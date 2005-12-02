@@ -1,0 +1,242 @@
+#!/usr/bin/perl
+#
+# Tool to send git commit notifications
+#
+# Copyright 2005 Alexandre Julliard
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or (at your option) any later version.
+#
+#
+# This script is meant to be called from .git/hooks/update.
+#
+# Usage: git-notify [options] [--] refname old-sha1 new-sha1
+#
+#   -c name   Send CIA notifications under specified project name
+#   -m addr   Send mail notifications to specified address
+#   -r name   Set the git repository name
+#   -s bytes  Set the maximum diff size in bytes (-1 for no limit)
+#
+
+use strict;
+use open ':utf8';
+
+# some parameters you may want to change
+
+# base URL of the gitweb repository browser
+my $gitweb_url = "http://source.winehq.org/git";
+
+# set this to something that takes "-s"
+my $mailer = "/usr/bin/mail";
+
+# default repository name (can be changed with the -r option)
+my $repos_name = "wine";
+
+# max size of diffs in bytes (can be changed with the -s option)
+my $max_diff_size = 10000;
+
+# address for mail notices (can be set with -m option)
+my $commitlist_address;
+
+# project name for CIA notices (can be set with -C option)
+my $cia_project_name;
+
+# CIA notification address
+my $cia_address = "cia\@cia.navi.cx";
+
+# debug mode
+my $debug = 0;
+
+sub usage()
+{
+    print "Usage: $0 [options] [--] refname old-sha1 new-sha1\n";
+    print "   -c name   Send CIA notifications under specified project name\n";
+    print "   -m addr   Send mail notifications to specified address\n";
+    print "   -r name   Set the git repository name\n";
+    print "   -s bytes  Set the maximum diff size in bytes (-1 for no limit)\n";
+    exit 1;
+}
+
+sub xml_escape($)
+{
+    my $str = shift;
+    $str =~ s/&/&amp;/g;
+    $str =~ s/</&lt;/g;
+    $str =~ s/>/&gt;/g;
+    my @chars = unpack "U*", $str;
+    $str = join "", map { ($_ > 127) ? sprintf "&#%u;", $_ : chr($_); } @chars;
+    return $str;
+}
+
+# parse command line options
+sub parse_options()
+{
+    while (@ARGV && $ARGV[0] =~ /^-/)
+    {
+        my $arg = shift @ARGV;
+
+        if ($arg eq '--') { last; }
+        elsif ($arg eq '-c') { $cia_project_name = shift @ARGV; }
+        elsif ($arg eq '-m') { $commitlist_address = shift @ARGV; }
+        elsif ($arg eq '-r') { $repos_name = shift @ARGV; }
+        elsif ($arg eq '-s') { $max_diff_size = shift @ARGV; }
+        elsif ($arg eq '-d') { $debug++; }
+        else { usage(); }
+    }
+    if ($#ARGV != 2) { usage(); }
+}
+
+# send an email notification
+sub mail_notification($$$@)
+{
+    my ($name, $subject, $content_type, @text) = @_;
+    if ($debug)
+    {
+        print "---------------------\n";
+        print "To: $name\n";
+        print "Subject: $subject\n";
+        print "Content-Type: $content_type\n";
+        print "\n", join("\n", @text), "\n";
+    }
+    else
+    {
+        open MAIL, "| $mailer -s \"$subject\" -a \"Content-Type: $content_type\" $name";
+        print MAIL join("\n", @text), "\n";
+        close MAIL;
+    }
+}
+
+# extract the information from a commit and return a hash containing the various fields
+sub get_commit_info($)
+{
+    my $commit = shift;
+    my %info = ();
+    my @log = ();
+    my $do_log = 0;
+
+    open COMMIT, "git-cat-file commit $commit |" or die "cannot run git-cat-file";
+    while (<COMMIT>)
+    {
+        chomp;
+        if ($do_log)
+        {
+            push @log, $_;
+            next;
+        }
+        elsif (/^(author|committer) ((.*)(<.*>)) (\d+) \+\d+$/)
+        {
+            $info{$1} = $2;
+            $info{$1 . "_name"} = $3;
+            $info{$1 . "_email"} = $4;
+            $info{$1 . "_date"} = $5;
+            next;
+        }
+        elsif (/^$/) { $do_log = 1; }
+    }
+    close COMMIT;
+
+    $info{"log"} = \@log;
+    return %info;
+}
+
+# send a commit notice to a mailing list
+sub send_commit_notice($)
+{
+    my $commit = shift;
+    my %info = get_commit_info($commit);
+    my @notice = ();
+
+    push @notice,
+    "Module: $repos_name",
+    "Branch: $ARGV[0]",
+    "Commit: $commit",
+    "URL:    $gitweb_url/?p=$repos_name.git;a=commit;h=$commit",
+    "",
+    "Author: " . $info{"author"},
+    "Date:   " . gmtime($info{"author_date"}),
+    "",
+    join "\n", @{$info{"log"}},
+    "",
+    "---",
+    "";
+
+    my $stat = `git-diff-tree -p $commit | git-apply --stat --summary`;
+    my $diff = `git-diff-tree -p --no-commit-id $commit`;
+
+    push @notice, $stat;
+    push @notice, $diff if ($max_diff_size == -1) || (length($diff) < $max_diff_size);
+
+    my $subject = $info{"author_name"} . ": " . ${$info{"log"}}[0];
+
+    mail_notification($commitlist_address, $subject, "text/plain; charset=UTF-8", @notice);
+}
+
+# send a commit notice to the CIA server
+sub send_cia_notice($)
+{
+    my $commit = shift;
+    my %info = get_commit_info($commit);
+    my @cia_text = ();
+
+    push @cia_text,
+        "<message>",
+        "  <generator>",
+        "    <name>git-notify script for CIA</name>",
+        "  </generator>",
+        "  <source>",
+        "    <project>" . xml_escape($cia_project_name) . "</project>",
+        "    <module>" . xml_escape($repos_name) . "</module>",
+        "    <branch>" . xml_escape($ARGV[0]). "</branch>",
+        "  </source>",
+        "  <body>",
+        "    <commit>",
+        "      <revision>$commit</revision>",
+        "      <author>" . xml_escape($info{"author"}) . "</author>",
+        "      <log>" . xml_escape(join "\n", @{$info{"log"}}) . "</log>",
+        "      <files>";
+
+    open COMMIT, "git-diff-tree --name-status -r $commit |" or die "cannot run git-diff-tree";
+    while (<COMMIT>)
+    {
+        chomp;
+        if (/^([AMD])\t(.*)$/)
+        {
+            my ($action, $file) = ($1, $2);
+            my %actions = ( "A" => "add", "M" => "modify", "D" => "remove" );
+            next unless defined $actions{$action};
+            push @cia_text, "        <file action=\"$actions{$action}\">" . xml_escape($file) . "</file>";
+        }
+    }
+    close COMMIT;
+
+    push @cia_text,
+        "      </files>",
+        "      <url>" . xml_escape("$gitweb_url/?p=$repos_name.git;a=commit;h=$commit") . "</url>",
+        "    </commit>",
+        "  </body>",
+        "  <timestamp>" . $info{"author_date"} . "</timestamp>",
+        "</message>";
+
+    mail_notification($cia_address, "DeliverXML", "text/xml", @cia_text);
+}
+
+
+parse_options();
+
+my @commits = ();
+open LIST, "git-rev-list $ARGV[1]..$ARGV[2] |" or die "cannot get rev list for $ARGV[1]..$ARGV[2]";
+while (<LIST>)
+{
+    chomp;
+    die "invalid commit $_" unless /^[0-9a-f]{40}$/;
+    unshift @commits, $_;
+}
+close LIST;
+
+foreach my $commit (@commits)
+{
+    send_commit_notice( $commit ) if $commitlist_address;
+    send_cia_notice( $commit ) if $cia_project_name;
+}
