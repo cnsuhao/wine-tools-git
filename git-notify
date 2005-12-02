@@ -46,6 +46,9 @@ my $cia_project_name;
 # CIA notification address
 my $cia_address = "cia\@cia.navi.cx";
 
+# max number of individual notices before falling back to a single global notice
+my $max_individual_notices = 100;
+
 # debug mode
 my $debug = 0;
 
@@ -269,6 +272,23 @@ sub send_cia_notice($$)
     mail_notification($cia_address, "DeliverXML", "text/xml", @cia_text);
 }
 
+# send a global commit notice when there are too many commits for individual mails
+sub send_global_notice($$$)
+{
+    my ($ref, $old_sha1, $new_sha1) = @_;
+    my @notice = ();
+
+    open LIST, "git-rev-list --pretty $old_sha1..$new_sha1 |" or die "cannot get rev list for $old_sha1..$new_sha1";
+    while (<LIST>)
+    {
+        chomp;
+        s/^commit /URL:    $gitweb_url\/?p=$repos_name.git;a=commit;h=/;
+        push @notice, $_;
+    }
+    close LIST;
+
+    mail_notification($commitlist_address, "New commits on branch $ref", "text/plain; charset=UTF-8", @notice);
+}
 
 parse_options();
 
@@ -287,6 +307,12 @@ while (<LIST>)
     unshift @commits, $_;
 }
 close LIST;
+
+if (@commits > $max_individual_notices)
+{
+    send_global_notice( $ARGV[0], $ARGV[1], $ARGV[2] );
+    exit 0;
+}
 
 foreach my $commit (@commits)
 {
