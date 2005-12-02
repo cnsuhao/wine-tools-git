@@ -70,6 +70,25 @@ sub xml_escape($)
     return $str;
 }
 
+# format an integer date + timezone as string
+# algorithm taken from git's date.c
+sub format_date($$)
+{
+    my ($time,$tz) = @_;
+
+    if ($tz < 0)
+    {
+        my $minutes = (-$tz / 100) * 60 + (-$tz % 100);
+        $time -= $minutes * 60;
+    }
+    else
+    {
+        my $minutes = ($tz / 100) * 60 + ($tz % 100);
+        $time += $minutes * 60;
+    }
+    return gmtime($time) . sprintf " %+05d", $tz;
+}
+
 # parse command line options
 sub parse_options()
 {
@@ -125,12 +144,13 @@ sub get_commit_info($)
             push @log, $_;
             next;
         }
-        elsif (/^(author|committer) ((.*)(<.*>)) (\d+) \+\d+$/)
+        elsif (/^(author|committer) ((.*)(<.*>)) (\d+) ([+-]\d+)$/)
         {
             $info{$1} = $2;
             $info{$1 . "_name"} = $3;
             $info{$1 . "_email"} = $4;
             $info{$1 . "_date"} = $5;
+            $info{$1 . "_tz"} = $6;
             next;
         }
         elsif (/^$/) { $do_log = 1; }
@@ -155,7 +175,7 @@ sub send_commit_notice($)
     "URL:    $gitweb_url/?p=$repos_name.git;a=commit;h=$commit",
     "",
     "Author: " . $info{"author"},
-    "Date:   " . gmtime($info{"author_date"}),
+    "Date:   " . format_date($info{"author_date"},$info{"author_tz"}),
     "",
     join "\n", @{$info{"log"}},
     "",
