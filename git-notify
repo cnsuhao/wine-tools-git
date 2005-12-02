@@ -127,78 +127,105 @@ sub mail_notification($$$@)
     }
 }
 
-# extract the information from a commit and return a hash containing the various fields
-sub get_commit_info($)
+# extract the information from a commit or tag object and return a hash containing the various fields
+sub get_object_info($)
 {
-    my $commit = shift;
+    my $obj = shift;
     my %info = ();
     my @log = ();
     my $do_log = 0;
 
-    open COMMIT, "git-cat-file commit $commit |" or die "cannot run git-cat-file";
-    while (<COMMIT>)
+    my $type = `git-cat-file -t $obj`;
+    chomp $type;
+
+    open OBJ, "git-cat-file $type $obj |" or die "cannot run git-cat-file";
+    while (<OBJ>)
     {
         chomp;
         if ($do_log)
         {
+            last if /^-----BEGIN PGP SIGNATURE-----/;
             push @log, $_;
-            next;
         }
-        elsif (/^(author|committer) ((.*)(<.*>)) (\d+) ([+-]\d+)$/)
+        elsif (/^(author|committer|tagger) ((.*)(<.*>)) (\d+) ([+-]\d+)$/)
         {
             $info{$1} = $2;
             $info{$1 . "_name"} = $3;
             $info{$1 . "_email"} = $4;
             $info{$1 . "_date"} = $5;
             $info{$1 . "_tz"} = $6;
-            next;
+        }
+        elsif (/^tag (.*)$/)
+        {
+            $info{"tag"} = $1;
         }
         elsif (/^$/) { $do_log = 1; }
     }
-    close COMMIT;
+    close OBJ;
 
+    $info{"type"} = $type;
     $info{"log"} = \@log;
     return %info;
 }
 
 # send a commit notice to a mailing list
-sub send_commit_notice($)
+sub send_commit_notice($$)
 {
-    my $commit = shift;
-    my %info = get_commit_info($commit);
+    my ($ref,$obj) = @_;
+    my %info = get_object_info($obj);
     my @notice = ();
+    my $subject;
 
-    push @notice,
-    "Module: $repos_name",
-    "Branch: $ARGV[0]",
-    "Commit: $commit",
-    "URL:    $gitweb_url/?p=$repos_name.git;a=commit;h=$commit",
-    "",
-    "Author: " . $info{"author"},
-    "Date:   " . format_date($info{"author_date"},$info{"author_tz"}),
-    "",
-    join "\n", @{$info{"log"}},
-    "",
-    "---",
-    "";
+    if ($info{"type"} eq "tag")
+    {
+        push @notice,
+        "Module: $repos_name",
+        "Branch: $ref",
+        "Tag:    $obj",
+        "URL:    $gitweb_url/?p=$repos_name.git;a=tag;h=$obj",
+        "",
+        "Tagger: " . $info{"tagger"},
+        "Date:   " . format_date($info{"tagger_date"},$info{"tagger_tz"}),
+        "",
+        join "\n", @{$info{"log"}};
+        $subject = "Tag " . $info{"tag"} . " : " . $info{"tagger_name"} . ": " . ${$info{"log"}}[0];
+    }
+    else
+    {
+        push @notice,
+        "Module: $repos_name",
+        "Branch: $ref",
+        "Commit: $obj",
+        "URL:    $gitweb_url/?p=$repos_name.git;a=commit;h=$obj",
+        "",
+        "Author: " . $info{"author"},
+        "Date:   " . format_date($info{"author_date"},$info{"author_tz"}),
+        "",
+        join "\n", @{$info{"log"}},
+        "",
+        "---",
+        "";
 
-    my $stat = `git-diff-tree -p $commit | git-apply --stat --summary`;
-    my $diff = `git-diff-tree -p --no-commit-id $commit`;
+        my $stat = `git-diff-tree -p $obj | git-apply --stat --summary`;
+        my $diff = `git-diff-tree -p --no-commit-id $obj`;
 
-    push @notice, $stat;
-    push @notice, $diff if ($max_diff_size == -1) || (length($diff) < $max_diff_size);
+        push @notice, $stat;
+        push @notice, $diff if ($max_diff_size == -1) || (length($diff) < $max_diff_size);
 
-    my $subject = $info{"author_name"} . ": " . ${$info{"log"}}[0];
+        $subject = $info{"author_name"} . ": " . ${$info{"log"}}[0];
+    }
 
     mail_notification($commitlist_address, $subject, "text/plain; charset=UTF-8", @notice);
 }
 
 # send a commit notice to the CIA server
-sub send_cia_notice($)
+sub send_cia_notice($$)
 {
-    my $commit = shift;
-    my %info = get_commit_info($commit);
+    my ($ref,$commit) = @_;
+    my %info = get_object_info($commit);
     my @cia_text = ();
+
+    return if $info{"type"} ne "commit";
 
     push @cia_text,
         "<message>",
@@ -208,7 +235,7 @@ sub send_cia_notice($)
         "  <source>",
         "    <project>" . xml_escape($cia_project_name) . "</project>",
         "    <module>" . xml_escape($repos_name) . "</module>",
-        "    <branch>" . xml_escape($ARGV[0]). "</branch>",
+        "    <branch>" . xml_escape($ref). "</branch>",
         "  </source>",
         "  <body>",
         "    <commit>",
@@ -245,6 +272,12 @@ sub send_cia_notice($)
 
 parse_options();
 
+if ($ARGV[1] eq '0' x 40)  # new ref
+{
+    send_commit_notice( $ARGV[0], $ARGV[2] );
+    exit 0;
+}
+
 my @commits = ();
 open LIST, "git-rev-list $ARGV[1]..$ARGV[2] |" or die "cannot get rev list for $ARGV[1]..$ARGV[2]";
 while (<LIST>)
@@ -257,6 +290,6 @@ close LIST;
 
 foreach my $commit (@commits)
 {
-    send_commit_notice( $commit ) if $commitlist_address;
-    send_cia_notice( $commit ) if $cia_project_name;
+    send_commit_notice( $ARGV[0], $commit ) if $commitlist_address;
+    send_cia_notice( $ARGV[0], $commit ) if $cia_project_name;
 }
