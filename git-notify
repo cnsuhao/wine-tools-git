@@ -213,7 +213,14 @@ sub send_commit_notice($$)
         my $diff = `git-diff-tree -p --no-commit-id $obj`;
 
         push @notice, $stat;
-        push @notice, $diff if ($max_diff_size == -1) || (length($diff) < $max_diff_size);
+        if (($max_diff_size == -1) || (length($diff) < $max_diff_size))
+        {
+            push @notice, $diff;
+        }
+        else
+        {
+            push @notice, "Diff:   $gitweb_url/?p=$repos_name.git;a=commitdiff;h=$obj",
+        }
 
         $subject = $info{"author_name"} . ": " . ${$info{"log"}}[0];
     }
