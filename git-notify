@@ -124,7 +124,12 @@ sub mail_notification($$$@)
     }
     else
     {
-        open MAIL, "| $mailer -s \"$subject\" -a \"Content-Type: $content_type\" $name";
+        my $pid = open MAIL, "|-";
+        return unless defined $pid;
+        if (!$pid)
+        {
+            exec $mailer, "-s", $subject, "-a", "Content-Type: $content_type", $name or die "Cannot exec $mailer";
+        }
         print MAIL join("\n", @text), "\n";
         close MAIL;
     }
