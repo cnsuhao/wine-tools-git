@@ -18,6 +18,7 @@
 #   -m addr   Send mail notifications to specified address
 #   -r name   Set the git repository name
 #   -s bytes  Set the maximum diff size in bytes (-1 for no limit)
+#   -u url    Set the URL to the gitweb browser
 #
 
 use strict;
@@ -26,7 +27,7 @@ use Encode 'encode';
 
 # some parameters you may want to change
 
-# base URL of the gitweb repository browser
+# base URL of the gitweb repository browser (can be set with the -u option)
 my $gitweb_url = "http://source.winehq.org/git";
 
 # set this to something that takes "-s"
@@ -60,6 +61,7 @@ sub usage()
     print "   -m addr   Send mail notifications to specified address\n";
     print "   -r name   Set the git repository name\n";
     print "   -s bytes  Set the maximum diff size in bytes (-1 for no limit)\n";
+    print "   -u url    Set the URL to the gitweb browser\n";
     exit 1;
 }
 
@@ -105,6 +107,7 @@ sub parse_options()
         elsif ($arg eq '-m') { $commitlist_address = shift @ARGV; }
         elsif ($arg eq '-r') { $repos_name = shift @ARGV; }
         elsif ($arg eq '-s') { $max_diff_size = shift @ARGV; }
+        elsif ($arg eq '-u') { $gitweb_url = shift @ARGV; }
         elsif ($arg eq '-d') { $debug++; }
         else { usage(); }
     }
