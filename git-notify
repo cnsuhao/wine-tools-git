@@ -22,6 +22,7 @@
 
 use strict;
 use open ':utf8';
+use Encode 'encode';
 
 # some parameters you may want to change
 
@@ -114,6 +115,7 @@ sub parse_options()
 sub mail_notification($$$@)
 {
     my ($name, $subject, $content_type, @text) = @_;
+    $subject = encode("MIME-Q",$subject);
     if ($debug)
     {
         print "---------------------\n";
