@@ -25,6 +25,7 @@
 use strict;
 use open ':utf8';
 use Encode 'encode';
+use Cwd 'realpath';
 
 # some parameters you may want to change
 
@@ -35,7 +36,7 @@ my $gitweb_url = "http://source.winehq.org/git";
 my $mailer = "/usr/bin/mail";
 
 # default repository name (can be changed with the -r option)
-my $repos_name = "wine";
+my $repos_name = "";
 
 # max size of diffs in bytes (can be changed with the -s option)
 my $max_diff_size = 10000;
@@ -144,6 +145,17 @@ sub mail_notification($$$@)
         print MAIL join("\n", @text), "\n";
         close MAIL;
     }
+}
+
+# get the default repository name
+sub get_repos_name()
+{
+    my $dir = `git-rev-parse --git-dir`;
+    chomp $dir;
+    my $repos = realpath($dir);
+    $repos =~ s/(.*?)((\.git\/)?\.git)$/\1/;
+    $repos =~ s/(.*)\/([^\/]+)\/?$/\2/;
+    return $repos;
 }
 
 # extract the information from a commit or tag object and return a hash containing the various fields
@@ -313,6 +325,7 @@ sub send_global_notice($$$)
     mail_notification($commitlist_address, "New commits on branch $ref", "text/plain; charset=UTF-8", @notice);
 }
 
+$repos_name = get_repos_name();
 parse_options();
 
 if ($ARGV[1] eq '0' x 40)  # new ref
