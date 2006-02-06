@@ -19,6 +19,7 @@
 #   -r name   Set the git repository name
 #   -s bytes  Set the maximum diff size in bytes (-1 for no limit)
 #   -u url    Set the URL to the gitweb browser
+#   -x branch Exclude changes to the specified branch from reports
 #
 
 use strict;
@@ -54,6 +55,9 @@ my $max_individual_notices = 100;
 # debug mode
 my $debug = 0;
 
+# branches to exclude
+my @exclude_list = ();
+
 sub usage()
 {
     print "Usage: $0 [options] [--] refname old-sha1 new-sha1\n";
@@ -62,6 +66,7 @@ sub usage()
     print "   -r name   Set the git repository name\n";
     print "   -s bytes  Set the maximum diff size in bytes (-1 for no limit)\n";
     print "   -u url    Set the URL to the gitweb browser\n";
+    print "   -x branch Exclude changes to the specified branch from reports\n";
     exit 1;
 }
 
@@ -108,6 +113,7 @@ sub parse_options()
         elsif ($arg eq '-r') { $repos_name = shift @ARGV; }
         elsif ($arg eq '-s') { $max_diff_size = shift @ARGV; }
         elsif ($arg eq '-u') { $gitweb_url = shift @ARGV; }
+        elsif ($arg eq '-x') { push @exclude_list, "^" . shift @ARGV; }
         elsif ($arg eq '-d') { $debug++; }
         else { usage(); }
     }
@@ -295,7 +301,7 @@ sub send_global_notice($$$)
     my ($ref, $old_sha1, $new_sha1) = @_;
     my @notice = ();
 
-    open LIST, "git-rev-list --pretty $old_sha1..$new_sha1 |" or die "cannot get rev list for $old_sha1..$new_sha1";
+    open LIST, "-|" or exec "git-rev-list", "--pretty", "^$old_sha1", "$new_sha1", @exclude_list or die "cannot exec git-rev-list";
     while (<LIST>)
     {
         chomp;
@@ -316,7 +322,8 @@ if ($ARGV[1] eq '0' x 40)  # new ref
 }
 
 my @commits = ();
-open LIST, "git-rev-list $ARGV[1]..$ARGV[2] |" or die "cannot get rev list for $ARGV[1]..$ARGV[2]";
+
+open LIST, "-|" or exec "git-rev-list", "^$ARGV[1]", "$ARGV[2]", @exclude_list or die "cannot exec git-rev-list";
 while (<LIST>)
 {
     chomp;
