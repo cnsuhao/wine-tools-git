@@ -1,0 +1,229 @@
+#!/usr/bin/perl -w
+#
+# Apply git commits to a CVS tree.
+#
+# Copyright 2005 Alexandre Julliard
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or (at your option) any later version.
+#
+#
+# Usage: git-to-cvs [last-commit-tag [branch]]
+#
+# Optional parameters:
+#   last-commit-tag: tag to use to keep track of cvs
+#                    commits, default is LAST_CVS_COMMIT
+#   branch: where to get the git commits from, default is 'master'
+#
+# This script needs to be run from the root of the checked-out CVS tree,
+# with .git (or GIT_DIR) pointing to the git repository.
+#
+
+use Unicode::String qw(latin1 utf8);
+
+my %tags = ();
+
+my $last_commit = $ARGV[0] || "LAST_CVS_COMMIT";
+my $branch = $ARGV[1] || "master";
+my $git_dir = `git-rev-parse --git-dir`;
+die "Cannot find git repository" if $?;
+chomp $git_dir;
+-d "CVS" or die "Not in a CVS repository";
+
+# run a shell command and die on error
+sub shell($)
+{
+    my $arg = shift;
+    !(system $arg) or die $arg;
+}
+
+# add a dir and all its parents
+sub create_dir($)
+{
+    my $dir = shift;
+    my $base = ".";
+    foreach $d (split "/", $dir)
+    {
+        last unless -d "$base/$d";
+        shell "cvs -Q add -m '' $base/$d" unless -d "$base/$d/CVS";
+        $base .= "/$d";
+    }
+}
+
+# replace .gitignore by .cvsignore
+sub map_ignore(@)
+{
+    map { s/^((.*\/)?)\.gitignore/$1.cvsignore/; } @_;
+    return @_;
+}
+
+# cvs add a bunch of files
+sub cvs_add_files(@)
+{
+    my @files = map_ignore(@_);
+    # first create dirs if needed
+    foreach my $file (@files) { create_dir( $file ); }
+    shell "cvs -Q add -m '' " . join(" ",@files);
+}
+
+# cvs rm a bunch of files
+sub cvs_rm_files(@)
+{
+    my @files = map_ignore(@_);
+    shell "cvs -Q rm -f " . join(" ",@files);
+}
+
+# set a CVS tag on all files
+sub cvs_tag($)
+{
+    my $tag = shift;
+    my $cvstag = $tag;
+    $cvstag =~ s/\./_/g;
+    $cvstag =~ s/^wine/Wine/;
+    print "Tagging $tag as $cvstag\n\n";
+    shell "cvs -Q tag -c $cvstag";
+}
+
+# perform the cvs commit once the updates/adds/deletes have been done
+sub cvs_commit($@)
+{
+    my $commit = shift;
+    my @files = map_ignore(@_);
+    my $author;
+    my @log = ();
+
+    # convert log message according to Wine CVS conventions
+
+    open COMMIT, "git-cat-file commit $commit |" or die "cannot run git-cat-file";
+    while (<COMMIT>)
+    {
+        chomp;
+        if (/^author (.*<.*>) \d+ \+\d+$/)
+        {
+            $author = $1;
+            next;
+        }
+        last if /^$/;
+    }
+    while (<COMMIT>)
+    {
+        chomp;
+        push @log, $_;
+    }
+    close COMMIT;
+
+    open LOGFILE, ">.logfile";
+    print LOGFILE utf8("$author\n")->latin1;
+    print LOGFILE utf8(join("\n",@log), "\n")->latin1;
+    close LOGFILE;
+
+    print "commit $commit\n";
+    print "$author\n";
+    print join("\n",@log), "\n";
+    print "\n";
+    shell "cvs -Q commit -F .logfile " . join(" ",@files);
+    unlink ".logfile";
+    shell "git-update-ref $last_commit $commit";
+    if (defined $tags{$commit}) { cvs_tag($tags{$commit}); }
+}
+
+# apply the specified git commit to the CVS tree
+sub apply_git_commit($)
+{
+    my $commit = shift;
+    my @added = ();
+    my @modified = ();
+    my @deleted = ();
+
+    $commit = `git-rev-parse $commit^\{commit\}`;
+    chomp $commit;
+    open COMMIT, "git-diff-tree --name-status -r $commit |" or die "cannot run git-diff-tree";
+    while (<COMMIT>)
+    {
+        chomp;
+        if (/^([AMD])\t(.*)$/)
+        {
+            my $file = $2;
+            if ($1 eq "A") { push @added, $file; }
+            elsif ($1 eq "M") { push @modified, $file; }
+            elsif ($1 eq "D") { push @deleted, $file; }
+        }
+    }
+    close COMMIT;
+    foreach my $file (@added) { print "A $file\n"; }
+    foreach my $file (@modified) { print "M $file\n"; }
+    foreach my $file (@deleted) { print "D $file\n"; }
+
+    # get the modified files
+    shell "git-read-tree --reset $commit";
+    shell "git-checkout-index -f -u -- " . join(" ",@added,@modified) if (@added || @modified);
+    foreach my $file (@added, @modified)
+    {
+        if ($file =~ /^((.*\/)?)\.gitignore/) { shell "cp -p $file $1.cvsignore"; }
+    }
+
+    cvs_add_files(@added) if (@added);
+    cvs_rm_files(@deleted) if (@deleted);
+    cvs_commit( $commit, @added, @deleted, @modified );
+
+    # prune empty dirs
+    shell "cvs -Q update -P" if (@deleted);
+}
+
+# apply all commits from the specified one up to current top of branch
+sub apply_commits()
+{
+    my @commits = ();
+
+    my $base = `git-merge-base $last_commit $branch`;
+    my $commit = `git-rev-parse $last_commit^\{commit\}`;
+    die "$last_commit is not a parent of $branch" unless ($base eq $commit);
+
+    # read the tree of the first commit and make sure we are up to date
+    shell "git-read-tree --reset $last_commit";
+    shell "git-update-index --refresh";
+    shell "git-checkout-index -q -f -u -a";
+
+    open LIST, "git-rev-list $last_commit..$branch |" or die "cannot run git-rev-list";
+    while (<LIST>)
+    {
+        chomp;
+        die "invalid commit $_" unless /^[0-9a-f]{40}$/;
+        unshift @commits, $_;
+    }
+    close LIST;
+
+    unless (@commits)
+    {
+        print "No new commits to apply.\n";
+        return;
+    }
+    foreach my $commit (@commits)
+    {
+        apply_git_commit($commit);
+    }
+    printf "Applied %d commits.\n", $#commits+1;
+}
+
+# build a list of all commits that are pointed to by a tag
+sub read_tags()
+{
+    opendir DIR, "$git_dir/refs/tags";
+    foreach my $tag (grep /^wine/, readdir DIR )
+    {
+        my $commit = `git-rev-parse $tag^{commit}`;
+        chomp $commit;
+        $tags{$commit} = $tag;
+    }
+    close DIR;
+}
+
+# use a tmp index file to avoid touching the main one
+$ENV{"GIT_INDEX_FILE"} = "CVS/.git-index";
+
+read_tags();
+apply_commits();
+
+unlink "CVS/.git-index";
