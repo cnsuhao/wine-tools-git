@@ -16,6 +16,7 @@
 #
 #   -c name   Send CIA notifications under specified project name
 #   -m addr   Send mail notifications to specified address
+#   -n max    Set max number of individual mails to send
 #   -r name   Set the git repository name
 #   -s bytes  Set the maximum diff size in bytes (-1 for no limit)
 #   -u url    Set the URL to the gitweb browser
@@ -44,13 +45,13 @@ my $max_diff_size = 10000;
 # address for mail notices (can be set with -m option)
 my $commitlist_address;
 
-# project name for CIA notices (can be set with -C option)
+# project name for CIA notices (can be set with -c option)
 my $cia_project_name;
 
 # CIA notification address
 my $cia_address = "cia\@cia.navi.cx";
 
-# max number of individual notices before falling back to a single global notice
+# max number of individual notices before falling back to a single global notice (can be set with -n option)
 my $max_individual_notices = 100;
 
 # debug mode
@@ -64,6 +65,7 @@ sub usage()
     print "Usage: $0 [options] [--] refname old-sha1 new-sha1\n";
     print "   -c name   Send CIA notifications under specified project name\n";
     print "   -m addr   Send mail notifications to specified address\n";
+    print "   -n max    Set max number of individual mails to send\n";
     print "   -r name   Set the git repository name\n";
     print "   -s bytes  Set the maximum diff size in bytes (-1 for no limit)\n";
     print "   -u url    Set the URL to the gitweb browser\n";
@@ -111,6 +113,7 @@ sub parse_options()
         if ($arg eq '--') { last; }
         elsif ($arg eq '-c') { $cia_project_name = shift @ARGV; }
         elsif ($arg eq '-m') { $commitlist_address = shift @ARGV; }
+        elsif ($arg eq '-n') { $max_individual_notices = shift @ARGV; }
         elsif ($arg eq '-r') { $repos_name = shift @ARGV; }
         elsif ($arg eq '-s') { $max_diff_size = shift @ARGV; }
         elsif ($arg eq '-u') { $gitweb_url = shift @ARGV; }
