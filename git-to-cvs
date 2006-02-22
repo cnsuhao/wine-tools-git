@@ -100,7 +100,7 @@ sub cvs_commit($@)
     while (<COMMIT>)
     {
         chomp;
-        if (/^author (.*<.*>) \d+ \+\d+$/)
+        if (/^author (.*<.*>) \d+ [-+]\d+$/)
         {
             $author = $1;
             next;
