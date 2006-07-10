@@ -2,7 +2,7 @@
 #
 # Apply git commits to a CVS tree.
 #
-# Copyright 2005 Alexandre Julliard
+# Copyright 2005, 2006 Alexandre Julliard
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -24,6 +24,20 @@
 use Unicode::String qw(latin1 utf8);
 
 my %tags = ();
+
+# patterns to skip in .gitignore because they are ignored by default in CVS
+my %ignore_patterns =
+(
+ "*.[oa]" => 1,
+ "*.o" => 1,
+ "*.a" => 1,
+ "*.orig" => 1,
+ "*.rej" => 1,
+ "*.so" => 1,
+ "*~" => 1,
+ "tags" => 1,
+ "TAGS" => 1
+);
 
 my $last_commit = $ARGV[0] || "LAST_CVS_COMMIT";
 my $branch = $ARGV[1] || "master";
@@ -52,17 +66,10 @@ sub create_dir($)
     }
 }
 
-# replace .gitignore by .cvsignore
-sub map_ignore(@)
-{
-    map { s/^((.*\/)?)\.gitignore/$1.cvsignore/; } @_;
-    return @_;
-}
-
 # cvs add a bunch of files
 sub cvs_add_files(@)
 {
-    my @files = map_ignore(@_);
+    my @files = @_;
     # first create dirs if needed
     foreach my $file (@files) { create_dir( $file ); }
     shell "cvs -Q add -m '' " . join(" ",@files);
@@ -71,7 +78,7 @@ sub cvs_add_files(@)
 # cvs rm a bunch of files
 sub cvs_rm_files(@)
 {
-    my @files = map_ignore(@_);
+    my @files = @_;
     shell "cvs -Q rm -f " . join(" ",@files);
 }
 
@@ -86,11 +93,120 @@ sub cvs_tag($)
     shell "cvs -Q tag -c $cvstag";
 }
 
+# get the list of directories touched by the specified files
+sub get_file_dirs(@)
+{
+    my %dirs = ();
+    foreach my $file (@_)
+    {
+        if ($file =~ /^(.*)\//) { $dirs{$1} = 1; }
+        else { $dirs{"."} = 1; }
+    }
+    return sort keys %dirs;
+}
+
+# check if directory names match, including wildcards
+sub match_dirs($$)
+{
+    my @d1 = split "/", $_[0];
+    my @d2 = split "/", $_[1];
+    return 0 if ($#d1 != $#d2);
+    for (my $i = 0; $i <= $#d1; $i++)
+    {
+        return 0 if ($d1[$i] ne $d2[$i]) && ($d2[$i] ne "*");
+    }
+    return 1;
+}
+
+# read in a single .gitignore file
+sub read_gitignore($$)
+{
+    my ($basedir, $subdir) = @_;
+    my @patterns = ();
+
+    if (open GITIGNORE, "<$basedir/.gitignore")
+    {
+        while (<GITIGNORE>)
+        {
+            chomp;
+            next if (/^$/);
+            next if (/^#/);
+            if (/^(.*)\/([^\/]*)$/)
+            {
+                my ($dir, $file) = ($1, $2);
+                push @patterns, $file if (match_dirs($subdir, $dir) != 0);
+            }
+            else
+            {
+                push @patterns, $_;
+            }
+        }
+        close GITIGNORE;
+    }
+    return @patterns;
+}
+
+# read all the .gitignore files that affect the specified directory
+sub read_all_gitignores($)
+{
+    my $dir = shift;
+    my @elems = split("/", $dir);
+    my @patterns = ();
+
+    shift @elems if ($elems[0] eq ".");
+
+    if (@elems)
+    {
+        # first the top-level dir
+        push @patterns, read_gitignore( ".", join("/",@elems) );
+
+        # then the intermediate dirs
+        for (my $i = 0; $i < $#elems; $i++)
+        {
+            push @patterns, read_gitignore( join("/",@elems[0..$i]), join("/",@elems[$i+1..$#elems]) );
+        }
+    }
+    # and last, the specified dir
+    push @patterns, read_gitignore( $dir, "" );
+    return @patterns;
+}
+
+# generate the .cvsignore in the specified directory
+sub make_cvsignore($)
+{
+    my $dir = shift;
+    my %patterns = ();
+    my @files = glob "$dir/*";
+    if (@files > 1)  # we always have a CVS dir
+    {
+        foreach $file (read_all_gitignores($dir))
+        {
+            $patterns{$file} = 1 unless defined($ignore_patterns{$file});
+        }
+        if (keys %patterns)
+        {
+            my $op = (-f "$dir/.cvsignore") ? "M" : "A";
+            open CVSIGNORE, ">$dir/.cvsignore" or die "cannot create $dir/.cvsignore";
+            print CVSIGNORE join("\n", sort keys %patterns) . "\n";
+            close CVSIGNORE;
+            if ($op eq "A") { cvs_add_files( "$dir/.cvsignore" ); }
+            return $op;
+        }
+    }
+
+    if (-f "$dir/.cvsignore")
+    {
+        cvs_rm_files( "$dir/.cvsignore" );
+        return "D";
+    }
+    return "";
+}
+
 # perform the cvs commit once the updates/adds/deletes have been done
 sub cvs_commit($@)
 {
     my $commit = shift;
-    my @files = map_ignore(@_);
+    my @files = @_;
     my $author;
     my @log = ();
 
@@ -136,6 +252,8 @@ sub apply_git_commit($)
     my @added = ();
     my @modified = ();
     my @deleted = ();
+    my @gitignores = ();
+    my @gitignores_deleted = ();
 
     $commit = `git-rev-parse $commit^\{commit\}`;
     chomp $commit;
@@ -145,10 +263,15 @@ sub apply_git_commit($)
         chomp;
         if (/^([AMD])\t(.*)$/)
         {
-            my $file = $2;
-            if ($1 eq "A") { push @added, $file; }
-            elsif ($1 eq "M") { push @modified, $file; }
-            elsif ($1 eq "D") { push @deleted, $file; }
+            my ($op, $file) = ($1, $2);
+            if ($file =~ /\.gitignore$/)
+            {
+                if ($op eq "D") { push @gitignores_deleted, $file; }
+                else { push @gitignores, $file; }
+            }
+            elsif ($op eq "A") { push @added, $file; }
+            elsif ($op eq "M") { push @modified, $file; }
+            elsif ($op eq "D") { push @deleted, $file; }
         }
     }
     close COMMIT;
@@ -158,14 +281,21 @@ sub apply_git_commit($)
 
     # get the modified files
     shell "git-read-tree --reset $commit";
-    shell "git-checkout-index -f -u -- " . join(" ",@added,@modified) if (@added || @modified);
-    foreach my $file (@added, @modified)
-    {
-        if ($file =~ /^((.*\/)?)\.gitignore/) { shell "cp -p $file $1.cvsignore"; }
-    }
+    shell "git-checkout-index -f -u -- " . join(" ",@added, @modified, @gitignores) if (@added || @modified || @gitignores);
+    unlink @gitignores_deleted if (@gitignores_deleted);
 
     cvs_add_files(@added) if (@added);
     cvs_rm_files(@deleted) if (@deleted);
+
+    foreach my $dir (get_file_dirs(@added, @modified, @deleted, @gitignores, @gitignores_deleted))
+    {
+        my $op = make_cvsignore($dir);
+        next unless $op;
+        if ($op eq "A") { push @added, "$dir/.cvsignore"; }
+        elsif ($op eq "M") { push @modified, "$dir/.cvsignore"; }
+        elsif ($op eq "D") { push @deleted, "$dir/.cvsignore"; }
+    }
+
     cvs_commit( $commit, @added, @deleted, @modified );
 
     # prune empty dirs
