@@ -47,10 +47,10 @@ chomp $git_dir;
 -d "CVS" or die "Not in a CVS repository";
 
 # run a shell command and die on error
-sub shell($)
+sub shell(@)
 {
-    my $arg = shift;
-    !(system $arg) or die $arg;
+    my @args = @_;
+    system(@args) == 0 or die "system @args failed: $?";
 }
 
 # add a dir and all its parents
@@ -61,7 +61,7 @@ sub create_dir($)
     foreach $d (split "/", $dir)
     {
         last unless -d "$base/$d";
-        shell "cvs -Q add -m '' $base/$d" unless -d "$base/$d/CVS";
+        shell "cvs", "-Q", "add", "-m", "", "$base/$d" unless -d "$base/$d/CVS";
         $base .= "/$d";
     }
 }
@@ -72,14 +72,14 @@ sub cvs_add_files(@)
     my @files = @_;
     # first create dirs if needed
     foreach my $file (@files) { create_dir( $file ); }
-    shell "cvs -Q add -m '' " . join(" ",@files);
+    shell "cvs", "-Q", "add", "-m", "", @files;
 }
 
 # cvs rm a bunch of files
 sub cvs_rm_files(@)
 {
     my @files = @_;
-    shell "cvs -Q rm -f " . join(" ",@files);
+    shell "cvs", "-Q", "rm", "-f", @files;
 }
 
 # set a CVS tag on all files
@@ -90,7 +90,7 @@ sub cvs_tag($)
     $cvstag =~ s/\./_/g;
     $cvstag =~ s/^wine/Wine/;
     print "Tagging $tag as $cvstag\n\n";
-    shell "cvs -Q tag -c $cvstag";
+    shell "cvs", "-Q", "tag", "-c", $cvstag;
 }
 
 # get the list of directories touched by the specified files
@@ -239,9 +239,9 @@ sub cvs_commit($@)
     print "$author\n";
     print join("\n",@log), "\n";
     print "\n";
-    shell "cvs -Q commit -F .logfile " . join(" ",@files);
+    shell "cvs", "-Q", "commit", "-F", ".logfile", @files;
     unlink ".logfile";
-    shell "git-update-ref $last_commit $commit";
+    shell "git-update-ref", $last_commit, $commit;
     if (defined $tags{$commit}) { cvs_tag($tags{$commit}); }
 }
 
@@ -280,8 +280,8 @@ sub apply_git_commit($)
     foreach my $file (@deleted) { print "D $file\n"; }
 
     # get the modified files
-    shell "git-read-tree --reset $commit";
-    shell "git-checkout-index -f -u -- " . join(" ",@added, @modified, @gitignores) if (@added || @modified || @gitignores);
+    shell "git-read-tree", "--reset", $commit;
+    shell "git-checkout-index", "-f", "-u", "--", @added, @modified, @gitignores if (@added || @modified || @gitignores);
     unlink @gitignores_deleted if (@gitignores_deleted);
 
     cvs_add_files(@added) if (@added);
@@ -299,7 +299,7 @@ sub apply_git_commit($)
     cvs_commit( $commit, @added, @deleted, @modified );
 
     # prune empty dirs
-    shell "cvs -Q update -P" if (@deleted);
+    shell "cvs", "-Q", "update", "-P" if (@deleted);
 }
 
 # apply all commits from the specified one up to current top of branch
@@ -312,9 +312,9 @@ sub apply_commits()
     die "$last_commit is not a parent of $branch" unless ($base eq $commit);
 
     # read the tree of the first commit and make sure we are up to date
-    shell "git-read-tree --reset $last_commit";
-    shell "git-update-index --refresh";
-    shell "git-checkout-index -q -f -u -a";
+    shell "git-read-tree", "--reset", $last_commit;
+    shell "git-update-index", "--refresh";
+    shell "git-checkout-index", "-q", "-f", "-u", "-a";
 
     open LIST, "git-rev-list $last_commit..$branch |" or die "cannot run git-rev-list";
     while (<LIST>)
