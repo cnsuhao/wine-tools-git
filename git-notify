@@ -331,9 +331,12 @@ sub send_global_notice($$$)
 $repos_name = get_repos_name();
 parse_options();
 
+my $ref = $ARGV[0];
+$ref =~ s/^refs\/heads\///;
+
 if ($ARGV[1] eq '0' x 40)  # new ref
 {
-    send_commit_notice( $ARGV[0], $ARGV[2] );
+    send_commit_notice( $ref, $ARGV[2] );
     exit 0;
 }
 
@@ -350,12 +353,12 @@ close LIST;
 
 if (@commits > $max_individual_notices)
 {
-    send_global_notice( $ARGV[0], $ARGV[1], $ARGV[2] );
+    send_global_notice( $ref, $ARGV[1], $ARGV[2] );
     exit 0;
 }
 
 foreach my $commit (@commits)
 {
-    send_commit_notice( $ARGV[0], $commit ) if $commitlist_address;
-    send_cia_notice( $ARGV[0], $commit ) if $cia_project_name;
+    send_commit_notice( $ref, $commit ) if $commitlist_address;
+    send_cia_notice( $ref, $commit ) if $cia_project_name;
 }
