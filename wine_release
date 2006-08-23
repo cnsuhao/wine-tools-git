@@ -1,0 +1,87 @@
+#!/bin/sh
+
+# This script is ran after a new release of Wine. It updates the website
+# and FTP for the new wine release.
+
+# usage: wine_release <old version> <new version>
+
+set -e
+
+if [ $# -lt 2 ]
+then
+  echo "Usage: $0 oldver newver"
+  exit 1
+fi
+
+oldver=$1
+version=$2
+
+# nuke old attempt (if any)
+rm -rf wine-$version
+
+git clone -l -n git/wine.git wine-$version
+(cd wine-$version && git checkout -b dummy wine-$version)
+
+# move wine link
+rm -f wine
+ln -s wine-$version wine
+
+# make cross reference database for LXR
+# note that we must have write permission in this directory
+echo "==== UPDATING LXR ===="
+cd db
+rm -rf wine-$version
+mkdir wine-$version
+cd wine-$version
+../../bin/genxref ../../wine-$version
+chmod +r fileidx xref
+
+# make Glimpse index
+##glimpseindex -n -H . ../../wine-$version
+##chmod +r .glimpse*
+cd ../..
+
+(echo "wine-$version"; cat wine-versions) | uniq > wine-versions.new && mv wine-versions.new wine-versions
+
+# update man page and documentation
+echo "==== UPDATING DOCUMENTATION ===="
+cd wine-$version
+./configure
+
+manpages="\
+  loader/wine.man \
+  server/wineserver.man \
+  tools/winemaker.man \
+  tools/widl/widl.man \
+  tools/winebuild/winebuild.man \
+  tools/winedump/winedump.man \
+  tools/winegcc/winegcc.man \
+  tools/wmc/wmc.man \
+  tools/wrc/wrc.man"
+
+for f in $manpages
+do
+  name=`basename $f .man`
+  make -C `dirname $f` $name.man
+  nroff -man $f | ../bin/man2html | ../html2template -o /home/winehq/opt/lostwages/templates/en/docs/$name.template
+done
+
+git diff --stat wine-$oldver wine-$version >../ds$version.txt
+
+make htmlpages && rm -rf ../WineAPI && mv documentation/html ../WineAPI
+
+# Wine API Stats
+echo "==== UPDATING WINE API STATS PAGE ===="
+./tools/winapi/winapi_extract --pseudo-stub-statistics --no-verbose --no-progress > winapi_stats.txt
+../winapi_stats.php > /home/winehq/opt/lostwages/templates/en/winapi_stats.template
+rm -f winapi_stats.txt
+
+# cleanup source tree
+make distclean
+rm -rf .git
+
+# homepage announcement
+# edit the homepage to announce the new release...
+# TODO
+
+# end

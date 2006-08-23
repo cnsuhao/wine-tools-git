@@ -1,0 +1,80 @@
+#!/bin/sh
+
+# This script is ran after a new release of Wine. It updates the website
+# and FTP for the new wine release.
+
+# usage: winedoc_release <winedoc version>
+
+set -e
+
+if [ $# -lt 1 ]
+then
+  echo "Usage: $0 version|cvs"
+  exit 1
+fi
+
+version=$1
+
+# nuke old attempt (if any)
+rm -rf wine-docs-$version
+
+if [ "$version" = "cvs" ]
+then
+  cvs -z9 -d :pserver:anonymous@cvs.sourceforge.net:/cvsroot/wine co -d wine-docs-cvs docs
+else
+  if [ -f wine-docs-$version.tar.bz2 ]
+  then
+    echo "Already have Wine docs, skipping download"
+  else
+    ncftpget ftp://ibiblio.org/pub/linux/system/emulators/wine/wine-docs-$version.tar.bz2
+  fi
+  tar xfj wine-docs-$version.tar.bz2
+  rm wine-docs-$version.tar.bz2
+fi
+
+echo "==== BUILDING SGML DOCUMENTATION ===="
+
+books="wineusr-guide winedev-guide winelib-guide wine-faq"
+langs="en"
+site_base_dir="/home/winehq/opt/lostwages"
+guides_base_dir="$site_base_dir/docs"
+winehq_base_dir="$site_base_dir/templates"
+
+cd wine-docs-$version
+
+for lang in $langs
+do
+  [ -d $guides_base_dir/$lang ] || mkdir $guides_base_dir/$lang
+  [ -d $winehq_base_dir/$lang/docs ] || mkdir $winehq_base_dir/$lang/docs
+  cp ../winedoc.css $guides_base_dir/$lang
+
+  cd $lang
+  for book in $books
+  do
+    echo "* $book"
+
+    # build guides as single files (only for releases)
+    if [ "$version" != "cvs" ]
+    then
+      docbook2html -u -d ../../winehtml.dsl $book.sgml
+      docbook2pdf -d ../../wineprint.dsl $book.sgml
+      docbook2ps -d ../../wineprint.dsl $book.sgml
+      mv $book.html $book.pdf $book.ps $guides_base_dir/$lang
+    fi
+
+    # build the online html version
+    docbook2html -d ../../winehtml.dsl -o $book.web $book.sgml
+    [ -d $winehq_base_dir/$lang/docs/$book ] || mkdir $winehq_base_dir/$lang/docs/$book
+    for f in $book.web/*.htm
+    do
+      ../../html2template -i $f -o $winehq_base_dir/$lang/docs/$book/`basename $f .htm`.template
+    done
+    rm -rf $book.web
+  done
+  cd ..
+done
+
+cd ..
+rm -rf wine-docs-$version
+
+# end
