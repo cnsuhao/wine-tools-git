@@ -20,7 +20,7 @@ rm -rf wine-docs-$version
 
 if [ "$version" = "cvs" ]
 then
-  cvs -z9 -d :pserver:anonymous@cvs.sourceforge.net:/cvsroot/wine co -d wine-docs-cvs docs
+  cvs -z9 -d :pserver:anonymous@wine.cvs.sourceforge.net:/cvsroot/wine co -d wine-docs-cvs docs
 else
   if [ -f wine-docs-$version.tar.bz2 ]
   then
