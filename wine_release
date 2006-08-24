@@ -16,6 +16,10 @@ fi
 oldver=$1
 version=$2
 
+templates_dir="/home/winehq/opt/lostwages/templates"
+
+cd /home/winehq/opt/source
+
 # nuke old attempt (if any)
 rm -rf wine-$version
 
@@ -64,7 +68,7 @@ for f in $manpages
 do
   name=`basename $f .man`
   make -C `dirname $f` $name.man
-  nroff -man $f | ../bin/man2html | ../html2template -o /home/winehq/opt/lostwages/templates/en/docs/$name.template
+  nroff -man $f | ../bin/man2html | ../html2template -o $templates_dir/en/docs/$name.template
 done
 
 git diff --stat wine-$oldver wine-$version >../ds$version.txt
@@ -74,7 +78,7 @@ make htmlpages && rm -rf ../WineAPI && mv documentation/html ../WineAPI
 # Wine API Stats
 echo "==== UPDATING WINE API STATS PAGE ===="
 ./tools/winapi/winapi_extract --pseudo-stub-statistics --no-verbose --no-progress > winapi_stats.txt
-../winapi_stats.php > /home/winehq/opt/lostwages/templates/en/winapi_stats.template
+../winapi_stats.php > $templates_dir/en/winapi_stats.template
 rm -f winapi_stats.txt
 
 # cleanup source tree
