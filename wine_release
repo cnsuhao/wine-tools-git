@@ -19,7 +19,7 @@ version=$2
 # nuke old attempt (if any)
 rm -rf wine-$version
 
-git clone -l -n git/wine.git wine-$version
+git clone -l -s -n git/wine.git wine-$version
 (cd wine-$version && git checkout -b dummy wine-$version)
 
 # move wine link
@@ -46,7 +46,7 @@ cd ../..
 # update man page and documentation
 echo "==== UPDATING DOCUMENTATION ===="
 cd wine-$version
-./configure
+./configure --quiet
 
 manpages="\
   loader/wine.man \
@@ -78,7 +78,7 @@ echo "==== UPDATING WINE API STATS PAGE ===="
 rm -f winapi_stats.txt
 
 # cleanup source tree
-make distclean
+make --quiet distclean
 rm -rf .git
 
 # homepage announcement
