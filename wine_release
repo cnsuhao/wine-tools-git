@@ -68,7 +68,7 @@ for f in $manpages
 do
   name=`basename $f .man`
   make -C `dirname $f` $name.man
-  nroff -man $f | ../bin/man2html | ../html2template -o $templates_dir/en/docs/$name.template
+  nroff -man $f | ../bin/man2html --pgsize=100000 | ../html2template -o $templates_dir/en/docs/$name.template
 done
 
 git diff --stat wine-$oldver wine-$version >../ds$version.txt
