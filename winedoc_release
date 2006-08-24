@@ -37,6 +37,7 @@ echo "==== BUILDING SGML DOCUMENTATION ===="
 books="wineusr-guide winedev-guide winelib-guide wine-faq"
 langs="en"
 site_base_dir="/home/winehq/opt/lostwages"
+tools_dir="/home/winehq/opt/tools"
 guides_base_dir="$site_base_dir/docs"
 winehq_base_dir="$site_base_dir/templates"
 
@@ -46,7 +47,7 @@ for lang in $langs
 do
   [ -d $guides_base_dir/$lang ] || mkdir $guides_base_dir/$lang
   [ -d $winehq_base_dir/$lang/docs ] || mkdir $winehq_base_dir/$lang/docs
-  cp ../winedoc.css $guides_base_dir/$lang
+  cp $tools_dir/winedoc.css $guides_base_dir/$lang
 
   cd $lang
   for book in $books
@@ -56,18 +57,18 @@ do
     # build guides as single files (only for releases)
     if [ "$version" != "cvs" ]
     then
-      docbook2html -u -d ../../winehtml.dsl $book.sgml
-      docbook2pdf -d ../../wineprint.dsl $book.sgml
-      docbook2ps -d ../../wineprint.dsl $book.sgml
+      docbook2html -u -d $tools_dir/winehtml.dsl $book.sgml
+      docbook2pdf -d $tools_dir/wineprint.dsl $book.sgml
+      docbook2ps -d $tools_dir/wineprint.dsl $book.sgml
       mv $book.html $book.pdf $book.ps $guides_base_dir/$lang
     fi
 
     # build the online html version
-    docbook2html -d ../../winehtml.dsl -o $book.web $book.sgml
+    docbook2html -d $tools_dir/winehtml.dsl -o $book.web $book.sgml
     [ -d $winehq_base_dir/$lang/docs/$book ] || mkdir $winehq_base_dir/$lang/docs/$book
     for f in $book.web/*.htm
     do
-      ../../html2template -i $f -o $winehq_base_dir/$lang/docs/$book/`basename $f .htm`.template
+      $tools_dir/html2template -i $f -o $winehq_base_dir/$lang/docs/$book/`basename $f .htm`.template
     done
     rm -rf $book.web
   done
