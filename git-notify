@@ -153,7 +153,7 @@ sub mail_notification($$$@)
 # get the default repository name
 sub get_repos_name()
 {
-    my $dir = `git-rev-parse --git-dir`;
+    my $dir = `git rev-parse --git-dir`;
     chomp $dir;
     my $repos = realpath($dir);
     $repos =~ s/(.*?)((\.git\/)?\.git)$/\1/;
@@ -169,10 +169,12 @@ sub get_object_info($)
     my @log = ();
     my $do_log = 0;
 
-    my $type = `git-cat-file -t $obj`;
+    open TYPE, "-|" or exec "git", "cat-file", "-t", $obj or die "cannot run git-cat-file";
+    my $type = <TYPE>;
     chomp $type;
+    close TYPE;
 
-    open OBJ, "git-cat-file $type $obj |" or die "cannot run git-cat-file";
+    open OBJ, "-|" or exec "git", "cat-file", $type, $obj or die "cannot run git-cat-file";
     while (<OBJ>)
     {
         chomp;
@@ -325,7 +327,7 @@ sub send_global_notice($$$)
     my ($ref, $old_sha1, $new_sha1) = @_;
     my @notice = ();
 
-    open LIST, "-|" or exec "git-rev-list", "--pretty", "^$old_sha1", "$new_sha1", @exclude_list or die "cannot exec git-rev-list";
+    open LIST, "-|" or exec "git", "rev-list", "--pretty", "^$old_sha1", "$new_sha1", @exclude_list or die "cannot exec git-rev-list";
     while (<LIST>)
     {
         chomp;
@@ -351,7 +353,7 @@ if ($ARGV[1] eq '0' x 40)  # new ref
 
 my @commits = ();
 
-open LIST, "-|" or exec "git-rev-list", "^$ARGV[1]", "$ARGV[2]", @exclude_list or die "cannot exec git-rev-list";
+open LIST, "-|" or exec "git", "rev-list", "^$ARGV[1]", "$ARGV[2]", @exclude_list or die "cannot exec git-rev-list";
 while (<LIST>)
 {
     chomp;
