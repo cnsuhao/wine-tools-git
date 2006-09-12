@@ -240,10 +240,14 @@ sub send_commit_notice($$)
         "---",
         "";
 
-        my $stat = `git-diff-tree -p $obj | git-apply --stat --summary`;
-        my $diff = `git-diff-tree -p --no-commit-id $obj`;
+        open STAT, "-|" or exec "git", "diff-tree", "--stat", "-M", "--no-commit-id", $obj or die "cannot exec git-diff-tree";
+        push @notice, join("", <STAT>);
+        close STAT;
 
-        push @notice, $stat;
+        open DIFF, "-|" or exec "git", "diff-tree", "-p", "-M", "--no-commit-id", $obj or die "cannot exec git-diff-tree";
+        my $diff = join( "", <DIFF> );
+        close DIFF;
+
         if (($max_diff_size == -1) || (length($diff) < $max_diff_size))
         {
             push @notice, $diff;
