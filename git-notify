@@ -289,7 +289,7 @@ sub send_cia_notice($$)
         "      <log>" . xml_escape(join "\n", @{$info{"log"}}) . "</log>",
         "      <files>";
 
-    open COMMIT, "git-diff-tree --name-status -r $commit |" or die "cannot run git-diff-tree";
+    open COMMIT, "-|" or exec "git", "diff-tree", "--name-status", "-r", "-M", $commit or die "cannot run git-diff-tree";
     while (<COMMIT>)
     {
         chomp;
@@ -299,6 +299,11 @@ sub send_cia_notice($$)
             my %actions = ( "A" => "add", "M" => "modify", "D" => "remove" );
             next unless defined $actions{$action};
             push @cia_text, "        <file action=\"$actions{$action}\">" . xml_escape($file) . "</file>";
+        }
+        elsif (/^R\d+\t(.*)\t(.*)$/)
+        {
+            my ($old, $new) = ($1, $2);
+            push @cia_text, "        <file action=\"rename\" to=\"" . xml_escape($new) . "\">" . xml_escape($old) . "</file>";
         }
     }
     close COMMIT;
