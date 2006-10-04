@@ -218,7 +218,7 @@ sub send_commit_notice($$)
         "Module: $repos_name",
         "Branch: $ref",
         "Tag:    $obj",
-        "URL:    $gitweb_url/?p=$repos_name.git;a=tag;h=$obj",
+        "URL:    $gitweb_url/?a=tag;h=$obj",
         "",
         "Tagger: " . $info{"tagger"},
         "Date:   " . format_date($info{"tagger_date"},$info{"tagger_tz"}),
@@ -232,7 +232,7 @@ sub send_commit_notice($$)
         "Module: $repos_name",
         "Branch: $ref",
         "Commit: $obj",
-        "URL:    $gitweb_url/?p=$repos_name.git;a=commit;h=$obj",
+        "URL:    $gitweb_url/?a=commit;h=$obj",
         "",
         "Author: " . $info{"author"},
         "Date:   " . format_date($info{"author_date"},$info{"author_tz"}),
@@ -256,7 +256,7 @@ sub send_commit_notice($$)
         }
         else
         {
-            push @notice, "Diff:   $gitweb_url/?p=$repos_name.git;a=commitdiff;h=$obj",
+            push @notice, "Diff:   $gitweb_url/?a=commitdiff;h=$obj",
         }
 
         $subject = $info{"author_name"} . ": " . ${$info{"log"}}[0];
@@ -312,7 +312,7 @@ sub send_cia_notice($$)
 
     push @cia_text,
         "      </files>",
-        "      <url>" . xml_escape("$gitweb_url/?p=$repos_name.git;a=commit;h=$commit") . "</url>",
+        "      <url>" . xml_escape("$gitweb_url/?a=commit;h=$commit") . "</url>",
         "    </commit>",
         "  </body>",
         "  <timestamp>" . $info{"author_date"} . "</timestamp>",
@@ -331,7 +331,7 @@ sub send_global_notice($$$)
     while (<LIST>)
     {
         chomp;
-        s/^commit /URL:    $gitweb_url\/?p=$repos_name.git;a=commit;h=/;
+        s/^commit /URL:    $gitweb_url\/?a=commit;h=/;
         push @notice, $_;
     }
     close LIST;
@@ -341,6 +341,9 @@ sub send_global_notice($$$)
 
 $repos_name = get_repos_name();
 parse_options();
+
+# append repository path to URL
+$gitweb_url .= "/$repos_name.git";
 
 my $ref = $ARGV[0];
 $ref =~ s/^refs\/heads\///;
