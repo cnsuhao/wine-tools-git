@@ -1,0 +1,129 @@
+#!/usr/bin/perl -w
+#
+# Update the winehq.org homepage from the ANNOUNCE file of a new Wine release
+#
+# Copyright 2006 Alexandre Julliard
+#
+# Usage: update-winehq [announce-file]
+#
+# Must be run from the top-level dir of a CVS checkout of the lostwages module
+#
+
+sub xml_escape($)
+{
+    my $str = shift;
+    $str =~ s/&/&amp;/g;
+    $str =~ s/</&lt;/g;
+    $str =~ s/>/&gt;/g;
+    my @chars = unpack "U*", $str;
+    $str = join "", map { ($_ > 127) ? sprintf "&#%u;", $_ : chr($_); } @chars;
+    return $str;
+}
+
+my $rel;
+my $changes = "\n";
+
+die "Not in lostwages dir?" unless -d "news" && -f "include/winehq.conf";
+system("cvs", "-Q", "update", "include", "news") == 0 or die "cvs update failed";
+
+# Parse the ANNOUNCE file
+
+open ANNOUNCE, $ARGV[0] || "ANNOUNCE" or die "cannot open ANNOUNCE";
+my $whats_new = 0;
+while (<ANNOUNCE>)
+{
+    chomp;
+    if (/^This is release (\S*) /)
+    {
+        $rel = $1;
+        next;
+    }
+    if (/^What's new in this release/)
+    {
+        $whats_new = 1;
+        next;
+    }
+    if ($whats_new && /^ *- (.*)$/)
+    {
+        $changes .= "<li>" . xml_escape($1) . "</li>\n";
+        next;
+    }
+    if ($whats_new && /^\s*$/)
+    {
+        last;
+    }
+}
+close ANNOUNCE;
+
+# Update snapshot date in winehq.conf
+
+my @lines = ();
+open CONF, "<include/winehq.conf" or die "cannot open include/winehq.conf";
+while (<CONF>)
+{
+    s/^snapshot_date:.*$/snapshot_date:  $rel/;
+    push @lines, $_;
+}
+close CONF;
+
+open NEWCONF, ">include/winehq.conf" or die "cannot update include/winehq.conf";
+print NEWCONF @lines;
+close NEWCONF;
+print "Updated include/winehq.conf\n";
+
+# Create the news file
+
+my $newsdate = `date +%Y%m%d`;
+chomp $newsdate;
+my $newscount = 1;
+my $newsfile;
+
+do
+{
+    $newsfile = sprintf "news/%s%02u.xml", $newsdate, $newscount++;
+}
+while (-f "$newsfile");
+
+open NEWS, ">$newsfile" or die "cannot create $newsfile";
+
+my $date = `date "+%B %e, %Y"`;
+chomp $date;
+
+print NEWS <<EOF;
+<news>
+<date>$date</date>
+<title>Wine $rel Released</title>
+<body>
+<p>Wine $rel was released today, with the following main changes:</p>
+
+<ul>$changes</ul>
+
+<p>
+Binary packages are in the process of being built and it may take a
+few days for them to appear, but the source is
+<a href="http://prdownloads.sourceforge.net/wine/wine-$rel.tar.bz2">available now</a>.
+You can find out more about this release in the
+<a href="?announce=$rel">announcement</a>.  Check out our
+<a href="/site/download">download page</a> for packages for your
+distribution.
+</p>
+</body>
+</news>
+EOF
+
+close NEWS;
+print "Created $newsfile\n";
+
+# Commit changes
+
+if (system("cvs", "-Q", "add", $newsfile))
+{
+    unlink $newsfile;
+    die "cvs add $newsfile failed";
+}
+
+if (system("cvs", "commit", "-m", "Release $rel", "include/winehq.conf", $newsfile))
+{
+    unlink $newsfile;
+    die "cvs commit failed";
+}
