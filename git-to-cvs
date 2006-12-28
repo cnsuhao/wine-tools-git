@@ -67,13 +67,27 @@ sub create_dir($)
     }
 }
 
-# cvs add a bunch of files
-sub cvs_add_files(@)
+# this is the heuristic that git-diff uses
+sub is_file_binary($)
 {
+    my $file = shift;
+    my $data;
+    open F, $file or return 0;
+    sysread F, $data, 8000;
+    close F;
+    return ($data =~ /\0/);
+}
+
+# cvs add a bunch of files
+sub cvs_add_files($@)
+{
+    my $is_binary = shift;
     my @files = @_;
     # first create dirs if needed
     foreach my $file (@files) { create_dir( $file ); }
-    shell "cvs", "-Q", "add", "-m", "", @files;
+    my @cmdline = ("cvs", "-Q", "add", "-m", "");
+    push @cmdline, "-kb" if $is_binary;
+    shell @cmdline, @files;
 }
 
 # cvs rm a bunch of files
@@ -192,7 +206,7 @@ sub make_cvsignore($)
             open CVSIGNORE, ">$dir/.cvsignore" or die "cannot create $dir/.cvsignore";
             print CVSIGNORE join("\n", sort keys %patterns) . "\n";
             close CVSIGNORE;
-            if ($op eq "A") { cvs_add_files( "$dir/.cvsignore" ); }
+            if ($op eq "A") { cvs_add_files( 0, "$dir/.cvsignore" ); }
             return $op;
         }
     }
@@ -253,6 +267,8 @@ sub apply_git_commit($)
 {
     my $commit = shift;
     my @added = ();
+    my @added_bin = ();
+    my @added_text = ();
     my @modified = ();
     my @deleted = ();
     my @gitignores = ();
@@ -278,16 +294,30 @@ sub apply_git_commit($)
         }
     }
     close COMMIT;
-    foreach my $file (@added) { print "A $file\n"; }
-    foreach my $file (@modified) { print "M $file\n"; }
-    foreach my $file (@deleted) { print "D $file\n"; }
 
     # get the modified files
     shell "git-read-tree", "--reset", $commit;
     shell "git-checkout-index", "-f", "-u", "--", @added, @modified, @gitignores if (@added || @modified || @gitignores);
     unlink @gitignores_deleted if (@gitignores_deleted);
 
-    cvs_add_files(@added) if (@added);
+    foreach my $file (@added)
+    {
+        if (is_file_binary($file))
+        {
+            print "A $file  (binary)\n";
+            push @added_bin, $file;
+        }
+        else
+        {
+            print "A $file\n";
+            push @added_text, $file;
+        }
+    }
+    foreach my $file (@modified) { print "M $file\n"; }
+    foreach my $file (@deleted) { print "D $file\n"; }
+
+    cvs_add_files( 0, @added_text ) if (@added_text);
+    cvs_add_files( 1, @added_bin ) if (@added_bin);
     cvs_rm_files(@deleted) if (@deleted);
 
     foreach my $dir (get_file_dirs(@added, @modified, @deleted, @gitignores, @gitignores_deleted))
