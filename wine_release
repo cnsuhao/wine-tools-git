@@ -82,11 +82,7 @@ echo "==== UPDATING WINE API STATS PAGE ===="
 rm -f winapi_stats.txt
 
 # cleanup source tree
-make --quiet distclean
+git clean -q -d -x
 rm -rf .git
-
-# homepage announcement
-# edit the homepage to announce the new release...
-# TODO
 
 # end
