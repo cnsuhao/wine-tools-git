@@ -28,6 +28,9 @@ use open ':utf8';
 use Encode 'encode';
 use Cwd 'realpath';
 
+binmode STDIN, ':utf8';
+binmode STDOUT, ':utf8';
+
 # some parameters you may want to change
 
 # base URL of the gitweb repository browser (can be set with the -u option)
@@ -121,7 +124,7 @@ sub parse_options()
         elsif ($arg eq '-d') { $debug++; }
         else { usage(); }
     }
-    if ($#ARGV != 2) { usage(); }
+    if (@ARGV && $#ARGV != 2) { usage(); }
 }
 
 # send an email notification
@@ -339,40 +342,60 @@ sub send_global_notice($$$)
     mail_notification($commitlist_address, "New commits on branch $ref", "text/plain; charset=UTF-8", @notice);
 }
 
+# send all the notices
+sub send_all_notices($$$)
+{
+    my ($ref, $old_sha1, $new_sha1) = @_;
+
+    $ref =~ s/^refs\/heads\///;
+
+    if ($old_sha1 eq '0' x 40)  # new ref
+    {
+        send_commit_notice( $ref, $new_sha1 ) if $commitlist_address;
+        return;
+    }
+
+    my @commits = ();
+
+    open LIST, "-|" or exec "git", "rev-list", "^$old_sha1", "$new_sha1", @exclude_list or die "cannot exec git-rev-list";
+    while (<LIST>)
+    {
+        chomp;
+        die "invalid commit $_" unless /^[0-9a-f]{40}$/;
+        unshift @commits, $_;
+    }
+    close LIST;
+
+    if (@commits > $max_individual_notices)
+    {
+        send_global_notice( $ref, $old_sha1, $new_sha1 ) if $commitlist_address;
+        return;
+    }
+
+    foreach my $commit (@commits)
+    {
+        send_commit_notice( $ref, $commit ) if $commitlist_address;
+        send_cia_notice( $ref, $commit ) if $cia_project_name;
+    }
+}
+
 $repos_name = get_repos_name();
 parse_options();
 
 # append repository path to URL
 $gitweb_url .= "/$repos_name.git";
 
-my $ref = $ARGV[0];
-$ref =~ s/^refs\/heads\///;
-
-if ($ARGV[1] eq '0' x 40)  # new ref
+if (@ARGV)
 {
-    send_commit_notice( $ref, $ARGV[2] );
-    exit 0;
+    send_all_notices( $ARGV[0], $ARGV[1], $ARGV[2] );
+}
+else  # read them from stdin
+{
+    while (<>)
+    {
+        chomp;
+        if (/^([0-9a-f]{40}) ([0-9a-f]{40}) (.*)$/) { send_all_notices( $3, $1, $2 ); }
+    }
 }
 
-my @commits = ();
-
-open LIST, "-|" or exec "git", "rev-list", "^$ARGV[1]", "$ARGV[2]", @exclude_list or die "cannot exec git-rev-list";
-while (<LIST>)
-{
-    chomp;
-    die "invalid commit $_" unless /^[0-9a-f]{40}$/;
-    unshift @commits, $_;
-}
-close LIST;
-
-if (@commits > $max_individual_notices)
-{
-    send_global_notice( $ref, $ARGV[1], $ARGV[2] );
-    exit 0;
-}
-
-foreach my $commit (@commits)
-{
-    send_commit_notice( $ref, $commit ) if $commitlist_address;
-    send_cia_notice( $ref, $commit ) if $cia_project_name;
-}
+exit 0;
