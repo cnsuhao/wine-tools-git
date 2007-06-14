@@ -373,14 +373,16 @@ sub apply_commits()
 # build a list of all commits that are pointed to by a tag
 sub read_tags()
 {
-    opendir DIR, "$git_dir/refs/tags";
-    foreach my $tag (grep /^wine/, readdir DIR )
+    open LIST, "-|" or exec "git-for-each-ref", "refs/tags/wine*" or die "cannot run git-for-each-ref";
+    while (<LIST>)
     {
+        next unless /^[0-9a-f]{40} tag\trefs\/tags\/(.*)$/;
+        my $tag = $1;
         my $commit = `git-rev-parse $tag^{commit}`;
         chomp $commit;
         $tags{$commit} = $tag;
     }
-    close DIR;
+    close LIST;
 }
 
 # use a tmp index file to avoid touching the main one
