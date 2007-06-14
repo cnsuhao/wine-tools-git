@@ -18,7 +18,7 @@
 #   branch: where to get the git commits from, default is 'master'
 #
 # This script needs to be run from the root of the checked-out CVS tree,
-# with .git (or GIT_DIR) pointing to the git repository.
+# with CVS/.git (or GIT_DIR) pointing to the git repository.
 #
 
 use Unicode::String qw(latin1 utf8);
@@ -42,10 +42,6 @@ my %ignore_patterns =
 
 my $last_commit = $ARGV[0] || "LAST_CVS_COMMIT";
 my $branch = $ARGV[1] || "master";
-my $git_dir = `git-rev-parse --git-dir`;
-die "Cannot find git repository" if $?;
-chomp $git_dir;
--d "CVS" or die "Not in a CVS repository";
 
 # run a shell command and die on error
 sub shell(@)
@@ -385,8 +381,16 @@ sub read_tags()
     close LIST;
 }
 
+# if we have a .git symlink in CVS/ use that as GIT_DIR
+$ENV{"GIT_DIR"} = "CVS/.git" if -d "CVS/.git";
+
 # use a tmp index file to avoid touching the main one
 $ENV{"GIT_INDEX_FILE"} = "CVS/.git-index";
+
+# sanity checks
+-d "CVS" or die "Not in a CVS repository";
+-d $ENV{"GIT_DIR"} or die "Invalid git dir $ENV{GIT_DIR}";
+-w "." or die "No write access to current directory";
 
 read_tags();
 apply_commits();
