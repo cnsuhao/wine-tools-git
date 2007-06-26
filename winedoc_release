@@ -34,7 +34,7 @@ fi
 
 echo "==== BUILDING SGML DOCUMENTATION ===="
 
-books="wineusr-guide winedev-guide winelib-guide wine-faq"
+books="wineusr-guide winedev-guide winelib-guide"
 langs="en"
 site_base_dir="/home/winehq/opt/lostwages"
 tools_dir="/home/winehq/opt/tools"
