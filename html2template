@@ -1,0 +1,93 @@
+#!/usr/bin/perl -w
+# Francois Gouget <fgouget@codeweavers.com>
+# Jeremy Newman <jnewman@codeweavers.com>
+use strict;
+use Getopt::Std;
+
+# This is a convenience script for building the website docs for
+# www.winehq.com. WineHQ is a template based website so that the
+# generated files must have a slightly special format:
+#  * everything outside the <body> tag must be stripped
+#  * the title is specified using a special tag on the first line
+#  * the filenames don't end in '.html'
+
+sub skip_to_gt($)
+{
+    my $line=$_[0];
+    while (defined $line)
+    {
+        return $line if ($line =~ s/^[^>]*>//i);
+        $line=<>;
+    }
+    return undef;
+}
+
+sub grab_cdata($)
+{
+    my $line=$_[0];
+    my $cdata;
+    while (defined $line)
+    {
+        if ($line =~ s/^([^<]*)<.*$/$1/i)
+        {
+            chomp $line;
+            $cdata=(defined $cdata?"$cdata $line":$line);
+            return ($cdata,$line);
+        }
+        chomp $line;
+        $cdata=(defined $cdata?"$cdata $line":$line);
+        $line=<>;
+    }
+    return ($cdata,$line);
+}
+
+sub convert_to_template()
+{
+    my $line;
+    while ($line=<>)
+    {
+        if ($line =~ s/^.*<title\s*//i)
+        {
+            $line=skip_to_gt($line);
+            my ($title,$line)=grab_cdata($line);
+            print "<!--TITLE:[$title]-->\n";
+        }
+        elsif ($line =~ s/^.*<body//i)
+        {
+            $line=skip_to_gt($line);
+            last;
+        }
+    }
+
+    my $exit;
+    do
+    {
+        $exit=($line =~ s/<\/body.*$//i);
+        $line=~s/(href=\"[^.\/]*)\.(htm|html)([^\"]*\")/$1$3/gi;
+        print $line;
+    }
+    while (!$exit and $line=<>);
+}
+
+#
+# main
+#
+
+# get command line options
+# $opts{'i'} = input file name
+# $opts{'o'} = output file name
+my %opts;
+getopt('io', \%opts);
+
+if (defined($opts{'i'}))
+{
+    open STDIN, "<$opts{'i'}" or die "cannot read from $opts{'i'}: $!";
+}
+
+if (defined($opts{'o'}))
+{
+    open STDOUT, ">$opts{'o'}" or die "cannot write to $opts{'o'}: $!";
+}
+
+convert_to_template();
+exit 0;

@@ -1,0 +1,10 @@
+body { background-color: #FFFFFF; color: #000000; }
+
+a:link { color: #a50d0d; }
+a:visited  { color: #505050; }
+a:active  { color: #a50d0d; }
+
+.screen { background-color: #E0D0D0; padding: 0.5ex; }
+.question { border-top: dashed thin; font-weight: bolder; }
+
+.userinput { font-weight: bold; }

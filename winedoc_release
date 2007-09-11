@@ -37,7 +37,7 @@ echo "==== BUILDING SGML DOCUMENTATION ===="
 books="wineusr-guide winedev-guide winelib-guide"
 langs="en"
 site_base_dir="/home/winehq/opt/lostwages"
-tools_dir="/home/winehq/opt/tools"
+tools_dir="/home/winehq/opt/git-tools"
 guides_base_dir="$site_base_dir/docs"
 winehq_base_dir="$site_base_dir/templates"
 
