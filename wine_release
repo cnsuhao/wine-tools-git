@@ -17,6 +17,7 @@ oldver=$1
 version=$2
 
 templates_dir="/home/winehq/opt/lostwages/templates"
+tools_dir="/home/winehq/opt/git-tools"
 
 cd /home/winehq/opt/source
 
@@ -24,7 +25,7 @@ cd /home/winehq/opt/source
 rm -rf wine-$version
 
 git clone -l -s -n git/wine.git wine-$version
-(cd wine-$version && git checkout -b dummy wine-$version)
+(cd wine-$version && git checkout wine-$version)
 
 # move wine link
 rm -f wine
@@ -77,9 +78,7 @@ make htmlpages && rm -rf ../WineAPI && mv documentation/html ../WineAPI
 
 # Wine API Stats
 echo "==== UPDATING WINE API STATS PAGE ===="
-./tools/winapi/winapi_extract --pseudo-stub-statistics --no-verbose --no-progress > winapi_stats.txt
-../winapi_stats.php > $templates_dir/en/winapi_stats.template
-rm -f winapi_stats.txt
+$tools_dir/winapi_stats > winapi_stats.template && mv winapi_stats.template $templates_dir/en/winapi_stats.template
 
 # cleanup source tree
 git clean -q -d -x
