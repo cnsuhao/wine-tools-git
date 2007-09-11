@@ -6,7 +6,7 @@
 #
 # Usage: update-winehq [announce-file]
 #
-# Must be run from the top-level dir of a CVS checkout of the lostwages module
+# Must be run from the top-level dir of a git checkout of the website module
 #
 
 sub xml_escape($)
@@ -24,7 +24,7 @@ my $rel;
 my $changes = "\n";
 
 die "Not in lostwages dir?" unless -d "news" && -f "include/winehq.conf";
-system("cvs", "-Q", "update", "include", "news") == 0 or die "cvs update failed";
+system("git", "pull") == 0 or die "git pull failed";
 
 # Parse the ANNOUNCE file
 
@@ -116,14 +116,16 @@ print "Created $newsfile\n";
 
 # Commit changes
 
-if (system("cvs", "-Q", "add", $newsfile))
+if (system("git", "add", $newsfile))
 {
     unlink $newsfile;
-    die "cvs add $newsfile failed";
+    die "git add $newsfile failed";
 }
 
-if (system("cvs", "commit", "-m", "Release $rel", "include/winehq.conf", $newsfile))
+if (system("git", "commit", "-m", "Wine release $rel", "include/winehq.conf", $newsfile))
 {
-    unlink $newsfile;
-    die "cvs commit failed";
+    system("git", "rm", "-f", $newsfile);
+    die "git commit failed";
 }
+
+system("git", "push") == 0 or die "git push failed";
