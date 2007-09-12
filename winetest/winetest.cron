@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# Cron job for generating winetest reports.  Use it like
+# */5 * * * * apache winetest.cron
+
+lock=/tmp/winetest.lock
+if [ ! -f $lock ]; then
+    touch $lock
+    while perl dissect; [ $? -eq 0 -o $? -eq 1 ]; do true; done
+    while perl gather; do true; done
+    rm $lock
+fi

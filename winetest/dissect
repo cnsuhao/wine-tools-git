@@ -1,0 +1,231 @@
+#!/usr/bin/perl -w
+#
+# Searches for $queuedir/rep*/report.txt-s, preprocesses and moves
+# them into the appropriate $datadir/build/version directories, and
+# creates $datadir/build/outdated.  Allowed builds are read from
+# $builds.  Each generated file has .txt extension.
+#
+# Files: winetest.conf
+#
+# Exit: 0 - successfully processed a report, call again
+#       1 - failure processing a report, call again
+#       2 - there was nothing to do
+#       3 - fatal error, something went utterly wrong
+#
+# Copyright (C) 2004 Ferenc Wagner
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+use strict;
+use vars qw/$builds $queuedir $datadir $maxmult $fileversion $maxfilesize/;
+require "winetest.conf";
+
+use File::Temp qw/tempdir/;
+use Errno qw/ENOTEMPTY/;
+
+my ($report, $tmpdir);
+
+sub mydie {
+    my $errdir = tempdir ("errXXXXX", DIR => $queuedir);
+    if (!rename $tmpdir, $errdir) {
+        print "can't rename $tmpdir to $errdir: $!\n";
+        exit 3;
+    }
+    print "$errdir: ", @_;
+    exit 1;
+}
+
+($report,undef) = glob "$queuedir/rep*/report";
+exit 2 unless defined $report;
+
+($tmpdir = $report) =~ s|^(.+)/report$|$1|;
+my $tmpfile = "$tmpdir/dissect.tmp";
+
+open IN, "<:raw", $report or mydie "can't read $report: $!";
+open SUM, ">$tmpdir/summary.txt" or mydie "can't write $tmpdir/summary.txt: $!";
+
+# Get the size of the report file
+my $filesize = -s "$report";
+
+$_ = <IN>;
+/^Version (\d+)\r?$/ or mydie "no version header: $_";
+$1 eq $fileversion or mydie "illegal version: $1\n";
+print SUM "Version $fileversion\n";
+
+$_ = <IN>;
+/^Tests from build ([-.0-9a-zA-Z]+)\r?$/ or mydie "no build header: $_";
+my $testbuild = $1;
+if (!open BUILDS, "<$builds") {
+    print "can't open $builds: $!\n";
+    exit 3;
+}
+while (<BUILDS>) {
+    next if /^#/;
+    chomp;
+    last if $testbuild =~ "^$_\$";
+}
+close BUILDS;
+defined $_ or mydie "$1 not in $builds\n";
+
+$_ = <IN>;
+/^Archive: (.*?)\r?$/ or mydie "no archive line: $_";
+print SUM "Archive: $1\n";
+
+$_ = <IN>;
+/^Tag: ([-.0-9a-zA-Z]*)\r?$/ or mydie "no tag line: $_";
+my $tag = $1 eq ""?"":"_$1";
+
+$_ = <IN>;
+/^Build info:\r?$/ or mydie "no Build info header: $_";
+open BINFO, ">$tmpdir/build.txt" or mydie "can't write $tmpdir/build.txt: $!";
+while (($_ = <IN>) =~ s/^    //) { print BINFO; }
+close BINFO or mydie "error writing $tmpdir/build.txt: $!";
+
+my ($wine, $version, $major, $minor, $plid);
+/^Operating system version:\r?$/ or mydie "no OS header: $_";
+open OSVER, ">$tmpdir/version.txt" or mydie "can't write $tmpdir/version.txt: $!";
+while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
+    print OSVER "$1=$2\n";
+    if      ($1 eq "bRunningUnderWine") {
+        $wine = $2;
+    } elsif ($1 eq "dwMajorVersion") {
+        $major = $2;
+    } elsif ($1 eq "dwMinorVersion") {
+        $minor = $2;
+    } elsif ($1 eq "PlatformId") {
+        $plid = $2;
+    }
+}
+close OSVER or mydie "error writing $tmpdir/version.txt: $!";
+
+$version = "unknown";
+if ($plid==1 && $major==4) {
+    if      ($minor==0) {
+        $version = "95";
+    } elsif ($minor==10) {
+        $version = "98";
+    } elsif ($minor==90) {
+        $version = "me";
+    }
+} elsif ($plid==2) {
+    if      ($major==3 && $minor==51) {
+        $version = "nt3";
+    } elsif ($major==4 && $minor== 0) {
+        $version = "nt4";
+    } elsif ($major==5) {
+        if      ($minor==0) {
+            $version = "2000";
+        } elsif ($minor==1) {
+            $version = "xp";
+        } elsif ($minor==2) {
+            $version = "2003";
+        }
+    } elsif ($major==6) {
+        $version = "vista";
+    }
+} elsif ($plid==3) {
+    $version = "ce$major$minor";
+}
+if ($wine) {
+    $tag = "_$version$tag";
+    $version = "wine";
+}
+
+# Dll information is only available in new type reports
+if (/^Dll info:\r?$/) {
+    open DLLINFO, ">$tmpdir/dllinfo.txt" or mydie "can't write $tmpdir/dllinfo.txt: $!";
+    while (($_ = <IN>) =~ s/^    //) { print DLLINFO; }
+    close DLLINFO or mydie "error writing $tmpdir/dllinfo.txt: $!";
+}
+
+/Test output:\r?/ or mydie "no test header: $_";
+my ($unit, $test, $source, $rev, $result);
+my ($lines,$total, $todo, $failed, $skipped);
+$unit = undef;                  # state machine starts
+$total = $todo = $failed = $skipped = 0;
+$lines = 0;
+while (<IN>) {
+    if (!defined $unit) {       # new test
+        next if /^\s*$/;
+        m[([_.a-z0-9]+):([_a-z0-9]+) start ([/_.a-z0-9]+) (-|[.0-9]+)\r?$]
+          or mydie "no start line:$.: $_";
+        ($unit,$test,$source,$rev) = ($1,$2,$3,$4);
+        open OUT, ">:raw", $tmpfile or mydie "can't open $tmpfile: $!\n";
+    } elsif (s/^(.*$test.*: (\d+) tests executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\.)\r?$/$1/) {
+        $lines++;
+        $total += $2;
+        $todo += $3;
+        $failed += $4;
+        $skipped += $5;
+        print OUT;
+    } elsif (s/$unit:$test done \((-?\d+)\)\r?$//) {
+        chomp;                  # current test ended
+        if ($lines==0) {
+            $result = "failed $1 - -";
+        } else {
+            $result = "$total $todo $failed $skipped";
+        }
+      FINISH:
+        print SUM "- $unit $test $result $source $rev\n";
+        print OUT;
+        close OUT or mydie "error writing $tmpfile: $!\n";
+        if (-s $tmpfile) {
+            my $testfile = "$tmpdir/${unit}:${test}.txt";
+            rename $tmpfile, $testfile or
+              mydie "can't rename $tmpfile to $testfile: $!\n";
+        }
+        $unit = undef;
+        $total = $todo = $failed = $skipped = 0;
+        $lines = 0;
+    } else {                    # current test output
+        print OUT;
+    }
+}
+if (defined $unit) {
+    # Either winetest crashed or the report file was cut off
+    $_="";
+    if ($filesize == $maxfilesize) {
+        $result = "failed filelimit - -";
+    } else {
+        $result = "failed crash - -";
+    }
+    goto FINISH;
+}
+close SUM or mydie "error writing $tmpdir/summary.txt: $!";
+close IN;
+
+my $builddir = "$datadir/$testbuild";
+foreach ($datadir, $builddir) {
+    if (!(-d $_ || mkdir $_)) {
+        print "can't create $_: $!\n";
+        exit 3;
+    }
+}
+
+my ($dir, $dirbase, $try);
+$dir = $dirbase = "$builddir/$version$tag";
+$try = 0;
+while (!rename $tmpdir, $dir) {
+    $!{ENOTEMPTY} or mydie "can't rename $tmpdir to $dir: $!\n";
+    ++$try < $maxmult or mydie "more than $maxmult submissions for $dirbase\n";
+    $dir = "${dirbase}_$try";
+}
+if (!-e "$builddir/outdated") {
+    if (!open SIGN, ">$builddir/outdated") {
+        print "can't outdate $builddir: $!\n";
+        exit 1;
+    }
+    close SIGN;
+}

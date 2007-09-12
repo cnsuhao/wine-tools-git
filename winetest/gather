@@ -1,0 +1,425 @@
+#!/usr/bin/perl -w
+#
+# Searches for a $datadir/*/outdated, updates the corresponding
+# index.html and removes the outdated.
+#
+# Files: winetest.conf
+#
+# Exit: 0 - successfully processed a build, call again
+#       1 - should not happen
+#       2 - there was nothing to do
+#       3 - fatal error, something went utterly wrong
+#
+# Copyright (C) 2004 Ferenc Wagner
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+use strict;
+use vars qw/$datadir $fileversion/;
+require "winetest.conf";
+
+# Group result containers.  Keys:
+# name: group name
+# extrema: hashes min and max error numbers to test names
+# digests: hashes report digests or "differ" to test names
+# visible: whether winetest ran on a visible desktop
+# tests: array of test hashes (name, tag, dir, results hash).
+my %w95   = (name => "Win95");
+my %w98   = (name => "Win98");
+my %me    = (name => "Me");
+my %nt3   = (name => "NT 3");
+my %nt4   = (name => "NT 4");
+my %w2k   = (name => "2000");
+my %xp    = (name => "XP");
+my %w2k3  = (name => "2003");
+my %vista = (name => "Vista");
+my %wine  = (name => "Wine");
+
+# Map dissect's IDs to the above hashes
+my %idmap = (95=>\%w95, 98=>\%w98, me=>\%me, nt3=>\%nt3, nt4=>\%nt4,
+             2000=>\%w2k, xp=>\%xp, 2003=>\%w2k3, vista=>\%vista, wine=>\%wine);
+
+# Define the order of version groups in the summary
+my @groups = (\%w95, \%w98, \%me, \%nt3, \%nt4, \%w2k, \%xp, \%w2k3, \%vista, \%wine);
+
+my ($outdated,undef) = glob "$datadir/*/outdated";
+exit 2 unless defined $outdated;
+(my $build = $outdated) =~ s|^\Q$datadir\E/(.*)/outdated$|$1|;
+(my $release = $build) =~ s/^(\d+).*$/$1/;
+
+# Read in the data
+
+my %alltests;                   # union of test names
+my $url;                        # archive url of winetest.exe
+foreach my $file (glob "$datadir/$build/*/summary.txt") {
+    (my $dir = $file) =~ s|^\Q$datadir/$build\E/(.*?)/summary.txt$|$1|;
+    my $testref = {};
+    (my $id, my @tag) = split /_/, $dir;
+    my $group = $idmap{$id};
+    if ($id eq "wine" && defined $tag[0]) {
+        $tag[0] = $idmap{$tag[0]}->{name};
+        $group = undef unless defined $tag[0]; # make the check below fail
+    }
+    if (!defined $group) {
+        print "Unknown architecture: $id in file $file\n";
+        next;
+    }
+    # Read the dll information if present (newer type reports)
+    my $dllinfo = "$datadir/$build/$dir/dllinfo.txt";
+    if (open DLLINFO, "<$dllinfo") {
+        while ($_ = <DLLINFO>) {
+            if (/^\s*([0-9a-zA-Z_]+)=(dll is missing)\r?$/) {
+                $testref->{dllmissing}->{$1} = 1;
+            }
+        }
+        close DLLINFO;
+    }
+    $testref->{tag} = @tag?"@tag":"";
+    $testref->{dir} = $dir;
+    if (!open TEST, "<$file") {
+        print "can't open $file: $!\n";
+        next;
+    }
+    if (($_ = <TEST>) ne "Version $fileversion\n") {
+        print "$file: wrong header: $_";
+        close TEST;
+        next;
+    }
+    if (($url = <TEST>) !~ s/^Archive: (.*)$/$1/) {
+        print "$file: wrong archive url: $_";
+        close TEST;
+        next;
+    }
+    while (<TEST>) {
+        my ($digest, $unit, $test, $count, $todo, $error, $skipped,
+            $source, $rev) = split;
+        my $testname = "$unit:$test";
+        # Leave this in for older type reports
+        if ($test =~ /_dll_missing/) {
+            # Mark the dll as missing on this system
+            $testref->{dllmissing}->{$unit} = 1;
+            next;
+        }
+        $testref->{results}->{$testname} = [$count, $todo, $error, $skipped];
+        $alltests{$testname} = "http://cvs.winehq.org/cvsweb/wine/$source" . ($rev ne "-"?"#rev$rev":"")
+            unless exists $alltests{$testname};
+        if ($count ne "failed") {
+            if (defined $group->{extrema}->{$testname}) {
+                my $extrema = $group->{extrema}->{$testname};
+                $extrema->[0] = $error if $error < $extrema->[0];
+                $extrema->[1] = $error if $error > $extrema->[1];
+            } else {
+                $group->{extrema}->{$testname} = [$error, $error];
+            }
+
+            if ($skipped > 0) {
+                # Mark this test as being (partly) skipped for one or more systems in the group
+                $group->{skipped}->{$testname} = 1;
+            }
+
+            if ($todo > 0) {
+                if (defined $group->{todo}->{$testname}) {
+                    $group->{todo}->{$testname} = $todo if $todo > $group->{todo}->{$testname};
+                } else {
+                    $group->{todo}->{$testname} = $todo;
+                }
+            }
+            
+        } elsif ($todo eq "crash") {
+            $testref->{crash} = $testname;
+        } elsif ($todo eq "filelimit") {
+            $testref->{filelimit} = $testname;
+        }
+        my $prevdigest = \$group->{digests}->{$testname};
+        $$prevdigest = ($count eq "failed" || $error || $skipped ||
+                        ($$prevdigest && $$prevdigest ne $digest))?"differ":$digest;
+    }
+    close TEST;
+
+    push @{$group->{tests}}, $testref;
+}
+
+# Find missing tests. After this exercise all testresults (correct, failed and missing) are available
+# for all systems.
+foreach my $group (@groups) {
+    next unless exists $group->{tests};
+    foreach my $test (@{$group->{tests}}) {
+        foreach my $testname (sort keys %alltests) {
+            if (!exists $test->{results}->{$testname}) {
+                # Make sure missing tests are shown in the group results
+                $group->{digests}->{$testname} = "differ";
+                my ($dll, $subtest) = split(/:/, $testname);
+                my $crash = $test->{crash};
+                my $filelimit = $test->{filelimit};
+                if (exists $test->{dllmissing}->{$dll}) {
+                    # Mark this test as missing because of a missing dll
+                    $test->{results}->{$testname} = ["dll missing", "-", "-", "-"]; 
+                } elsif (defined $crash && $testname gt $crash) {
+                    # Mark this test as missing because of a winetest crash.
+                    $test->{results}->{$testname} = ["winetest crash", "-", "-", "-"];
+                } elsif (defined $filelimit && $testname gt $filelimit) {
+                    # Mark this test as missing because of a partial report file.
+                    $test->{results}->{$testname} = ["file limit", "-", "-", "-"];
+                } else {
+                    # Mark this test as missing for an unknown reason
+                    $test->{results}->{$testname} = ["test missing", "-", "-", "-"];
+                }
+            }
+        }
+    }
+}
+
+# Write out the tables
+
+my ($header);                   # same in thead and tfoot
+foreach (@groups) {
+    if (exists $_->{tests}) {
+        my $testnum = @{$_->{tests}};
+        if ($testnum > 1) {
+            $header .= "      <th><a href=\"#$_->{name}\">$_->{name}<br><small>$testnum reports</small></a></th>\n";
+        } else {
+            my $test = $_->{tests}->[0];
+            # If dllinfo.txt exist we use a different layout (new style report)
+            if (-r "$datadir/$build/$test->{dir}/dllinfo.txt") {
+                $header .= <<"EOF";
+    <th>$_->{name}<br><small>
+        <a href=\"$test->{dir}/version.txt\">$test->{tag}</a><br>
+        <a href=\"$test->{dir}/dllinfo.txt\">[info]</a>
+        <a href=\"$test->{dir}/report\">[file]</a></small></th>
+EOF
+            } else {
+                $header .= <<"EOF";
+    <th>$_->{name}<br><small>
+        <a href=\"$test->{dir}/build.txt\">$test->{tag}</a><br>
+        <a href=\"$test->{dir}/version.txt\">[info]</a>
+        <a href=\"$test->{dir}/report\">[file]</a></small></th>
+EOF
+            }
+        }
+    }
+}
+chop $header;
+
+if (!open OUT, ">$datadir/$build/index.html") {
+  print "can't open $datadir/$build/index.html for writing: $!\n";
+  goto DONE;
+}
+print OUT <<"EOF";
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+                      "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <title>$build</title>
+  <link rel="stylesheet" href="../../summary.css" type="text/css">
+
+  <meta http-equiv="Content-Type"
+        content="text/html; charset=ISO-8859-1">
+  <meta name="Author" content="gather">
+  <meta http-equiv="Content-Script-Type" content="text/javascript">
+</head>
+
+<body>
+<table class="navbar">
+  <tr>
+    <td class="left">
+      <a href="/site?testing=prev&amp;current=$build">Previous build</a>
+    </td>
+    <td><script type="text/javascript" src="../../summary.js"></script
+        ><noscript><p>JavaScript support missing</p></noscript></td>
+    <td class="right">
+      <a href="/site?testing=next&amp;current=$build">Next build</a>
+    </td>
+  </tr>
+</table>
+<h3>Legend</h3>
+<p class="legend">All tests <span class="pass">pass</span> in all reports<br>
+   Some tests <span class="mixed">fail</span> in some reports<br>
+   Some tests <span class="fail">fail</span> in all reports<br>
+   This <span class="skip_pass">border</span> signals that some tests are skipped<br>
+   This <span class="todo_pass">border</span> signals that the implementation needs some work
+</p>
+<h1>Main summary for build <a href="$url">$build</a></h1>
+<table class="report">
+  <thead>
+    <tr>
+      <th class="test">unit:test</th>
+$header
+    </tr>
+  </thead>
+  <tfoot>
+    <tr>
+      <th class="test">unit:test</th>
+$header
+    </tr>
+  </tfoot>
+  <tbody onDblClick="clone();">
+EOF
+
+# Output a single cell of a test
+sub singletest {
+    my ($test, $testname, $groupname) = @_;
+    my $file = "$test->{dir}/$testname.txt";
+    my ($count, $todo, $error, $skipped) = @{$test->{results}->{$testname}};
+    if ($count eq "failed") {
+        my $msg = $todo eq "crash"?"crash":
+                  $todo eq "filelimit"?"file limit":
+                  $todo == 258?"timeout":"failed";
+        my $fail = -r "$datadir/$build/$file"?"<a href=\"$file\">$msg</a>":$msg;
+        print OUT "      <td class=\"note\">$fail</td>\n";
+    } elsif ($count eq "dll missing") {
+        my ($dll, $subtest) = split(/:/, $testname);
+        print OUT <<"EOF";
+      <td class="skip_pass"><a
+        title="No tests run as $dll.dll is not present on this system"
+        >0</a></td>
+EOF
+    } elsif ($count eq "winetest crash") {
+        print OUT <<"EOF";
+      <td class="skip_fail"><a
+        title="Test did not run as winetest crashed"
+        >.</a></td>
+EOF
+    } elsif ($count eq "file limit") {
+        print OUT <<"EOF";
+      <td class="skip_fail"><a
+        title="Test is missing because of a partial report file"
+        >.</a></td>
+EOF
+    } elsif ($count eq "test missing") {
+        print OUT <<"EOF";
+      <td class="skip_fail"><a
+        title="Test did not run for an unknown reason"
+        >.</a></td>
+EOF
+    } else {
+        my $class = $error?"fail":"pass";
+        my $skip = $skipped?"skip_":"";
+        my $todos = $todo?"todo_":"";
+        print OUT <<"EOF";
+      <td class="$todos$skip$class"><a
+        href="$file"
+        title="$count tests, $todo TODO, $error errors, $skipped skipped"
+        onMouseOver="refresh('$testname','$groupname $test->{tag}',$count,$todo,$error,$skipped);"
+        >$error</a></td>
+EOF
+    }
+}
+
+# Create the Main Summary
+foreach my $testname (sort keys %alltests) {
+    print OUT <<"EOF";
+    <tr>
+      <td class="test">
+        <a href="$alltests{$testname}">$testname</a></td>
+EOF
+    foreach my $group (@groups) {
+        if (!exists $group->{tests}) {
+            # Do nothing
+        } elsif (@{$group->{tests}} == 1) {
+            singletest ($group->{tests}->[0], $testname, $group->{name});
+        } else {
+            my $href = "href=\"#$group->{name}\"";
+            if (exists $group->{extrema}->{$testname}) {
+                my ($min,$max) = @{$group->{extrema}->{$testname}};
+                my $class = $min==0?($max==0?"pass":"mixed"):"fail";
+                my $title = $min==0?"":" title=\"Best: $min";
+                my $errors = $min==$max?$min:"$min to $max";
+                my $todos = (exists $group->{todo}->{$testname})?"todo_":"";
+                $title = (exists $group->{todo}->{$testname})?"$title, Todo: $group->{todo}->{$testname}\"":"$title\"";
+                my $skip = (exists $group->{skipped}->{$testname})?"skip_":"";
+                print OUT <<"EOF";
+      <td class="$todos$skip$class"><a $href$title
+        onMouseOver="refresh('$testname','$group->{name}','-','-','$errors');"
+        >$max</a></td>
+EOF
+            } else {
+                print OUT "      <td class=\"note\"><a $href>.</a></td>\n";
+            }
+        }
+    }
+    print OUT "    </tr>\n";
+}
+print OUT <<"EOF";
+  </tbody>
+</table>
+EOF
+
+# Take the groups with multiple reports
+foreach my $group (@groups) {
+    next unless exists $group->{tests} && @{$group->{tests}} > 1;
+
+    $header = "";
+    foreach (@{$group->{tests}}) {
+        # If dllinfo.txt exist we use a different layout (new style report)
+        if (-r "$datadir/$build/$_->{dir}/dllinfo.txt") {
+            $header .= <<"EOF";
+    <th><small><a href=\"$_->{dir}/version.txt\">$_->{tag}</a><br>
+        <a href=\"$_->{dir}/dllinfo.txt\">[info]</a>
+        <a href=\"$_->{dir}/report\">[file]</a></small></th>
+EOF
+        } else {
+            $header .= <<"EOF";
+    <th><small><a href=\"$_->{dir}/build.txt\">$_->{tag}</a><br>
+        <a href=\"$_->{dir}/version.txt\">[info]</a>
+        <a href=\"$_->{dir}/report\">[file]</a></small></th>
+EOF
+        }
+    }
+    chop $header;
+
+    print OUT <<"EOF";
+<hr>
+<h2><a name="$group->{name}">$group->{name} differences</a></h2>
+<table class="report">
+  <thead>
+    <tr>
+      <th class="test">unit:test</th>
+$header
+    </tr>
+  </thead>
+  <tfoot>
+    <tr>
+      <th class="test">unit:test</th>
+$header
+    </tr>
+  </tfoot>
+  <tbody onDblClick="clone();">
+EOF
+    foreach my $testname (sort keys %alltests) { # skip identical
+        my $digest = $group->{digests}->{$testname};
+        next unless defined $digest && $digest eq "differ";
+        print OUT <<"EOF";
+    <tr>
+      <td class="test">
+        <a href="$alltests{$testname}">$testname</a></td>
+EOF
+        singletest ($_, $testname, $group->{name}) foreach (@{$group->{tests}});
+    }
+    print OUT <<"EOF";
+  </tbody>
+</table>
+EOF
+}
+print OUT <<"EOF";
+</body>
+</html>
+EOF
+close OUT;
+
+DONE:
+if (!unlink $outdated) {
+    print "can't unlink $outdated: $!\n";
+    exit 3;
+}

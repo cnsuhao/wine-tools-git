@@ -1,0 +1,183 @@
+body {
+        white-space: nowrap;
+}
+:link, :visited {
+        text-decoration: none;
+}
+h3, p.legend {
+        text-align: center;
+}
+.pass {
+        background-color: #60ff60;
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-color: #60ff60;
+}
+.mixed {
+        background-color: #ffff40;
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-color: #ffff40;
+}
+.fail {
+        background-color: #ff5050;
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-color: #ff5050;
+}
+.vis_pass {
+        background-color: #60ff60;
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-left-color: #60ff60;
+        border-right-color: #0070ff;
+}
+.vis_fail {
+        background-color: #ff5050;
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-left-color: #ff5050;
+        border-right-color: #0070ff;
+}
+.skip_pass {
+        background-color: #60ff60;
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-left-color: #60ff60;
+        border-right-color: #0070ff;
+}
+.skip_mixed {
+        background-color: #ffff40;
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-left-color: #ffff40;
+        border-right-color: #0070ff;
+}
+.skip_fail {
+        background-color: #ff5050;
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-left-color: #ff5050;
+        border-right-color: #0070ff;
+}
+.todo_pass {
+        background-color: #60ff60;
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-left-color: #ff9b49;
+        border-right-color: #60ff60;
+}
+.todo_mixed {
+        background-color: #ffff40;
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-left-color: #ff9b49;
+        border-right-color: #ffff40;
+}
+.todo_fail {
+        background-color: #ff5050;
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-left-color: #ff9b49;
+        border-right-color: #ff5050;
+}
+.todo_skip_pass {
+        background-color: #60ff60;
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-left-color: #ff9b49;
+        border-right-color: #0070ff;
+}
+.todo_skip_mixed {
+        background-color: #ffff40;
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-left-color: #ff9b49;
+        border-right-color: #0070ff;
+}
+.todo_skip_fail {
+        background-color: #ff5050;
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-left-color: #ff9b49;
+        border-right-color: #0070ff;
+}
+td {
+        text-align: center;
+}
+
+table.report {
+        margin-left: auto;
+        margin-right: auto;
+}
+table.report th {
+        line-height: 0.9;
+        vertical-align: text-top;
+        border-width: thin;
+}
+table.report th.test {
+        text-align: center;
+        vertical-align: middle;
+}
+table.report thead th {
+        border-bottom-style: solid;
+}
+table.report tfoot th {
+        border-top-style: solid;
+}
+table.report td :link {
+        color: black;
+}
+table.report td.vis_note {
+        border-right-style: solid;
+        border-left-style: solid;
+        border-width: thick;
+        border-left-color: #ffffff;
+        border-right-color: #0070ff;
+}
+table.report td.note :link, table.report td.note :visited,
+table.report td.vis_note :link, table.report td.vis_note :visited {
+        text-decoration: underline;
+}
+table.report td.test :link {
+        color: blue;
+}
+table.report td.test {
+        text-align: left;
+}
+table.report td a {
+        display: block;
+}
+form td {
+        text-align: left;
+}
+
+table.navbar {
+        width: 100%;
+}
+table.navbar td {
+        width: 33%
+}
+table.navbar td :link {
+        color: blue;
+}
+table.navbar td.left {
+        text-align: left;
+}
+table.navbar td.right {
+        text-align: right;
+}
