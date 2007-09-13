@@ -6,6 +6,7 @@
 # usage: wine_release <old version> <new version>
 
 set -e
+umask 002
 
 if [ $# -lt 2 ]
 then
@@ -16,7 +17,7 @@ fi
 oldver=$1
 version=$2
 
-templates_dir="/home/winehq/opt/lostwages/templates"
+templates_dir="/home/winehq/opt/website/templates"
 tools_dir="/home/winehq/opt/git-tools"
 
 cd /home/winehq/opt/source
@@ -46,7 +47,7 @@ chmod +r fileidx xref
 ##chmod +r .glimpse*
 cd ../..
 
-(echo "wine-$version"; cat wine-versions) | uniq > wine-versions.new && mv wine-versions.new wine-versions
+(echo "wine-$version"; cat wine-versions) | uniq > wine-versions.new && mv -f wine-versions.new wine-versions
 
 # update man page and documentation
 echo "==== UPDATING DOCUMENTATION ===="
@@ -69,16 +70,17 @@ for f in $manpages
 do
   name=`basename $f .man`
   make -C `dirname $f` $name.man
-  nroff -man $f | ../bin/man2html --pgsize=100000 | $tools_dir/html2template -o $templates_dir/en/docs/$name.template
+  nroff -man $f | ../bin/man2html --pgsize=100000 | $tools_dir/html2template -o $name.template && mv -f $name.template $templates_dir/en/docs/$name.template
 done
 
+rm -f ../ds$version.txt
 git diff -M --stat wine-$oldver wine-$version >../ds$version.txt
 
 make htmlpages && rm -rf ../WineAPI && mv documentation/html ../WineAPI
 
 # Wine API Stats
 echo "==== UPDATING WINE API STATS PAGE ===="
-$tools_dir/winapi_stats > winapi_stats.template && mv winapi_stats.template $templates_dir/en/winapi_stats.template
+$tools_dir/winapi_stats > winapi_stats.template && mv -f winapi_stats.template $templates_dir/en/winapi_stats.template
 
 # cleanup source tree
 git clean -q -d -x
