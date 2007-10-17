@@ -22,7 +22,7 @@ while (<STATS>)
         ${$stats{" Total"}}[4] += $forwards;
     }
 }
-close STATS;
+close STATS or die "winapi_extract failed";
 
 my $bg = 0;
 
