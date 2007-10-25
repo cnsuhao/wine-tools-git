@@ -1,0 +1,59 @@
+#!/usr/bin/perl
+
+#
+# WineTest Index Script
+# by Jeremy Newman <jnewman@codeweavers.com>
+#
+
+# load CGI object
+use CGI qw(:standard);
+my $q = new CGI;
+
+# change url based on testing vars
+if ($q->param('testing')) {
+
+    # read testing dir
+    opendir(DIR, "./data/");
+    my @files = readdir(DIR);
+    closedir(DIR);
+    splice(@files,0,2);
+    @files = sort {lc($a) cmp lc($b)} @files;
+
+    # get only dirs
+    my @newFiles = ();
+    for (my $c = 0; $c < $#files; $c++) {
+        if (-d "./data/".$files[$c]) {
+            push(@newFiles, $files[$c]);
+        }
+    }
+    @files = @newFiles;
+
+    # get current pos
+    my $curPos = 0;
+    for (my $c = 0; $c < $#files; $c++) {
+        if ($q->param('current') eq $files[$c]) {
+            $curPos = $c;
+        }
+    }
+
+    # perform redirect based on vars
+    if ($curPos == 0 and $q->param('testing') eq "prev") {
+        print "Location: http://test.winehq.org/data/".$files[$#files]."\n\n";
+        exit();
+    } elsif ($curPos == $#files and $q->param('testing') eq "next") {
+        print "Location: http://test.winehq.org/data/".$files[0]."\n\n";
+        exit();
+    } elsif ($q->param('testing') eq "prev" and $files[$curPos - 1]) {
+        print "Location: http://test.winehq.org/data/".$files[$curPos - 1]."\n\n";
+        exit();
+    } elsif ($q->param('testing') eq "next" and $files[$curPos + 1]) {
+        print "Location: http://test.winehq.org/data/".$files[$curPos + 1]."\n\n";
+        exit();
+    }
+}
+
+# redirect to data dir when no vars present
+print "Location: http://test.winehq.org/data/\n\n";
+
+# done
+exit();
