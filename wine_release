@@ -17,10 +17,15 @@ fi
 oldver=$1
 version=$2
 
-templates_dir="/home/winehq/opt/website/templates"
+website_dir="/home/winehq/opt/website"
+templates_dir=$website_dir/templates
 tools_dir="/home/winehq/opt/git-tools"
 
 cd /home/winehq/opt/source
+
+# update website config
+
+echo "snapshot_date: $version" > globals.conf && mv -f globals.conf $website_dir/include/globals.conf
 
 # nuke old attempt (if any)
 rm -rf wine-$version

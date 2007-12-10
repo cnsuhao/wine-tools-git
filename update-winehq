@@ -23,7 +23,7 @@ sub xml_escape($)
 my $rel;
 my $changes = "\n";
 
-die "Not in lostwages dir?" unless -d "news" && -f "include/winehq.conf";
+die "Not in lostwages dir?" unless -d "news";
 system("git", "pull") == 0 or die "git pull failed";
 
 # Parse the ANNOUNCE file
@@ -54,22 +54,6 @@ while (<ANNOUNCE>)
     }
 }
 close ANNOUNCE;
-
-# Update snapshot date in winehq.conf
-
-my @lines = ();
-open CONF, "<include/winehq.conf" or die "cannot open include/winehq.conf";
-while (<CONF>)
-{
-    s/^snapshot_date:.*$/snapshot_date:  $rel/;
-    push @lines, $_;
-}
-close CONF;
-
-open NEWCONF, ">include/winehq.conf" or die "cannot update include/winehq.conf";
-print NEWCONF @lines;
-close NEWCONF;
-print "Updated include/winehq.conf\n";
 
 # Create the news file
 
@@ -122,7 +106,7 @@ if (system("git", "add", $newsfile))
     die "git add $newsfile failed";
 }
 
-if (system("git", "commit", "-m", "Wine release $rel", "include/winehq.conf", $newsfile))
+if (system("git", "commit", "-m", "Wine release $rel", $newsfile))
 {
     system("git", "rm", "-f", $newsfile);
     die "git commit failed";
