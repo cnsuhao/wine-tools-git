@@ -2,6 +2,11 @@
 
 # Main script - change 'config' to setup input/output directories
 
+if [ ! -f ./config ]; then
+    echo "Config file not found in current directory. Copy config-example to config and edit the configuration"
+    exit 1
+fi
+
 . ./config
 
 function die {

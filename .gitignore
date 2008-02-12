@@ -1,4 +1,5 @@
 /work/*
+/scripts/config
 /scripts/local-posthook.sh
 /php/conf
 /php/dumps
