@@ -1,0 +1,20 @@
+# Config file. The meaning of the fields is as follows:
+
+# Path to the Wine source tree to analyze
+SOURCEROOT=/path/to/wine-src
+
+# Path to the Wine tree to take wrc from. Usually the same as SOURCEROOT. 
+WRCROOT=/path/to/wine-src
+
+# The directory where to store the generated langs/ and dumps/. Usually the
+# directory with the PHP scripts.
+DESTDIR=../php
+
+# Temporary directory for some scratch files. Must be writable.
+WORKDIR=../work
+
+# If set to '1' the script will do a minimal build of the SOURCEROOT and WRCROOT
+# making the script work even for a just downloaded tree with only ./configure
+# executed in it. If you are running the script on trees that are already fully
+# built you may set this to '0' to save time.
+PREPARE_TREES=1

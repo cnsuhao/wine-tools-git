@@ -1,0 +1,5 @@
+/work/*
+/scripts/local-posthook.sh
+/php/conf
+/php/dumps
+/php/langs

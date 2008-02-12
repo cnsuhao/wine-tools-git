@@ -1,0 +1,64 @@
+#!/bin/sh
+
+# Main script - change 'config' to setup input/output directories
+
+. ./config
+
+function die {
+    echo $1 >>"$WORKDIR/run.log"
+    cat "$WORKDIR/run.log"
+    exit 1
+}
+
+mv -f $WORKDIR/run.log $WORKDIR/run.log.old
+
+if [ "$PREPARE_TREES" -eq 1 ]; then
+    # Prepare the trees (they may be the same or different)
+    if [ "x$NO_VERBOSE" = "x" ]; then
+        echo -n "Preparing tree(s)..."
+    fi
+    make -C "$WRCROOT" depend >/dev/null 2>>"$WORKDIR/run.log" || die "make depend in wrc tree failed"
+    make -C "$WRCROOT" tools >/dev/null 2>>"$WORKDIR/run.log" || die "make tools in wrc tree failed"
+    make -C "$SOURCEROOT" depend >/dev/null 2>>"$WORKDIR/run.log" || die "make depend in source tree failed"
+    make -C "$SOURCEROOT" include/stdole2.tlb >/dev/null 2>>"$WORKDIR/run.log" || die "make depend in source tree failed"
+    if [ "x$NO_VERBOSE" = "x" ]; then
+        echo " done"
+    fi
+fi
+
+# Do cleanup for new run
+rm -Rf $WORKDIR/langs
+rm -Rf $WORKDIR/dumps
+rm -Rf $WORKDIR/new-langs
+mkdir $WORKDIR/langs
+mkdir $WORKDIR/dumps
+mkdir $WORKDIR/new-langs
+
+# Analyze all the Makefiles
+find $SOURCEROOT/ -name Makefile.in -exec ./checkmakefile.pl \{\} \;
+./summary.pl "$WORKDIR"
+
+# Check for a non-standard content that may show a new language
+find $WORKDIR/new-langs -size 945c -exec rm \{\} \;
+find $WORKDIR/new-langs -size 961c -exec rm \{\} \;
+ls $WORKDIR/new-langs
+
+# Show any changes in the log
+diff -u $WORKDIR/run.log.old $WORKDIR/run.log
+
+# Copy the new data from the working directory to the PHP scripts input
+mv -f $DESTDIR/langs $DESTDIR/langs.old
+mv -f $DESTDIR/dumps $DESTDIR/dumps.old
+mv -f $WORKDIR/langs $DESTDIR/langs
+mv -f $WORKDIR/dumps $DESTDIR/dumps
+
+rsync -r --delete conf $DESTDIR
+
+# Deleting can take a bit longer so we do it after the new version is set up
+rm -Rf $DESTDIR/langs.old
+rm -Rf $DESTDIR/dumps.old
+
+# Optional hooks
+if [ -x ./local-posthook.sh ]; then
+    ./local-posthook.sh
+fi
