@@ -12,6 +12,27 @@ function validate_lang($id)
     return $lang;
 }
 
+function validate_type($type)
+{
+    if (!preg_match("/^[0-9]+$/", $type))
+        die("Invalid type");
+    return $type;
+}
+
+function validate_resfile($resfile)
+{
+    if (!preg_match("*^[a-zA-Z0-9/.-_]+$*", $resfile))
+        die("Invalid resource file");
+    return $resfile;
+}
+
+function validate_id($id)
+{
+    if (!preg_match("/^[a-zA-Z0-9_]+$/", $id))
+        die("Invalid resource file");
+    return $id;
+}
+
 function get_lang_name($id)
 {
     global $DATAROOT;

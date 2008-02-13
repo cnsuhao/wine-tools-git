@@ -3,9 +3,9 @@ include("config.php");
 include("lib.php");
 
 $lang = validate_lang($_REQUEST['lang']);
-$resfile = $_REQUEST['resfile'];
-$type = $_REQUEST['type'];
-$id = $_REQUEST['id'];
+$resfile = validate_resfile($_REQUEST['resfile']);
+$type = validate_type($_REQUEST['type']);
+$id = validate_id($_REQUEST['id']);
     
 $norm_fn = preg_replace("/[^A-Za-z0-9]/", "-", $resfile);
 $file = fopen("$DATAROOT/dumps/$norm_fn/$lang-$type-$id", "r");

@@ -3,7 +3,7 @@ include("config.php");
 include("lib.php");
 
 $lang = validate_lang($_REQUEST['lang']);
-$resfile = $_REQUEST['resfile'];
+$resfile = validate_resfile($_REQUEST['resfile']);
     
 $file = fopen("$DATAROOT/langs/$lang", "r");
 $msgs = array();
