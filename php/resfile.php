@@ -51,7 +51,7 @@ foreach ($msgs as $value)
         else
         {
             if (strpos($value, "Error: ") === 0)
-                $extra = "&compare";
+                $extra = "&compare=";
             else
                 $extra = "";
             $value = preg_replace("/STRINGTABLE ([0-9]+)/",

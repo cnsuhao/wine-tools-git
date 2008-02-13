@@ -23,7 +23,7 @@ $msgs = array();
 if (!$compare)
 {
     echo "<tr style=\"background-color: #e8e8ff\"><td colspan=\"2\" style=\"text-align: right\">";
-    echo "<small><a href=\"resource.php?lang=".urlencode($lang)."&resfile=".urlencode($resfile)."&type=".urlencode($type)."&id=".urlencode($id)."&compare\">";
+    echo "<small><a href=\"resource.php?lang=".urlencode($lang)."&resfile=".urlencode($resfile)."&type=".urlencode($type)."&id=".urlencode($id)."&compare=\">";
     echo "Compare with ".get_lang_name($MASTER_LANGUAGE)." &gt;&gt;</a></small>";
     echo "</td></tr>";
 }
