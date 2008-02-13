@@ -1,6 +1,7 @@
 /work/*
 /scripts/config
 /scripts/local-posthook.sh
+/scripts/local-prehook.sh
 /php/conf
 /php/dumps
 /php/langs

@@ -9,6 +9,10 @@ fi
 
 . ./config
 
+if [ -x ./local-prehook.sh ]; then
+    ./local-prehook.sh
+fi
+
 function die {
     echo $1 >>"$WORKDIR/run.log"
     cat "$WORKDIR/run.log"
