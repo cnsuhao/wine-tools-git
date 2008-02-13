@@ -50,8 +50,12 @@ foreach ($msgs as $value)
         }
         else
         {
+            if (strpos($value, "Error: ") === 0)
+                $extra = "&compare";
+            else
+                $extra = "";
             $value = preg_replace("/STRINGTABLE ([0-9]+)/",
-                "<a href=\"resource.php?lang=$lang&resfile=$resfile&type=6&id=".$m[1]."\">".
+                "<a href=\"resource.php?lang=$lang&resfile=$resfile&type=6&id=".$m[1]."$extra\">".
                 "STRINGTABLE #".$m[1]." (strings $id0..$id1)</a>",
                 $value);
         }
