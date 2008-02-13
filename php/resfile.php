@@ -1,16 +1,15 @@
 <?php
 include("config.php");
+include("lib.php");
 
-$lang = preg_replace("/[^0-9a-f:]/", "-", $_REQUEST['lang']);
+$lang = validate_lang($_REQUEST['lang']);
 $resfile = $_REQUEST['resfile'];
-if (!file_exists("$DATAROOT/langs/$lang"))
-    die("Invalid lang parameter");
     
 $file = fopen("$DATAROOT/langs/$lang", "r");
 $msgs = array();
 ?>
 <html>
-<h1>File <?php echo $resfile?> - <?php echo file_get_contents("$DATAROOT/conf/$lang") ?> language</h1>
+<h1>File <?php echo $resfile?> - <?php echo get_lang_name($lang) ?> language</h1>
 
 <?php
 while ($line = fgets($file, 4096))

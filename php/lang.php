@@ -1,10 +1,9 @@
 <?php
 include_once("config.php") ;
+include_once("lib.php");
 
-$lang = preg_replace("/[^0-9a-f:]/", "-", $_REQUEST['lang']);
-if (!file_exists("$DATAROOT/langs/$lang"))
-    die("Invalid lang parameter");
-    
+$lang = validate_lang($_REQUEST['lang']);
+
 $file = fopen("$DATAROOT/langs/$lang", "r");
 $transl = array();
 $notransl = array();
@@ -56,7 +55,7 @@ function dump_table($table)
 }
 
 ?>
-<h1><?php echo "Language: ".file_get_contents("$DATAROOT/conf/$lang") ?></h1>
+<h1><?php echo "Language: ".get_lang_name($lang) ?></h1>
 <h2>Partialy translanted files</h2>
 <?php dump_table($partial) ?>
 
