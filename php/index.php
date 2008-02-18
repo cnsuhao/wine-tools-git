@@ -25,8 +25,14 @@ while ($line = fgets($summary, 1024))
 <?php
 function draw_bar($tr, $err, $sum)
 {
-    $tr_len = ($tr*300)/$sum;
-    $err_len = ($err*300)/$sum;
+    $tr_len = floor(($tr*300)/$sum);
+    $err_len = floor(($err*300)/$sum);
+    if ($err_len == 0 && $err > 0)
+    {
+        $err_len++;
+        if ($tr_len > 1)
+            $tr_len--;
+    }
     $miss_len = 300 - $tr_len - $err_len;
     echo '<td style="background-color: #D1DAF9">';
     echo "<img src=\"img/bar0.gif\" height=\"15\" width=\"$tr_len\">";
