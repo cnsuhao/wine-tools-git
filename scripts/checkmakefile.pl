@@ -9,6 +9,11 @@ sub mycheck
 {
     my($name) = shift(@_);
 
+    if ($name =~ m/version.rc$/) {
+        print "--- Ignoring ".$name."\n" unless (exists $ENV{"NOVERBOSE"});
+        return;
+    }
+
     if (not exists $ENV{"NOVERBOSE"}) {
         print "*** ".$name."\n";
     }
@@ -24,6 +29,14 @@ sub mycheck
     {
         $name =~ s,$winedir,,;
         system("./ver.pl \"$name\" \"$workdir\" <$workdir/ver.txt");
+        $norm_fn= $name;
+        $norm_fn =~ s/\.rc$//;
+        $norm_fn =~ s/[^a-zA-Z0-9]/-/g;
+        $ret = system("$wrc -I$winedir/include -I$winedir/dlls/user32 $defs $winedir$name $workdir/dumps/res/$norm_fn.res 2>>$workdir/run.log >/dev/null");
+        if ($ret != 0)
+        {
+            print "!!!!!!! 2nd pass return value: ".$ret."\n";        
+        }
     }
     else
     {

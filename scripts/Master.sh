@@ -41,6 +41,7 @@ rm -Rf $WORKDIR/dumps
 rm -Rf $WORKDIR/new-langs
 mkdir $WORKDIR/langs
 mkdir $WORKDIR/dumps
+mkdir $WORKDIR/dumps/res
 mkdir $WORKDIR/new-langs
 
 # Analyze all the Makefiles
