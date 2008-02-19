@@ -9,20 +9,20 @@ $workdir = $ARGV[0];
 
 sub collapse {
     my($name) = shift @_;
+    $base_name = $name;
+    $base_name =~ s/:[0-9a-f]{2}/:00/;
     if (not exists $tab_should_collapse{$name})
     {
-        open(NAMEFILE, "<conf/$name");
+        open(NAMEFILE, "<conf/$base_name");
         $content = <NAMEFILE>;
-        if ($content eq "collapse") {
-            $tab_should_collapse{$name} = TRUE;
-        } else {
-            $tab_should_collapse{$name} = FALSE;
-        }
         close(NAMEFILE);
+        if ($content =~  /\[ignore-sublang\]/) {
+            $tab_should_collapse{$name} = TRUE;
+        }
     }
     
     if ($tab_should_collapse{$name} eq TRUE) {
-        $name =~ s/:[0-9a-f][0-9a-f]/:00/;
+        $name = $base_name;
     }
     return $name;
 }

@@ -27,7 +27,8 @@ $compare = isset($_REQUEST['compare']);
 
 $resources = new ResFile(get_res_path($resfile));
 
-$resdata = $resources->loadResource($type, $id, get_lang_binid($lang), is_lang_ignore_sublang($lang));
+$res_lang = update_lang_from_resfile($lang, $resfile);
+$resdata = $resources->loadResource($type, $id, get_lang_binid($res_lang), is_lang_ignore_sublang($lang));
 if (!$resdata)
     die("Resource not found in *.res file\n");
 $res = new StringTable($resdata[0], $resdata[1]);

@@ -5,6 +5,14 @@
 
 use Cwd;
 
+sub log_string
+{
+    my($string) = shift(@_);
+    open(LOG, ">>$workdir/run.log") || die "Couldn't open run.log\n";
+    print LOG $string."\n";
+    close(LOG);
+}
+
 sub mycheck
 {
     my($name) = shift(@_);
@@ -22,13 +30,19 @@ sub mycheck
     my($defs) = "";
     $defs = "-D__WINESRC__" if ($name =~ m,^${winedir}/?dlls,);
 
-    system("echo \\*\\*\\* ".$name." [$defs] >>$workdir/run.log");
+    log_string("*** $name [$defs]");
 
     $ret = system("$wrc -I$winedir/include -I$winedir/dlls/user32 --verify-translation $defs $name $workdir/tmp.res 2>>$workdir/run.log >$workdir/ver.txt");
     if ($ret == 0)
     {
         $name =~ s,$winedir,,;
-        system("./ver.pl \"$name\" \"$workdir\" <$workdir/ver.txt");
+        if ($name eq "dlls/kernel32/kernel.rc") {
+            system("./ver.pl \"$name\" \"$workdir\" nonlocale <$workdir/ver.txt");
+            log_string("*** $name [$defs] (locale run)");
+            system("./ver.pl \"$name\" \"$workdir\" locale <$workdir/ver.txt");
+        } else {
+            system("./ver.pl \"$name\" \"$workdir\" normal <$workdir/ver.txt");
+        }
         $norm_fn= $name;
         $norm_fn =~ s/\.rc$//;
         $norm_fn =~ s/[^a-zA-Z0-9]/-/g;

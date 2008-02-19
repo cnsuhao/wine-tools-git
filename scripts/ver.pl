@@ -3,9 +3,11 @@
 # Helper script - parse the results of wrc --verify-translation
 # and store then in $2/langs/* and $2/dumps/*
 
-die "This helper script takes two arguments" unless ($#ARGV == 1);
+die "This helper script takes three arguments" unless ($#ARGV == 2);
 
+$filename = $ARGV[0];
 $workdir = $ARGV[1];
+$mode = $ARGV[2];
 
 $type=-1;
 $types[1] = "CURSOR";
@@ -24,6 +26,15 @@ $types[14] = "GROUP_ICON";
 $types[16] = "VERSION";
 $types[260] = "MENUEX";
 $types[262] = "DIALOGEX";
+
+sub mode_skip
+{
+    $type = shift @_;
+    return 0 if ($mode eq "normal");
+    return ($type != 6) if ($mode eq "locale");
+    return ($type == 6) if ($mode eq "nonlocale");
+    die("Unknown mode");
+}
 
 sub resource_name {
     my $type = shift @_;
@@ -49,7 +60,7 @@ sub resource_name2 {
 sub collapse {
     my($name) = shift @_;
     $base_name = $name;
-    $base_name =~ s/:[0-9a-f][0-9a-f]/:00/;
+    $base_name =~ s/:[0-9a-f]{2}/:00/;
     if (not exists $tab_should_collapse{$name})
     {
         open(NAMEFILE, "<conf/$base_name");
@@ -57,17 +68,7 @@ sub collapse {
         close(NAMEFILE);
         if ($content =~  /\[ignore-sublang\]/) {
             $tab_should_collapse{$name} = TRUE;
-        } else {
-            open(NAMEFILE, "<conf/$name");
-            $content = <NAMEFILE>;
-            if ($content eq "collapse") {
-                $tab_should_collapse{$name} = TRUE;
-            } else {
-                $tab_should_collapse{$name} = FALSE;
-            }
-            close(NAMEFILE);
         }
-
     }
     
     if ($tab_should_collapse{$name} eq TRUE) {
@@ -76,7 +77,6 @@ sub collapse {
     return $name;
 }
 
-$filename = shift @ARGV;
 $norm_fn = $filename;
 $norm_fn =~ s/[^a-zA-Z0-9]/-/g;
 mkdir "$workdir/dumps/$norm_fn";
@@ -92,7 +92,11 @@ while (<STDIN>)
         $type++;
         next;
     }
-    
+
+    if (mode_skip($type)) {
+        next;
+    }
+
     if (m/^RESOURCE \[([a-zA-Z_0-9.]+)\]/)
     {
         $resource = $1;
@@ -188,54 +192,73 @@ foreach $resource (@resources)
 
 foreach $lang (@file_langs)
 {
-    if (-e "conf/$lang") {
-        open(LANGOUT, ">>$workdir/langs/$lang");
-    } else {
-        open(LANGOUT, ">>$workdir/new-langs/$lang");
+    if ($mode eq "locale")
+    {
+        $basic_lang = $lang;
+        $basic_lang =~ s/:[0-9a-f]{2}/:00/;
+        if (-e "conf/$lang") {
+            open(LANGOUT, ">>$workdir/langs/$lang");
+        } elsif (-e "conf/$basic_lang") {
+            open(LANGOUT, ">>$workdir/langs/$basic_lang");
+        } else {
+#            print("Ignoring locale $lang\n");
+        }
+        print LANGOUT "LOCALE $lang $filename ".($transl_count{$lang}+0)." ".($missing_count{$lang}+0)." ".($err_count{$lang}+0)."\n";
+        $suffix = "#locale$lang";
+    } else  {
+        if (-e "conf/$lang") {
+            open(LANGOUT, ">>$workdir/langs/$lang");
+        } else {
+            open(LANGOUT, ">>$workdir/new-langs/$lang");
+        }
+        print LANGOUT "FILE STAT $filename ".($transl_count{$lang}+0)." ".($missing_count{$lang}+0)." ".($err_count{$lang}+0)."\n";
+        $suffix = "";
     }
-    print LANGOUT "FILE STAT $filename ".($transl_count{$lang}+0)." ".($missing_count{$lang}+0)." ".($err_count{$lang}+0)."\n";
     
     foreach $warn (@{$warns{$lang}})
     {
-        print LANGOUT "$filename: Warning: $warn\n";
+        print LANGOUT "$filename$suffix: Warning: $warn\n";
     }
     
     foreach $resource (@resources)
     {
         foreach $msg (@{$errs_rl{$resource}{$lang}})
         {
-            print LANGOUT "$filename: Error: resource ".resource_name2($resource).": $msg\n";
+            print LANGOUT "$filename$suffix: Error: resource ".resource_name2($resource).": $msg\n";
         }
         
         foreach $msg (@{$warn_rl{$resource}{$lang}})
         {
-            print LANGOUT "$filename: Warning: resource ".resource_name2($resource).": $msg\n";
+            print LANGOUT "$filename$suffix: Warning: resource ".resource_name2($resource).": $msg\n";
         }
 
         foreach $msg (@{$missing_rl{$resource}{$lang}})
         {
-            print LANGOUT "$filename: Missing: resource ".resource_name2($resource).": $msg\n";
+            print LANGOUT "$filename$suffix: Missing: resource ".resource_name2($resource).": $msg\n";
         }
 
         foreach $msg (@{$notes_rl{$resource}{$lang}})
         {
-            print LANGOUT "$filename: note: resource ".resource_name2($resource).": $msg\n";
+            print LANGOUT "$filename$suffix: note: resource ".resource_name2($resource).": $msg\n";
         }
     }
     close(LANGOUT);
 }
 
-opendir(DIR, "conf");
-@files = grep(!/^\./, readdir(DIR));
-closedir(DIR);
-foreach $lang (@files) {
-    next if (!($lang eq collapse($lang)));
-    next if ($transl_count{"009:01"} == 0 && $transl_count{"009:00"} == 0);
-    @transl = grep {$_ eq $lang} @file_langs;
-    if ($#transl == -1) {
-#        print "No translation for $lang\n";
-        open(LANGOUT, ">>$workdir/langs/$lang");
-        print LANGOUT "FILE NONE $filename 0 ".$transl_count{"009:01"}." 0\n";
-        close(LANGOUT);
-    }    
+if (!($mode eq "locale"))
+{
+    opendir(DIR, "conf");
+    @files = grep(!/^\./, readdir(DIR));
+    closedir(DIR);
+    foreach $lang (@files) {
+        next if (!($lang eq collapse($lang)));
+        next if ($transl_count{"009:01"} == 0 && $transl_count{"009:00"} == 0);
+        @transl = grep {$_ eq $lang} @file_langs;
+        if ($#transl == -1) {
+#            print "No translation for $lang\n";
+            open(LANGOUT, ">>$workdir/langs/$lang");
+            print LANGOUT "FILE NONE $filename 0 ".$transl_count{"009:01"}." 0\n";
+            close(LANGOUT);
+        }    
+    }
 }

@@ -23,7 +23,7 @@ function validate_type($type)
 
 function validate_resfile($resfile)
 {
-    if (!preg_match("*^[a-zA-Z0-9/.-_]+$*", $resfile))
+    if (!preg_match("*^[a-zA-Z0-9/.-_]+(#locale[0-9a-f]{3}:[0-9a-f]{2})?$*", $resfile))
         die("Invalid resource file");
     return $resfile;
 }
@@ -61,9 +61,6 @@ function has_lang_flag($id, $flag)
 function is_lang_ignore_sublang($lang)
 {
     return has_lang_flag($lang, "ignore-sublang");
-/*    if (!preg_match("/([0-9a-f]{3}):00/", $lang, $m))
-        return FALSE;
-    return (get_lang_name($m[1].":01") == "collapse");*/
 }
 
 function get_lang_binid($lang)
@@ -77,8 +74,15 @@ function get_res_path($respath)
 {
     global $DATAROOT;
 
-    $respath = preg_replace("/\\.rc$/", "", $respath);
+    $respath = preg_replace("/\\.rc(#.*)?$/", "", $respath);
     return "$DATAROOT/dumps/res/".preg_replace("/[^a-zA-Z0-9]/", "-", $respath).".res";
+}
+
+function update_lang_from_resfile($lang, $resfile)
+{
+    if (preg_match("/#locale([0-9a-f]{3}:[0-9a-f]{2})?$/", $resfile, $m))
+        return $m[1];
+    return $lang;
 }
 
 ?>

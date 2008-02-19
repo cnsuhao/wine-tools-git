@@ -55,7 +55,7 @@ foreach ($msgs as $value)
             else
                 $extra = "";
             $value = preg_replace("/STRINGTABLE ([0-9]+)/",
-                "<a href=\"resource.php?lang=$lang&resfile=$resfile&type=6&id=".$m[1]."$extra\">".
+                "<a href=\"resource.php?lang=$lang&resfile=".urlencode($resfile)."&type=6&id=".$m[1]."$extra\">".
                 "STRINGTABLE #".$m[1]." (strings $id0..$id1)</a>",
                 $value);
         }

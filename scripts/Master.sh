@@ -48,9 +48,7 @@ mkdir $WORKDIR/new-langs
 find $SOURCEROOT/ -name Makefile.in -exec ./checkmakefile.pl \{\} \;
 ./summary.pl "$WORKDIR"
 
-# Check for a non-standard content that may show a new language
-find $WORKDIR/new-langs -size 945c -exec rm \{\} \;
-find $WORKDIR/new-langs -size 961c -exec rm \{\} \;
+# Check for a new languages
 ls $WORKDIR/new-langs
 
 # Show any changes in the log
