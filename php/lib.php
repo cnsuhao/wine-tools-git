@@ -53,6 +53,11 @@ function get_lang_name($id)
     return preg_replace("/\[ignore-sublang\]/", "", get_raw_lang_name($id));
 }
 
+function get_lang_base($id)
+{
+    return preg_replace("/:[0-9a-f]{2}/", ":00", $id);
+}
+
 function has_lang_flag($id, $flag)
 {
     return is_int(strpos(get_raw_lang_name($id), "[".$flag."]"));
@@ -68,6 +73,13 @@ function get_lang_binid($lang)
     if (!preg_match("/([0-9a-f]{3}):([0-9a-f]{2})/", $lang, $m))
         die("Couldn't pare language code");
     return hexdec($m[1]) + (hexdec($m[2]) << 10);
+}
+
+function get_locale_name($localeid)
+{
+    global $LOCALE_NAMES;
+    include_once("dump_locales.php");
+    return $LOCALE_NAMES[$localeid];
 }
 
 function get_res_path($respath)
