@@ -1,5 +1,6 @@
 <?php
 include_once("config.php");
+include_once("lib.php");
 
 $summary = fopen("$DATAROOT/langs/summary", "r");
 while ($line = fgets($summary, 1024))
@@ -8,10 +9,10 @@ while ($line = fgets($summary, 1024))
     {
         die("couldn't parse line $line");
     }
-    
-    $names[$m[1]] = file_get_contents("$DATAROOT/conf/".$m[1]);
-    if (strpos($names[$m[1]], "[hide]"))
+
+    if (has_lang_flag($m[1], "hide"))
         continue;
+    
     $sum = $m[2]+0;
     $transl[$m[1]] = $m[3];
     $missing[$m[1]] = $m[4];
@@ -62,7 +63,7 @@ for ($i = 0; $i < count($transl); $i++)
         echo "<td rowspan=\"$serial\" style=\"text-align: center\">$nr";
         echo "</td>";
     }
-    echo "<td><a href=\"lang.php?lang=$langid\">".$names[$langid]."</a></td>";
+    echo "<td><a href=\"lang.php?lang=$langid\">".get_lang_name($langid)."</a></td>";
     printf("<td>%d (%.1f%%)</td>", $value, ($value*100)/$sum);
     echo "<td>".$missing[$langid]."</td><td>".$errors[$langid]."</td>\n";
     draw_bar($value, $errors[$langid], $sum);

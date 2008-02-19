@@ -35,18 +35,35 @@ function validate_id($id)
     return $id;
 }
 
+function get_raw_lang_name($id)
+{
+    static $lang_cache = array();
+    if (empty($lang_cache[$id]))
+    {
+        global $DATAROOT;
+
+        $name = file_get_contents("$DATAROOT/conf/$id");
+        $lang_cache[$id] = $name;
+    }
+    return $lang_cache[$id];
+}
+
 function get_lang_name($id)
 {
-    global $DATAROOT;
+    return preg_replace("/\[ignore-sublang\]/", "", get_raw_lang_name($id));
+}
 
-    return file_get_contents("$DATAROOT/conf/$id");
+function has_lang_flag($id, $flag)
+{
+    return is_int(strpos(get_raw_lang_name($id), "[".$flag."]"));
 }
 
 function is_lang_ignore_sublang($lang)
 {
-    if (!preg_match("/([0-9a-f]{3}):00/", $lang, $m))
+    return has_lang_flag($lang, "ignore-sublang");
+/*    if (!preg_match("/([0-9a-f]{3}):00/", $lang, $m))
         return FALSE;
-    return (get_lang_name($m[1].":01") == "collapse");
+    return (get_lang_name($m[1].":01") == "collapse");*/
 }
 
 function get_lang_binid($lang)
