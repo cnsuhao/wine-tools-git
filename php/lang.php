@@ -49,7 +49,7 @@ function dump_table($table)
     echo "<tr><th>File name</th><th>translated</th><th>missing</th><th>errors</th></tr>\n";
     foreach ($table as $key => $value)
     {
-        echo "<tr><td><a href=\"resfile.php?lang=$lang&resfile=".urlencode($value[3])."\">".$key."</a></td>";
+        echo "<tr><td>".gen_resfile_a($lang, $value[3]).$key."</a></td>";
         echo "<td>".$value[0]."</td>";
         echo "<td>".$value[1]."</td>";
         echo "<td>".$value[2]."</td>";
@@ -59,6 +59,7 @@ function dump_table($table)
 }
 
 ?>
+<p><?php dump_menu_root() ?> &gt; <?php dump_menu_lang($lang, FALSE)?> </p>
 <h1><?php echo "Language: ".get_lang_name($lang) ?></h1>
 <h2>Partialy translanted files</h2>
 <?php dump_table($partial) ?>

@@ -21,7 +21,9 @@ $compare = isset($_REQUEST['compare']);
     </style>
 </head>
 <body>
-<h1>File <?php echo $resfile?> - <?php echo get_lang_name($lang) ?> language - Resource <?php echo "$id ($type)"?></h1>
+<?php dump_menu_root() ?> &gt <?php dump_menu_lang($lang) ?> &gt <?php dump_menu_resfile($lang, $resfile) ?> &gt
+<?php dump_menu_resource($lang, $resfile, $type, $id) ?>
+<h1>Resource <?php echo "$id ($type)"?></h1>
 
 <?php
 
@@ -62,14 +64,14 @@ function dump_unicode_or_empty($uni_str)
 if (!$compare)
 {
     echo "<tr style=\"background-color: #e8e8ff\"><td colspan=\"2\" style=\"text-align: right\">";
-    echo "<small><a href=\"resource.php?lang=".urlencode($lang)."&resfile=".urlencode($resfile)."&type=".urlencode($type)."&id=".urlencode($id)."&compare=\">";
+    echo "<small>".gen_resource_a($lang, $resfile, $type, $id, TRUE);
     echo "Compare with ".$MASTER_LANGUAGE_NAME." &gt;&gt;</a></small>";
     echo "</td></tr>";
 }
 else
 {
     echo "<tr style=\"background-color: #e8e8ff\"><td colspan=\"3\" style=\"text-align: right\">";
-    echo "<small><a href=\"resource.php?lang=".urlencode($lang)."&resfile=".urlencode($resfile)."&type=".urlencode($type)."&id=".urlencode($id)."\">";
+    echo "<small>".gen_resource_a($lang, $resfile, $type, $id, FALSE);
     echo "&lt;&lt; Hide compare with ".get_lang_name($MASTER_LANGUAGE)."</a></small>";
     echo "</td></tr>";
 

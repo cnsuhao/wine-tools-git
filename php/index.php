@@ -63,7 +63,7 @@ for ($i = 0; $i < count($transl); $i++)
         echo "<td rowspan=\"$serial\" style=\"text-align: center\">$nr";
         echo "</td>";
     }
-    echo "<td><a href=\"lang.php?lang=$langid\">".get_lang_name($langid)."</a></td>";
+    echo "<td>".gen_lang_a($langid).get_lang_name($langid)."</a></td>";
     printf("<td>%d (%.1f%%)</td>", $value, ($value*100)/$sum);
     echo "<td>".$missing[$langid]."</td><td>".$errors[$langid]."</td>\n";
     draw_bar($value, $errors[$langid], $sum);

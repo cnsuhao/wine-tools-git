@@ -31,7 +31,7 @@ function validate_resfile($resfile)
 function validate_id($id)
 {
     if (!preg_match("/^[a-zA-Z0-9_]+$/", $id))
-        die("Invalid resource file");
+        die("Invalid resource id");
     return $id;
 }
 
@@ -82,12 +82,26 @@ function get_locale_name($localeid)
     return $LOCALE_NAMES[$localeid];
 }
 
-function get_res_path($respath)
+function get_res_path($resfile)
 {
     global $DATAROOT;
 
-    $respath = preg_replace("/\\.rc(#.*)?$/", "", $respath);
-    return "$DATAROOT/dumps/res/".preg_replace("/[^a-zA-Z0-9]/", "-", $respath).".res";
+    $resfile = preg_replace("/\\.rc(#.*)?$/", "", $resfile);
+    return "$DATAROOT/dumps/res/".preg_replace("/[^a-zA-Z0-9]/", "-", $resfile).".res";
+}
+
+function get_resfile_name($resfile)
+{
+    if (preg_match("*^([a-zA-Z0-9/.-_]+)#locale([0-9a-f]{3}:[0-9a-f]{2})$*", $resfile, $m))
+    {
+        return "Locale data for: ".get_locale_name($m[2])." (".$m[1].")";
+    }
+    return $resfile;
+}
+
+function get_resource_name($type, $name)
+{
+    return "Resource ".$type." ".$name;
 }
 
 function update_lang_from_resfile($lang, $resfile)
@@ -95,6 +109,51 @@ function update_lang_from_resfile($lang, $resfile)
     if (preg_match("/#locale([0-9a-f]{3}:[0-9a-f]{2})?$/", $resfile, $m))
         return $m[1];
     return $lang;
+}
+
+function gen_lang_a($lang)
+{
+    return "<a href=\"lang.php?lang=".urlencode($lang)."\">";
+}
+
+function gen_resfile_a($lang, $resfile)
+{
+    return "<a href=\"resfile.php?lang=".urlencode($lang)."&resfile=".urlencode($resfile)."\">";
+}
+
+function gen_resource_a($lang, $resfile, $type, $id, $compare=FALSE)
+{
+    if ($compare)
+        $extra = "&compare=";
+    else
+        $extra = "";
+    return "<a href=\"resource.php?lang=".urlencode($lang)."&resfile=".urlencode($resfile)."&type=".urlencode($type)."&id=".urlencode($id)."$extra\">";
+}
+
+function dump_menu_root()
+{
+    echo "<a href=\"index.php\">Wine translations</a>";
+}
+
+function dump_menu_lang($lang, $link = TRUE)
+{
+    if ($link)
+        echo gen_lang_a($lang);
+    echo get_lang_name($lang);
+    echo "</a>";
+}
+
+function dump_menu_resfile($lang, $resfile, $link = TRUE)
+{
+    if ($link)
+        echo gen_resfile_a($lang, $resfile);
+    echo get_resfile_name($resfile);
+    echo "</a>";
+}
+
+function dump_menu_resource($lang, $resfile, $type, $id)
+{
+    echo get_resource_name($type, $id);
 }
 
 ?>

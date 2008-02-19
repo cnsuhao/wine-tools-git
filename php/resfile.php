@@ -4,12 +4,14 @@ include("lib.php");
 
 $lang = validate_lang($_REQUEST['lang']);
 $resfile = validate_resfile($_REQUEST['resfile']);
-    
+
 $file = fopen("$DATAROOT/langs/$lang", "r");
 $msgs = array();
 ?>
 <html>
-<h1>File <?php echo $resfile?> - <?php echo get_lang_name($lang) ?> language</h1>
+<?php dump_menu_root() ?> &gt <?php dump_menu_lang($lang) ?> &gt <?php dump_menu_resfile($lang, $resfile, FALSE) ?>
+
+<h1>File <?php echo $resfile?></h1>
 
 <?php
 while ($line = fgets($file, 4096))
@@ -50,12 +52,9 @@ foreach ($msgs as $value)
         }
         else
         {
-            if (strpos($value, "Error: ") === 0)
-                $extra = "&compare=";
-            else
-                $extra = "";
+            $error = (strpos($value, "Error: ") === 0);
             $value = preg_replace("/STRINGTABLE ([0-9]+)/",
-                "<a href=\"resource.php?lang=$lang&resfile=".urlencode($resfile)."&type=6&id=".$m[1]."$extra\">".
+                gen_resource_a($lang, $resfile, 6, $m[1], $error).
                 "STRINGTABLE #".$m[1]." (strings $id0..$id1)</a>",
                 $value);
         }
