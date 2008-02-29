@@ -1,5 +1,7 @@
 <?php
 
+include_once("stopwatch.php");
+
 function get_word(&$data)
 {
     if (strlen($data)  < 2)
@@ -9,18 +11,32 @@ function get_word(&$data)
     return $cx["c"];
 }
 
-function get_stringorid(&$data)
+function get_stringorid($data, &$pos)
 {
-    $c1 = get_word($data);
-    if ($c1 == 0xffff)
-        return get_word($data);
+    $len = strlen($data);
+
+    if ((ord($data[$pos]) == 0xff) && (ord($data[$pos + 1]) == 0xff))
+    {
+        if ($len < 4)
+            die("not enough data");
+        $pos += 4;
+        return (ord($data[$pos - 2]) + (ord($data[$pos - 1]) << 8));
+    }
 
     $ret ="";
-    while ($c1)
+    for ($i = $pos; (ord($data[$i]) != 0) || (ord($data[$i+1]) != 0); $i += 2)
     {
-        $ret .= ($c1>=0x80 ? '?' : chr($c1));
-        $c1 = get_word($data);
+        if (ord($data[$i+1]))
+            $ret .= '?';
+        else
+            $ret .= (ord($data[$i])>=0x80 ? '?' : $data[$i]);
     }
+
+    $pos = $i + 2;
+
+    if ($pos >= $len)
+        die("not enough data");
+
     return $ret;
 }
 
@@ -60,11 +76,12 @@ class ResFile
         do {
             $data = fread($this->file, 8);
 
-            if (strlen($data) == 0)
+            $len = strlen($data);
+            if ($len == 0)
                 break;
-
-            if (strlen($data) < 8)
+            if ($len < 8)
                 die("Couldn't read header");
+
             $header = unpack("VresSize/VheaderSize", $data);
             assert($header["headerSize"] > 8);
 
@@ -73,10 +90,12 @@ class ResFile
             if (strlen($data) < $len)
                 die("Couldn't read header");
 
-            $header["type"] = get_stringorid($data);
-            $header["name"] = get_stringorid($data);
-            if (($len - strlen($data)) % 4)  /* WORD padding */
-                get_word($data);
+            $strpos = 0;
+            $header["type"] = get_stringorid($data, $strpos);
+            $header["name"] = get_stringorid($data, $strpos);
+            if ($strpos & 3)  /* DWORD padding */
+                $strpos += 2;
+            $data = substr($data, $strpos);
             $header += unpack("VdataVersion/vmemoryOptions/vlanguage/Vversion/Vcharacteristics", $data);
         
             $pos += ($header["headerSize"] + $header["resSize"] + 3) & 0xfffffffc;
@@ -103,11 +122,58 @@ class ResFile
 
     function loadResource($type, $name, $language, $ignore_sublang = FALSE)
     {
-        $out = NULL;
+//        $sw = new Stopwatch();
+/*      too slow
         if ($this->enumResources(array($this, 'load_resource_helper'), array($type, $name, $language, &$header, &$out, $ignore_sublang)))
         {
             return array($header, $out);
-        }
+        }*/
+        
+        fseek($this->file, 0);
+        $pos = 0;
+
+        do {
+            $data = fread($this->file, 512);
+
+            $len = strlen($data);
+            if ($len == 0)
+                break;
+            if ($len < 8)
+                die("Couldn't read header");
+
+            $header = unpack("Va/Vb", $data);
+            $resSize = $header["a"];
+            $headerSize = $header["b"];
+            assert($headerSize > 8 && $headerSize <= $len);
+
+            $strpos = 8;
+            $res_type = get_stringorid($data, $strpos);
+            if ($res_type == $type)
+            {
+                $res_name = get_stringorid($data, $strpos);
+                if ($res_name == $name)
+                {
+                    if ($strpos & 3)  /* DWORD padding */
+                        $strpos += 2;
+                    $data = substr($data, $strpos);
+                    $header = unpack("VdataVersion/vmemoryOptions/vlanguage/Vversion/Vcharacteristics", $data);
+
+                    $curr_lang = ($ignore_sublang ? ($header["language"] & 0x3ff) : $header["language"]); /* check the ignore_sublang */
+                    if ($curr_lang == $language)
+                    {
+                        fseek($this->file, $pos + $headerSize);
+                        $out = fread($this->file, $resSize);
+//                        $sw->stop();
+                        return array($header, $out);
+                    }
+                }
+            }
+            
+            $pos += ($headerSize + $resSize + 3) & 0xfffffffc;
+            
+            fseek($this->file, $pos);
+        } while (true);
+        
         return FALSE;
     }
 }
