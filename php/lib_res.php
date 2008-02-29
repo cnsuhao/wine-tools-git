@@ -50,11 +50,25 @@ function dump_unicode($unistr, $quoted = TRUE)
                 || ($unistr[$i] >= ord('A') && $unistr[$i] < ord('Z'))
                 || $unistr[$i] == ord(' '))
             echo chr($unistr[$i]);
-        else
+        else if ($unistr[$i] == 10) { 
+            echo "<span class=\"resmeta\">\\n</span>";
+            if ($i < count($unistr) - 1)
+                echo "<br/>\n";
+        } else if ($unistr[$i] == 0) {
+            echo "<span class=\"resmeta\">\\0</span>";
+        } else
             echo "&#x".dechex($unistr[$i]).";";
     }
     if ($quoted)
         echo "&quot;";
+}
+
+function dump_unicode_or_empty($uni_str)
+{
+    if ($uni_str)
+        dump_unicode($uni_str);
+    else
+        echo "<span class=\"resmeta\">empty</span>";
 }
 
 class ResFile
@@ -192,10 +206,11 @@ class StringTable extends Resource
 {
     var $strings;
 
-    function StringTable($header, $data)
+    function StringTable($header, $data, $table_id)
     {
         $this->Resource($header);
         $this->strings = array();
+        $this->table_id = $table_id;
         for ($i = 0; $i < 16; $i++)
         {
             $len = get_word($data);
@@ -213,6 +228,36 @@ class StringTable extends Resource
     {
         return $this->strings[$id];
     }
+    
+    function dump($master_res = NULL)
+    {
+        for ($i=0; $i<16; $i++) {
+            $extra = "";
+
+            $uni_str = $this->getString($i);
+            if ($master_res)
+            {
+                $master_uni_str = $master_res->getString($i);
+                if ((!$master_uni_str && $uni_str) || ($master_uni_str && !$uni_str))
+                    $extra = " style=\"background-color: #ffb8d0\"";
+            }
+    
+            echo "<tr$extra><td valign=\"top\">".(($this->table_id-1)*16+$i)."</td>";
+            echo "<td>";
+
+            dump_unicode_or_empty($uni_str);
+
+            if ($master_res)
+            {
+                echo "</td><td>";
+                dump_unicode_or_empty($master_uni_str);
+            }
+            echo "</td></tr>\n";
+        }
+
+    }
+    
+    var $table_id;
 }
 
 function dump_header($header)
