@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Main script - change 'config' to setup input/output directories
 

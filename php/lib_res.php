@@ -275,14 +275,14 @@ class StringTable extends Resource
                     $extra = " style=\"background-color: #ffb8d0\"";
             }
     
-            echo "<tr$extra><td valign=\"top\">".(($this->table_id-1)*16+$i)."</td>";
+            echo "<tr$extra><td valign=\"top\">".(($this->table_id-1)*16+$i)."</td><td></td>";
             echo "<td>";
 
             dump_unicode_or_empty($uni_str);
 
             if ($master_res)
             {
-                echo "</td><td>";
+                echo "</td><td></td><td>";
                 dump_unicode_or_empty($master_uni_str);
             }
             echo "</td></tr>\n";
@@ -425,9 +425,9 @@ class MenuResource extends Resource
             $tstate[] = TRUE;
         } else if ($resinfo & 0x80) {  /* END */
             array_pop($tstate);
-            while (array_pop($tstate) === FALSE)
-                ;
-            $tstate[] = TRUE;
+            while (count($tstate) > 0 && $tstate[count($tstate) - 1] === FALSE)
+                array_pop($tstate);
+//            $tstate[] = TRUE;
         }
     }
     
@@ -472,7 +472,7 @@ class MenuResource extends Resource
             }
 
             $id = ($show[$i] & 1 ? $this->items[$pos]["id"] : $master_res->items[$pos]["id"]);
-            echo "<tr$extra><td valign=\"top\">$id</td>"; /* FIXME */
+            echo "<tr$extra><td valign=\"top\">$id</td><td></td>";
             echo "<td>";
 
             if ($show[$i] & 1)
@@ -486,7 +486,7 @@ class MenuResource extends Resource
 
             if ($master_res)
             {
-                echo "</td><td>";
+                echo "</td><td></td><td>";
                 if ($show[$i] & 2)
                 {
                     $this->handle_indent($tstate_master, $master_res->items[$master_pos]["resinfo"]);
