@@ -85,7 +85,7 @@ for ($i = 0; $i < count($transl); $i++)
 <?php
 if ($time = filemtime("$DATAROOT/langs/summary"))
 {
-    echo "<p><small>Generated on ".gmdate("j M Y, G:i:s T", $time)."</small></p>";
+    echo "<p><small>Generated on ".gmdate("j M Y, G:i:s T", $time)." (see <a href=\"runlog.php\">run log</a>)</small></p>";
 }
 ?>
 </html>

@@ -59,6 +59,7 @@ mv -f $DESTDIR/langs $DESTDIR/langs.old
 mv -f $DESTDIR/dumps $DESTDIR/dumps.old
 mv -f $WORKDIR/langs $DESTDIR/langs
 mv -f $WORKDIR/dumps $DESTDIR/dumps
+cp -f $WORKDIR/run.log $DESTDIR/dumps/run.log
 
 rsync -r --delete conf $DESTDIR
 
