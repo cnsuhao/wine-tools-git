@@ -101,7 +101,42 @@ function get_resfile_name($resfile)
 
 function get_resource_name($type, $name)
 {
-    return "Resource ".$type." ".$name;
+    $types = array();
+    $types[1] = "CURSOR";
+    $types[2] = "BITMAP";
+    $types[3] = "ICON";
+    $types[4] = "MENU";
+    $types[5] = "DIALOG";
+    $types[6] = "STRINGTABLE";
+    $types[7] = "FONTDIR";
+    $types[8] = "FONT";
+    $types[9] = "ACCELERATOR";
+    $types[10] = "RCDATA";
+    $types[11] = "MESSAGE";
+    $types[12] = "GROUP_CURSOR";
+    $types[14] = "GROUP_ICON";
+    $types[16] = "VERSION";
+    $types[260] = "MENUEX";
+    $types[262] = "DIALOGEX";
+
+    if (is_numeric($name))
+        $pname = "#".$name;
+    else
+        $pname = $name;
+
+    if (isset($types[$type]))
+        $ret = $types[$type]." ".$pname;
+    else
+        $ret = $types[$type]." ".$pname;
+
+    if ($type == 6)
+        $ret .= " (strings ".($name*16 - 16)."..".($name*16 - 1).")";
+    return $ret;    
+}
+
+function is_dumpable_type($type)
+{
+    return ($type == 4) || ($type == 6);
 }
 
 function update_lang_from_resfile($lang, $resfile)

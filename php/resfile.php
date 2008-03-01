@@ -40,25 +40,21 @@ foreach ($msgs as $value)
     }
     if (isset($icon))
         echo "<img src=\"img/icon-".$icon."\" width=\"32\">";
-        
-    if (preg_match("/STRINGTABLE ([0-9]+)/", $value, $m)) {
-        $id0 = $m[1]*16 - 16;
-        $id1 = $m[1]*16 - 1;
-        if (strpos($value, "Missing: ") === 0)
+
+    if (preg_match("/@RES\(([^:\)]+):([^:\)]+)\)/", $value, $m))
+    {
+        if (is_dumpable_type($m[1]) && (strpos($value, "Missing: ") !== 0))
         {
-            $value = preg_replace("/STRINGTABLE ([0-9]+)/",
-                "STRINGTABLE #".$m[1]." (strings $id0..$id1)",
+            $error = (strpos($value, "Error: ") === 0);
+            $value = preg_replace("/@RES\(([^:\)]+):([^:\)]+)\)/", 
+                gen_resource_a($lang, $resfile, $m[1], $m[2], $error).
+                get_resource_name($m[1], $m[2])."</a>",
                 $value);
         }
         else
-        {
-            $error = (strpos($value, "Error: ") === 0);
-            $value = preg_replace("/STRINGTABLE ([0-9]+)/",
-                gen_resource_a($lang, $resfile, 6, $m[1], $error).
-                "STRINGTABLE #".$m[1]." (strings $id0..$id1)</a>",
-                $value);
-        }
+            $value = preg_replace("/@RES\(([^:\)]+):([^:\)]+)\)/", get_resource_name($m[1], $m[2]), $value);
     }
+
     echo "</td><td>".$value."</td></tr>\n";
 }
 ?>

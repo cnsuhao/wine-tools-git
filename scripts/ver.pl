@@ -44,12 +44,13 @@ sub resource_name {
 #        return "STRINGTABLE #".$name." (strings ".($name*16-16)."..".($name*16-1).")";
 #    }
 #    print "arg1=$type arg2=$name\n";
-    if (defined($types[$type])) {
-        $typename = $types[$type];
-    } else {
-        $typename = $type."";
-    }
-    return "$typename ".$name;
+#    if (defined($types[$type])) {
+#        $typename = $types[$type];
+#    } else {
+#        $typename = $type."";
+#    }
+#    return "$typename ".$name;
+    return "\@RES($type:$name)";
 };
 
 sub resource_name2 {
