@@ -79,7 +79,7 @@ sub collapse {
 
 $norm_fn = $filename;
 $norm_fn =~ s/[^a-zA-Z0-9]/-/g;
-mkdir "$workdir/dumps/$norm_fn";
+#mkdir "$workdir/dumps/$norm_fn";
 
 @file_langs = ("009:01");
 #$deflangs{"009:00"} = TRUE;
@@ -145,9 +145,9 @@ while (<STDIN>)
     
     if (m/^DUMP ([0-9a-f]+)$/)
     {
-        open(DUMPOUT, ">$workdir/dumps/$norm_fn/$lang-$type-$resource");
-        print DUMPOUT $1;
-        close(DUMPOUT);
+#        open(DUMPOUT, ">$workdir/dumps/$norm_fn/$lang-$type-$resource");
+#        print DUMPOUT $1;
+#        close(DUMPOUT);
         next;
     }
 
