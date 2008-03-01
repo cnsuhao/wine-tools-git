@@ -67,6 +67,9 @@ foreach ($msgs as $value)
                     .$MASTER_LANGUAGE_NAME." resource</a>)";
         }
     }
+    
+    if (strpos($value, "note: ") === 0)
+        $value = substr($value, 6);
 
     echo "</td><td>".$value."</td></tr>\n";
 }
