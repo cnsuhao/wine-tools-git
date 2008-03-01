@@ -22,6 +22,18 @@ while ($line = fgets($file, 4096))
     }
 }
 
+if (count($msgs) == 0) {
+    echo "<p>This file is not translated into ".get_lang_name($lang).".</p>\n";
+    echo "<ul><li>If you want to see what resources are in this file, check the "
+            .gen_resfile_a($MASTER_LANGUAGE, $resfile)."English (US) version</a>"
+            ." of this file</li>\n";
+    echo "<li>If you want to translate this file you should check the $resfile\n";
+    echo "file in the Wine source tree and make it include a new language file for\n";
+    echo get_lang_name($lang)." (see $WINE_WIKI_TRANSLATIONS for a guide to\n";
+    echo "translating)</li>";
+    exit();
+}
+
 echo "<table>\n";
 sort($msgs);
 foreach ($msgs as $value)

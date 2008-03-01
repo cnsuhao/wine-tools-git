@@ -21,6 +21,15 @@ while ($line = fgets($summary, 1024))
 ?>
 <html>
 <h1>Wine translation statistics</h1>
+
+<p>This page shows the state of the translations of <a href="http://www.winehq.org/">Wine</a>.
+Note that some resources marked as translated may be in fact in English - sometimes developers
+adds new English resources into every language file. This automatic tool doesn't detect this -
+this needs to be found manually by the translators. If you want to read about how to translate
+Wine or just want to know why adding English stringtable strings into every language file is
+recommended check <?php echo $WINE_WIKI_TRANSLATIONS ?>.
+</p>
+
 <table border="1">
 <tr><th></th><th>Language</th><th>Translated</th><th>Missing</th><th>Errors</th><th>&nbsp;</th></tr>
 <?php

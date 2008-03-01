@@ -4,6 +4,8 @@ $MASTER_LANGUAGE = "009:01";
 $MASTER_LANGUAGE_BINID = 1033;
 $MASTER_LANGUAGE_NAME = "English (US)";
 
+$WINE_WIKI_TRANSLATIONS = "<a href=\"TODO\">[TODO: Wiki translations page]</a>";
+
 function validate_lang($id)
 {
     global $DATAROOT;
