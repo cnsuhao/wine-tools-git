@@ -1,6 +1,16 @@
 <?php
 
-include_once("stopwatch.php");
+//include_once("stopwatch.php");
+
+$CONSTS["RT_MENU"] = 4;
+$CONSTS["RT_STRING"] = 6;
+
+$CONSTS["MF_CHECKED"]   = 0x0008;
+$CONSTS["MF_POPUP"]     = 0x0010;
+$CONSTS["MF_END"]       = 0x0080;
+$CONSTS["MF_SEPARATOR"] = 0x0800;
+
+$CONSTS["MFT_DISABLED"] =   0x3;
 
 function get_word(&$data)
 {
@@ -40,6 +50,19 @@ function get_stringorid($data, &$pos)
     return $ret;
 }
 
+function get_string_nul(&$data)
+{
+    $str = array();
+    while (TRUE)
+    {
+        $w = get_word($data);
+        if ($w == 0)
+            break;
+        $str[] = $w;
+    }
+    return $str;
+}
+
 function dump_unicode($unistr, $quoted = TRUE)
 {
     if ($quoted)
@@ -54,6 +77,8 @@ function dump_unicode($unistr, $quoted = TRUE)
             echo "<span class=\"resmeta\">\\n</span>";
             if ($i < count($unistr) - 1)
                 echo "<br/>\n";
+        } else if ($unistr[$i] == 9) { 
+            echo "<span class=\"resmeta\">\\t</span>";
         } else if ($unistr[$i] == 0) {
             echo "<span class=\"resmeta\">\\0</span>";
         } else
@@ -192,6 +217,13 @@ class ResFile
     }
 }
 
+function dump_header($header)
+{
+    var_dump($header);
+    echo "<br/>";
+    return FALSE;
+}
+
 class Resource
 {
     var $header;
@@ -205,6 +237,7 @@ class Resource
 class StringTable extends Resource
 {
     var $strings;
+    var $table_id;
 
     function StringTable($header, $data, $table_id)
     {
@@ -234,10 +267,10 @@ class StringTable extends Resource
         for ($i=0; $i<16; $i++) {
             $extra = "";
 
-            $uni_str = $this->getString($i);
+            $uni_str = $this->strings[$i];
             if ($master_res)
             {
-                $master_uni_str = $master_res->getString($i);
+                $master_uni_str = $master_res->strings[$i];
                 if ((!$master_uni_str && $uni_str) || ($master_uni_str && !$uni_str))
                     $extra = " style=\"background-color: #ffb8d0\"";
             }
@@ -255,16 +288,219 @@ class StringTable extends Resource
             echo "</td></tr>\n";
         }
 
-    }
-    
-    var $table_id;
+    }    
 }
 
-function dump_header($header)
+class MenuResource extends Resource
 {
-    var_dump($header);
-    echo "<br/>";
-    return FALSE;
+    var $items;
+
+    function parse_menu(&$data, $level)
+    {
+        global $CONSTS;
+        do
+        {
+            $item = array();
+            $item["state"] = get_word($data);
+            if (!($item["state"] & $CONSTS["MF_POPUP"]))
+                $item["id"] = get_word($data);
+            else
+                $item["id"] = 0;
+            $item["text"] = get_string_nul($data);
+
+/*            echo "lvl=$level ";
+            dump_unicode($item["text"]);
+            echo "word=".$item["state"]."<br/>";*/
+
+
+            $item["resinfo"] = 0;
+            if ($item["state"] & $CONSTS["MF_POPUP"])
+                $item["resinfo"] |= 1;
+            if ($item["state"] & $CONSTS["MF_END"])
+                $item["resinfo"] |= $CONSTS["MF_END"];
+
+            $item["state"] &= 0xff6f;   /* clear MF_POPUP|MF_END */
+            $item["level"] = $level;
+
+            $this->items[] = $item;
+            if ($item["resinfo"] & 1)
+                $this->parse_menu($data, $level + 1);
+        }
+        while (!($item["resinfo"] & $CONSTS["MF_END"]));
+    }
+
+    function MenuResource($header, $data)
+    {
+        $this->Resource($header);
+        $this->items = array();
+
+        $version = get_word($data);
+        $header = get_word($data);
+        $data = substr($data, $header);
+
+        if ($version == 0)
+            $this->parse_menu($data, 0);
+        else
+            die("Unsupported version $version");
+
+//        echo urlencode($data);
+        if (strlen($data) > 0)
+            die("unexpected data in MENU resource\n");
+    }
+    
+    function draw_tree_img($name)
+    {
+        echo "<img src=\"img/tree-$name.png\" align=\"center\" height=\"28\"/>";
+    }
+
+    /* O(n^2) time and O(n^2) space algorithm. Menus are small so this should be OK */
+    function diff_menus(&$res2)
+    {
+        $out = array();
+        $tabdyn = array_fill(0, count($this->items) + 1,
+                    array_fill(0, count($res2->items) + 1,
+                        array(0, 0)));
+
+        for ($i = 1; $i <= count($this->items); $i++)
+        {
+            for ($j = 1; $j <= count($res2->items); $j++)
+            {
+                if (($this->items[$i-1]["id"] == $res2->items[$j-1]["id"]) &&
+                    ($this->items[$i-1]["level"] == $res2->items[$j-1]["level"]) &&
+                    (($this->items[$i-1]["resinfo"]&1) == ($res2->items[$j-1]["resinfo"]&1)))
+                {
+                    $tabdyn[$i][$j] = array($tabdyn[$i-1][$j-1][0] + 1, 3);
+                } else
+                {
+                    if ($tabdyn[$i][$j-1][0] > $tabdyn[$i-1][$j][0])
+                        $tabdyn[$i][$j] = array($tabdyn[$i][$j-1][0], 2);
+                    else
+                        $tabdyn[$i][$j] = array($tabdyn[$i-1][$j][0], 1);
+                    
+                }
+            }
+        }
+        
+        $i = count($this->items);
+        $j = count($res2->items);
+        while ($i > 0 || $j > 0) {
+            $step = $tabdyn[$i][$j][1];
+            if ($i == 0)
+                $step |= 2;
+            if ($j == 0)
+                $step |= 1;
+
+            $out[] = $step;
+
+            if ($step & 1)
+                $i--;
+            if ($step & 2)
+                $j--;
+        }
+        return array_reverse($out);
+    }
+
+    function handle_indent(&$tstate, $resinfo)
+    {
+        for ($i = 0; $i < count($tstate) - ($resinfo === NULL ? 0 : 1); $i++)
+        {
+            if ($tstate[$i])
+                $this->draw_tree_img("vert");
+            else
+                $this->draw_tree_img("empty");
+        }
+
+        if ($resinfo === NULL)
+            return;
+
+        if ($resinfo & 0x80)
+            $this->draw_tree_img("l");
+        else
+            $this->draw_tree_img("t");
+
+        if (($resinfo & 0x81) == 0x81) { /* END & POPUP*/
+            $tstate[count($tstate) - 1] = FALSE;
+            $tstate[] = TRUE;
+        } else if ($resinfo & 1) { /* POPUP */
+            $tstate[] = TRUE;
+        } else if ($resinfo & 0x80) {  /* END */
+            array_pop($tstate);
+            while (array_pop($tstate) === FALSE)
+                ;
+            $tstate[] = TRUE;
+        }
+    }
+    
+    function dump_title($item)
+    {
+        global $CONSTS;
+        if (($item["state"] & $CONSTS["MF_SEPARATOR"]) || 
+            (empty($item["text"]) && !($item["resinfo"] & 0x1)))
+        {
+            echo " <span class=\"resmeta\">SEPARATOR</span>";
+            return;
+        }
+        
+        if ($item["state"] & $CONSTS["MF_CHECKED"])
+            echo "<img src=\"img/iconsm-check.png\"/>";
+
+        if ($item["state"] & $CONSTS["MFT_DISABLED"])
+            echo "<span class=\"resdisabled\">";
+        dump_unicode($item["text"]);
+        if ($item["state"] & $CONSTS["MFT_DISABLED"])
+            echo "</span>";
+    }
+
+    function dump($master_res = NULL)
+    {
+        if ($master_res)
+            $show = $this->diff_menus($master_res);
+        else
+            $show = array_fill(0, count($this->items), 1);
+
+        $tstate = array(TRUE);
+        $tstate_master = array(TRUE);
+        $pos = 0;
+        $master_pos = 0;
+        for ($i=0; $i<count($show); $i++) {
+            $extra = "";
+
+            if ($master_res)
+            {
+                if ($show[$i] != 3 || $this->items[$pos]["state"] != $master_res->items[$master_pos]["state"])
+                    $extra = " style=\"background-color: #ffb8d0\"";
+            }
+
+            $id = ($show[$i] & 1 ? $this->items[$pos]["id"] : $master_res->items[$pos]["id"]);
+            echo "<tr$extra><td valign=\"top\">$id</td>"; /* FIXME */
+            echo "<td>";
+
+            if ($show[$i] & 1)
+            {
+                $this->handle_indent($tstate, $this->items[$pos]["resinfo"]);
+                $this->dump_title($this->items[$pos]);
+                $pos++;
+            }
+            else
+                $this->handle_indent($tstate, NULL);
+
+            if ($master_res)
+            {
+                echo "</td><td>";
+                if ($show[$i] & 2)
+                {
+                    $this->handle_indent($tstate_master, $master_res->items[$master_pos]["resinfo"]);
+                    $this->dump_title($master_res->items[$master_pos]);
+                    $master_pos++;
+                }
+                else
+                    $this->handle_indent($tstate_master, NULL);
+            }
+            echo "</td></tr>\n";
+        }
+
+    }
+    
 }
 
 ?>

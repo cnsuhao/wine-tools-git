@@ -18,6 +18,11 @@ $compare = isset($_REQUEST['compare']);
         color: #7f7fff;
         font-style: italic;
     }
+    .resdisabled
+    {
+        color: grey;
+        font-style: italic;
+    }
     </style>
 </head>
 <body>
@@ -27,28 +32,36 @@ $compare = isset($_REQUEST['compare']);
 
 <?php
 
+function load_resource(&$resources, $type, $id, $langid, &$res)
+{
+    $resdata = $resources->loadResource($type, $id, get_lang_binid($langid), is_lang_ignore_sublang($langid));
+    if (!$resdata)
+        die("Resource not found in *.res file\n");
+    switch ($type)
+    {
+        case 4:   /* RT_MENU */
+            $res = new MenuResource($resdata[0], $resdata[1]);
+            return TRUE;
+        case 6:   /* RT_STRING*/
+            $res = new StringTable($resdata[0], $resdata[1], $id);
+            return TRUE;
+        default:
+            die("Unhandled resource type $type");
+    }
+}
+
 $resources = new ResFile(get_res_path($resfile));
 
 $res_lang = update_lang_from_resfile($lang, $resfile);
-$resdata = $resources->loadResource($type, $id, get_lang_binid($res_lang), is_lang_ignore_sublang($lang));
-if (!$resdata)
-    die("Resource not found in *.res file\n");
-$res = new StringTable($resdata[0], $resdata[1], $id);
+load_resource($resources, $type, $id, $res_lang, $res);
 
 $master_res = NULL;
 if ($compare)
-{
-    $resdata = $resources->loadResource($type, $id, $MASTER_LANGUAGE_BINID);
-    if (!$resdata)
-        echo ("<b>Can't compare with master language as resource not found</b>\n");
-    else
-        $master_res = new StringTable($resdata[0], $resdata[1], $id);
-}
-unset($resdata);
+    load_resource($resources, $type, $id, $MASTER_LANGUAGE, $master_res);
 
 ?>
 
-<table style="background-color: #f0f0ff">
+<table style="background-color: #f0f0ff" cellpadding="0" cellspacing="0">
 <tr style="background-color: #e0e0ff"><th colspan="3">String table #<?php echo $id?></th></tr>
 <?php
 
