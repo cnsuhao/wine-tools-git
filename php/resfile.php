@@ -41,13 +41,21 @@ foreach ($msgs as $value)
     if (isset($icon))
         echo "<img src=\"img/icon-".$icon."\" width=\"32\">";
 
+    $line_lang = $lang;
+    if (preg_match("/@LANG\(([0-9a-f]{3}:[0-9a-f]{2})\)/", $value, $m))
+    {
+        validate_lang($m[1]);
+        $line_lang = $m[1];
+        $value = preg_replace("/@LANG\(([0-9a-f]{3}:[0-9a-f]{2})\)/", get_lang_name($m[1]), $value);
+    }
+
     if (preg_match("/@RES\(([^:\)]+):([^:\)]+)\)/", $value, $m))
     {
         if (is_dumpable_type($m[1]) && (strpos($value, "Missing: ") !== 0))
         {
             $error = (strpos($value, "Error: ") === 0);
             $value = preg_replace("/@RES\(([^:\)]+):([^:\)]+)\)/", 
-                gen_resource_a($lang, $resfile, $m[1], $m[2], $error).
+                gen_resource_a($line_lang, $resfile, $m[1], $m[2], $error).
                 get_resource_name($m[1], $m[2])."</a>",
                 $value);
         }

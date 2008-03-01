@@ -8,7 +8,7 @@ function validate_lang($id)
 {
     global $DATAROOT;
     
-    $lang = preg_replace("/[^0-9a-f:]/", "-", $_REQUEST['lang']);
+    $lang = preg_replace("/[^0-9a-f:]/", "-", $id);
     if (!file_exists("$DATAROOT/conf/$lang") || !file_exists("$DATAROOT/langs/$lang"))
         die("Invalid lang parameter");
     return $lang;
@@ -50,7 +50,7 @@ function get_raw_lang_name($id)
 
 function get_lang_name($id)
 {
-    return preg_replace("/\[ignore-sublang\]/", "", get_raw_lang_name($id));
+    return preg_replace("/\[[A-za-z0-9-]+\]/", "", get_raw_lang_name($id));
 }
 
 function get_lang_base($id)
@@ -65,6 +65,8 @@ function has_lang_flag($id, $flag)
 
 function is_lang_ignore_sublang($lang)
 {
+    if (!preg_match("/:00/", $lang))
+        return FALSE;
     return has_lang_flag($lang, "ignore-sublang");
 }
 

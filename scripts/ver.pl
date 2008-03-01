@@ -177,7 +177,7 @@ foreach $resource (@resources)
                 }
             } else
             {
-                push @{$notes_rl{$resource}{$lang}}, "Translation inherited from $basic_lang";
+                push @{$notes_rl{$resource}{$lang}}, "Translation inherited from \@LANG($basic_lang)";
                 $transl_count{$lang}++;
             }
         }
