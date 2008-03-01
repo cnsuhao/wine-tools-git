@@ -60,7 +60,12 @@ foreach ($msgs as $value)
                 $value);
         }
         else
+        {
             $value = preg_replace("/@RES\(([^:\)]+):([^:\)]+)\)/", get_resource_name($m[1], $m[2]), $value);
+            if (is_dumpable_type($m[1]) && (strpos($value, "Missing: ") === 0))
+                $value .= " (see ".gen_resource_a($MASTER_LANGUAGE, $resfile, $m[1], $m[2])
+                    .$MASTER_LANGUAGE_NAME." resource</a>)";
+        }
     }
 
     echo "</td><td>".$value."</td></tr>\n";
