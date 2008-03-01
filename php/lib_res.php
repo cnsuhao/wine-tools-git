@@ -190,7 +190,7 @@ class ResFile
             if ($res_type == $type)
             {
                 $res_name = get_stringorid($data, $strpos);
-                if ($res_name == $name)
+                if ($res_name == strtoupper($name))
                 {
                     if ($strpos & 3)  /* DWORD padding */
                         $strpos += 2;
