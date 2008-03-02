@@ -49,7 +49,11 @@ find $SOURCEROOT/ -name Makefile.in -exec ./checkmakefile.pl \{\} \;
 ./summary.pl "$WORKDIR"
 
 # Check for a new languages
-ls $WORKDIR/new-langs
+for i in $WORKDIR/new-langs/*; do
+    if [ -f "$i" ]; then
+        echo "note: New language:" `basename "$i"` | tee -a $WORKDIR/run.log
+    fi
+done
 
 # Show any changes in the log
 diff -u $WORKDIR/run.log.old $WORKDIR/run.log
