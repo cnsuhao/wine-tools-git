@@ -37,6 +37,11 @@ ksort($partial);
 ksort($notransl);
 ?>
 <html>
+<head>
+    <link rel="stylesheet" href="style.css" type="text/css"/>
+    <title>Language <?php echo get_lang_name($lang) ?> - Wine translations</title>
+</head>
+
 <?php
 function dump_table($table)
 {
@@ -61,6 +66,9 @@ function dump_table($table)
 ?>
 <p><?php dump_menu_root() ?> &gt; <?php dump_menu_lang($lang, FALSE)?> </p>
 <h1><?php echo "Language: ".get_lang_name($lang) ?></h1>
+
+<?php warn_if_lang_hidden($lang) ?>
+
 <h2>Partialy translanted files</h2>
 <?php dump_table($partial) ?>
 

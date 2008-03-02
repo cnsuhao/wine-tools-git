@@ -11,3 +11,13 @@
     color: grey;
     font-style: italic;
 }
+
+/* a note e.g. that you are watching a hidden language */
+p.note
+{
+    background-color: #ffff7f;
+    border-width: 2px;
+    border-style: solid;
+    border-color: black;
+    padding: 2px;
+}

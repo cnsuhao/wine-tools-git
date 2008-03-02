@@ -79,6 +79,18 @@ function get_lang_binid($lang)
     return hexdec($m[1]) + (hexdec($m[2]) << 10);
 }
 
+/* Make sure people are not suprised if they see Portugese (Neutral) has nearly
+ * no resources */
+function warn_if_lang_hidden($lang)
+{
+    if (has_lang_flag($lang, "hide"))
+    {
+        echo "<p class=\"note\"><b>Note:</b> this is the ".get_lang_name($lang)." locale which\n".
+            "is not supposed to be used directly but only to have some resources\n".
+            "inherited by sublanguages.</p>";
+    }
+}
+
 function get_locale_name($localeid)
 {
     global $LOCALE_NAMES;

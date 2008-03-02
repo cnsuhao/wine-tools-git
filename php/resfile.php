@@ -9,11 +9,18 @@ $file = fopen("$DATAROOT/langs/$lang", "r");
 $msgs = array();
 ?>
 <html>
+<head>
+    <link rel="stylesheet" href="style.css" type="text/css"/>
+    <title>File <?php echo $resfile?> - Wine translations</title>
+</head>
+
 <?php dump_menu_root() ?> &gt <?php dump_menu_lang($lang) ?> &gt <?php dump_menu_resfile($lang, $resfile, FALSE) ?>
 
 <h1>File <?php echo $resfile?></h1>
 
 <?php
+warn_if_lang_hidden($lang);
+
 while ($line = fgets($file, 4096))
 {
     if (preg_match("@$resfile: (.*)@", $line, $m))

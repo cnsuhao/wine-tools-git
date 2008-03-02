@@ -177,8 +177,16 @@ foreach $resource (@resources)
                 }
             } else
             {
-                push @{$notes_rl{$resource}{$lang}}, "Translation inherited from \@LANG($basic_lang)";
-                $transl_count{$lang}++;
+                if (@{$errs_rl{$resource}{$basic_lang}})
+                {
+                    push @{$errs_rl{$resource}{$lang}}, "Translation inherited from \@LANG($basic_lang): translation out of sync";
+                    $err_count{$langs}++;
+                    print "Inheritance error\n";
+                } else
+                {
+                    push @{$notes_rl{$resource}{$lang}}, "Translation inherited from \@LANG($basic_lang)";
+                    $transl_count{$lang}++;
+                }
             }
         }
         else
