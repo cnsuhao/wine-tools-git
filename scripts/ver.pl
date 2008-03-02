@@ -180,8 +180,7 @@ foreach $resource (@resources)
                 if (@{$errs_rl{$resource}{$basic_lang}})
                 {
                     push @{$errs_rl{$resource}{$lang}}, "Translation inherited from \@LANG($basic_lang): translation out of sync";
-                    $err_count{$langs}++;
-                    print "Inheritance error\n";
+                    $err_count{$lang}++;
                 } else
                 {
                     push @{$notes_rl{$resource}{$lang}}, "Translation inherited from \@LANG($basic_lang)";

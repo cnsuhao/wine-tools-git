@@ -1,7 +1,5 @@
 <?php
 
-//include_once("stopwatch.php");
-
 $CONSTS["RT_MENU"] = 4;
 $CONSTS["RT_STRING"] = 6;
 
@@ -353,42 +351,64 @@ class MenuResource extends Resource
         echo "<img src=\"img/tree-$name.png\" align=\"center\" height=\"28\"/>";
     }
 
-    /* O(n^2) time and O(n^2) space algorithm. Menus are small so this should be OK */
+    function menuitem_equals(&$res2, $i, $j)
+    {
+        return (($this->items[$i]["id"] == $res2->items[$j]["id"]) &&
+            ($this->items[$i]["level"] == $res2->items[$j]["level"]) &&
+            (($this->items[$i]["resinfo"]&1) == ($res2->items[$j]["resinfo"]&1)));
+    }
+    
+    /* Longest common subsequence - simple O(n^2) time and O(n^2) space algorithm,
+     * but nenus are small so this should be OK */
     function diff_menus(&$res2)
     {
-        $out = array();
-        $tabdyn = array_fill(0, count($this->items) + 1,
-                    array_fill(0, count($res2->items) + 1,
-                        array(0, 0)));
+        $mincount = min(count($this->items), count($res2->items));
+        for ($start = 0; $start < $mincount; $start++)
+            if (!$this->menuitem_equals($res2, $start, $start))
+                break;
 
-        for ($i = 1; $i <= count($this->items); $i++)
+        if (($start == $mincount) && (count($this->items) == count($res2->items)))
+            return array_fill(0, $mincount, 3);
+
+        for ($end = 0; $end < $mincount; $end++)
+            if (!$this->menuitem_equals($res2, count($this->items) - 1 - $end, count($res2->items) - 1 - $end))
+                break;
+
+        $out = array();
+        $tabdyn = array_fill(0, count($this->items) - $start - $end + 1,
+                    array_fill(0, count($res2->items) - $start - $end + 1, 0));
+
+        for ($i = 1; $i <= count($this->items) - $start - $end; $i++)
         {
-            for ($j = 1; $j <= count($res2->items); $j++)
+            for ($j = 1; $j <= count($res2->items) - $start - $end; $j++)
             {
-                if (($this->items[$i-1]["id"] == $res2->items[$j-1]["id"]) &&
-                    ($this->items[$i-1]["level"] == $res2->items[$j-1]["level"]) &&
-                    (($this->items[$i-1]["resinfo"]&1) == ($res2->items[$j-1]["resinfo"]&1)))
-                {
-                    $tabdyn[$i][$j] = array($tabdyn[$i-1][$j-1][0] + 1, 3);
-                } else
-                {
-                    if ($tabdyn[$i][$j-1][0] > $tabdyn[$i-1][$j][0])
-                        $tabdyn[$i][$j] = array($tabdyn[$i][$j-1][0], 2);
-                    else
-                        $tabdyn[$i][$j] = array($tabdyn[$i-1][$j][0], 1);
-                    
-                }
+                if ($this->menuitem_equals($res2, $start + $i - 1, $start + $j - 1))
+                    $tabdyn[$i][$j] = $tabdyn[$i-1][$j-1] + 1;
+                else if ($tabdyn[$i][$j-1] > $tabdyn[$i-1][$j])
+                    $tabdyn[$i][$j] = $tabdyn[$i][$j-1];
+                else
+                    $tabdyn[$i][$j] = $tabdyn[$i-1][$j];
             }
         }
-        
-        $i = count($this->items);
-        $j = count($res2->items);
+
+        /* backtrack (produces results in reverse order) */
+        $out = array_fill(0, $end, 3);
+        $i = count($this->items) - $start - $end;
+        $j = count($res2->items) - $start - $end;
         while ($i > 0 || $j > 0) {
-            $step = $tabdyn[$i][$j][1];
             if ($i == 0)
-                $step |= 2;
-            if ($j == 0)
-                $step |= 1;
+                $step = 2;
+            else if ($j == 0)
+                $step = 1;
+            else
+            {
+                if ($this->menuitem_equals($res2, $start + $i - 1, $start + $j - 1))
+                    $step = 3;
+                else if ($tabdyn[$i][$j-1] > $tabdyn[$i-1][$j])
+                    $step = 2;
+                else
+                    $step = 1;
+            }
 
             $out[] = $step;
 
@@ -397,6 +417,7 @@ class MenuResource extends Resource
             if ($step & 2)
                 $j--;
         }
+        $out += array_fill(count($out), $start, 3);
         return array_reverse($out);
     }
 
@@ -427,7 +448,6 @@ class MenuResource extends Resource
             array_pop($tstate);
             while (count($tstate) > 0 && $tstate[count($tstate) - 1] === FALSE)
                 array_pop($tstate);
-//            $tstate[] = TRUE;
         }
     }
     

@@ -22,6 +22,8 @@ $compare = isset($_REQUEST['compare']);
 
 <?php
 
+//include_once("stopwatch.php");
+
 function load_resource(&$resources, $type, $id, $langid, &$res)
 {
     $resdata = $resources->loadResource($type, $id, get_lang_binid($langid), is_lang_ignore_sublang($langid));
