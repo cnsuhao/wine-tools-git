@@ -12,18 +12,7 @@ $compare = isset($_REQUEST['compare']);
 ?>
 <html>
 <head>
-    <style>
-    .resmeta
-    {
-        color: #7f7fff;
-        font-style: italic;
-    }
-    .resdisabled
-    {
-        color: grey;
-        font-style: italic;
-    }
-    </style>
+	<link rel="stylesheet" href="style.css" type="text/css"/>
 </head>
 <body>
 <?php dump_menu_root() ?> &gt <?php dump_menu_lang($lang) ?> &gt <?php dump_menu_resfile($lang, $resfile) ?> &gt

@@ -1,0 +1,13 @@
+/* used to mark resource parts that are not literaly in the string, like \0, \n etc*/
+.resmeta
+{
+    color: #7f7fff;
+    font-style: italic;
+}
+
+/* used to mark disabled menu options */
+.resdisabled
+{
+    color: grey;
+    font-style: italic;
+}
