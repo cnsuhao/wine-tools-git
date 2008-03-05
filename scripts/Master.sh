@@ -23,14 +23,14 @@ mv -f $WORKDIR/run.log $WORKDIR/run.log.old
 
 if [ "$PREPARE_TREES" -eq 1 ]; then
     # Prepare the trees (they may be the same or different)
-    if [ "x$NO_VERBOSE" = "x" ]; then
+    if [ "x$NOVERBOSE" = "x" ]; then
         echo -n "Preparing tree(s)..."
     fi
     make -C "$WRCROOT" depend >/dev/null 2>>"$WORKDIR/run.log" || die "make depend in wrc tree failed"
     make -C "$WRCROOT" tools >/dev/null 2>>"$WORKDIR/run.log" || die "make tools in wrc tree failed"
     make -C "$SOURCEROOT" depend >/dev/null 2>>"$WORKDIR/run.log" || die "make depend in source tree failed"
     make -C "$SOURCEROOT" include/stdole2.tlb >/dev/null 2>>"$WORKDIR/run.log" || die "make depend in source tree failed"
-    if [ "x$NO_VERBOSE" = "x" ]; then
+    if [ "x$NOVERBOSE" = "x" ]; then
         echo " done"
     fi
 fi

@@ -39,7 +39,7 @@ ksort($notransl);
 <html>
 <head>
     <link rel="stylesheet" href="style.css" type="text/css"/>
-    <title>Language <?php echo get_lang_name($lang) ?> - Wine translations</title>
+    <title><?php echo get_lang_name($lang) ?> language - Wine translations</title>
 </head>
 
 <?php

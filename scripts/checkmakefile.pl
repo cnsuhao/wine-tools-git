@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # Helper script - analyze one Makefile, run wrc --verify-translation
-# on resource files and call ver.sh to parse the results
+# on resource files and call ver.pl to parse the results
 
 use Cwd;
 
