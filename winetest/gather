@@ -272,9 +272,11 @@ sub singletest($$$) {
     my $file = "$test->{dir}/$testname.txt";
     my ($count, $todo, $error, $skipped) = @{$test->{results}->{$testname}};
     if ($count eq "failed") {
-        my $msg = $todo eq "crash"?"crash":
+        my $msg = $todo eq "crash"?"crashed":
+                  $todo eq "-2"?"failed":
+                  $todo =~ /^-/?"crashed":
                   $todo eq "filelimit"?"file limit":
-                  $todo == 258?"timeout":"failed";
+                  $todo eq "258"?"timeout":"failed";
         my $fail = -r "$datadir/$build/$file"?"<a href=\"$file\">$msg</a>":$msg;
         print OUT "      <td class=\"note\">$fail</td>\n";
     } elsif ($count eq "dll missing") {
