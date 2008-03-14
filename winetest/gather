@@ -97,7 +97,7 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
         close TEST;
         next;
     }
-    if (($url = <TEST>) !~ s/^Archive: (.*)$/$1/) {
+    if (($url = <TEST>) !~ s/^Archive: (.*)\n$/$1/) {
         print "$file: wrong archive url: $_";
         close TEST;
         next;
