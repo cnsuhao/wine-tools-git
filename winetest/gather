@@ -27,11 +27,14 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 use strict;
-use vars qw/$datadir $fileversion/;
+use vars qw/$datadir/;
 require "winetest.conf";
 
 my $name0=$0;
 $name0 =~ s+^.*/++;
+
+# We support summary files version 4 and up
+my $summary_version=4;
 
 
 # Group result containers:
@@ -116,7 +119,7 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
         print STDERR "$name0:error: unable to open '$file' for reading: $!\n";
         next;
     }
-    if (($_ = <TEST>) ne "Version $fileversion\n") {
+    if (($_ = <TEST>) ne "Version $summary_version\n") {
         print STDERR "$name0:error: wrong header in '$file': $_";
         close TEST;
         next;

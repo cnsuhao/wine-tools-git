@@ -29,11 +29,16 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 use strict;
-use vars qw/$builds $queuedir $datadir $maxmult $fileversion $maxfilesize/;
+use vars qw/$builds $queuedir $datadir $maxmult $maxfilesize/;
 require "winetest.conf";
 
 my $name0=$0;
 $name0 =~ s+^.*/++;
+
+# We support reports version 4 and up
+my $minimum_report_version=4;
+# And we generate summary files version 4
+my $summary_version=4;
 
 
 use File::Temp qw/tempdir/;
@@ -65,8 +70,8 @@ my $filesize = -s "$report";
 
 $_ = <IN>;
 /^Version (\d+)\r?$/ or mydie "no version header: $_";
-$1 eq $fileversion or mydie "illegal version: $1\n";
-print SUM "Version $fileversion\n";
+mydie "illegal version: $1\n" if ($1 lt $minimum_report_version);
+print SUM "Version $summary_version\n";
 
 $_ = <IN>;
 /^Tests from build ([-.0-9a-zA-Z]+)\r?$/ or mydie "no build header: $_";
