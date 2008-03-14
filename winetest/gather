@@ -411,6 +411,9 @@ EOF
         <a href="$alltests{$testname}">$testname</a></td>
 EOF
         singletest ($_, $testname, $group->{name}) foreach (@{$group->{tests}});
+    print OUT <<"EOF";
+    </tr>
+EOF
     }
     print OUT <<"EOF";
   </tbody>
