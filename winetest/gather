@@ -268,7 +268,7 @@ $header
 EOF
 
 # Output a single cell of a test
-sub singletest {
+sub singletest($$$) {
     my ($test, $testname, $groupname) = @_;
     my $file = "$test->{dir}/$testname.txt";
     my ($count, $todo, $error, $skipped) = @{$test->{results}->{$testname}};

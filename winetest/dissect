@@ -37,7 +37,7 @@ use Errno qw/ENOTEMPTY/;
 
 my ($report, $tmpdir);
 
-sub mydie {
+sub mydie($) {
     my $errdir = tempdir ("errXXXXX", DIR => $queuedir);
     if (!rename $tmpdir, $errdir) {
         print "can't rename $tmpdir to $errdir: $!\n";
