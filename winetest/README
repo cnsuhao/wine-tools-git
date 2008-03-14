@@ -13,7 +13,7 @@ the destination for that and presents the results in an ordered form.
 
 Configuration file, sets the following variables:
 $queuedir - queue incoming submissions here
-$datadir  - processed data get served from here
+$datadir  - processed data is served from here
 $builds   - list of allowed build tags
 
 * winetest.cgi
@@ -41,7 +41,7 @@ head of the file.
 * gather
 
 This program is intended to run as a second stage.  See the sample
-crontab file, races and concurrency problems must be dealed with on
+crontab file. Races and concurrency problems must be dealt with on
 that higher level.  The program looks for a file matching
 $datadir/*/outdated, creates index.html in the same directory and
 removes the outdated file.  See also the head of the file.

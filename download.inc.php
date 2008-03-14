@@ -45,7 +45,7 @@ function is_downloadable($sUrl)
         fputs($fp, $get);
         while(!feof($fp))
         {
-            // get ONLY header informations
+            // get ONLY header information
             $header .= fgets($fp, 128);
         }
         fclose($fp);
