@@ -203,24 +203,24 @@ foreach my $group (@groups) {
 # Write out the tables
 
 my ($header);                   # same in thead and tfoot
-foreach (@groups) {
-    if (exists $_->{reports}) {
-        my $report_count = @{$_->{reports}};
+foreach my $group (@groups) {
+    if (exists $group->{reports}) {
+        my $report_count = @{$group->{reports}};
         if ($report_count > 1) {
-            $header .= "      <th><a href=\"#$_->{name}\">$_->{name}<br><small>$report_count reports</small></a></th>\n";
+            $header .= "      <th><a href=\"#$group->{name}\">$group->{name}<br><small>$report_count reports</small></a></th>\n";
         } else {
-            my $report = $_->{reports}->[0];
+            my $report = $group->{reports}->[0];
             # If dllinfo.txt exist we use a different layout (new style report)
             if (-r "$datadir/$build/$report->{dir}/dllinfo.txt") {
                 $header .= <<"EOF";
-    <th>$_->{name}<br><small>
+    <th>$group->{name}<br><small>
         <a href=\"$report->{dir}/version.txt\">$report->{tag}</a><br>
         <a href=\"$report->{dir}/dllinfo.txt\">[info]</a>
         <a href=\"$report->{dir}/report\">[file]</a></small></th>
 EOF
             } else {
                 $header .= <<"EOF";
-    <th>$_->{name}<br><small>
+    <th>$group->{name}<br><small>
         <a href=\"$report->{dir}/build.txt\">$report->{tag}</a><br>
         <a href=\"$report->{dir}/version.txt\">[info]</a>
         <a href=\"$report->{dir}/report\">[file]</a></small></th>
