@@ -32,18 +32,22 @@ use strict;
 use vars qw/$builds $queuedir $datadir $maxmult $fileversion $maxfilesize/;
 require "winetest.conf";
 
+my $name0=$0;
+$name0 =~ s+^.*/++;
+
+
 use File::Temp qw/tempdir/;
 use Errno qw/ENOTEMPTY/;
 
 my ($report, $tmpdir);
 
-sub mydie($) {
+sub mydie(@) {
     my $errdir = tempdir ("errXXXXX", DIR => $queuedir);
     if (!rename $tmpdir, $errdir) {
-        print "can't rename $tmpdir to $errdir: $!\n";
+        print STDERR "$name0:error: unable to rename '$tmpdir' to '$errdir': $!\n";
         exit 3;
     }
-    print "$errdir: ", @_;
+    print STDERR "$name0:error:$errdir: ", @_;
     exit 1;
 }
 
@@ -53,8 +57,8 @@ exit 2 unless defined $report;
 ($tmpdir = $report) =~ s|^(.+)/report$|$1|;
 my $tmpfile = "$tmpdir/dissect.tmp";
 
-open IN, "<:raw", $report or mydie "can't read $report: $!";
-open SUM, ">$tmpdir/summary.txt" or mydie "can't write $tmpdir/summary.txt: $!";
+open IN, "<:raw", $report or mydie "unable to open '$report' for reading: $!\n";
+open SUM, ">$tmpdir/summary.txt" or mydie "unable to open '$tmpdir/summary.txt' for writing: $!\n";
 
 # Get the size of the report file
 my $filesize = -s "$report";
@@ -68,7 +72,7 @@ $_ = <IN>;
 /^Tests from build ([-.0-9a-zA-Z]+)\r?$/ or mydie "no build header: $_";
 my $testbuild = $1;
 if (!open BUILDS, "<$builds") {
-    print "can't open $builds: $!\n";
+    print STDERR "$name0:error: unable to open '$builds' for reading: $!\n";
     exit 3;
 }
 while (<BUILDS>) {
@@ -89,13 +93,13 @@ my $tag = $1 eq ""?"":"_$1";
 
 $_ = <IN>;
 /^Build info:\r?$/ or mydie "no Build info header: $_";
-open BINFO, ">$tmpdir/build.txt" or mydie "can't write $tmpdir/build.txt: $!";
+open BINFO, ">$tmpdir/build.txt" or mydie "unable to open '$tmpdir/build.txt' for writing: $!\n";
 while (($_ = <IN>) =~ s/^    //) { print BINFO; }
-close BINFO or mydie "error writing $tmpdir/build.txt: $!";
+close BINFO or mydie "error writing to '$tmpdir/build.txt': $!\n";
 
 my ($wine, $version, $major, $minor, $plid);
 /^Operating system version:\r?$/ or mydie "no OS header: $_";
-open OSVER, ">$tmpdir/version.txt" or mydie "can't write $tmpdir/version.txt: $!";
+open OSVER, ">$tmpdir/version.txt" or mydie "unable to open '$tmpdir/version.txt' for writing: $!\n";
 while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
     print OSVER "$1=$2\n";
     if      ($1 eq "bRunningUnderWine") {
@@ -108,7 +112,7 @@ while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
         $plid = $2;
     }
 }
-close OSVER or mydie "error writing $tmpdir/version.txt: $!";
+close OSVER or mydie "error writing to '$tmpdir/version.txt': $!\n";
 
 $version = "unknown";
 if ($plid==1 && $major==4) {
@@ -145,9 +149,9 @@ if ($wine) {
 
 # Dll information is only available in new type reports
 if (/^Dll info:\r?$/) {
-    open DLLINFO, ">$tmpdir/dllinfo.txt" or mydie "can't write $tmpdir/dllinfo.txt: $!";
+    open DLLINFO, ">$tmpdir/dllinfo.txt" or mydie "unable to open '$tmpdir/dllinfo.txt' for writing: $!\n";
     while (($_ = <IN>) =~ s/^    //) { print DLLINFO; }
-    close DLLINFO or mydie "error writing $tmpdir/dllinfo.txt: $!";
+    close DLLINFO or mydie "error writing to '$tmpdir/dllinfo.txt': $!\n";
 }
 
 /Test output:\r?/ or mydie "no test header: $_";
@@ -162,7 +166,7 @@ while (<IN>) {
         m[([_.a-z0-9]+):([_a-z0-9]+) start ([/_.a-z0-9]+) (-|[.0-9]+)\r?$]
           or mydie "no start line:$.: $_";
         ($dll,$unit,$source,$rev) = ($1,$2,$3,$4);
-        open OUT, ">:raw", $tmpfile or mydie "can't open $tmpfile: $!\n";
+        open OUT, ">:raw", $tmpfile or mydie "unable to open '$tmpfile' for writing: $!\n";
         print OUT;
     } elsif (/^(.*$unit.*: (\d+) tests executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\.)\r?$/) {
         $lines++;
@@ -181,11 +185,11 @@ while (<IN>) {
       FINISH:
         print SUM "- $dll $unit $result $source $rev\n";
         print OUT;
-        close OUT or mydie "error writing $tmpfile: $!\n";
+        close OUT or mydie "error writing ot '$tmpfile': $!\n";
         if (-s $tmpfile) {
             my $testfile = "$tmpdir/$dll:$unit.txt";
             rename $tmpfile, $testfile or
-              mydie "can't rename $tmpfile to $testfile: $!\n";
+              mydie "unable to rename '$tmpfile' to '$testfile': $!\n";
         }
         $dll = undef;
         $total = $todo = $failed = $skipped = 0;
@@ -204,13 +208,13 @@ if (defined $dll) {
     }
     goto FINISH;
 }
-close SUM or mydie "error writing $tmpdir/summary.txt: $!";
+close SUM or mydie "error writing to '$tmpdir/summary.txt': $!\n";
 close IN;
 
 my $builddir = "$datadir/$testbuild";
 foreach ($datadir, $builddir) {
     if (!(-d $_ || mkdir $_)) {
-        print "can't create $_: $!\n";
+        print STDERR "$name0:error: unable to create the '$_' directory: $!\n";
         exit 3;
     }
 }
@@ -219,13 +223,13 @@ my ($dir, $dirbase, $try);
 $dir = $dirbase = "$builddir/$version$tag";
 $try = 0;
 while (!rename $tmpdir, $dir) {
-    $!{ENOTEMPTY} or mydie "can't rename $tmpdir to $dir: $!\n";
+    $!{ENOTEMPTY} or mydie "unable to rename '$tmpdir' to '$dir': $!\n";
     ++$try < $maxmult or mydie "more than $maxmult submissions for $dirbase\n";
     $dir = "${dirbase}_$try";
 }
 if (!-e "$builddir/outdated") {
     if (!open SIGN, ">$builddir/outdated") {
-        print "can't outdate $builddir: $!\n";
+        print STDERR "$name0:error: unable to open '$builddir/outdated' for writing: $!\n";
         exit 1;
     }
     close SIGN;

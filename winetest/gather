@@ -30,6 +30,10 @@ use strict;
 use vars qw/$datadir $fileversion/;
 require "winetest.conf";
 
+my $name0=$0;
+$name0 =~ s+^.*/++;
+
+
 # Group result containers:
 #  name        Group name
 #  extrema     Hashes test names to an array containing the minimum and maximum
@@ -91,7 +95,7 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
         $group = undef unless defined $tag[0]; # make the check below fail
     }
     if (!defined $group) {
-        print "Unknown architecture: $id in file $file\n";
+        print STDERR "$name0:error: unknown architecture '$id' in '$file'\n";
         next;
     }
 
@@ -109,16 +113,16 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
     $report->{tag} = @tag?"@tag":"";
     $report->{dir} = $dir;
     if (!open TEST, "<$file") {
-        print "can't open $file: $!\n";
+        print STDERR "$name0:error: unable to open '$file' for reading: $!\n";
         next;
     }
     if (($_ = <TEST>) ne "Version $fileversion\n") {
-        print "$file: wrong header: $_";
+        print STDERR "$name0:error: wrong header in '$file': $_";
         close TEST;
         next;
     }
     if (($url = <TEST>) !~ s/^Archive: (.*)\n$/$1/) {
-        print "$file: wrong archive url: $_";
+        print STDERR "$name0:error: wrong archive url in '$file': $url";
         close TEST;
         next;
     }
@@ -232,7 +236,7 @@ EOF
 chop $header;
 
 if (!open OUT, ">$datadir/$build/index.html") {
-  print "can't open $datadir/$build/index.html for writing: $!\n";
+  print STDERR "$name0:error: unable to open '$datadir/$build/index.html' for writing: $!\n";
   goto DONE;
 }
 print OUT <<"EOF";
@@ -452,6 +456,6 @@ close OUT;
 
 DONE:
 if (!unlink $outdated) {
-    print "can't unlink $outdated: $!\n";
+    print STDERR "$name0:error: unable to unlink '$outdated': $!\n";
     exit 3;
 }
