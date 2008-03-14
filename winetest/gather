@@ -34,7 +34,6 @@ require "winetest.conf";
 # name: group name
 # extrema: hashes min and max error numbers to test names
 # digests: hashes report digests or "differ" to test names
-# visible: whether winetest ran on a visible desktop
 # tests: array of test hashes (name, tag, dir, results hash).
 my %w95   = (name => "Win95");
 my %w98   = (name => "Win98");
