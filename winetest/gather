@@ -333,12 +333,17 @@ EOF
             my $href = "href=\"#$group->{name}\"";
             if (exists $group->{extrema}->{$testname}) {
                 my ($min,$max) = @{$group->{extrema}->{$testname}};
-                my $class = $min==0?($max==0?"pass":"mixed"):"fail";
-                my $title = $min==0?"":" title=\"Best: $min";
-                my $errors = $min==$max?$min:"$min to $max";
                 my $todos = (exists $group->{todo}->{$testname})?"todo_":"";
-                $title = (exists $group->{todo}->{$testname})?"$title, Todo: $group->{todo}->{$testname}\"":"$title\"";
                 my $skip = (exists $group->{skipped}->{$testname})?"skip_":"";
+                my $class = $min==0?($max==0?"pass":"mixed"):"fail";
+                my $title = "";
+                if ($min)
+                {
+                    $title = " title=\"Best: $min";
+                    $title.= ", Todo: $group->{todo}->{$testname}" if (exists $group->{todo}->{$testname});
+                    $title.="\"";
+                }
+                my $errors = $min==$max?$min:"$min to $max";
                 print OUT <<"EOF";
       <td class="$todos$skip$class"><a $href$title
         onMouseOver="refresh('$testname','$group->{name}','-','-','$errors');"
