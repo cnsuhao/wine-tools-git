@@ -139,7 +139,12 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
             $report->{dllmissing}->{$dll} = 1;
             next;
         }
-        $report->{results}->{$testname} = [$count, $todo, $error, $skipped];
+        if ($count eq "0" and exists $report->{dllmissing}->{$dll}) {
+            # Mark this test as missing because of a missing dll
+            $report->{results}->{$testname} = ["dll missing", "-", "-", "-"];
+        } else {
+            $report->{results}->{$testname} = [$count, $todo, $error, $skipped];
+        }
         $alltests{$testname} = "http://cvs.winehq.org/cvsweb/wine/$source" . ($rev ne "-"?"#rev$rev":"")
             unless exists $alltests{$testname};
         if ($count ne "failed") {
@@ -309,8 +314,9 @@ sub singletest($$$) {
     } elsif ($count eq "dll missing") {
         my ($dll, $unit) = split(/:/, $testname);
         $dll.=".dll" if ($dll !~ /\./);
+        my $href=(-r "$datadir/$build/$file") ? "href=\"$file\"" : "";
         print OUT <<"EOF";
-      <td class="skip_pass"><a
+      <td class="skip_pass"><a $href
         title="No tests run as $dll is not present on this system"
         >n/a</a></td>
 EOF

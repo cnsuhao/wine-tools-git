@@ -153,13 +153,17 @@ if ($wine) {
 }
 
 # Dll information is only available in new type reports
+my %dllinfo;
+chomp;
 if (/^Dll info:\r?$/) {
-    open DLLINFO, ">$tmpdir/dllinfo.txt" or mydie "unable to open '$tmpdir/dllinfo.txt' for writing: $!\n";
-    while (($_ = <IN>) =~ s/^    //) { print DLLINFO; }
-    close DLLINFO or mydie "error writing to '$tmpdir/dllinfo.txt': $!\n";
+    while ($_ = <IN>) {
+        chomp;
+        last if (!/^\s+([^ =]+)=(.*)\r?$/);
+        $dllinfo{$1}=$2;
+    }
 }
 
-/Test output:\r?/ or mydie "no test header: $_";
+/^Test output:/ or mydie "no test header: $_";
 my ($dll, $unit, $source, $rev, $result);
 my ($lines,$total, $todo, $failed, $skipped);
 $dll = undef;                   # state machine starts
@@ -186,6 +190,14 @@ while (<IN>) {
         $total += $2;
         $todo += $3;
         $failed += $4;
+        print OUT;
+    } elsif (/^.*$unit.*: Tests skipped: (?:$dll(?:\.dll)? cannot be loaded|$dll(?:\.dll)? not found|Could not load $dll(?:\.dll)?)\r?$/) {
+        # We find these lines in report version 3 files
+        $dllinfo{$dll}="dll is missing";
+        print OUT;
+    } elsif (/^.*$unit.*:Could not load $dll/) {
+        # We find these lines in report version 3 files
+        $dllinfo{$dll}="dll is missing";
         print OUT;
     } elsif (/$dll:$unit done \((-?\d+)\)\r?$/) {
         chomp;                  # current test ended
@@ -222,6 +234,14 @@ if (defined $dll) {
 }
 close SUM or mydie "error writing to '$tmpdir/summary.txt': $!\n";
 close IN;
+
+if (%dllinfo) {
+    open DLLINFO, ">$tmpdir/dllinfo.txt" or mydie "unable to open '$tmpdir/dllinfo.txt' for writing: $!\n";
+    foreach my $dll (sort keys %dllinfo) {
+        print DLLINFO "$dll=$dllinfo{$dll}\n";
+    }
+    close DLLINFO or mydie "error writing to '$tmpdir/dllinfo.txt': $!\n";
+}
 
 my $builddir = "$datadir/$testbuild";
 foreach ($datadir, $builddir) {
