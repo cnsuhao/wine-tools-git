@@ -283,7 +283,7 @@ sub singletest {
         print OUT <<"EOF";
       <td class="skip_pass"><a
         title="No tests run as $dll.dll is not present on this system"
-        >0</a></td>
+        >n/a</a></td>
 EOF
     } elsif ($count eq "winetest crash") {
         print OUT <<"EOF";
