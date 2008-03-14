@@ -280,7 +280,7 @@ sub singletest($$$) {
         my $fail = -r "$datadir/$build/$file"?"<a href=\"$file\">$msg</a>":$msg;
         print OUT "      <td class=\"note\">$fail</td>\n";
     } elsif ($count eq "dll missing") {
-        my ($dll, $subtest) = split(/:/, $testname);
+        my ($dll, $unit) = split(/:/, $testname);
         $dll.=".dll" if ($dll !~ /\./);
         print OUT <<"EOF";
       <td class="skip_pass"><a
