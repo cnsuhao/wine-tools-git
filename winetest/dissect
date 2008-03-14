@@ -151,27 +151,27 @@ if (/^Dll info:\r?$/) {
 }
 
 /Test output:\r?/ or mydie "no test header: $_";
-my ($unit, $test, $source, $rev, $result);
+my ($dll, $unit, $source, $rev, $result);
 my ($lines,$total, $todo, $failed, $skipped);
-$unit = undef;                  # state machine starts
+$dll = undef;                   # state machine starts
 $total = $todo = $failed = $skipped = 0;
 $lines = 0;
 while (<IN>) {
-    if (!defined $unit) {       # new test
+    if (!defined $dll) {        # new test
         next if /^\s*$/;
         m[([_.a-z0-9]+):([_a-z0-9]+) start ([/_.a-z0-9]+) (-|[.0-9]+)\r?$]
           or mydie "no start line:$.: $_";
-        ($unit,$test,$source,$rev) = ($1,$2,$3,$4);
+        ($dll,$unit,$source,$rev) = ($1,$2,$3,$4);
         open OUT, ">:raw", $tmpfile or mydie "can't open $tmpfile: $!\n";
         print OUT;
-    } elsif (/^(.*$test.*: (\d+) tests executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\.)\r?$/) {
+    } elsif (/^(.*$unit.*: (\d+) tests executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\.)\r?$/) {
         $lines++;
         $total += $2;
         $todo += $3;
         $failed += $4;
         $skipped += $5;
         print OUT;
-    } elsif (/$unit:$test done \((-?\d+)\)\r?$/) {
+    } elsif (/$dll:$unit done \((-?\d+)\)\r?$/) {
         chomp;                  # current test ended
         if ($lines==0) {
             $result = "failed $1 - -";
@@ -179,22 +179,22 @@ while (<IN>) {
             $result = "$total $todo $failed $skipped";
         }
       FINISH:
-        print SUM "- $unit $test $result $source $rev\n";
+        print SUM "- $dll $unit $result $source $rev\n";
         print OUT;
         close OUT or mydie "error writing $tmpfile: $!\n";
         if (-s $tmpfile) {
-            my $testfile = "$tmpdir/${unit}:${test}.txt";
+            my $testfile = "$tmpdir/$dll:$unit.txt";
             rename $tmpfile, $testfile or
               mydie "can't rename $tmpfile to $testfile: $!\n";
         }
-        $unit = undef;
+        $dll = undef;
         $total = $todo = $failed = $skipped = 0;
         $lines = 0;
     } else {                    # current test output
         print OUT;
     }
 }
-if (defined $unit) {
+if (defined $dll) {
     # Either winetest crashed or the report file was cut off
     $_="";
     if ($filesize == $maxfilesize) {

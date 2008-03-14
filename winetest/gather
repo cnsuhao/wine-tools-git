@@ -102,13 +102,13 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
         next;
     }
     while (<TEST>) {
-        my ($digest, $unit, $test, $count, $todo, $error, $skipped,
+        my ($digest, $dll, $unit, $count, $todo, $error, $skipped,
             $source, $rev) = split;
-        my $testname = "$unit:$test";
+        my $testname = "$dll:$unit";
         # Leave this in for older type reports
-        if ($test =~ /_dll_missing/) {
+        if ($unit =~ /_dll_missing/) {
             # Mark the dll as missing on this system
-            $testref->{dllmissing}->{$unit} = 1;
+            $testref->{dllmissing}->{$dll} = 1;
             next;
         }
         $testref->{results}->{$testname} = [$count, $todo, $error, $skipped];
@@ -159,7 +159,7 @@ foreach my $group (@groups) {
             if (!exists $test->{results}->{$testname}) {
                 # Make sure missing tests are shown in the group results
                 $group->{digests}->{$testname} = "differ";
-                my ($dll, $subtest) = split(/:/, $testname);
+                my ($dll, $unit) = split(/:/, $testname);
                 my $crash = $test->{crash};
                 my $filelimit = $test->{filelimit};
                 if (exists $test->{dllmissing}->{$dll}) {
@@ -253,13 +253,13 @@ print OUT <<"EOF";
 <table class="report">
   <thead>
     <tr>
-      <th class="test">unit:test</th>
+      <th class="test">dll:unit_test</th>
 $header
     </tr>
   </thead>
   <tfoot>
     <tr>
-      <th class="test">unit:test</th>
+      <th class="test">dll:unit_test</th>
 $header
     </tr>
   </tfoot>
@@ -392,13 +392,13 @@ EOF
 <table class="report">
   <thead>
     <tr>
-      <th class="test">unit:test</th>
+      <th class="test">dll:unit_test</th>
 $header
     </tr>
   </thead>
   <tfoot>
     <tr>
-      <th class="test">unit:test</th>
+      <th class="test">dll:unit_test</th>
 $header
     </tr>
   </tfoot>
