@@ -281,9 +281,10 @@ sub singletest($$$) {
         print OUT "      <td class=\"note\">$fail</td>\n";
     } elsif ($count eq "dll missing") {
         my ($dll, $subtest) = split(/:/, $testname);
+        $dll.=".dll" if ($dll !~ /\./);
         print OUT <<"EOF";
       <td class="skip_pass"><a
-        title="No tests run as $dll.dll is not present on this system"
+        title="No tests run as $dll is not present on this system"
         >n/a</a></td>
 EOF
     } elsif ($count eq "winetest crash") {
