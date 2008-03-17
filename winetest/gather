@@ -353,7 +353,7 @@ EOF
         print OUT <<"EOF";
       <td class="result $class"><a
         href="$file"
-        title="$count tests, $todo TODO, $error errors, $skipped skipped"
+        title="$count tests, $error errors, $todo todos, $skipped skips"
         onMouseOver="refresh('$testname','$groupname $report->{tag}',$count,$todo,$error,$skipped);"
         >$msg</a></td>
 EOF
