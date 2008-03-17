@@ -7,27 +7,35 @@ body {
 h3, p.legend {
         text-align: center;
 }
+.result {
+        border-left-width: thick;
+        border-left-style: solid;
+        border-right-width: thick;
+        border-right-style: solid;
+}
 .pass {
         background-color: #60ff60;
-        border-right-style: solid;
-        border-left-style: solid;
-        border-width: thick;
-        border-color: #60ff60;
+        border-left-color: #60ff60;
+        border-right-color: #60ff60;
 }
 .mixed {
         background-color: #ffff40;
-        border-right-style: solid;
-        border-left-style: solid;
-        border-width: thick;
-        border-color: #ffff40;
+        border-left-color: #ffff40;
+        border-right-color: #ffff40;
 }
 .fail {
         background-color: #ff5050;
-        border-right-style: solid;
-        border-left-style: solid;
-        border-width: thick;
-        border-color: #ff5050;
+        border-left-color: #ff5050;
+        border-right-color: #ff5050;
 }
+.also-todo {
+        border-left-color: #ff9b49;
+}
+.also-skip {
+        border-right-color: #0070ff;
+}
+
+/* Styles kept for compatibility with old reports */
 .vis_pass {
         background-color: #60ff60;
         border-right-style: solid;
@@ -116,6 +124,8 @@ h3, p.legend {
         border-left-color: #ff9b49;
         border-right-color: #0070ff;
 }
+/* End of legacy styles */
+
 td {
         text-align: center;
 }

@@ -282,11 +282,11 @@ print OUT <<"EOF";
   </tr>
 </table>
 <h3>Legend</h3>
-<p class="legend">All tests <span class="pass">pass</span> in all reports<br>
-   Some tests <span class="mixed">fail</span> in some reports<br>
-   Some tests <span class="fail">fail</span> in all reports<br>
-   This <span class="skip_pass">border</span> signals that some tests are skipped<br>
-   This <span class="todo_pass">border</span> signals that the implementation needs some work
+<p class="legend">All tests <span class="result pass">pass</span> in all reports<br>
+   Some tests <span class="result mixed">fail</span> in some reports<br>
+   Some tests <span class="result fail">fail</span> in all reports<br>
+   This <span class="result pass also-skip">border</span> signals that some tests are skipped<br>
+   This <span class="result pass also-todo">border</span> signals that the implementation needs some work
 </p>
 <h1>Main summary for build <a href="$url">$build</a></h1>
 <table class="report">
@@ -323,34 +323,34 @@ sub singletest($$$) {
         $dll.=".dll" if ($dll !~ /\./);
         my $href=(-r "$datadir/$build/$file") ? "href=\"$file\"" : "";
         print OUT <<"EOF";
-      <td class="skip_pass"><a $href
+      <td class="result pass also-skip"><a
         title="No tests run as $dll is not present on this system"
         >n/a</a></td>
 EOF
     } elsif ($count eq "winetest crash") {
         print OUT <<"EOF";
-      <td class="skip_fail"><a
+      <td class="result fail also-skip"><a
         title="Test did not run as winetest crashed"
         >.</a></td>
 EOF
     } elsif ($count eq "file limit") {
         print OUT <<"EOF";
-      <td class="skip_fail"><a
+      <td class="result fail also-skip"><a
         title="Test is missing because of a partial report file"
         >.</a></td>
 EOF
     } elsif ($count eq "test missing") {
         print OUT <<"EOF";
-      <td class="skip_fail"><a
+      <td class="result fail also-skip"><a
         title="Test did not run for an unknown reason"
         >.</a></td>
 EOF
     } else {
         my $class = $error?"fail":"pass";
-        my $skip = $skipped?"skip_":"";
-        my $todos = $todo?"todo_":"";
+        $class .= " also-skip" if ($skipped);
+        $class .= " also-todo" if ($todo);
         print OUT <<"EOF";
-      <td class="$todos$skip$class"><a
+      <td class="result $class"><a
         href="$file"
         title="$count tests, $todo TODO, $error errors, $skipped skipped"
         onMouseOver="refresh('$testname','$groupname $report->{tag}',$count,$todo,$error,$skipped);"
@@ -375,9 +375,9 @@ EOF
             my $href = "href=\"#group_$group->{name}:$testname\"";
             if (exists $group->{extrema}->{$testname}) {
                 my ($min,$max) = @{$group->{extrema}->{$testname}};
-                my $todos = (exists $group->{todo}->{$testname})?"todo_":"";
-                my $skip = (exists $group->{skipped}->{$testname})?"skip_":"";
                 my $class = $min==0?($max==0?"pass":"mixed"):"fail";
+                $class .= " also-todo" if (exists $group->{todo}->{$testname});
+                $class .= " also-skip" if (exists $group->{skipped}->{$testname});
                 my $title = "";
                 if ($min)
                 {
@@ -387,7 +387,7 @@ EOF
                 }
                 my $errors = $min==$max?$min:"$min to $max";
                 print OUT <<"EOF";
-      <td class="$todos$skip$class"><a $href$title
+      <td class="result $class"><a $href$title
         onMouseOver="refresh('$testname','$group->{name}','-','-','$errors');"
         >$max</a></td>
 EOF
