@@ -372,7 +372,7 @@ EOF
         } elsif (@{$group->{reports}} == 1) {
             singletest($group->{reports}->[0], $testname, $group->{name});
         } else {
-            my $href = "href=\"#group_$group->{name}\"";
+            my $href = "href=\"#group_$group->{name}:$testname\"";
             if (exists $group->{extrema}->{$testname}) {
                 my ($min,$max) = @{$group->{extrema}->{$testname}};
                 my $todos = (exists $group->{todo}->{$testname})?"todo_":"";
@@ -450,7 +450,7 @@ EOF
         print OUT <<"EOF";
     <tr>
       <td class="test">
-        <a href="$alltests{$testname}">$testname</a></td>
+        <a href="$alltests{$testname}" name="group_$group->{name}:$testname">$testname</a></td>
 EOF
         foreach my $report (@{$group->{reports}}) {
             singletest($report, $testname, $group->{name});
