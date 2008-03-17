@@ -286,7 +286,7 @@ print OUT <<"EOF";
    Some tests <span class="result mixed">fail</span> in some reports<br>
    Some tests <span class="result fail">fail</span> in all reports<br>
    This <span class="result pass also-skip">border</span> signals that some tests are skipped<br>
-   This <span class="result pass also-todo">border</span> signals that the implementation needs some work
+   This <span class="result pass also-todo">border</span> and this <span class="result todo">background</span> signal that the implementation needs some work
 </p>
 <h1>Main summary for build <a href="$url">$build</a></h1>
 <table class="report">
@@ -346,15 +346,16 @@ EOF
         >.</a></td>
 EOF
     } else {
-        my $class = $error?"fail":"pass";
+        my $class = $error?"fail":$todo?"todo":"pass";
         $class .= " also-skip" if ($skipped);
         $class .= " also-todo" if ($todo);
+        my $msg=$todo ? ($error ? "$error+$todo" : $todo) : $error;
         print OUT <<"EOF";
       <td class="result $class"><a
         href="$file"
         title="$count tests, $todo TODO, $error errors, $skipped skipped"
         onMouseOver="refresh('$testname','$groupname $report->{tag}',$count,$todo,$error,$skipped);"
-        >$error</a></td>
+        >$msg</a></td>
 EOF
     }
 }
@@ -375,8 +376,9 @@ EOF
             my $href = "href=\"#group_$group->{name}:$testname\"";
             if (exists $group->{extrema}->{$testname}) {
                 my ($min,$max) = @{$group->{extrema}->{$testname}};
-                my $class = $min==0?($max==0?"pass":"mixed"):"fail";
-                $class .= " also-todo" if (exists $group->{todo}->{$testname});
+                my $todo=$group->{todo}->{$testname};
+                my $class = $min?"fail":$max?"mixed":$todo?"todo":"pass";
+                $class .= " also-todo" if ($todo);
                 $class .= " also-skip" if (exists $group->{skipped}->{$testname});
                 my $title = "";
                 if ($min)
@@ -386,10 +388,11 @@ EOF
                     $title.="\"";
                 }
                 my $errors = $min==$max?$min:"$min to $max";
+                my $msg=$todo ? ($max ? "$max+$todo" : $todo) : $max;
                 print OUT <<"EOF";
       <td class="result $class"><a $href$title
         onMouseOver="refresh('$testname','$group->{name}','-','-','$errors');"
-        >$max</a></td>
+        >$msg</a></td>
 EOF
             } else {
                 print OUT "      <td class=\"note\"><a $href>.</a></td>\n";
