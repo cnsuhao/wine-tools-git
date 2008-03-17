@@ -226,7 +226,7 @@ foreach my $group (@groups) {
     if (exists $group->{reports}) {
         my $report_count = @{$group->{reports}};
         if ($report_count > 1) {
-            $header .= "      <th><a href=\"#$group->{name}\">$group->{name}<br><small>$report_count reports</small></a></th>\n";
+            $header .= "      <th><a href=\"#group_$group->{name}\">$group->{name}<br><small>$report_count reports</small></a></th>\n";
         } else {
             my $report = $group->{reports}->[0];
             # If dllinfo.txt exist we use a different layout (new style report)
@@ -372,7 +372,7 @@ EOF
         } elsif (@{$group->{reports}} == 1) {
             singletest($group->{reports}->[0], $testname, $group->{name});
         } else {
-            my $href = "href=\"#$group->{name}\"";
+            my $href = "href=\"#group_$group->{name}\"";
             if (exists $group->{extrema}->{$testname}) {
                 my ($min,$max) = @{$group->{extrema}->{$testname}};
                 my $todos = (exists $group->{todo}->{$testname})?"todo_":"";
@@ -428,7 +428,7 @@ EOF
 
     print OUT <<"EOF";
 <hr>
-<h2><a name="$group->{name}">$group->{name} differences</a></h2>
+<h2><a name="group_$group->{name}">$group->{name} differences</a></h2>
 <table class="report">
   <thead>
     <tr>
