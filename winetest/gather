@@ -329,21 +329,21 @@ sub singletest($$$) {
 EOF
     } elsif ($count eq "winetest crash") {
         print OUT <<"EOF";
-      <td class="result fail also-skip"><a
+      <td class="note"><a
         title="Test did not run as winetest crashed"
-        >.</a></td>
+        >winetest</a></td>
 EOF
     } elsif ($count eq "file limit") {
         print OUT <<"EOF";
-      <td class="result fail also-skip"><a
+      <td class="note"><a
         title="Test is missing because of a partial report file"
-        >.</a></td>
+        >truncated</a></td>
 EOF
     } elsif ($count eq "test missing") {
         print OUT <<"EOF";
-      <td class="result fail also-skip"><a
+      <td class="note"><a
         title="Test did not run for an unknown reason"
-        >.</a></td>
+        >not run</a></td>
 EOF
     } else {
         my $class = $error?"fail":$todo?"todo":"pass";
