@@ -4,6 +4,7 @@
 # on resource files and call ver.pl to parse the results
 
 use Cwd;
+use File::Basename;
 
 sub log_string
 {
@@ -32,7 +33,8 @@ sub mycheck
 
     log_string("*** $name [$defs]");
 
-    $ret = system("$wrc -I$winedir/include -I$winedir/dlls/user32 --verify-translation $defs $name $workdir/tmp.res 2>>$workdir/run.log >$workdir/ver.txt");
+    my($respath) = dirname($name);
+    $ret = system("$wrc -I$respath -I$winedir/include -I$winedir/dlls/user32 --verify-translation $defs $name $workdir/tmp.res 2>>$workdir/run.log >$workdir/ver.txt");
     if ($ret == 0)
     {
         $name =~ s,$winedir,,;
@@ -46,7 +48,7 @@ sub mycheck
         $norm_fn= $name;
         $norm_fn =~ s/\.rc$//;
         $norm_fn =~ s/[^a-zA-Z0-9]/-/g;
-        $ret = system("$wrc -I$winedir/include -I$winedir/dlls/user32 $defs $winedir$name $workdir/dumps/res/$norm_fn.res 2>>$workdir/run.log >/dev/null");
+        $ret = system("$wrc -I$respath -I$winedir/include -I$winedir/dlls/user32 $defs $winedir$name $workdir/dumps/res/$norm_fn.res 2>>$workdir/run.log >/dev/null");
         if ($ret != 0)
         {
             print "!!!!!!! 2nd pass return value: ".$ret."\n";        
