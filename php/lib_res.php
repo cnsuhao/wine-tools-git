@@ -273,7 +273,7 @@ class StringTable extends Resource
                     $extra = " style=\"background-color: #ffb8d0\"";
             }
     
-            echo "<tr$extra><td valign=\"top\">".(($this->table_id-1)*16+$i)."</td><td></td>";
+            echo "<tr$extra><td valign=\"top\">".(($this->table_id-1)*16+$i)."</td><td>&nbsp;</td>";
             echo "<td>";
 
             dump_unicode_or_empty($uni_str);
@@ -392,7 +392,7 @@ class MenuResource extends Resource
         }
 
         /* backtrack (produces results in reverse order) */
-        $out = array_fill(0, $end, 3);
+        $out = ($end > 0 ? array_fill(0, $end, 3) : array());
         $i = count($this->items) - $start - $end;
         $j = count($res2->items) - $start - $end;
         while ($i > 0 || $j > 0) {
@@ -417,7 +417,8 @@ class MenuResource extends Resource
             if ($step & 2)
                 $j--;
         }
-        $out += array_fill(count($out), $start, 3);
+        if ($start > 0)
+            $out += array_fill(count($out), $start, 3);
         return array_reverse($out);
     }
 
@@ -491,8 +492,8 @@ class MenuResource extends Resource
                     $extra = " style=\"background-color: #ffb8d0\"";
             }
 
-            $id = ($show[$i] & 1 ? $this->items[$pos]["id"] : $master_res->items[$pos]["id"]);
-            echo "<tr$extra><td valign=\"top\">$id</td><td></td>";
+            $id = ($show[$i] & 1 ? $this->items[$pos]["id"] : $master_res->items[$master_pos]["id"]);
+            echo "<tr$extra><td valign=\"top\">$id</td><td>&nbsp;</td>";
             echo "<td>";
 
             if ($show[$i] & 1)
