@@ -88,7 +88,7 @@ echo "==== UPDATING WINE API STATS PAGE ===="
 $tools_dir/winapi_stats > winapi_stats.template && mv -f winapi_stats.template $templates_dir/en/winapi_stats.template
 
 # cleanup source tree
-git clean -q -d -x
+git clean -q -d -x -f
 rm -rf .git
 
 # end
