@@ -68,6 +68,8 @@ my $summary_version=4;
 #  <testname>    Maps the test names to a structure containing the individual
 #                  unit test's results. Note that there's no name collision
 #                  with the other fields because the test names contain a ':'.
+#  errors        The number of unit tests with errors.
+#  todos         The number of unit tests with no error but todos.
 #
 # Group result containers:
 #  name          Group name.
@@ -76,6 +78,8 @@ my $summary_version=4;
 #                  result of the group's reports for that unit test. Note that
 #                  there's no name collision with the other fields because the
 #                  test names contain a ':'.
+#  errors        The number of unit tests with errors.
+#  todos         The number of unit tests with no error but todos.
 
 my %w95   = (name => "Win95");
 my %w98   = (name => "Win98");
@@ -271,13 +275,44 @@ foreach my $group (@groups) {
     }
 }
 
+# Compute some statistics
+
+foreach my $group (@groups) {
+    next unless exists $group->{reports};
+    foreach my $report (@{$group->{reports}}, $group) {
+        $report->{errors} = 0;
+        $report->{todos} = 0;
+        foreach my $testname (sort keys %alltests) {
+            my $result = $report->{$testname};
+            if ($result->{status} !~ /^(?:dll missing|run)$/ or
+                ($result->{status} eq "run" and
+                 $result->{errors}->[1] != 0))
+            {
+                $report->{errors}++;
+            }
+            elsif ($result->{status} eq "run" and
+                   $result->{todos}->[1] != 0)
+            {
+                $report->{todos}++;
+            }
+        }
+    }
+}
+
 # Write out the tables
+
+sub percent($$)
+{
+    my ($value, $base)=@_;
+    return sprintf("%4.1f", 100 * $value / $base);
+}
 
 sub build_header_footer($)
 {
     my ($reports)=@_;
 
-    my $title;
+    my $unit_count=scalar(keys %alltests);
+    my ($title, $stats);
     foreach my $rep (@{$reports}) {
         my $report=$rep;
         my $msg;
@@ -318,18 +353,40 @@ EOF
 $msg
       </th>
 EOF
+
+        my $class = $report->{errors} ? "fail" :
+                    $report->{todos} ? "todo" :
+                    "pass";
+        my $count=!$report->{todos} ? $report->{errors} :
+                  !$report->{errors} ? $report->{todos} :
+                  "$group->{errors}+$group->{todos}";
+
+        my $prcnt=!$report->{todos} ? percent($report->{errors}, $unit_count) :
+                  !$report->{errors} ? percent($report->{todos}, $unit_count) :
+                  (percent($report->{errors}, $unit_count) . "+" .
+                   percent($report->{todos}, $unit_count));
+        $stats .= "      <th class=\"$class\"><a title=\"$unit_count unit tests, $report->{errors} have errors, $report->{todos} have todos\">$count<br>$prcnt\%</a></th>\n";
     }
     chop $title;
+    chop $stats;
     return <<"EOF";
   <thead>
     <tr>
-      <th class="test">dll:unit_test</th>
+      <th class="test">platforms</th>
 $title
+    </tr>
+    <tr>
+      <th class="test">errors</th>
+$stats
     </tr>
   </thead>
   <tfoot>
     <tr>
-      <th class="test">dll:unit_test</th>
+      <th class="test">errors</th>
+$stats
+    </tr>
+    <tr>
+      <th class="test">platforms</th>
 $title
     </tr>
   </tfoot>
@@ -489,7 +546,7 @@ foreach my $testname (sort keys %alltests) {
     print OUT <<"EOF";
     <tr>
       <td class="test">
-        <a href="$alltests{$testname}">$testname</a></td>
+        <a href="$alltests{$testname}" title="dll:unit_test source">$testname</a></td>
 EOF
     foreach my $group (@groups) {
         if (!exists $group->{reports}) {
@@ -524,7 +581,7 @@ EOF
         print OUT <<"EOF";
     <tr>
       <td class="test">
-        <a href="$alltests{$testname}" name="group_$group->{name}:$testname">$testname</a></td>
+        <a href="$alltests{$testname}" name="group_$group->{name}:$testname" title="dll:unit_test source">$testname</a></td>
 EOF
         foreach my $report (@{$group->{reports}}) {
             singletest($report, $testname, $group->{name});
