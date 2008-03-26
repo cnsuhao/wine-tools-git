@@ -134,17 +134,13 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
             $source, $rev) = split;
         my $testname = "$dll:$unit";
         # Leave this in for older type reports
-        if ($unit =~ /_dll_missing/) {
+        if ($unit =~ /_dll_missing/ or
+            ($count eq "0" and exists $report->{dllmissing}->{$dll})) {
             # Mark the dll as missing on this system
             $report->{dllmissing}->{$dll} = 1;
             next;
         }
-        if ($count eq "0" and exists $report->{dllmissing}->{$dll}) {
-            # Mark this test as missing because of a missing dll
-            $report->{results}->{$testname} = ["dll missing", "-", "-", "-"];
-        } else {
-            $report->{results}->{$testname} = [$count, $todo, $error, $skipped];
-        }
+        $report->{results}->{$testname} = [$count, $todo, $error, $skipped];
 	if ($rev =~ /\./) {
 		$alltests{$testname} = "http://cvs.winehq.org/cvsweb/wine/$source" . ($rev ne "-"?"#rev$rev":"")
 		    unless exists $alltests{$testname};
