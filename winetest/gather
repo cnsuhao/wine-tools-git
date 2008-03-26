@@ -59,6 +59,7 @@ my $summary_version=4;
 # Report result containers:
 #  tag           The report's tag.
 #  dir           The directory containing the report data (log files, etc).
+#  group         A reference to the group the report belongs to.
 #  dllmissing    A hash of the missing dlls for that system.
 #  winetestcrash The name of the last test that was run before winetest
 #                  crashed.
@@ -116,7 +117,7 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
         next;
     }
 
-    my $report = {};
+    my $report = { group => $group};
     # Read the dll information if present (newer type reports)
     my $dllinfo = "$datadir/$build/$dir/dllinfo.txt";
     if (open DLLINFO, "<$dllinfo") {
@@ -212,6 +213,7 @@ sub merge_min_max($$$)
 # and missing) are available for all reports.
 foreach my $group (@groups) {
     next unless exists $group->{reports};
+    $group->{group}=$group;
     foreach my $testname (sort keys %alltests) {
         my $group_result = {};
         foreach my $report (@{$group->{reports}}) {
@@ -271,34 +273,70 @@ foreach my $group (@groups) {
 
 # Write out the tables
 
-my ($header);                   # same in thead and tfoot
-foreach my $group (@groups) {
-    if (exists $group->{reports}) {
-        my $report_count = @{$group->{reports}};
-        if ($report_count > 1) {
-            $header .= "      <th><a href=\"#group_$group->{name}\">$group->{name}<br><small>$report_count reports</small></a></th>\n";
-        } else {
-            my $report = $group->{reports}->[0];
+sub build_header_footer($)
+{
+    my ($reports)=@_;
+
+    my $title;
+    foreach my $rep (@{$reports}) {
+        my $report=$rep;
+        my $msg;
+        if (exists $report->{reports}) {
+            my $report_count = @{$report->{reports}};
+            if ($report_count > 1) {
+                $msg = "        <a href=\"#group_$report->{name}\">$report->{name}<br><small>$report_count reports</small></a>";
+            } else {
+                $report = $report->{reports}->[0];
+            }
+        } elsif (exists $report->{name}) {
+            # Ignore groups with no reports
+            next;
+        }
+        my $group = $report->{group};
+
+        if (!defined $msg) {
             # If dllinfo.txt exist we use a different layout (new style report)
             if (-r "$datadir/$build/$report->{dir}/dllinfo.txt") {
-                $header .= <<"EOF";
-    <th>$group->{name}<br><small>
+                $msg = <<"EOF";
+        $group->{name}<br><small>
         <a href=\"$report->{dir}/version.txt\">$report->{tag}</a><br>
         <a href=\"$report->{dir}/dllinfo.txt\">[info]</a>
-        <a href=\"$report->{dir}/report\">[file]</a></small></th>
+        <a href=\"$report->{dir}/report\">[file]</a></small>
 EOF
             } else {
-                $header .= <<"EOF";
-    <th>$group->{name}<br><small>
+                $msg = <<"EOF";
+        $group->{name}<br><small>
         <a href=\"$report->{dir}/build.txt\">$report->{tag}</a><br>
         <a href=\"$report->{dir}/version.txt\">[info]</a>
-        <a href=\"$report->{dir}/report\">[file]</a></small></th>
+        <a href=\"$report->{dir}/report\">[file]</a></small>
 EOF
             }
+            chop $msg;
         }
+        $title .=  <<"EOF";
+      <th>
+$msg
+      </th>
+EOF
     }
+    chop $title;
+    return <<"EOF";
+  <thead>
+    <tr>
+      <th class="test">dll:unit_test</th>
+$title
+    </tr>
+  </thead>
+  <tfoot>
+    <tr>
+      <th class="test">dll:unit_test</th>
+$title
+    </tr>
+  </tfoot>
+EOF
 }
-chop $header;
+
+my $header_footer=build_header_footer(\@groups);
 
 if (!open OUT, ">$datadir/$build/index.html") {
   print STDERR "$name0:error: unable to open '$datadir/$build/index.html' for writing: $!\n";
@@ -340,18 +378,7 @@ print OUT <<"EOF";
 </p>
 <h1>Main summary for build <a href="$url">$build</a></h1>
 <table class="report">
-  <thead>
-    <tr>
-      <th class="test">dll:unit_test</th>
-$header
-    </tr>
-  </thead>
-  <tfoot>
-    <tr>
-      <th class="test">dll:unit_test</th>
-$header
-    </tr>
-  </tfoot>
+$header_footer
   <tbody onDblClick="clone();">
 EOF
 
@@ -482,41 +509,13 @@ EOF
 foreach my $group (@groups) {
     next unless exists $group->{reports} && @{$group->{reports}} > 1;
 
-    $header = "";
-    foreach my $report (@{$group->{reports}}) {
-        # If dllinfo.txt exist we use a different layout (new style report)
-        if (-r "$datadir/$build/$report->{dir}/dllinfo.txt") {
-            $header .= <<"EOF";
-    <th><small><a href=\"$report->{dir}/version.txt\">$report->{tag}</a><br>
-        <a href=\"$report->{dir}/dllinfo.txt\">[info]</a>
-        <a href=\"$report->{dir}/report\">[file]</a></small></th>
-EOF
-        } else {
-            $header .= <<"EOF";
-    <th><small><a href=\"$report->{dir}/build.txt\">$report->{tag}</a><br>
-        <a href=\"$report->{dir}/version.txt\">[info]</a>
-        <a href=\"$report->{dir}/report\">[file]</a></small></th>
-EOF
-        }
-    }
-    chop $header;
+    $header_footer = build_header_footer($group->{reports});
 
     print OUT <<"EOF";
 <hr>
 <h2><a name="group_$group->{name}">$group->{name} differences</a></h2>
 <table class="report">
-  <thead>
-    <tr>
-      <th class="test">dll:unit_test</th>
-$header
-    </tr>
-  </thead>
-  <tfoot>
-    <tr>
-      <th class="test">dll:unit_test</th>
-$header
-    </tr>
-  </tfoot>
+$header_footer
   <tbody onDblClick="clone();">
 EOF
     foreach my $testname (sort keys %alltests) {
