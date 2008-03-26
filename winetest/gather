@@ -37,32 +37,45 @@ $name0 =~ s+^.*/++;
 my $summary_version=4;
 
 
-# Group result containers:
-#  name          Group name
-#  extrema       Hashes test names to an array containing the minimum and
-#                  maximum number of errors for the test across the group's
-#                  reports
-#  todo          Hashes test names to the maximum number of todos for that test
-#  skipped       Hashes test names to the maximum number of skips for that test
-#  digests       Hashes test names to a string which is 'differ' if the test
-#                  should be shown in the group's results table
-#  reports       An array of report result containers
+# A test name is of the form 'dll:unit' where:
+#  dll           Is the dll being tested.
+#  unit          Is a unit test composed of multiple individual checks testing
+#                  one aspect of the dll functionality.
+#
+# Unit test result container:
+#
+# A unit test result container contains the results of one or multiple runs
+# of a given unit test.
+#
+#  status        A string indicating the status of the result: whether it ran,
+#                  crashed, etc.
+#  count         The minimum and maximum number of checks performed.
+#  errors        The minimum and maximum number of errors.
+#  todos         The minimum and maximum number of todos.
+#  skips         The minimum and maximum number of skips.
+#  omit          If set then this result can be omitted from the group table.
+#                  Only used for group results.
 #
 # Report result containers:
-#  tag           The report's tag
+#  tag           The report's tag.
 #  dir           The directory containing the report data (log files, etc).
-#  dllmissing    A hash of the missing dlls for that system
-#  winetestcrash The name of the last test that was run before winetest crashed
+#  dllmissing    A hash of the missing dlls for that system.
+#  winetestcrash The name of the last test that was run before winetest
+#                  crashed.
 #  filelimit     The name of the last test that was run before the report file
-#                  size limit was reached
-#  results       Hashes test names to an array containing that test's results:
-#                  [ count, todos, errors, skips ]
-#                Where:
-#                 count    Is the number of checks in that test or a string
-#                            describing the test failure
-#                 todos    Is the number of todo checks
-#                 errors   Is the number of checks that failed
-#                 skips    Is the number of times checks were skipped
+#                  size limit was reached.
+#  <testname>    Maps the test names to a structure containing the individual
+#                  unit test's results. Note that there's no name collision
+#                  with the other fields because the test names contain a ':'.
+#
+# Group result containers:
+#  name          Group name.
+#  reports       An array of report result containers.
+#  <testname>    Maps the test names to a structure containing the merged
+#                  result of the group's reports for that unit test. Note that
+#                  there's no name collision with the other fields because the
+#                  test names contain a ':'.
+
 my %w95   = (name => "Win95");
 my %w98   = (name => "Win98");
 my %me    = (name => "Me");
@@ -131,9 +144,19 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
         next;
     }
     while (<TEST>) {
-        my ($digest, $dll, $unit, $count, $todo, $error, $skipped,
+        my ($dummy, $dll, $unit, $count, $todos, $errors, $skips,
             $source, $rev) = split;
         my $testname = "$dll:$unit";
+
+	if ($rev =~ /\./) {
+		$alltests{$testname} = "http://cvs.winehq.org/cvsweb/wine/$source" . ($rev ne "-"?"#rev$rev":"")
+		    unless exists $alltests{$testname};
+	} else {
+		$alltests{$testname} = "http://source.winehq.org/git/wine.git/?a=blob;f=$source;" .
+					($rev ne "-" ? "h=$rev;" : "hb=master;")
+		    unless exists $alltests{$testname};
+	}
+
         # Leave this in for older type reports
         if ($unit =~ /_dll_missing/ or
             ($count eq "0" and exists $report->{dllmissing}->{$dll})) {
@@ -141,77 +164,107 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
             $report->{dllmissing}->{$dll} = 1;
             next;
         }
-        $report->{results}->{$testname} = [$count, $todo, $error, $skipped];
-	if ($rev =~ /\./) {
-		$alltests{$testname} = "http://cvs.winehq.org/cvsweb/wine/$source" . ($rev ne "-"?"#rev$rev":"")
-		    unless exists $alltests{$testname};
-	}
-	else {
-		$alltests{$testname} = "http://source.winehq.org/git/wine.git/?a=blob;f=$source;" .
-					($rev ne "-" ? "h=$rev;" : "hb=master;")
-		    unless exists $alltests{$testname};
-	}
-        if ($count ne "failed") {
-            if (defined $group->{extrema}->{$testname}) {
-                my $extrema = $group->{extrema}->{$testname};
-                $extrema->[0] = $error if $error < $extrema->[0];
-                $extrema->[1] = $error if $error > $extrema->[1];
+        if ($count eq "failed") {
+            if ($todos eq "crash") {
+                $report->{$testname} = { status => "winetest crash" };
+                $report->{winetestcrash} = $testname;
+            } elsif ($todos eq "filelimit") {
+                $report->{$testname} = { status => "file limit" };
+                $report->{filelimit} = $testname;
             } else {
-                $group->{extrema}->{$testname} = [$error, $error];
+                $report->{$testname} = { status => $todos };
             }
-
-            if ($skipped > 0) {
-                # Mark this test as being (partly) skipped for one or more reports in the group
-                $group->{skipped}->{$testname} = 1;
-            }
-
-            if ($todo > 0) {
-                if (defined $group->{todo}->{$testname}) {
-                    $group->{todo}->{$testname} = $todo if $todo > $group->{todo}->{$testname};
-                } else {
-                    $group->{todo}->{$testname} = $todo;
-                }
-            }
-        } elsif ($todo eq "crash") {
-            $report->{winetestcrash} = $testname;
-        } elsif ($todo eq "filelimit") {
-            $report->{filelimit} = $testname;
+        } else {
+            $report->{$testname} = { status => "run",
+                                     count  => [ $count, $count ],
+                                     errors => [ $errors, $errors ],
+                                     todos  => [ $todos, $todos ],
+                                     skips  => [ $skips, $skips ]
+                                   };
         }
-        my $prevdigest = \$group->{digests}->{$testname};
-        $$prevdigest = ($count eq "failed" || $error || $skipped ||
-                        ($$prevdigest && $$prevdigest ne $digest))?"differ":$digest;
+        $report->{$testname}->{testname} = $testname;
     }
     close TEST;
 
     push @{$group->{reports}}, $report;
 }
 
+sub merge_min_max($$$)
+{
+    my ($merged, $result, $field)=@_;
+    return if (!exists $result->{$field});
+
+    if (!exists $merged->{$field}) {
+        $merged->{$field}=[ @{$result->{$field}} ];
+    } else {
+        if ($merged->{$field}->[0] > $result->{$field}->[0])
+        {
+            $merged->{$field}->[0] = $result->{$field}->[0];
+        }
+        if ($merged->{$field}->[1] < $result->{$field}->[1])
+        {
+            $merged->{$field}->[1] = $result->{$field}->[1];
+        }
+    }
+}
+
 # Find missing tests. After this exercise all test results (correct, failed
 # and missing) are available for all reports.
 foreach my $group (@groups) {
     next unless exists $group->{reports};
-    foreach my $report (@{$group->{reports}}) {
-        foreach my $testname (sort keys %alltests) {
-            if (!exists $report->{results}->{$testname}) {
-                # Make sure missing tests are shown in the group results
-                $group->{digests}->{$testname} = "differ";
+    foreach my $testname (sort keys %alltests) {
+        my $group_result = {};
+        foreach my $report (@{$group->{reports}}) {
+            if (!exists $report->{$testname}) {
                 my ($dll, $unit) = split(/:/, $testname);
                 my $crash = $report->{winetestcrash};
                 my $filelimit = $report->{filelimit};
                 if (exists $report->{dllmissing}->{$dll}) {
                     # Mark this test as missing because of a missing dll
-                    $report->{results}->{$testname} = ["dll missing", "-", "-", "-"];
+                    $report->{$testname} = { status => "dll missing",
+                                             count  => [ 1, 1 ],
+                                             skips  => [ 1, 1 ]
+                                           };
                 } elsif (defined $crash && $testname gt $crash) {
-                    # Mark this test as missing because of a winetest crash.
-                    $report->{results}->{$testname} = ["winetest crash", "-", "-", "-"];
+                    # Mark this test as missing because of a winetest crash
+                    $report->{$testname}->{status} = "winetest crash";
                 } elsif (defined $filelimit && $testname gt $filelimit) {
-                    # Mark this test as missing because of a partial report file.
-                    $report->{results}->{$testname} = ["file limit", "-", "-", "-"];
+                    # Mark this test as missing because of a partial report file
+                    $report->{$testname}->{status} = "filelimit";
                 } else {
                     # Mark this test as missing for an unknown reason
-                    $report->{results}->{$testname} = ["test missing", "-", "-", "-"];
+                    $report->{$testname}->{status} = "missing";
                 }
             }
+            my $result = $report->{$testname};
+            if (!defined $group_result->{status}) {
+                $group_result->{status} = $result->{status};
+            } elsif ($group_result->{status} eq "dll missing" and
+                     $result->{status} eq "run") {
+                $group_result->{status} = "run";
+            } elsif ($group_result->{status} eq "run" and
+                     $result->{status} eq "dll missing") {
+                ; # Nothing to do
+            } elsif ($group_result->{status} ne $result->{status}) {
+                $group_result->{status} = "mixed";
+            }
+            if (defined $result->{count}) {
+                merge_min_max($group_result, $result, "count");
+                merge_min_max($group_result, $result, "errors");
+                merge_min_max($group_result, $result, "todos");
+                merge_min_max($group_result, $result, "skips");
+            }
+        }
+        $group->{$testname} = $group_result;
+        if ($group_result->{status} eq "dll missing" or
+            ($group_result->{status} eq "run" and
+             $group_result->{errors}->[1] == 0 and
+             $group_result->{todos}->[1] == 0 and
+             $group_result->{skips}->[1] == 0))
+        {
+            # No errors and no todos so we can omit this result
+            # from the group table
+            $group_result->{omit} = 1;
         }
     }
 }
@@ -302,58 +355,105 @@ $header
   <tbody onDblClick="clone();">
 EOF
 
+sub min_to_max($)
+{
+    my ($minmax)=@_;
+    return $minmax->[0] if ($minmax->[0] == $minmax->[1]);
+    return "$minmax->[0] to $minmax->[1]";
+}
+
 # Output a single cell of a test
 sub singletest($$$) {
-    my ($report, $testname, $groupname) = @_;
-    my $file = "$report->{dir}/$testname.txt";
-    my ($count, $todo, $error, $skipped) = @{$report->{results}->{$testname}};
-    if ($count eq "failed") {
-        my $msg = $todo eq "crash"?"crashed":
-                  $todo eq "-2"?"failed":
-                  $todo =~ /^-/?"crashed":
-                  $todo eq "filelimit"?"file limit":
-                  $todo eq "258"?"timeout":"failed";
-        my $fail = -r "$datadir/$build/$file"?"<a href=\"$file\">$msg</a>":$msg;
-        print OUT "      <td class=\"note\">$fail</td>\n";
-    } elsif ($count eq "dll missing") {
+    my ($group, $testname, $groupname) = @_;
+    my $result = $group->{$testname};
+
+    my ($href, $label);
+    if ($group->{reports} and @{$group->{reports}} > 1)
+    {
+        $href = $result->{omit} ? "" : "href=\"#group_$groupname:$testname\"";
+        $label = $groupname;
+    }
+    else
+    {
+        my $report = $group->{reports} ? $group->{reports}->[0] : $group;
+        $href = "$report->{dir}/$testname.txt";
+        $href = (-r "$datadir/$build/$href") ? "href=\"$href\"" : "";
+        $label = "$groupname $report->{tag}";
+    }
+
+    my $status = $result->{status};
+    if ($status eq "run")
+    {
+        my $class = $result->{errors}->[0] ? "fail" :
+                    $result->{errors}->[1] ? "mixed" :
+                    $result->{todos}->[1] ? "todo" :
+                    "pass";
+        $class .= " also-todo" if ($result->{todos}->[1]);
+        $class .= " also-skip" if ($result->{skips}->[1]);
+        my $mm_count=min_to_max($result->{count});
+        my $mm_errors=min_to_max($result->{errors});
+        my $mm_todos=min_to_max($result->{todos});
+        my $mm_skips=min_to_max($result->{skips});
+        my $title="$mm_count tests, $mm_errors errors, $mm_todos todos, $mm_skips skips";
+        my $msg=!$result->{todos}->[1] ? $result->{errors}->[1] :
+                !$result->{errors}->[1] ? $result->{todos}->[1] :
+                "$result->{errors}->[1]+$result->{todos}->[1]";
+        print OUT <<"EOF";
+      <td class="result $class"><a $href title="$title"
+        onMouseOver="refresh('$testname', '$label', $mm_count, $mm_todos, $mm_errors, $mm_skips);"
+        >$msg</a></td>
+EOF
+    }
+    elsif ($status eq "dll missing")
+    {
         my ($dll, $unit) = split(/:/, $testname);
         $dll.=".dll" if ($dll !~ /\./);
-        my $href=(-r "$datadir/$build/$file") ? "href=\"$file\"" : "";
         print OUT <<"EOF";
-      <td class="result pass also-skip"><a
+      <td class="result pass also-skip"><a $href
         title="No tests run as $dll is not present on this system"
         >n/a</a></td>
 EOF
-    } elsif ($count eq "winetest crash") {
+    }
+    elsif ($status eq "winetest crash")
+    {
         print OUT <<"EOF";
-      <td class="note"><a
+      <td class="note"><a $href
         title="Test did not run as winetest crashed"
         >winetest</a></td>
 EOF
-    } elsif ($count eq "file limit") {
+    }
+    elsif ($status eq "filelimit")
+    {
         print OUT <<"EOF";
-      <td class="note"><a
+      <td class="note"><a $href
         title="Test is missing because of a partial report file"
         >truncated</a></td>
 EOF
-    } elsif ($count eq "test missing") {
+    }
+    elsif ($status eq "missing")
+    {
         print OUT <<"EOF";
-      <td class="note"><a
+      <td class="note"><a $href
         title="Test did not run for an unknown reason"
         >not run</a></td>
 EOF
-    } else {
-        my $class = $error?"fail":$todo?"todo":"pass";
-        $class .= " also-skip" if ($skipped);
-        $class .= " also-todo" if ($todo);
-        my $msg=$todo ? ($error ? "$error+$todo" : $todo) : $error;
+    }
+    elsif ($status eq "mixed")
+    {
         print OUT <<"EOF";
-      <td class="result $class"><a
-        href="$file"
-        title="$count tests, $error errors, $todo todos, $skipped skips"
-        onMouseOver="refresh('$testname','$groupname $report->{tag}',$count,$todo,$error,$skipped);"
-        >$msg</a></td>
+      <td class="note"><a $href
+        title="Mixed results"
+        >mixed</a></td>
 EOF
+    }
+    else
+    {
+        my $msg = $status eq "crash" ? "crashed" :
+                  $status eq "-2" ? "failed" :
+                  $status =~ /^-/ ? "crashed" :
+                  $status eq "258" ? "timeout": "failed";
+        $msg = "<a $href>$msg</a>" if ($href ne "");
+        print OUT "      <td class=\"note\">$msg</td>\n";
     }
 }
 
@@ -367,33 +467,8 @@ EOF
     foreach my $group (@groups) {
         if (!exists $group->{reports}) {
             # Do nothing
-        } elsif (@{$group->{reports}} == 1) {
-            singletest($group->{reports}->[0], $testname, $group->{name});
         } else {
-            my $href = "href=\"#group_$group->{name}:$testname\"";
-            if (exists $group->{extrema}->{$testname}) {
-                my ($min,$max) = @{$group->{extrema}->{$testname}};
-                my $todo=$group->{todo}->{$testname};
-                my $class = $min?"fail":$max?"mixed":$todo?"todo":"pass";
-                $class .= " also-todo" if ($todo);
-                $class .= " also-skip" if (exists $group->{skipped}->{$testname});
-                my $title = "";
-                if ($min)
-                {
-                    $title = " title=\"Best: $min";
-                    $title.= ", Todo: $group->{todo}->{$testname}" if (exists $group->{todo}->{$testname});
-                    $title.="\"";
-                }
-                my $errors = $min==$max?$min:"$min to $max";
-                my $msg=$todo ? ($max ? "$max+$todo" : $todo) : $max;
-                print OUT <<"EOF";
-      <td class="result $class"><a $href$title
-        onMouseOver="refresh('$testname','$group->{name}','-','-','$errors');"
-        >$msg</a></td>
-EOF
-            } else {
-                print OUT "      <td class=\"note\"><a $href>.</a></td>\n";
-            }
+            singletest($group, $testname, $group->{name});
         }
     }
     print OUT "    </tr>\n";
@@ -444,9 +519,9 @@ $header
   </tfoot>
   <tbody onDblClick="clone();">
 EOF
-    foreach my $testname (sort keys %alltests) { # skip identical
-        my $digest = $group->{digests}->{$testname};
-        next unless defined $digest && $digest eq "differ";
+    foreach my $testname (sort keys %alltests) {
+        my $result = $group->{$testname};
+        next if ($result->{omit});
         print OUT <<"EOF";
     <tr>
       <td class="test">
