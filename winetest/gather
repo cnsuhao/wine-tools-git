@@ -38,30 +38,31 @@ my $summary_version=4;
 
 
 # Group result containers:
-#  name        Group name
-#  extrema     Hashes test names to an array containing the minimum and maximum
-#                number of errors for the test across the group's reports
-#  todo        Hashes test names to the maximum number of todos for that test
-#  skipped     Hashes test names to the maximum number of skips for that test
-#  digests     Hashes test names to a string which is 'differ' if the test
-#                should be shown in the group's results table
-#  reports     An array of report result containers
+#  name          Group name
+#  extrema       Hashes test names to an array containing the minimum and
+#                  maximum number of errors for the test across the group's
+#                  reports
+#  todo          Hashes test names to the maximum number of todos for that test
+#  skipped       Hashes test names to the maximum number of skips for that test
+#  digests       Hashes test names to a string which is 'differ' if the test
+#                  should be shown in the group's results table
+#  reports       An array of report result containers
 #
 # Report result containers:
-#  tag         The report's tag
-#  dir         The directory containing the report data (log files, etc).
-#  dllmissing  A hash of the missing dlls for that system
-#  crash       The name of the last test that was run before winetest crashed
-#  filelimit   The name of the last test that was run before the report file
-#                size limit was reached
-#  results     Hashes test names to an array containing that test's results:
-#                [ count, todos, errors, skips ]
-#              Where:
-#               count    Is the number of checks in that test or a string
-#                          describing the test failure
-#               todos    Is the number of todo checks
-#               errors   Is the number of checks that failed
-#               skips    Is the number of times checks were skipped
+#  tag           The report's tag
+#  dir           The directory containing the report data (log files, etc).
+#  dllmissing    A hash of the missing dlls for that system
+#  winetestcrash The name of the last test that was run before winetest crashed
+#  filelimit     The name of the last test that was run before the report file
+#                  size limit was reached
+#  results       Hashes test names to an array containing that test's results:
+#                  [ count, todos, errors, skips ]
+#                Where:
+#                 count    Is the number of checks in that test or a string
+#                            describing the test failure
+#                 todos    Is the number of todo checks
+#                 errors   Is the number of checks that failed
+#                 skips    Is the number of times checks were skipped
 my %w95   = (name => "Win95");
 my %w98   = (name => "Win98");
 my %me    = (name => "Me");
@@ -172,7 +173,7 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
                 }
             }
         } elsif ($todo eq "crash") {
-            $report->{crash} = $testname;
+            $report->{winetestcrash} = $testname;
         } elsif ($todo eq "filelimit") {
             $report->{filelimit} = $testname;
         }
@@ -195,7 +196,7 @@ foreach my $group (@groups) {
                 # Make sure missing tests are shown in the group results
                 $group->{digests}->{$testname} = "differ";
                 my ($dll, $unit) = split(/:/, $testname);
-                my $crash = $report->{crash};
+                my $crash = $report->{winetestcrash};
                 my $filelimit = $report->{filelimit};
                 if (exists $report->{dllmissing}->{$dll}) {
                     # Mark this test as missing because of a missing dll
