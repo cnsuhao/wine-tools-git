@@ -8,5 +8,17 @@ if [ ! -f $lock ]; then
     touch $lock
     while perl dissect; [ $? -eq 0 -o $? -eq 1 ]; do true; done
     while perl gather; do true; done
+
+    # move 2-month old results out of the way
+    for i in `find ./data -maxdepth 1 -mtime +60 -type d -print`
+    do
+        mv $i old-data
+    done
+
+    # and archive 6-month old results
+    (cd old-data && for i in `find . -maxdepth 1 -mtime +180 -type d -print`
+    do
+        tar cfj $i.tar.bz2 $i && rm -rf $i
+    done)
     rm $lock
 fi
