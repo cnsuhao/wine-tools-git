@@ -53,7 +53,7 @@ if ($q->param('testing')) {
 }
 
 # redirect to data dir when no vars present
-print "Location: http://test.winehq.org/data/\n\n";
+print "Location: http://test.winehq.org/data/?C=M;O=D\n\n";
 
 # done
 exit();
