@@ -2,7 +2,7 @@ result_window = null;
 document.writeln ('<a href="#" onClick="open_popup(); return false;">Open popup</a>');
 
 function open_popup () {
-    result_window = window.open("../../resultform.html","results","width=240,height=240,resizable,scrollbars=no");
+    result_window = window.open("/resultform.html","results","width=240,height=240,resizable,scrollbars=no");
 }
 
 function isopen () {
@@ -24,7 +24,7 @@ function refresh (test, version, tests, todo, errors, skipped) {
 
 function clone () {
     if (isopen ()) {
-        var cw = window.open("../../resultform.html","frozen","width=200,height=140,resizable,scrollbars=no");
+        var cw = window.open("/resultform.html","frozen","width=200,height=140,resizable,scrollbars=no");
         var cf = cw.document.results;
         var rf = result_window.document.results;
         cf.test.value = rf.test.value;
