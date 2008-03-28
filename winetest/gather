@@ -362,7 +362,7 @@ EOF
                     "pass";
         my $count=!$report->{todos} ? $report->{errors} :
                   !$report->{errors} ? $report->{todos} :
-                  "$group->{errors}+$group->{todos}";
+                  "$report->{errors}+$report->{todos}";
 
         my $prcnt=!$report->{todos} ? percent($report->{errors}, $unit_count) :
                   !$report->{errors} ? percent($report->{todos}, $unit_count) :
