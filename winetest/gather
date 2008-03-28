@@ -487,7 +487,7 @@ sub singletest($$$) {
                 "$result->{errors}->[1]+$result->{todos}->[1]";
         print OUT <<"EOF";
       <td class="result $class"><a $href title="$title"
-        onMouseOver="refresh('$testname', '$label', $mm_count, $mm_todos, $mm_errors, $mm_skips);"
+        onMouseOver="refresh('$testname', '$label', '$mm_count', '$mm_todos', '$mm_errors', '$mm_skips');"
         >$msg</a></td>
 EOF
     }
