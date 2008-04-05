@@ -133,7 +133,8 @@ function get_resource_name($type, $name)
     $types[14] = "GROUP_ICON";
     $types[16] = "VERSION";
     $types[260] = "MENUEX";
-    $types[262] = "DIALOGEX";
+    $types[261] = "DIALOGEX";
+    $types[262] = "USER";
 
     if (is_numeric($name))
         $pname = "#".$name;
