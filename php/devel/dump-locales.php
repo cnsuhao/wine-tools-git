@@ -15,7 +15,7 @@ function res_enum($header, $f)
         return FALSE;
 #    echo "Found resource for locale ".$header["language"]."<br/>\n";
     $data = fread($f, $header["resSize"]);
-    $str = new StringTable($header, $data);
+    $str = new StringTable($header, $data, 0);
     $langid = sprintf("%03x:%02x", $header["language"] & 0x3ff, $header["language"] >> 10);
     $LOCALE_NAMES[$langid] = $str->getString(2);
 }
