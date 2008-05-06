@@ -69,10 +69,10 @@ function dump_table($table)
 
 <?php warn_if_lang_hidden($lang) ?>
 
-<h2>Partialy translanted files</h2>
+<h2>Partially translated files</h2>
 <?php dump_table($partial) ?>
 
-<h2>Files not translanted</h2>
+<h2>Files not translated</h2>
 <?php dump_table($notransl) ?>
 
 <h2>Locales data</h2>
