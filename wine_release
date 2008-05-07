@@ -48,8 +48,8 @@ cd wine-$version
 chmod +r fileidx xref
 
 # make Glimpse index
-##glimpseindex -n -H . ../../wine-$version
-##chmod +r .glimpse*
+glimpseindex -n -H . ../../wine-$version
+chmod +r .glimpse*
 cd ../..
 
 (echo "wine-$version"; cat wine-versions) | uniq > wine-versions.new && mv -f wine-versions.new wine-versions
