@@ -57,7 +57,7 @@ cd ../..
 # update man page and documentation
 echo "==== UPDATING DOCUMENTATION ===="
 cd wine-$version
-./configure --quiet
+./configure --quiet --without-x --without-freetype
 
 manpages="\
   loader/wine.man \
