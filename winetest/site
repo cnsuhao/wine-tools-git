@@ -40,7 +40,6 @@ if ($q->param('testing')) {
     } elsif ($q->param('testing') eq "next" and $curPos < $#builds) {
         print $q->redirect("http://test.winehq.org/data/".$builds[$curPos + 1]->{name});
         exit();
-    }
     } elsif ($q->param('testing') eq "latest") {
         print $q->redirect("http://test.winehq.org/data/".$builds[$#builds]->{name});
         exit();
