@@ -2,8 +2,7 @@
 #
 # Searches for $queuedir/rep*/report.txt-s, preprocesses and moves
 # them into the appropriate $datadir/build/version directories, and
-# creates $datadir/build/outdated.  Allowed builds are read from
-# $builds.  Each generated file has .txt extension.
+# creates $datadir/build/outdated. Each generated file has .txt extension.
 #
 # Files: winetest.conf
 #
@@ -29,7 +28,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 use strict;
-use vars qw/$builds $queuedir $datadir $maxmult $maxfilesize/;
+use vars qw/$gitdir $queuedir $datadir $maxmult $maxfilesize/;
 require "winetest.conf";
 
 my $name0=$0;
@@ -43,6 +42,8 @@ my $summary_version=4;
 
 use File::Temp qw/tempdir/;
 use Errno qw/ENOTEMPTY/;
+
+$ENV{GIT_DIR} = $gitdir;
 
 my ($report, $tmpdir);
 
@@ -76,17 +77,10 @@ print SUM "Version $summary_version\n";
 $_ = <IN>;
 /^Tests from build ([-.0-9a-zA-Z]+)\r?$/ or mydie "no build header: $_";
 my $testbuild = $1;
-if (!open BUILDS, "<$builds") {
-    print STDERR "$name0:error: unable to open '$builds' for reading: $!\n";
-    exit 3;
-}
-while (<BUILDS>) {
-    next if /^#/;
-    chomp;
-    last if $testbuild =~ "^$_\$";
-}
-close BUILDS;
-defined $_ or mydie "$1 not in $builds\n";
+$testbuild =~ /^[0-9a-f]{40}$/ or mydie "not a valid commit id $testbuild";
+my $commit = `git rev-parse --verify $testbuild^0 2>/dev/null`;
+chomp $commit;
+$testbuild eq $commit or mydie "not an existing commit $testbuild";
 
 $_ = <IN>;
 /^Archive: (.*?)\r?$/ or mydie "no archive line: $_";

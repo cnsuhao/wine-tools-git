@@ -210,7 +210,6 @@ sub releases_make {
     # all is good, store the cookie, and URL now, this activetes the release
     &write_file(">$base_path/$name.cookie", &md5sum($cookie));
     &write_file(">$base_path/$name.url", $url);
-    &write_file(">>$data_root/$program.builds", $build);
 
     return "OK";
 }

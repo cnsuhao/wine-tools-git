@@ -14,7 +14,6 @@ the destination for that and presents the results in an ordered form.
 Configuration file, sets the following variables:
 $queuedir - queue incoming submissions here
 $datadir  - processed data is served from here
-$builds   - list of allowed build tags
 
 * winetest.cgi
 
@@ -35,8 +34,7 @@ at processing this report.  If everything goes flawlessly the whole
 directory is renamed (based on the information learned in the process)
 to $datadir/BUILD/VERSION_TAG_DIGIT where DIGIT is for resolving name
 clashes and $datadir/BUILD/outdated is created to signal the change in
-the given build.  Allowed builds are those in $builds.  See also the
-head of the file.
+the given build.  See also the head of the file.
 
 * gather
 
@@ -49,10 +47,6 @@ removes the outdated file.  See also the head of the file.
 * summary.css, summary.js, resultform.html
 
 These files are referenced by the index.html files created by gather.
-
-* winetest.builds
-
-The file to have $builds point to.
 
 
 Ferenc Wagner <wferi@afavant.elte.hu>, Wed, 18 Jan 2004 18:18:05 +0100
