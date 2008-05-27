@@ -12,48 +12,43 @@ my $q = new CGI;
 # change url based on testing vars
 if ($q->param('testing')) {
 
+    my @builds;
     # read testing dir
     opendir(DIR, "./data/");
-    my @files = readdir(DIR);
-    closedir(DIR);
-    splice(@files,0,2);
-    @files = sort {lc($a) cmp lc($b)} @files;
-
-    # get only dirs
-    my @newFiles = ();
-    for (my $c = 0; $c < $#files; $c++) {
-        if (-d "./data/".$files[$c]) {
-            push(@newFiles, $files[$c]);
-        }
+    foreach my $build (readdir(DIR))
+    {
+        next if $build =~ /^\./;
+        next unless $build =~ /^[-.0-9a-zA-Z]+$/;
+        next unless -f "./data/$build/index.html";
+        push @builds, { name => $build, date => (stat "./data/$build")[9] };
     }
-    @files = @newFiles;
+    closedir(DIR);
+    @builds = sort { $a->{date} <=> $b->{date} } @builds;
 
     # get current pos
     my $curPos = 0;
-    for (my $c = 0; $c < $#files; $c++) {
-        if ($q->param('current') eq $files[$c]) {
+    for (my $c = 0; $c <= $#builds; $c++) {
+        if ($q->param('current') eq $builds[$c]->{name}) {
             $curPos = $c;
         }
     }
 
     # perform redirect based on vars
-    if ($curPos == 0 and $q->param('testing') eq "prev") {
-        print "Location: http://test.winehq.org/data/".$files[$#files]."\n\n";
+    if ($q->param('testing') eq "prev" and $curPos > 0) {
+        print $q->redirect("http://test.winehq.org/data/".$builds[$curPos - 1]->{name});
         exit();
-    } elsif ($curPos == $#files and $q->param('testing') eq "next") {
-        print "Location: http://test.winehq.org/data/".$files[0]."\n\n";
+    } elsif ($q->param('testing') eq "next" and $curPos < $#builds) {
+        print $q->redirect("http://test.winehq.org/data/".$builds[$curPos + 1]->{name});
         exit();
-    } elsif ($q->param('testing') eq "prev" and $files[$curPos - 1]) {
-        print "Location: http://test.winehq.org/data/".$files[$curPos - 1]."\n\n";
-        exit();
-    } elsif ($q->param('testing') eq "next" and $files[$curPos + 1]) {
-        print "Location: http://test.winehq.org/data/".$files[$curPos + 1]."\n\n";
+    }
+    } elsif ($q->param('testing') eq "latest") {
+        print $q->redirect("http://test.winehq.org/data/".$builds[$#builds]->{name});
         exit();
     }
 }
 
 # redirect to data dir when no vars present
-print "Location: http://test.winehq.org/data/?C=M;O=D\n\n";
-
+print $q->redirect("http://test.winehq.org/data/");
+ 
 # done
 exit();
