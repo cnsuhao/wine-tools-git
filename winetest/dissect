@@ -172,7 +172,7 @@ while (<IN>) {
     if (!defined $dll) {        # new test
         next if /^\s*$/;
         m[([_.a-z0-9]+):([_a-z0-9]+) start ([/_.a-z0-9]+) (-|[.0-9a-f]+)\r?$]
-          or mydie "no start line:$.: $_";
+          or next;
         ($dll,$unit,$source,$rev) = ($1,$2,$3,$4);
         open OUT, ">:raw", $tmpfile or mydie "unable to open '$tmpfile' for writing: $!\n";
         print OUT;
