@@ -154,7 +154,7 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
         my $testname = "$dll:$unit";
 
         if ($build =~ /^[0-9a-f]{40}$/) {
-		$alltests{$testname} = "http://source.winehq.org/git/wine.git/?a=blob;f=$source;hb=$build"
+		$alltests{$testname} = "http://source.winehq.org/git/wine.git/?a=history;f=$source;hb=$build"
 		    unless exists $alltests{$testname};
         } elsif ($rev =~ /\./) {
 		$alltests{$testname} = "http://cvs.winehq.org/cvsweb/wine/$source#rev$rev"
