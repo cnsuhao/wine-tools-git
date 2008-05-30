@@ -153,17 +153,8 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
             $source, $rev) = split;
         my $testname = "$dll:$unit";
 
-        if ($build =~ /^[0-9a-f]{40}$/) {
-		$alltests{$testname} = "http://source.winehq.org/git/wine.git/?a=history;f=$source;hb=$build"
-		    unless exists $alltests{$testname};
-        } elsif ($rev =~ /\./) {
-		$alltests{$testname} = "http://cvs.winehq.org/cvsweb/wine/$source#rev$rev"
-		    unless exists $alltests{$testname};
-	} else {
-		$alltests{$testname} = "http://source.winehq.org/git/wine.git/?a=blob;f=$source;" .
-					($rev ne "-" ? "h=$rev" : "hb=master")
-		    unless exists $alltests{$testname};
-	}
+        $alltests{$testname} = "http://source.winehq.org/git/wine.git/?a=history;f=$source;hb=$build"
+            unless exists $alltests{$testname};
 
         # Leave this in for older type reports
         if ($unit =~ /_dll_missing/ or
