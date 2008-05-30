@@ -53,6 +53,11 @@ sub mydie(@) {
         print STDERR "$name0:error: unable to rename '$tmpdir' to '$errdir': $!\n";
         exit 3;
     }
+    if (open ERR, ">$errdir/error")
+    {
+        print ERR "$name0:error:$errdir: ", @_;
+        close ERR;
+    }
     print STDERR "$name0:error:$errdir: ", @_;
     exit 1;
 }
