@@ -64,7 +64,7 @@ my $newsfile;
 
 do
 {
-    $newsfile = sprintf "news/%s%02u.xml", $newsdate, $newscount++;
+    $newsfile = sprintf "news/en/%s%02u.xml", $newsdate, $newscount++;
 }
 while (-f "$newsfile");
 
