@@ -27,7 +27,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 use strict;
-use vars qw/$datadir/;
+use vars qw/$datadir $gitweb/;
 require "winetest.conf";
 
 my $name0=$0;
@@ -153,8 +153,7 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
             $source, $rev) = split;
         my $testname = "$dll:$unit";
 
-        $alltests{$testname} = "http://source.winehq.org/git/wine.git/?a=history;f=$source;hb=$build"
-            unless exists $alltests{$testname};
+        $alltests{$testname} = $source;
 
         # Leave this in for older type reports
         if ($unit =~ /_dll_missing/ or
@@ -388,6 +387,7 @@ EOF
 }
 
 my $header_footer=build_header_footer(\@groups);
+my $short_build = substr($build,0,12);
 
 if (!open OUT, ">$datadir/$build/index.html") {
   print STDERR "$name0:error: unable to open '$datadir/$build/index.html' for writing: $!\n";
@@ -398,16 +398,17 @@ print OUT <<"EOF";
                       "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-  <title>$build</title>
+  <title>$short_build</title>
   <link rel="stylesheet" href="/summary.css" type="text/css">
 
   <meta http-equiv="Content-Type"
-        content="text/html; charset=ISO-8859-1">
+        content="text/html; charset=utf-8">
   <meta name="Author" content="gather">
   <meta http-equiv="Content-Script-Type" content="text/javascript">
 </head>
 
 <body>
+<div class="navbar">
 <table class="navbar">
   <tr>
     <td class="left">
@@ -420,14 +421,17 @@ print OUT <<"EOF";
     </td>
   </tr>
 </table>
+</div>
+<div class="legend">
 <h3>Legend</h3>
-<p class="legend">All tests <span class="result pass">pass</span> in all reports<br>
-   Some tests <span class="result mixed">fail</span> in some reports<br>
-   Some tests <span class="result fail">fail</span> in all reports<br>
-   This <span class="result pass also-skip">border</span> signals that some tests are skipped<br>
-   This <span class="result pass also-todo">border</span> and this <span class="result todo">background</span> signal that the implementation needs some work
-</p>
-<h1>Main summary for build <a href="$url">$build</a></h1>
+<p class="legend">All tests <span class="result pass">pass</span> in all reports.</p>
+<p class="legend">Some tests <span class="result mixed">fail</span> in some reports.</p>
+<p class="legend">Some tests <span class="result fail">fail</span> in all reports.</p>
+<p class="legend">This <span class="result pass also-skip">border</span> signals that some tests are skipped.</p>
+<p class="legend">This <span class="result pass also-todo">border</span> and this <span class="result todo">background</span> signal that the implementation needs some work.</p>
+</div>
+<div class="main">
+<h1>Main summary for build <a href="$url" title="$build">$short_build</a></h1>
 <table class="report">
 $header_footer
   <tbody onDblClick="clone();">
@@ -537,10 +541,12 @@ EOF
 
 # Create the Main Summary
 foreach my $testname (sort keys %alltests) {
+    my $source = $alltests{$testname};
+    my $url = $gitweb . "/?a=history;f=$source;hb=$build";
     print OUT <<"EOF";
     <tr>
       <td class="test">
-        <a href="$alltests{$testname}" title="dll:unit_test source">$testname</a></td>
+        <a href="$url" title="$source">$testname</a></td>
 EOF
     foreach my $group (@groups) {
         if (!exists $group->{reports}) {
@@ -554,6 +560,7 @@ EOF
 print OUT <<"EOF";
   </tbody>
 </table>
+</div>
 EOF
 
 # Take the groups with multiple reports
@@ -563,19 +570,21 @@ foreach my $group (@groups) {
     $header_footer = build_header_footer($group->{reports});
 
     print OUT <<"EOF";
-<hr>
+<div class="group">
 <h2><a name="group_$group->{name}">$group->{name} differences</a></h2>
 <table class="report">
 $header_footer
   <tbody onDblClick="clone();">
 EOF
     foreach my $testname (sort keys %alltests) {
+        my $source = $alltests{$testname};
+        my $url = $gitweb . "/?a=history;f=$source;hb=$build";
         my $result = $group->{$testname};
         next if ($result->{omit});
         print OUT <<"EOF";
     <tr>
       <td class="test">
-        <a href="$alltests{$testname}" name="group_$group->{name}:$testname" title="dll:unit_test source">$testname</a></td>
+        <a href="$url" name="group_$group->{name}:$testname" title="$source">$testname</a></td>
 EOF
         foreach my $report (@{$group->{reports}}) {
             singletest($report, $testname, $group->{name});
@@ -587,6 +596,7 @@ EOF
     print OUT <<"EOF";
   </tbody>
 </table>
+</div>
 EOF
 }
 print OUT <<"EOF";
