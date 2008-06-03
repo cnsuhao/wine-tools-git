@@ -1,9 +1,65 @@
+/* give a WineHQ-ish look to the test summary */
+body {
+    background-color: #E2E2E2;
+    color: #000000;
+    font-family: "bitstream vera sans", "verdana", "arial", "helvetica", sans-serif;
+    margin: 10px;
+    font-size: small;
+}
+
+a:link    { color: #A50D0D; text-decoration: none; }
+a:visited { color: #FF0000; }
+a:hover   { color: #FF6666; text-decoration: underline; }
+a:active  { color: #FF0000; }
+a.hidden  { text-decoration: none; color: #000000; }
+
+h1 { font-size: 180%; }
+h2 { font-size: 150%; }
+
 :link, :visited {
         text-decoration: none;
 }
-h3, p.legend {
-        text-align: center;
+
+h1, h2 {
+    text-align: center;
+    background-color: #601919;
+    color: #ffffff;
+    padding: 4px;
+    margin: 0;
 }
+h1 :link {
+    color: #ffe0e0;
+}
+div.main, div.group {
+    margin: 10px 0 0 0;
+    background-color: white;
+    width: 100%;
+    border: 1px solid #601919;
+}
+div.navbar {
+    padding: 0;
+    width: 100%;
+    text-align: center;
+    margin: 10px 0 0 0;
+    background-color: #e2e2e2;
+}
+div.legend {
+    text-align: center;
+    margin: 5px 0 0 0;
+    background-color: white;
+    border: 1px solid #601919;
+}
+div.legend h3 {
+    font-size: 120%;
+    text-align: center;
+    padding: 3px;
+    margin: 0;
+}
+p.legend {
+    padding: 0;
+    margin: 3px;
+}
+
 .result {
         border-left-width: thick;
         border-left-style: solid;
@@ -43,6 +99,8 @@ td {
 table.report {
         margin-left: auto;
         margin-right: auto;
+        padding: 10px;
+        background-color: white;
 }
 table.report th {
         line-height: 0.9;
@@ -55,13 +113,19 @@ table.report th.test {
 }
 table.report thead th {
         border-bottom-style: solid;
+        border-bottom-color: #601919;
 }
 table.report tfoot th {
         border-top-style: solid;
 }
-table.report td :link {
-        color: black;
-}
+table.report th.pass a:hover   { color: black; text-decoration: none; }
+table.report th.todo a:hover   { color: black; text-decoration: none; }
+table.report th.fail a:hover   { color: black; text-decoration: none; }
+
+table.report td.result :link    { color: black; }
+table.report td.result :visited { color: black; }
+table.report td.result :hover   { color: black; }
+
 table.report td.vis_note {
         border-right-style: solid;
         border-left-style: solid;
@@ -69,12 +133,12 @@ table.report td.vis_note {
         border-left-color: #ffffff;
         border-right-color: #0070ff;
 }
+table.report td.note {
+    background-color: #fff8f8;
+}
 table.report td.note :link, table.report td.note :visited,
 table.report td.vis_note :link, table.report td.vis_note :visited {
         text-decoration: underline;
-}
-table.report td.test :link {
-        color: blue;
 }
 table.report td.test {
         text-align: left;
@@ -91,9 +155,6 @@ table.navbar {
 }
 table.navbar td {
         width: 33%
-}
-table.navbar td :link {
-        color: blue;
 }
 table.navbar td.left {
         text-align: left;

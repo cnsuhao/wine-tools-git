@@ -5,7 +5,7 @@ body {
     color: #000000;
     font-family: "bitstream vera sans", "verdana", "arial", "helvetica", sans-serif;
     margin: 10px;
-    font-size: 12px;
+    font-size: small;
 }
 
 a                   { color: #A50D0D; text-decoration: none; }
@@ -13,9 +13,6 @@ a:visited           { color: #FF0000; }
 a:hover             { color: #FF6666; text-decoration: underline; }
 a:active            { color: #FF0000; }
 a.hidden            { text-decoration: none; color: #000000; }
-
-ol,ul,p             { font-size: 12px; }
-td,tr,th            { font-size: 12px; }
 
 table.builds {
     margin-right: auto;
@@ -44,6 +41,7 @@ tr.dark:hover  { background-color: #f8e8e8; }
 
 td.build, td.date {
     font-family: monospace;
+    font-size: medium;
 }
 td.version {
     text-align: center;
