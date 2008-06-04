@@ -34,8 +34,8 @@ require "winetest.conf";
 my $name0=$0;
 $name0 =~ s+^.*/++;
 
-# We support reports version 3 and up
-my $minimum_report_version=3;
+# We support reports version 4 and up
+my $minimum_report_version=4;
 # And we generate summary files version 4
 my $summary_version=4;
 
@@ -151,15 +151,12 @@ if ($wine) {
     $version = "wine";
 }
 
-# Dll information is only available in new type reports
 my %dllinfo;
-chomp;
-if (/^Dll info:\r?$/) {
-    while ($_ = <IN>) {
-        chomp;
-        last if (!/^\s+([^ =]+)=(.*)\r?$/);
-        $dllinfo{$1}=$2;
-    }
+/^Dll info:\r?$/ or mydie "no Dll info header: $_";
+while ($_ = <IN>) {
+    chomp;
+    last if (!/^\s+([^ =]+)=(.*)\r?$/);
+    $dllinfo{$1}=$2;
 }
 
 /^Test output:/ or mydie "no test header: $_";
@@ -182,21 +179,6 @@ while (<IN>) {
         $todo += $3;
         $failed += $4;
         $skipped += $5;
-        print OUT;
-    } elsif (/^(.*$unit.*: (\d+) tests executed, (\d+) marked as todo, (\d+) failures?\.)\r?$/) {
-        # We find these lines in report version 3 files
-        $lines++;
-        $total += $2;
-        $todo += $3;
-        $failed += $4;
-        print OUT;
-    } elsif (/^.*$unit.*: Tests skipped: (?:$dll(?:\.dll)? cannot be loaded|$dll(?:\.dll)? not found|Could not load $dll(?:\.dll)?)\r?$/) {
-        # We find these lines in report version 3 files
-        $dllinfo{$dll}="dll is missing";
-        print OUT;
-    } elsif (/^.*$unit.*:Could not load $dll/) {
-        # We find these lines in report version 3 files
-        $dllinfo{$dll}="dll is missing";
         print OUT;
     } elsif (/$dll:$unit done \((-?\d+)\)\r?$/) {
         chomp;                  # current test ended
