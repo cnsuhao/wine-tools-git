@@ -122,7 +122,7 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
     }
 
     my $report = { group => $group};
-    # Read the dll information if present (newer type reports)
+    # Read the dll information if present
     my $dllinfo = "$datadir/$build/$dir/dllinfo.txt";
     if (open DLLINFO, "<$dllinfo") {
         while ($_ = <DLLINFO>) {
@@ -153,15 +153,14 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
             $source, $rev) = split;
         my $testname = "$dll:$unit";
 
-        $alltests{$testname} = $source;
-
-        # Leave this in for older type reports
-        if ($unit =~ /_dll_missing/ or
-            ($count eq "0" and exists $report->{dllmissing}->{$dll})) {
-            # Mark the dll as missing on this system
+        if ($count eq "missing")
+        {
             $report->{dllmissing}->{$dll} = 1;
             next;
         }
+
+        $alltests{$testname} = $source;
+
         if ($count eq "failed") {
             if ($todos eq "crash") {
                 $report->{$testname} = { status => "winetest crash" };
@@ -331,19 +330,11 @@ sub build_header_footer($)
         <a href=\"$report->{dir}/dllinfo.html\">[info]</a>
         <a href=\"$report->{dir}/report.html\">[file]</a></small>
 EOF
-            # If dllinfo.txt exist we use a different layout (new style report)
-            } elsif (-r "$datadir/$build/$report->{dir}/dllinfo.txt") {
+            } else {
                 $msg = <<"EOF";
         $group->{name}<br><small>
         <a href=\"$report->{dir}/version.txt\">$report->{tag}</a><br>
         <a href=\"$report->{dir}/dllinfo.txt\">[info]</a>
-        <a href=\"$report->{dir}/report\">[file]</a></small>
-EOF
-            } else {
-                $msg = <<"EOF";
-        $group->{name}<br><small>
-        <a href=\"$report->{dir}/build.txt\">$report->{tag}</a><br>
-        <a href=\"$report->{dir}/version.txt\">[info]</a>
         <a href=\"$report->{dir}/report\">[file]</a></small>
 EOF
             }

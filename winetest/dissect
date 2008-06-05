@@ -183,6 +183,10 @@ while ($_ = <IN>) {
     s/\r+$//;
     last if (!/^\s+([^ =]+)=(.*)\r?$/);
     $dllinfo{$1} = { version => $2 };
+    if ($2 eq "dll is missing")
+    {
+        print SUM "- $1 - missing - - - - -\n";
+    }
 }
 
 /^Test output:/ or mydie "no test header: $_";
@@ -332,14 +336,6 @@ for (my $i = 0; $i <= $#boxes; $i++)
     print FILE $boxes[$i]->{data}, "</div>\n";
     print FILE end_html();
     close FILE or mydie "error writing to '$tmpdir/$boxes[$i]->{id}.html': $!\n";
-}
-
-if (%dllinfo) {
-    open DLLINFO, ">$tmpdir/dllinfo.txt" or mydie "unable to open '$tmpdir/dllinfo.txt' for writing: $!\n";
-    foreach my $dll (sort keys %dllinfo) {
-        print DLLINFO "$dll=$dllinfo{$dll}->{version}\n";
-    }
-    close DLLINFO or mydie "error writing to '$tmpdir/dllinfo.txt': $!\n";
 }
 
 my $builddir = "$datadir/$testbuild";
