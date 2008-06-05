@@ -113,7 +113,7 @@ $ARGV[0] =~ m,^(.*/)[^/]*$,;
 $path = $1;
 while (<MAKEFILE>)
 {
-    if (m/^RC_SRCS +=/)
+    if (m/^RC_SRCS *=/)
     {
         while (m/\\$/)
         {
@@ -121,7 +121,7 @@ while (<MAKEFILE>)
             chop;
             $_ .= <MAKEFILE>;
         }
-        m/^RC_SRCS += (.*)$/;
+        m/^RC_SRCS *=(.*)$/;
         @file = split(/ /, $1);
         foreach (@file)
         {
