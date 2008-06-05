@@ -1,0 +1,65 @@
+/* WineHQ-ish look */
+body {
+    background-color: #E2E2E2;
+    color: black;
+    font-family: "bitstream vera sans", "verdana", "arial", "helvetica", sans-serif;
+    margin: 10px;
+    font-size: small;
+}
+
+a:link    { color: #A50D0D; text-decoration: none; }
+a:visited { color: #FF0000; text-decoration: none; }
+a:hover   { color: #FF6666; text-decoration: underline; }
+a:active  { color: #FF0000; }
+
+div.build, div.version, div.dllinfo, div.testfile {
+    margin: 20px 0 0 0;
+    padding: 0 0 5px;
+    background-color: white;
+    border: 1px solid #601919;
+}
+
+div.output, div.test {
+    font-family: monospace;
+    font-size: medium;
+    text-align: left;
+    white-space: pre;
+    padding: 0 0 0 4px;
+    margin: 0;
+}
+
+div.updownbar {
+    padding: 10px
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-size: large;
+    background-color: #601919;
+    color: #ffffff;
+}
+div.updownbar a:link    { color: #ffffff; text-decoration: none; }
+div.updownbar a:visited { color: #ffffff; text-decoration: none; }
+div.updownbar a:hover   { color: #ffffff; text-decoration: underline; }
+
+div.end {
+    padding: 10px
+    margin-top: 10px;
+    color: red;
+    font-weight: bold;
+}
+
+.result { color: green; }
+.skipped { color: #c08000; }
+.failed { color: red; }
+.todo { color: blue; }
+.trace { color: black; }
+
+table.output td {
+    padding: 0 3em 0 0;
+    font-family: monospace;
+    font-size: medium;
+    text-align: left;
+}
+
+td.arrow :link    { color: #ffffff; text-decoration: none; }
+td.arrow :visited { color: #ffffff; text-decoration: none; }
+td.arrow :hover   { color: #ffffff; text-decoration: underline; }

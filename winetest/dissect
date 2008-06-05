@@ -12,6 +12,7 @@
 #       3 - fatal error, something went utterly wrong
 #
 # Copyright (C) 2004 Ferenc Wagner
+# Copyright (C) 2008 Alexandre Julliard
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -28,7 +29,11 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 use strict;
-use vars qw/$gitdir $queuedir $datadir $maxmult $maxfilesize/;
+use open ':utf8';
+use CGI qw(:standard);
+charset("utf-8");
+
+use vars qw/$gitdir $gitweb $queuedir $datadir $maxmult $maxfilesize/;
 require "winetest.conf";
 
 my $name0=$0;
@@ -62,11 +67,20 @@ sub mydie(@) {
     exit 1;
 }
 
+my @boxes;
+
+sub create_box($$$)
+{
+    my ($id, $class, $title) = @_;
+    my $box = { id => $id, class => $class, title => $title, data => "" };
+    push @boxes, $box;
+    return $box;
+}
+
 ($report,undef) = glob "$queuedir/rep*/report";
 exit 2 unless defined $report;
 
 ($tmpdir = $report) =~ s|^(.+)/report$|$1|;
-my $tmpfile = "$tmpdir/dissect.tmp";
 
 open IN, "<:raw", $report or mydie "unable to open '$report' for reading: $!\n";
 open SUM, ">$tmpdir/summary.txt" or mydie "unable to open '$tmpdir/summary.txt' for writing: $!\n";
@@ -89,6 +103,7 @@ $testbuild eq $commit or mydie "not an existing commit $testbuild\n";
 
 $_ = <IN>;
 /^Archive: (.*?)\r?$/ or mydie "no archive line: $_";
+my $archive = $1;
 print SUM "Archive: $1\n";
 
 $_ = <IN>;
@@ -97,15 +112,24 @@ my $tag = $1 eq ""?"":"_$1";
 
 $_ = <IN>;
 /^Build info:\r?$/ or mydie "no Build info header: $_";
-open BINFO, ">$tmpdir/build.txt" or mydie "unable to open '$tmpdir/build.txt' for writing: $!\n";
-while (($_ = <IN>) =~ s/^    //) { print BINFO; }
-close BINFO or mydie "error writing to '$tmpdir/build.txt': $!\n";
+my $box = create_box( "build", "build", "Build info" );
+$box->{data} .= sprintf "<div class=\"output\">Build: <a title=\"%s\" href=\"$gitweb/?a=shortlog;h=%s\">%s</a></div>\n", $testbuild, $testbuild, substr($testbuild,0,12);
+$box->{data} .= sprintf "<div class=\"output\">Tag: %s</div>\n", substr($tag,1);
+$box->{data} .= sprintf "<div class=\"output\"> </div>\n";
+while (($_ = <IN>) =~ s/^    //)
+{
+    chomp;
+    s/\r+$//;
+    $box->{data} .= "<div class=\"output\">" . escapeHTML($_) . "</div>\n";
+}
+$box->{data} .= "</div>";
 
 my ($wine, $version, $major, $minor, $plid);
 /^Operating system version:\r?$/ or mydie "no OS header: $_";
-open OSVER, ">$tmpdir/version.txt" or mydie "unable to open '$tmpdir/version.txt' for writing: $!\n";
+$box = create_box( "version", "version", "Operating system version" );
+$box->{data} .= "<table class=\"output\">\n";
 while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
-    print OSVER "$1=$2\n";
+    $box->{data} .= sprintf "<tr><td>$1</td><td>%s</td></tr>\n", escapeHTML($2);
     if      ($1 eq "bRunningUnderWine") {
         $wine = $2;
     } elsif ($1 eq "dwMajorVersion") {
@@ -116,7 +140,7 @@ while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
         $plid = $2;
     }
 }
-close OSVER or mydie "error writing to '$tmpdir/version.txt': $!\n";
+$box->{data} .= "</table>";
 
 $version = "unknown";
 if ($plid==1 && $major==4) {
@@ -153,10 +177,12 @@ if ($wine) {
 
 my %dllinfo;
 /^Dll info:\r?$/ or mydie "no Dll info header: $_";
+my $dllbox = create_box( "dllinfo", "dllinfo", "Dll info" );
 while ($_ = <IN>) {
     chomp;
+    s/\r+$//;
     last if (!/^\s+([^ =]+)=(.*)\r?$/);
-    $dllinfo{$1}=$2;
+    $dllinfo{$1} = { version => $2 };
 }
 
 /^Test output:/ or mydie "no test header: $_";
@@ -171,36 +197,56 @@ while (<IN>) {
         m[([_.a-z0-9]+):([_a-z0-9]+) start ([/_.a-z0-9]+) (-|[.0-9a-f]+)\r?$]
           or next;
         ($dll,$unit,$source,$rev) = ($1,$2,$3,$4);
-        open OUT, ">:raw", $tmpfile or mydie "unable to open '$tmpfile' for writing: $!\n";
-        print OUT;
+        $box = create_box( "$dll:$unit", "testfile", "<a href=\"$gitweb/?a=history;f=$source;hb=$testbuild\">$source</a>" );
+        if (defined($dllinfo{$dll}->{version}) && !defined($dllinfo{$dll}->{first}))
+        {
+            $dllinfo{$dll}->{first} = "$dll:$unit";
+        }
     } elsif (/^(.*$unit.*: (\d+) tests executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\.)\r?$/) {
         $lines++;
         $total += $2;
         $todo += $3;
         $failed += $4;
         $skipped += $5;
-        print OUT;
+        chomp;
+        s/\r+$//;
+        my $class = "test result";
+        if ($failed) { $class .= " failed"; }
+        elsif ($todo) { $class .= " todo"; }
+        $box->{data} .= sprintf "<div class=\"%s\">%s</div>\n", $class, escapeHTML($_);
     } elsif (/$dll:$unit done \((-?\d+)\)\r?$/) {
         chomp;                  # current test ended
         if ($lines==0) {
             $result = "failed $1 - -";
+            my $reason = "test failed: error $1";
+            if ($1 == 258) { $reason = "test failed: timed out"; }
+            elsif ($1 < 0) { $reason = "test failed: crash"; }
+            $box->{data} .= "<div class=\"test end\">$reason</div>\n";
         } else {
             $result = "$total $todo $failed $skipped";
         }
       FINISH:
         print SUM "- $dll $unit $result $source $rev\n";
-        print OUT;
-        close OUT or mydie "error writing ot '$tmpfile': $!\n";
-        if (-s $tmpfile) {
-            my $testfile = "$tmpdir/$dll:$unit.txt";
-            rename $tmpfile, $testfile or
-              mydie "unable to rename '$tmpfile' to '$testfile': $!\n";
-        }
+        $box->{data} .= "</div>";
         $dll = undef;
         $total = $todo = $failed = $skipped = 0;
         $lines = 0;
     } else {                    # current test output
-        print OUT;
+        chomp;
+        s/\r+$//;
+        if (/^$unit\.c:(\d+): (.*)$/)
+        {
+            my ($line, $text) = ($1, $2);
+            my $class = "test trace";
+            if ($text =~ /^Test failed: /) { $class = "test failed"; }
+            elsif ($text =~ /^Tests skipped: /) { $class = "test skipped"; }
+            $box->{data} .= sprintf "<div class=\"%s\"><a href=%s/?a=blob;f=%s;hb=%s#l%u>%s.c:%u</a>: %s</div>\n",
+                                 $class, $gitweb, $source, $testbuild, $line, $unit, $line, escapeHTML($text);
+        }
+        else
+        {
+            $box->{data} .= sprintf "<div class=\"test trace\">%s</div>\n", escapeHTML($_);
+        }
     }
 }
 if (defined $dll) {
@@ -208,18 +254,90 @@ if (defined $dll) {
     $_="";
     if ($filesize == $maxfilesize) {
         $result = "failed filelimit - -";
+        $box->{data} .= "<div class=\"test end\">test failed: file limit exceeded</div>\n";
     } else {
         $result = "failed crash - -";
+        $box->{data} .= "<div class=\"test end\">test failed: winetest crash</div>\n";
     }
     goto FINISH;
 }
 close SUM or mydie "error writing to '$tmpdir/summary.txt': $!\n";
 close IN;
 
+# fill the dllinfo box
+
+$dllbox->{data} .= "<table class=\"output\">\n";
+foreach my $dll (sort keys %dllinfo)
+{
+    if ($dllinfo{$dll}->{version} eq "dll is missing")
+    {
+        $dllbox->{data} .= sprintf "<tr><td>%s</td><td class=\"skipped\">missing</td></tr>\n", escapeHTML($dll);
+    }
+    elsif (defined($dllinfo{$dll}->{first}))
+    {
+        $dllbox->{data} .= sprintf "<tr><td><a href=\"report.html#%s\">%s</a></td><td>%s</td></tr>\n",
+                                    escapeHTML($dllinfo{$dll}->{first}), escapeHTML($dll), escapeHTML($dllinfo{$dll}->{version});
+    }
+    else
+    {
+        $dllbox->{data} .= sprintf "<tr><td>%s</td><td>%s</td></tr>\n", escapeHTML($dll), escapeHTML($dllinfo{$dll}->{version});
+    }
+}
+$dllbox->{data} .= "</table>";
+
+# add the prev/next links to all the boxes
+
+for (my $i = 0; $i <= $#boxes; $i++)
+{
+    $boxes[$i]->{prev} = $i > 0 ? $boxes[$i-1]->{id} : "";
+    $boxes[$i]->{next} = $boxes[$i+1]->{id} if $i < $#boxes;
+}
+
+# create the global report.html file
+
+open REPORT, ">$tmpdir/report.html" or mydie "unable to open '$tmpdir/report.html' for writing: $!\n";
+
+print REPORT start_html( -title => "Wine test run report", -style => {src=>"/report.css"} );
+print REPORT "<div class=\"navbar\">";
+print REPORT "<a href=\"report\">raw report</a> | <a href=\"..\">summary</a> | <a href=\"../..\">index</a>";
+if ($archive =~ /^http:\/\//) { printf REPORT " | <a href=\"%s\">test binary</a>", escapeHTML($archive); }
+print REPORT "</div>\n";
+
+for (my $i = 0; $i <= $#boxes; $i++)
+{
+    printf REPORT "<div id=\"%s\" class=\"%s\">\n", $boxes[$i]->{id}, $boxes[$i]->{class};
+    printf REPORT "<div class=\"updownbar\"><table><tr><td width=\"100%%\">%s</td>\n", $boxes[$i]->{title};
+    printf REPORT "<td class=\"arrow\"><a href=\"#%s\">&uarr;</a></td>\n", $boxes[$i]->{prev} if defined $boxes[$i]->{prev};
+    printf REPORT "<td class=\"arrow\"><a href=\"#%s\">&darr;</a></td>\n", $boxes[$i]->{next} if defined $boxes[$i]->{next};
+    printf REPORT "</tr></table></div>\n";
+    print REPORT $boxes[$i]->{data}, "</div>\n";
+}
+print REPORT end_html();
+close REPORT or mydie "error writing to '$tmpdir/report.html': $!\n";
+
+# create individual html files for all boxes
+
+for (my $i = 0; $i <= $#boxes; $i++)
+{
+    open FILE, ">$tmpdir/$boxes[$i]->{id}.html" or mydie "unable to open '$tmpdir/$boxes[$i]->{id}.html' for writing: $!\n";
+    print FILE start_html( -title => "Wine test run report", -style => {src=>"/report.css"} );
+    print FILE "<div class=\"navbar\">";
+    print FILE $boxes[$i]->{prev} ? "<a href=\"./$boxes[$i]->{prev}.html\">prev</a> | " : "prev | ";
+    print FILE $boxes[$i]->{next} ? "<a href=\"./$boxes[$i]->{next}.html\">next</a> | " : "next | ";
+    print FILE "<a href=\"report.html#$boxes[$i]->{id}\">full report</a> | ";
+    print FILE "<a href=\"..\">summary</a> | <a href=\"../..\">index</a></div>";
+
+    printf FILE "<div id=\"%s\" class=\"%s\">\n", $boxes[$i]->{id}, $boxes[$i]->{class};
+    printf FILE "<div class=\"updownbar\">%s</div>\n", $boxes[$i]->{title};
+    print FILE $boxes[$i]->{data}, "</div>\n";
+    print FILE end_html();
+    close FILE or mydie "error writing to '$tmpdir/$boxes[$i]->{id}.html': $!\n";
+}
+
 if (%dllinfo) {
     open DLLINFO, ">$tmpdir/dllinfo.txt" or mydie "unable to open '$tmpdir/dllinfo.txt' for writing: $!\n";
     foreach my $dll (sort keys %dllinfo) {
-        print DLLINFO "$dll=$dllinfo{$dll}\n";
+        print DLLINFO "$dll=$dllinfo{$dll}->{version}\n";
     }
     close DLLINFO or mydie "error writing to '$tmpdir/dllinfo.txt': $!\n";
 }
