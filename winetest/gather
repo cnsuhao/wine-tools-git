@@ -408,18 +408,10 @@ print OUT <<"EOF";
 
 <body>
 <div class="navbar">
-<table class="navbar">
-  <tr>
-    <td class="left">
-      <a href="/site?testing=prev&amp;current=$build">Previous build</a>
-    </td>
-    <td><script type="text/javascript" src="/summary.js"></script
-        ><noscript><p>JavaScript support missing</p></noscript></td>
-    <td class="right">
-      <a href="/site?testing=next&amp;current=$build">Next build</a>
-    </td>
-  </tr>
-</table>
+<a href="/site?testing=prev&amp;current=$build">prev</a>
+ | <a href="/site?testing=next&amp;current=$build">next</a>
+ | <a href="..">index</a>
+<script type="text/javascript" src="/summary.js"></script>
 </div>
 <div class="legend">
 <h3>Legend</h3>

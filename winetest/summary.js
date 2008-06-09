@@ -1,5 +1,5 @@
 result_window = null;
-document.writeln ('<a href="#" onClick="open_popup(); return false;">Open popup</a>');
+document.writeln (' | <a href="#" onClick="open_popup(); return false;">open popup</a>');
 
 function open_popup () {
     result_window = window.open("/resultform.html","results","width=240,height=240,resizable,scrollbars=no");
