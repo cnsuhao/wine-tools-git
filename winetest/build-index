@@ -17,23 +17,24 @@ binmode STDOUT, ':utf8';
 
 $ENV{GIT_DIR} = $gitdir;
 
-my %w95   = (name => "Win95");
-my %w98   = (name => "Win98");
-my %me    = (name => "Me");
-my %nt3   = (name => "NT3");
-my %nt4   = (name => "NT4");
-my %w2k   = (name => "2000");
-my %xp    = (name => "XP");
-my %w2k3  = (name => "2003");
-my %vista = (name => "Vista");
-my %wine  = (name => "Wine");
+my %w95     = (name => "Win95");
+my %w98     = (name => "Win98");
+my %me      = (name => "Me");
+my %nt3     = (name => "NT3");
+my %nt4     = (name => "NT4");
+my %w2k     = (name => "2000");
+my %xp      = (name => "XP");
+my %w2k3    = (name => "2003");
+my %vista   = (name => "Vista");
+my %unknown = (name => "Other");
+my %wine    = (name => "Wine");
 
 # Map dissect's IDs to the above hashes
-my %idmap = (95=>\%w95, 98=>\%w98, me=>\%me, nt3=>\%nt3, nt4=>\%nt4,
-             2000=>\%w2k, xp=>\%xp, 2003=>\%w2k3, vista=>\%vista, wine=>\%wine);
+my %idmap = (95=>\%w95, 98=>\%w98, me=>\%me, nt3=>\%nt3, nt4=>\%nt4, 2000=>\%w2k,
+             xp=>\%xp, 2003=>\%w2k3, vista=>\%vista, unknown=>\%unknown, wine=>\%wine);
 
 # Define the order of version groups in the summary
-my @groups = (\%w95, \%w98, \%me, \%nt3, \%nt4, \%w2k, \%xp, \%w2k3, \%vista, \%wine);
+my @groups = (\%w95, \%w98, \%me, \%nt3, \%nt4, \%w2k, \%xp, \%w2k3, \%vista, \%unknown, \%wine);
 
 my @months = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
 
