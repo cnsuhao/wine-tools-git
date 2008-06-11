@@ -1,0 +1,64 @@
+#!/bin/sh
+#
+# This script updates the documentation on the website if necessary.
+# It should be run periodically from cron.
+#
+
+set -e
+umask 002
+
+cd /home/winehq/opt/wine-docs
+git fetch >/dev/null 2>&1
+
+# check if anything has changed
+if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/master)" ]
+then
+  exit 0  # nothing to do
+fi
+
+rm -f lastbuild.log
+exec >lastbuild.log 2>&1
+
+git reset --hard origin/master
+
+echo "==== BUILDING SGML DOCUMENTATION ===="
+
+books="wineusr-guide winedev-guide winelib-guide"
+langs="en"
+site_base_dir="/home/winehq/opt/website"
+tools_dir="/home/winehq/opt/git-tools"
+git_dir="/home/winehq/opt/source/git"
+guides_base_dir="$site_base_dir/docs"
+winehq_base_dir="$site_base_dir/templates"
+
+for lang in $langs
+do
+  [ -d $guides_base_dir/$lang ] || mkdir $guides_base_dir/$lang
+  [ -d $winehq_base_dir/$lang/docs ] || mkdir $winehq_base_dir/$lang/docs
+  rm -f $guides_base_dir/$lang/winedoc.css && cp $tools_dir/winedoc.css $guides_base_dir/$lang
+
+  cd $lang
+  for book in $books
+  do
+    echo "* $book"
+
+    # build guides as single files
+    docbook2html -u -d $tools_dir/winehtml.dsl $book.sgml
+    docbook2pdf -d $tools_dir/wineprint.dsl $book.sgml
+    docbook2ps -d $tools_dir/wineprint.dsl $book.sgml
+    mv -f $book.html $book.pdf $book.ps $guides_base_dir/$lang
+
+    # build the online html version
+    docbook2html -d $tools_dir/winehtml.dsl -o $book.web $book.sgml
+    [ -d $winehq_base_dir/$lang/docs/$book ] || mkdir $winehq_base_dir/$lang/docs/$book
+    for f in $book.web/*.htm
+    do
+      outfile=`basename $f .htm`.template
+      $tools_dir/html2template -i $f -o $outfile && mv -f $outfile $winehq_base_dir/$lang/docs/$book/$outfile
+    done
+    rm -rf $book.web
+  done
+  cd ..
+done
+
+# end
