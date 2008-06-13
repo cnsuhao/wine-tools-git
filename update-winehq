@@ -9,6 +9,9 @@
 # Must be run from the top-level dir of a git checkout of the website module
 #
 
+use strict;
+use open ':utf8';
+
 sub xml_escape($)
 {
     my $str = shift;
@@ -17,42 +20,69 @@ sub xml_escape($)
     $str =~ s/>/&gt;/g;
     my @chars = unpack "U*", $str;
     $str = join "", map { ($_ > 127) ? sprintf "&#%u;", $_ : chr($_); } @chars;
+    $str =~ s/(http:\/\/\S+)/<a href=\"$1\">$1<\/a>/g;
     return $str;
 }
 
 my $rel;
-my $changes = "\n";
+my @text;
 
-die "Not in lostwages dir?" unless -d "news";
+die "Not in website dir?" unless -d "news/en";
 system("git", "pull") == 0 or die "git pull failed";
 
 # Parse the ANNOUNCE file
 
 open ANNOUNCE, $ARGV[0] || "ANNOUNCE" or die "cannot open ANNOUNCE";
 my $whats_new = 0;
+my $first = 1;
+
+push @text, "<body>\n<p>";
+
 while (<ANNOUNCE>)
 {
     chomp;
-    if (/^This is release (\S*) /)
+    if (!$whats_new)
     {
-        $rel = $1;
-        next;
+        if (!$rel && /release (\S*) /)
+        {
+            $rel = $1;
+        }
+        if (/^What's new in this release/)
+        {
+            $whats_new = 1;
+            push @text, " <a href=\"?announce=$rel\">What's new</a> in this release:";
+            next;
+        }
+        if (/^\s*$/)
+        {
+            push @text, "</p>\n<p>";
+            next;
+        }
+        last if (/^The source is available/);
+        last if (/^--------------------/);
+        push @text, " " . xml_escape($_);
     }
-    if (/^What's new in this release/)
+    else
     {
-        $whats_new = 1;
-        next;
-    }
-    if ($whats_new && /^ *- (.*)$/)
-    {
-        $changes .= "<li>" . xml_escape($1) . "</li>\n";
-        next;
-    }
-    if ($whats_new && /^\s*$/)
-    {
-        last;
+        if (/^ *- (.*)$/)
+        {
+            push @text, ($first ? "\n<ul>\n  <li>" : "</li>\n  <li>") . xml_escape($1);
+            $first = 0;
+            next;
+        }
+        if (/^\s*$/)
+        {
+            push @text, "</li>\n</ul></p>\n<p>";
+            $whats_new = 0;
+            next;
+        }
+        push @text, " " . xml_escape($_);
     }
 }
+
+push @text, "<p>The source is <a href=\"http://prdownloads.sourceforge.net/wine/wine-$rel.tar.bz2\">available now</a>.\n";
+push @text, "Binary packages are in the process of being built, and will appear soon at their respective <a href=\"/site/download\">download locations</a>.\n";
+push @text, "</p></body></news>\n";
 close ANNOUNCE;
 
 # Create the news file
@@ -77,24 +107,9 @@ print NEWS <<EOF;
 <news>
 <date>$date</date>
 <title>Wine $rel Released</title>
-<body>
-<p>Wine $rel was released today, with the following main changes:</p>
-
-<ul>$changes</ul>
-
-<p>
-Binary packages are in the process of being built and it may take a
-few days for them to appear, but the source is
-<a href="http://prdownloads.sourceforge.net/wine/wine-$rel.tar.bz2">available now</a>.
-You can find out more about this release in the
-<a href="?announce=$rel">announcement</a>.  Check out our
-<a href="/site/download">download page</a> for packages for your
-distribution.
-</p>
-</body>
-</news>
 EOF
 
+print NEWS join "", @text;
 close NEWS;
 print "Created $newsfile\n";
 
