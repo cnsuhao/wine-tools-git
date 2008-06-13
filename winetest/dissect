@@ -124,7 +124,7 @@ while (($_ = <IN>) =~ s/^    //)
 }
 $box->{data} .= "</div>";
 
-my ($wine, $version, $major, $minor, $plid);
+my ($wine, $version, $major, $minor, $plid, $product);
 /^Operating system version:\r?$/ or mydie "no OS header: $_";
 $box = create_box( "version", "version", "Operating system version" );
 $box->{data} .= "<table class=\"output\">\n";
@@ -138,6 +138,8 @@ while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
         $minor = $2;
     } elsif ($1 eq "PlatformId") {
         $plid = $2;
+    } elsif ($1 eq "wProductType") {
+        $product = $2;
     }
 }
 $box->{data} .= "</table>";
@@ -165,8 +167,12 @@ if ($plid==1 && $major==4) {
             $version = "2003";
         }
     } elsif ($major==6) {
-        $version = "vista";
-    }
+        if      ($product==1) {
+            $version = "Vista";
+        } elsif ($product==3) {
+            $version = "2008";
+        }
+	} 
 } elsif ($plid==3) {
     $version = "ce$major$minor";
 }
