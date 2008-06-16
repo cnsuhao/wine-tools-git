@@ -27,6 +27,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 use strict;
+use CGI qw(:standard);
+charset("utf-8");
+
 use vars qw/$datadir $gitweb/;
 require "winetest.conf";
 
@@ -108,7 +111,7 @@ exit 2 unless defined $outdated;
 # Read in the data
 
 my %alltests;                   # union of test names
-my $url;                        # archive url of winetest.exe
+my $url = "";                   # archive url of winetest.exe
 foreach my $file (glob "$datadir/$build/*/summary.txt") {
     (my $dir = $file) =~ s|^\Q$datadir/$build\E/(.*?)/summary.txt$|$1|;
     (my $id, my @tag) = split /_/, $dir;
@@ -144,11 +147,14 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
         close TEST;
         next;
     }
-    if (($url = <TEST>) !~ s/^Archive: (.*)\n$/$1/) {
-        print STDERR "$name0:error: wrong archive url in '$file': $url";
+    my $archive = <TEST>;
+    if ($archive !~ s/^Archive: (.*)\n$/$1/) {
+        print STDERR "$name0:error: wrong archive url in '$file': $archive";
         close TEST;
         next;
     }
+    $url = "href=\"" . escapeHTML($archive) . "\"" if (!$url && $archive =~ /^http:\/\//);
+
     while (<TEST>) {
         my ($dummy, $dll, $unit, $count, $todos, $errors, $skips,
             $source, $rev) = split;
@@ -423,7 +429,7 @@ print OUT <<"EOF";
 <p class="legend">This <span class="result pass also-todo">border</span> and this <span class="result todo">background</span> signal that the implementation needs some work.</p>
 </div>
 <div class="main">
-<h1>Main summary for build <a href="$url" title="$build">$short_build</a></h1>
+<h1>Main summary for build <a $url title="$build">$short_build</a></h1>
 <table class="report">
 $header_footer
   <tbody onDblClick="clone();">
