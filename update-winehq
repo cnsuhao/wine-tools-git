@@ -4,7 +4,7 @@
 #
 # Copyright 2006 Alexandre Julliard
 #
-# Usage: update-winehq [announce-file]
+# Usage: update-winehq release [announce-file]
 #
 # Must be run from the top-level dir of a git checkout of the website module
 #
@@ -24,7 +24,7 @@ sub xml_escape($)
     return $str;
 }
 
-my $rel;
+my $rel = $ARGV[0];
 my @text;
 
 die "Not in website dir?" unless -d "news/en";
@@ -32,7 +32,7 @@ system("git", "pull") == 0 or die "git pull failed";
 
 # Parse the ANNOUNCE file
 
-open ANNOUNCE, $ARGV[0] || "ANNOUNCE" or die "cannot open ANNOUNCE";
+open ANNOUNCE, $ARGV[1] || "ANNOUNCE" or die "cannot open ANNOUNCE";
 my $whats_new = 0;
 my $first = 1;
 
@@ -43,10 +43,6 @@ while (<ANNOUNCE>)
     chomp;
     if (!$whats_new)
     {
-        if (!$rel && /release (\S*) /)
-        {
-            $rel = $1;
-        }
         if (/^What's new in this release/)
         {
             $whats_new = 1;
