@@ -10,11 +10,9 @@
 # the License, or (at your option) any later version.
 #
 #
-# Usage: git-to-cvs [last-commit-tag [branch]]
+# Usage: git-to-cvs [branch]
 #
 # Optional parameters:
-#   last-commit-tag: tag to use to keep track of cvs
-#                    commits, default is LAST_CVS_COMMIT
 #   branch: where to get the git commits from, default is 'master'
 #
 # This script needs to be run from the root of the checked-out CVS tree,
@@ -40,14 +38,25 @@ my %ignore_patterns =
  "TAGS" => 1
 );
 
-my $last_commit = $ARGV[0] || "LAST_CVS_COMMIT";
-my $branch = $ARGV[1] || "master";
+my $branch = $ARGV[0] || "master";
+my $last_commit = "last-cvs-commit/$branch";
 
 # run a shell command and die on error
 sub shell(@)
 {
     my @args = @_;
     system(@args) == 0 or die "system @args failed: $?";
+}
+
+# run a shell command and return the first line of output
+sub shell_output(@)
+{
+    my @args = @_;
+    open OUT, "-|" or exec @args or die join(' ', "exec", @args);
+    my $ret = <OUT>;
+    chomp $ret;
+    close OUT or die join(' ', "broken pipe", @args);
+    return $ret;
 }
 
 # add a dir and all its parents
@@ -225,7 +234,7 @@ sub cvs_commit($@)
 
     # convert log message according to Wine CVS conventions
 
-    open COMMIT, "git-cat-file commit $commit |" or die "cannot run git-cat-file";
+    open COMMIT, "-|" or exec "git", "cat-file", "commit", $commit or die "cannot run git cat-file";
     while (<COMMIT>)
     {
         chomp;
@@ -248,13 +257,13 @@ sub cvs_commit($@)
     print LOGFILE utf8(join("\n",@log), "\n")->latin1;
     close LOGFILE;
 
-    print "commit $commit\n";
+    print "branch $branch commit $commit\n";
     print "$author\n";
     print join("\n",@log), "\n";
     print "\n";
     shell "cvs", "-Q", "commit", "-F", ".logfile", @files;
     unlink ".logfile";
-    shell "git-update-ref", $last_commit, $commit;
+    shell "git", "update-ref", $last_commit, $commit;
     if (defined $tags{$commit}) { cvs_tag($tags{$commit}); }
 }
 
@@ -270,9 +279,8 @@ sub apply_git_commit($)
     my @gitignores = ();
     my @gitignores_deleted = ();
 
-    $commit = `git-rev-parse $commit^\{commit\}`;
-    chomp $commit;
-    open COMMIT, "git-diff-tree --name-status -r $commit |" or die "cannot run git-diff-tree";
+    $commit = shell_output "git", "rev-parse", "$commit^\{commit\}";
+    open COMMIT, "-|" or exec "git", "diff-tree", "--name-status", "-r", $last_commit, $commit or die "cannot run git diff-tree";
     while (<COMMIT>)
     {
         chomp;
@@ -292,8 +300,8 @@ sub apply_git_commit($)
     close COMMIT;
 
     # get the modified files
-    shell "git-read-tree", "--reset", $commit;
-    shell "git-checkout-index", "-f", "-u", "--", @added, @modified, @gitignores if (@added || @modified || @gitignores);
+    shell "git", "read-tree", "--reset", $commit;
+    shell "git", "checkout-index", "-f", "-u", "--", @added, @modified, @gitignores if (@added || @modified || @gitignores);
     unlink @gitignores_deleted if (@gitignores_deleted);
 
     foreach my $file (@added)
@@ -336,16 +344,19 @@ sub apply_commits()
 {
     my @commits = ();
 
-    my $base = `git-merge-base $last_commit $branch`;
-    my $commit = `git-rev-parse $last_commit^\{commit\}`;
+    my $base = shell_output "git", "merge-base", $last_commit, $branch;
+    my $commit = shell_output "git", "rev-parse", "$last_commit^\{commit\}";
     die "$last_commit is not a parent of $branch" unless ($base eq $commit);
 
-    # read the tree of the first commit and make sure we are up to date
-    shell "git-read-tree", "--reset", $last_commit;
-    shell "git-update-index", "--refresh";
-    shell "git-checkout-index", "-q", "-f", "-u", "-a";
+    if (! -f $ENV{"GIT_INDEX_FILE"})
+    {
+        # read the tree of the first commit and make sure we are up to date
+        shell "git-read-tree", "--reset", $last_commit;
+        shell "git-update-index", "--refresh";
+        shell "git-checkout-index", "-q", "-f", "-u", "-a";
+    }
 
-    open LIST, "git-rev-list $last_commit..$branch |" or die "cannot run git-rev-list";
+    open LIST, "-|" or exec "git", "rev-list", "$last_commit..$branch" or die "cannot run git rev-list";
     while (<LIST>)
     {
         chomp;
@@ -369,13 +380,12 @@ sub apply_commits()
 # build a list of all commits that are pointed to by a tag
 sub read_tags()
 {
-    open LIST, "-|" or exec "git-for-each-ref", "refs/tags/wine*" or die "cannot run git-for-each-ref";
+    open LIST, "-|" or exec "git", "for-each-ref", "refs/tags/wine*" or die "cannot run git for-each-ref";
     while (<LIST>)
     {
         next unless /^[0-9a-f]{40} tag\trefs\/tags\/(.*)$/;
         my $tag = $1;
-        my $commit = `git-rev-parse $tag^{commit}`;
-        chomp $commit;
+        my $commit = shell_output "git", "rev-parse", "$tag^{commit}";
         $tags{$commit} = $tag;
     }
     close LIST;
@@ -383,6 +393,7 @@ sub read_tags()
 
 # if we have a .git symlink in CVS/ use that as GIT_DIR
 $ENV{"GIT_DIR"} = "CVS/.git" if -d "CVS/.git";
+$ENV{"GIT_WORK_TREE"} = ".";
 
 # use a tmp index file to avoid touching the main one
 $ENV{"GIT_INDEX_FILE"} = "CVS/.git-index";
@@ -394,5 +405,3 @@ $ENV{"GIT_INDEX_FILE"} = "CVS/.git-index";
 
 read_tags();
 apply_commits();
-
-unlink "CVS/.git-index";
