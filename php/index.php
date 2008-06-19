@@ -22,9 +22,11 @@ while ($line = fgets($summary, 1024))
 <html>
 <head>
     <link rel="stylesheet" href="style.css" type="text/css"/>
-    <title>Wine translation statistics</title>
+    <title>Wine translation statistics <?php echo $TITLE_APPENDIX ?></title>
 </head>
-<h1>Wine translation statistics</h1>
+<h1>Wine translation statistics <?php echo $TITLE_APPENDIX ?></h1>
+
+<?php echo $TITLE_DESCR ?>
 
 <p>This page shows the state of the translations of <a href="http://www.winehq.org/">Wine</a>.
 Note that some resources marked as translated may be in fact in English - sometimes developers
