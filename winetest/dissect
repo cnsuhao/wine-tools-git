@@ -168,7 +168,7 @@ if ($plid==1 && $major==4) {
         }
     } elsif ($major==6) {
         if      ($product==1) {
-            $version = "Vista";
+            $version = "vista";
         } elsif ($product==3) {
             $version = "2008";
         }
