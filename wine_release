@@ -3,18 +3,19 @@
 # This script is ran after a new release of Wine. It updates the website
 # and FTP for the new wine release.
 
-# usage: wine_release <new version>
+# usage: wine_release <version> [branch]
 
 set -e
 umask 002
 
 if [ $# -lt 1 ]
 then
-  echo "Usage: $0 version"
+  echo "Usage: $0 version [branch]"
   exit 1
 fi
 
 version=$1
+branch=${2:-master}
 
 website_dir="/home/winehq/opt/website"
 templates_dir=$website_dir/templates
@@ -24,7 +25,8 @@ cd /home/winehq/opt/source
 
 # update website config
 
-echo "snapshot_date: $version" > globals.conf && mv -f globals.conf $website_dir/include/globals.conf
+sed "s/^${branch}_release:.*$/${branch}_release: $version/" $website_dir/include/globals.conf >globals.conf
+mv -f globals.conf $website_dir/include/globals.conf
 
 # nuke old attempt (if any)
 rm -rf wine-$version
@@ -53,35 +55,38 @@ cd ../..
 
 (echo "wine-$version"; cat wine-versions) | uniq > wine-versions.new && mv -f wine-versions.new wine-versions
 
-# update man page and documentation
-echo "==== UPDATING DOCUMENTATION ===="
-cd wine-$version
-./configure --quiet --without-x --without-freetype
+if [ "$branch" = "master" ]
+then
+  # update man page and documentation
+  echo "==== UPDATING DOCUMENTATION ===="
+  cd wine-$version
+  ./configure --quiet --without-x --without-freetype
 
-manpages="\
-  loader/wine.man \
-  server/wineserver.man \
-  tools/winemaker.man \
-  tools/wineprefixcreate.man \
-  tools/widl/widl.man \
-  tools/winebuild/winebuild.man \
-  tools/winedump/winedump.man \
-  tools/winegcc/winegcc.man \
-  tools/wmc/wmc.man \
-  tools/wrc/wrc.man"
+  manpages="\
+    loader/wine.man \
+    server/wineserver.man \
+    tools/winemaker.man \
+    tools/wineprefixcreate.man \
+    tools/widl/widl.man \
+    tools/winebuild/winebuild.man \
+    tools/winedump/winedump.man \
+    tools/winegcc/winegcc.man \
+    tools/wmc/wmc.man \
+    tools/wrc/wrc.man"
 
-for f in $manpages
-do
-  name=`basename $f .man`
-  make -C `dirname $f` $name.man
-  nroff -man $f | ../bin/man2html --pgsize=100000 | $tools_dir/html2template -o $name.template && mv -f $name.template $templates_dir/en/docs/$name.template
-done
+  for f in $manpages
+  do
+    name=`basename $f .man`
+    make -s -C `dirname $f` $name.man
+    nroff -man $f | ../bin/man2html --pgsize=100000 | $tools_dir/html2template -o $name.template && mv -f $name.template $templates_dir/en/docs/$name.template
+  done
 
-make htmlpages && rm -rf ../WineAPI && mv documentation/html ../WineAPI
+  make -s htmlpages && rm -rf ../WineAPI && mv documentation/html ../WineAPI
 
-# Wine API Stats
-echo "==== UPDATING WINE API STATS PAGE ===="
-$tools_dir/winapi_stats > winapi_stats.template && mv -f winapi_stats.template $templates_dir/en/winapi_stats.template
+  # Wine API Stats
+  echo "==== UPDATING WINE API STATS PAGE ===="
+  $tools_dir/winapi_stats > winapi_stats.template && mv -f winapi_stats.template $templates_dir/en/winapi_stats.template
+fi
 
 # cleanup source tree
 git clean -q -d -x -f
