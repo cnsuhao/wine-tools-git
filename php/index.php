@@ -50,8 +50,10 @@ function draw_bar($tr, $err, $sum)
     }
     $miss_len = 300 - $tr_len - $err_len;
     echo '<td style="background-color: #D1DAF9">';
-    echo "<img src=\"img/bar0.gif\" height=\"15\" width=\"$tr_len\">";
-    echo "<img src=\"img/bar1.gif\" height=\"15\" width=\"$err_len\">";
+    if ($tr_len > 0)
+	echo "<img src=\"img/bar0.gif\" height=\"15\" width=\"$tr_len\">";
+    if ($err_len > 0)
+	echo "<img src=\"img/bar1.gif\" height=\"15\" width=\"$err_len\">";
 //    echo "<img src=\"img/bar6.gif\" height=\"15\" width=\"$miss_len\">";
     echo "</td></tr>";
 }
