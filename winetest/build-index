@@ -99,6 +99,104 @@ foreach my $build (@builds)
     $build->{versions} = \%build_ver;
 }
 
+# load summary files
+
+my %alltests = ();
+
+foreach my $build (@builds)
+{
+    open SUM, "./data/$build->{name}/summary.txt" or next;
+    while (<SUM>)
+    {
+        chomp;
+        my ($test, $group, $cell) = split / +/, $_, 3;
+        $alltests{$test}->{$build->{name}}->{$group} = $cell;
+    }
+    close SUM;
+}
+
+# build the tests linked list
+
+my $prev;
+foreach my $test (sort keys %alltests)
+{
+    $alltests{$test}->{prev} = "$prev.html" if $prev;
+    $alltests{$prev}->{next} = "$test.html" if $prev;
+    $prev = $test;
+}
+
+# output the html files for individual test runs
+
+foreach my $test (keys %alltests)
+{
+    open OUT, ">data/tests/$test.html.new" or die "cannot create data/tests/$test.html.new";
+    print OUT <<EOF;
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+                      "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <title>$test test runs</title>
+  <link rel="stylesheet" href="/summary.css" type="text/css">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+<div class="navbar">
+EOF
+    print OUT defined($alltests{$test}->{prev}) ? "<a href=\"./$alltests{$test}->{prev}\">prev</a>" : "prev";
+    print OUT defined($alltests{$test}->{next}) ? " | <a href=\"./$alltests{$test}->{next}\">next</a>" : " | next";
+    print OUT <<EOF;
+ | <a href="..">index</a>
+<script type="text/javascript" src="/summary.js"></script>
+</div>
+<div class="main">
+<h2>$test test runs</h2>
+<table class="report">
+<thead>
+  <tr><th class="test">Build</th><th class="test">Date</th>
+EOF
+
+    # check which group names are actually used by that test
+    my %used_group;
+    foreach my $build (@builds)
+    {
+        next unless defined $alltests{$test}->{$build->{name}};
+        foreach my $group (keys %{$alltests{$test}->{$build->{name}}}) { $used_group{$group} = 1; }
+    }
+
+    foreach my $group (@groups)
+    {
+        next unless defined $used_group{$group->{name}};
+        printf OUT "  <th class=\"test\">$group->{name}</th>\n";
+    }
+    print OUT "  <th class=\"test\"></th></tr>\n";
+    foreach my $build (@builds)
+    {
+        next unless defined $alltests{$test}->{$build->{name}};
+        printf OUT "  <tr><td class=\"build\"><a href=\"../%s\" title=\"%s\">%s</a></td>\n",
+                   $build->{name}, $build->{name}, substr($build->{name},0,12);
+        my @date = gmtime($build->{date});
+        printf OUT "  <td class=\"date\">%02d-%s-%04d %02d:%02d</td>",
+                   $date[3], $months[$date[4]], $date[5] + 1900, $date[2], $date[1], $date[0];
+        foreach my $group (@groups)
+        {
+            next unless defined $used_group{$group->{name}};
+            if (defined $alltests{$test}->{$build->{name}}->{$group->{name}})
+            {
+                printf OUT "    %s\n", $alltests{$test}->{$build->{name}}->{$group->{name}};
+            }
+            else
+            {
+                print OUT "    <td class=\"note\"></td>\n";
+            }
+        }
+        print OUT "  <td class=\"links\"><a href=\"$gitweb?a=shortlog;h=$build->{name}\">shortlog</a>";
+        print OUT " | <a href=\"../$build->{name}\">all tests</a></td></tr>\n";
+    }
+    print OUT "</table></body></html>\n";
+    close OUT;
+    rename "data/tests/$test.html.new", "data/tests/$test.html" or unlink "data/tests/$test.html.new";
+}
+
 open OUT, ">data/index.html.new" or die "cannot create data/index.html.new";
 
 print OUT <<"EOF";

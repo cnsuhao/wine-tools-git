@@ -143,8 +143,8 @@ table.report td.vis_note :link, table.report td.vis_note :visited {
 table.report td.test {
         text-align: left;
 }
-table.report td a {
-        display: block;
+table.report td.links {
+        font-size: x-small;
 }
 form td {
         text-align: left;
