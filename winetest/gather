@@ -396,8 +396,13 @@ EOF
 my $header_footer=build_header_footer(\@groups);
 my $short_build = substr($build,0,12);
 
-if (!open OUT, ">$datadir/$build/index.html") {
-  print STDERR "$name0:error: unable to open '$datadir/$build/index.html' for writing: $!\n";
+if (!open OUT, ">$datadir/$build/index.html.new") {
+  print STDERR "$name0:error: unable to open '$datadir/$build/index.html.new' for writing: $!\n";
+  goto DONE;
+}
+if (!open SUMMARY, ">$datadir/$build/summary.txt.new")
+{
+  print STDERR "$name0:error: unable to open '$datadir/$build/summary.txt.new' for writing: $!\n";
   goto DONE;
 }
 print OUT <<"EOF";
@@ -448,10 +453,10 @@ sub singletest($$$) {
     my ($group, $testname, $groupname) = @_;
     my $result = $group->{$testname};
 
-    my ($href, $label);
+    my ($class, $msg, $title, $mouseover, $href, $label);
     if ($group->{reports} and @{$group->{reports}} > 1)
     {
-        $href = $result->{omit} ? "" : "href=\"#group_$groupname:$testname\"";
+        $href = $result->{omit} ? "" : "#group_$groupname:$testname";
         $label = $groupname;
     }
     else
@@ -460,11 +465,11 @@ sub singletest($$$) {
         $label = "$groupname $report->{tag}"; 
         if (-r "$datadir/$build/$report->{dir}/$testname.html")
         {
-            $href = "href=\"$report->{dir}/$testname.html\"";
+            $href = "$report->{dir}/$testname.html";
         }
         elsif (-r "$datadir/$build/$report->{dir}/$testname.txt")
         {
-            $href = "href=\"$report->{dir}/$testname.txt\"";
+            $href = "$report->{dir}/$testname.txt";
         }
         else
         {
@@ -475,76 +480,75 @@ sub singletest($$$) {
     my $status = $result->{status};
     if ($status eq "run")
     {
-        my $class = $result->{errors}->[0] ? "fail" :
-                    $result->{errors}->[1] ? "mixed" :
-                    $result->{todos}->[1] ? "todo" :
-                    "pass";
+        $class = $result->{errors}->[0] ? "fail" :
+                 $result->{errors}->[1] ? "mixed" :
+                 $result->{todos}->[1] ? "todo" :
+                 "pass";
         $class .= " also-todo" if ($result->{todos}->[1]);
         $class .= " also-skip" if ($result->{skips}->[1]);
+        $class = "result $class";
         my $mm_count=min_to_max($result->{count});
         my $mm_errors=min_to_max($result->{errors});
         my $mm_todos=min_to_max($result->{todos});
         my $mm_skips=min_to_max($result->{skips});
-        my $title="$mm_count tests, $mm_errors errors, $mm_todos todos, $mm_skips skips";
-        my $msg=!$result->{todos}->[1] ? $result->{errors}->[1] :
-                !$result->{errors}->[1] ? $result->{todos}->[1] :
-                "$result->{errors}->[1]+$result->{todos}->[1]";
-        print OUT <<"EOF";
-      <td class="result $class"><a $href title="$title"
-        onMouseOver="refresh('$testname', '$label', '$mm_count', '$mm_todos', '$mm_errors', '$mm_skips');"
-        >$msg</a></td>
-EOF
+        $title="$mm_count tests, $mm_errors errors, $mm_todos todos, $mm_skips skips";
+        if ($group->{reports} and @{$group->{reports}} > 1)
+        {
+            $title = sprintf "%u test runs, %s", $#{$group->{reports}} + 1, $title;
+        }
+        $msg=!$result->{todos}->[1] ? $result->{errors}->[1] :
+             !$result->{errors}->[1] ? $result->{todos}->[1] :
+             "$result->{errors}->[1]+$result->{todos}->[1]";
+        $mouseover = "onMouseOver=\"refresh('$testname', '$label', '$mm_count', '$mm_todos', '$mm_errors', '$mm_skips');\"";
     }
     elsif ($status eq "dll missing")
     {
         my ($dll, $unit) = split(/:/, $testname);
         $dll.=".dll" if ($dll !~ /\./);
-        print OUT <<"EOF";
-      <td class="result pass also-skip"><a $href
-        title="No tests run as $dll is not present on this system"
-        >n/a</a></td>
-EOF
+        $class = "result pass also-skip";
+        $title = "No tests run as $dll is not present on this system";
+        $msg = "n/a";
     }
     elsif ($status eq "winetest crash")
     {
-        print OUT <<"EOF";
-      <td class="note"><a $href
-        title="Test did not run as winetest crashed"
-        >winetest</a></td>
-EOF
+        $class = "note";
+        $title = "Test did not run as winetest crashed";
+        $msg = "winetest";
     }
     elsif ($status eq "filelimit")
     {
-        print OUT <<"EOF";
-      <td class="note"><a $href
-        title="Test is missing because of a partial report file"
-        >truncated</a></td>
-EOF
+        $class = "note";
+        $title = "Test is missing because of a partial report file";
+        $msg = "truncated";
     }
     elsif ($status eq "missing")
     {
-        print OUT <<"EOF";
-      <td class="note"><a $href
-        title="Test did not run for an unknown reason"
-        >not run</a></td>
-EOF
+        $class = "note";
+        $title = "Test did not run for an unknown reason";
+        $msg = "not&nbsp;run";
     }
     elsif ($status eq "mixed")
     {
-        print OUT <<"EOF";
-      <td class="note"><a $href
-        title="Mixed results"
-        >mixed</a></td>
-EOF
+        $class = "note";
+        $title = "Mixed results";
+        $msg = "mixed";
     }
     else
     {
-        my $msg = $status eq "crash" ? "crashed" :
-                  $status eq "-2" ? "failed" :
-                  $status =~ /^-/ ? "crashed" :
-                  $status eq "258" ? "timeout": "failed";
-        $msg = "<a $href>$msg</a>" if ($href ne "");
-        print OUT "      <td class=\"note\">$msg</td>\n";
+        $class = "note";
+        $msg = $status eq "crash" ? "crashed" :
+               $status eq "-2" ? "failed" :
+               $status =~ /^-/ ? "crashed" :
+               $status eq "258" ? "timeout": "failed";
+    }
+    printf OUT "      <td class=\"%s\"><a %s %s %s>%s</a></td>\n",
+                $class, $href ? "href=\"$href\"" : "",
+                $title ? "title=\"$title\"" : "", $mouseover || "", $msg;
+    if ($group->{reports})
+    {
+        printf SUMMARY "%s %s <td class=\"%s\"><a %s %s %s>%s</a></td>\n",
+                       $testname, $groupname, $class, $href ? "href=\"../$build/$href\"" : "",
+                       $title ? "title=\"$title\"" : "", $mouseover || "", $msg;
     }
 }
 
@@ -613,6 +617,9 @@ print OUT <<"EOF";
 </html>
 EOF
 close OUT;
+close SUMMARY;
+rename "$datadir/$build/index.html.new", "$datadir/$build/index.html" or unlink "$datadir/$build/index.html.new";
+rename "$datadir/$build/summary.txt.new", "$datadir/$build/summary.txt" or unlink "$datadir/$build/summary.txt";
 
 DONE:
 if (!unlink $outdated) {
