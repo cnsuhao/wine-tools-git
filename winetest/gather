@@ -378,12 +378,14 @@ $title
     <tr>
       <th class="test">errors</th>
 $stats
+      <th class="test"></th>
     </tr>
   </thead>
   <tfoot>
     <tr>
       <th class="test">errors</th>
 $stats
+      <th class="test"></th>
     </tr>
     <tr>
       <th class="test">platforms</th>
@@ -552,6 +554,15 @@ sub singletest($$$) {
     }
 }
 
+sub test_links($)
+{
+    my ($testname) = @_;
+    my $source = $alltests{$testname};
+    return "<td class=\"links\"><a href=\"$gitweb/?a=history;f=$source;hb=$build\">history</a>" .
+           " | <a href=\"$gitweb/?a=blob;f=$source;hb=$build\">source</a>" .
+           " | <a href=\"../tests/$testname.html\">all&nbsp;builds</a></td>";
+}
+
 # Create the Main Summary
 foreach my $testname (sort keys %alltests) {
     my $source = $alltests{$testname};
@@ -568,7 +579,7 @@ EOF
             singletest($group, $testname, $group->{name});
         }
     }
-    print OUT "    </tr>\n";
+    printf OUT "      %s\n    </tr>\n", test_links($testname);
 }
 print OUT <<"EOF";
   </tbody>
@@ -602,9 +613,7 @@ EOF
         foreach my $report (@{$group->{reports}}) {
             singletest($report, $testname, $group->{name});
         }
-    print OUT <<"EOF";
-    </tr>
-EOF
+        printf OUT "      %s\n    </tr>\n", test_links($testname);
     }
     print OUT <<"EOF";
   </tbody>
