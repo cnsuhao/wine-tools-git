@@ -17,8 +17,7 @@ if ($q->param('testing')) {
     opendir(DIR, "./data/");
     foreach my $build (readdir(DIR))
     {
-        next if $build =~ /^\./;
-        next unless $build =~ /^[-.0-9a-zA-Z]+$/;
+        next unless $build =~ /^[0-9a-f]{40}$/;
         next unless -f "./data/$build/index.html";
         push @builds, { name => $build, date => (stat "./data/$build")[9] };
     }
