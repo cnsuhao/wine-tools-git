@@ -213,8 +213,32 @@ sub merge_min_max($$$)
     }
 }
 
+sub merge_status($$)
+{
+    my ($group_result, $result) = @_;
+    if (!defined $group_result->{status}) {
+        $group_result->{status} = $result->{status};
+    } elsif ($group_result->{status} eq "dll missing" and
+             $result->{status} eq "run") {
+        $group_result->{status} = "run";
+    } elsif ($group_result->{status} eq "run" and
+             $result->{status} eq "dll missing") {
+        ; # Nothing to do
+    } elsif ($group_result->{status} ne $result->{status}) {
+        $group_result->{status} = "mixed";
+    }
+
+    if (defined $result->{count}) {
+        merge_min_max($group_result, $result, "count");
+        merge_min_max($group_result, $result, "errors");
+        merge_min_max($group_result, $result, "todos");
+        merge_min_max($group_result, $result, "skips");
+    }
+}
+
 # Find missing tests. After this exercise all test results (correct, failed
 # and missing) are available for all reports.
+my %test_results;
 foreach my $group (@groups) {
     next unless exists $group->{reports};
     $group->{group}=$group;
@@ -242,24 +266,12 @@ foreach my $group (@groups) {
                     $report->{$testname}->{status} = "missing";
                 }
             }
-            my $result = $report->{$testname};
-            if (!defined $group_result->{status}) {
-                $group_result->{status} = $result->{status};
-            } elsif ($group_result->{status} eq "dll missing" and
-                     $result->{status} eq "run") {
-                $group_result->{status} = "run";
-            } elsif ($group_result->{status} eq "run" and
-                     $result->{status} eq "dll missing") {
-                ; # Nothing to do
-            } elsif ($group_result->{status} ne $result->{status}) {
-                $group_result->{status} = "mixed";
-            }
-            if (defined $result->{count}) {
-                merge_min_max($group_result, $result, "count");
-                merge_min_max($group_result, $result, "errors");
-                merge_min_max($group_result, $result, "todos");
-                merge_min_max($group_result, $result, "skips");
-            }
+            $test_results{$testname} = { } unless defined $test_results{$testname};
+            $test_results{$testname}->{global} = { } unless defined $test_results{$testname}->{global};
+            $test_results{$testname}->{$group->{name}} = { } unless defined $test_results{$testname}->{$group->{name}};
+            merge_status( $group_result, $report->{$testname} );
+            merge_status( $test_results{$testname}->{global}, $report->{$testname} );
+            merge_status( $test_results{$testname}->{$group->{name}}, $report->{$testname} );
         }
         $group->{$testname} = $group_result;
         if ($group_result->{status} eq "dll missing" or
@@ -372,23 +384,23 @@ EOF
     return <<"EOF";
   <thead>
     <tr>
-      <th class="test">platforms</th>
+      <th class="test" colspan="2">platforms</th>
 $title
     </tr>
     <tr>
-      <th class="test">errors</th>
+      <th class="test" colspan="2">errors</th>
 $stats
       <th class="test"></th>
     </tr>
   </thead>
   <tfoot>
     <tr>
-      <th class="test">errors</th>
+      <th class="test" colspan="2">errors</th>
 $stats
       <th class="test"></th>
     </tr>
     <tr>
-      <th class="test">platforms</th>
+      <th class="test" colspan="2">platforms</th>
 $title
     </tr>
   </tfoot>
@@ -450,6 +462,56 @@ sub min_to_max($)
     return "$minmax->[0] to $minmax->[1]";
 }
 
+sub get_result_class($)
+{
+    my ($result) = @_;
+
+    if ($result->{status} eq "run")
+    {
+        my $class = $result->{errors}->[0] ? "fail" :
+                    $result->{errors}->[1] ? "mixed" :
+                    $result->{todos}->[1] ? "todo" :
+                    "pass";
+        $class .= " also-todo" if ($result->{todos}->[1]);
+        $class .= " also-skip" if ($result->{skips}->[1]);
+        return "result $class";
+    }
+    if ($result->{status} eq "dll missing")
+    {
+        return "result pass also-skip";
+    }
+    return "note";
+}
+
+sub get_result_title($$)
+{
+    my ($testname, $result) = @_;
+
+    if ($result->{status} eq "run")
+    {
+        my $mm_count=min_to_max($result->{count});
+        my $mm_errors=min_to_max($result->{errors});
+        my $mm_todos=min_to_max($result->{todos});
+        my $mm_skips=min_to_max($result->{skips});
+        return "$mm_count tests, $mm_errors errors, $mm_todos todos, $mm_skips skips";
+    }
+    if ($result->{status} eq "dll missing")
+    {
+        my ($dll, $unit) = split(/:/, $testname);
+        $dll.=".dll" if ($dll !~ /\./);
+        return "No tests run as $dll is not present on this system";
+    }
+    if ($result->{status} eq "winetest crash") { return "Test did not run as winetest crashed"; }
+    if ($result->{status} eq "filelimit") { return "Test is missing because of a partial report file"; }
+    if ($result->{status} eq "missing") { return "Test did not run for an unknown reason"; }
+    if ($result->{status} eq "mixed") { return "Mixed results"; }
+    if ($result->{status} eq "crash") { return "Test crashed"; }
+    if ($result->{status} eq "-2") { return "Test failed"; }
+    if ($result->{status} =~ /^-/) { return "Test crashed"; }
+    if ($result->{status} eq "258") { return "Test timed out"; }
+    return "";
+}
+
 # Output a single cell of a test
 sub singletest($$$) {
     my ($group, $testname, $groupname) = @_;
@@ -479,21 +541,16 @@ sub singletest($$$) {
         }
     }
 
+    $class = get_result_class( $result );
+    $title = get_result_title( $testname, $result );
+
     my $status = $result->{status};
     if ($status eq "run")
     {
-        $class = $result->{errors}->[0] ? "fail" :
-                 $result->{errors}->[1] ? "mixed" :
-                 $result->{todos}->[1] ? "todo" :
-                 "pass";
-        $class .= " also-todo" if ($result->{todos}->[1]);
-        $class .= " also-skip" if ($result->{skips}->[1]);
-        $class = "result $class";
         my $mm_count=min_to_max($result->{count});
         my $mm_errors=min_to_max($result->{errors});
         my $mm_todos=min_to_max($result->{todos});
         my $mm_skips=min_to_max($result->{skips});
-        $title="$mm_count tests, $mm_errors errors, $mm_todos todos, $mm_skips skips";
         if ($group->{reports} and @{$group->{reports}} > 1)
         {
             $title = sprintf "%u test runs, %s", $#{$group->{reports}} + 1, $title;
@@ -505,39 +562,26 @@ sub singletest($$$) {
     }
     elsif ($status eq "dll missing")
     {
-        my ($dll, $unit) = split(/:/, $testname);
-        $dll.=".dll" if ($dll !~ /\./);
-        $class = "result pass also-skip";
-        $title = "No tests run as $dll is not present on this system";
         $msg = "n/a";
     }
     elsif ($status eq "winetest crash")
     {
-        $class = "note";
-        $title = "Test did not run as winetest crashed";
         $msg = "winetest";
     }
     elsif ($status eq "filelimit")
     {
-        $class = "note";
-        $title = "Test is missing because of a partial report file";
         $msg = "truncated";
     }
     elsif ($status eq "missing")
     {
-        $class = "note";
-        $title = "Test did not run for an unknown reason";
         $msg = "not&nbsp;run";
     }
     elsif ($status eq "mixed")
     {
-        $class = "note";
-        $title = "Mixed results";
         $msg = "mixed";
     }
     else
     {
-        $class = "note";
         $msg = $status eq "crash" ? "crashed" :
                $status eq "-2" ? "failed" :
                $status =~ /^-/ ? "crashed" :
@@ -558,19 +602,20 @@ sub test_links($)
 {
     my ($testname) = @_;
     my $source = $alltests{$testname};
-    return "<td class=\"links\"><a href=\"$gitweb/?a=history;f=$source;hb=$build\">history</a>" .
-           " | <a href=\"$gitweb/?a=blob;f=$source;hb=$build\">source</a>" .
-           " | <a href=\"../tests/$testname.html\">all&nbsp;builds</a></td>";
+    return "<td class=\"links\"><a href=\"$gitweb/?a=history;f=$source;hb=$build\" title=\"$source change history\">history</a>" .
+           " | <a href=\"$gitweb/?a=blob;f=$source;hb=$build\" title=\"$source source code\">source</a>" .
+           " | <a href=\"../tests/$testname.html\" title=\"$testname results across all builds\">all&nbsp;builds</a></td>";
 }
 
 # Create the Main Summary
 foreach my $testname (sort keys %alltests) {
     my $source = $alltests{$testname};
-    my $url = $gitweb . "/?a=history;f=$source;hb=$build";
+    my $class = get_result_class( $test_results{$testname}->{global} );
+    my $title = get_result_title( $testname, $test_results{$testname}->{global} );
     print OUT <<"EOF";
     <tr>
-      <td class="test">
-        <a href="$url" title="$source">$testname</a></td>
+      <td class="test $class">
+        <a href="../tests/$testname.html" title="$title">$testname</a></td><td>&nbsp;</td>
 EOF
     foreach my $group (@groups) {
         if (!exists $group->{reports}) {
@@ -602,13 +647,14 @@ $header_footer
 EOF
     foreach my $testname (sort keys %alltests) {
         my $source = $alltests{$testname};
-        my $url = $gitweb . "/?a=history;f=$source;hb=$build";
         my $result = $group->{$testname};
+        my $class = get_result_class( $test_results{$testname}->{$group->{name}} );
+        my $title = get_result_title( $testname, $test_results{$testname}->{$group->{name}} );
         next if ($result->{omit});
         print OUT <<"EOF";
     <tr>
-      <td class="test">
-        <a href="$url" name="group_$group->{name}:$testname" title="$source">$testname</a></td>
+      <td class="test $class">
+        <a href="../tests/$testname.html" name="group_$group->{name}:$testname" title="$title">$testname</a></td><td>&nbsp;</td>
 EOF
         foreach my $report (@{$group->{reports}}) {
             singletest($report, $testname, $group->{name});
