@@ -249,6 +249,7 @@ while (<IN>) {
             my ($line, $text) = ($1, $2);
             my $class = "test trace";
             if ($text =~ /^Test failed: /) { $class = "test failed"; }
+            elsif ($text =~ /^Test succeeded inside todo block: /) { $class = "test failed"; }
             elsif ($text =~ /^Tests skipped: /) { $class = "test skipped"; }
             $box->{data} .= sprintf "<div class=\"%s\"><a href=%s/?a=blob;f=%s;hb=%s#l%u>%s.c:%u</a>: %s</div>\n",
                                  $class, $gitweb, $source, $testbuild, $line, $unit, $line, escapeHTML($text);
