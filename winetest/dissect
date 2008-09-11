@@ -124,7 +124,7 @@ while (($_ = <IN>) =~ s/^    //)
 }
 $box->{data} .= "</div>";
 
-my ($wine, $version, $major, $minor, $plid, $product);
+my ($wine, $wine_build, $version, $major, $minor, $plid, $product);
 /^Operating system version:\r?$/ or mydie "no OS header: $_";
 $box = create_box( "version", "version", "Operating system version" );
 $box->{data} .= "<table class=\"output\">\n";
@@ -140,6 +140,8 @@ while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
         $plid = $2;
     } elsif ($1 eq "wProductType") {
         $product = $2;
+    } elsif ($1 eq "WineBuild") {
+        $wine_build = $2;
     }
 }
 $box->{data} .= "</table>";
@@ -179,6 +181,26 @@ if ($plid==1 && $major==4) {
 if ($wine) {
     $tag = "_$version$tag";
     $version = "wine";
+}
+if ($wine_build) {
+    my $wine_commit;
+    if ($wine_build =~ /-g([0-9a-f]+)$/)
+    {
+        $wine_commit = `git rev-parse --verify $1^0 2>/dev/null`;
+    }
+    elsif ($wine_build =~ /^[-+._0-9A-Za-z]+$/)
+    {
+        $wine_commit = `git rev-parse --verify $wine_build^0 2>/dev/null`;
+    }
+    else
+    {
+        mydie "invalid wine build '$wine_build'\n";
+    }
+    chomp $wine_commit;
+    mydie "unknown wine build '$wine_build'\n" unless $wine_commit;
+    my $merge_base = `git merge-base $wine_commit $testbuild 2>/dev/null`;
+    chomp $merge_base;
+    $merge_base eq $testbuild or mydie "wine build '$wine_build' not a descendant of build $testbuild\n";
 }
 
 my %dllinfo;
