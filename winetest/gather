@@ -377,7 +377,10 @@ EOF
                   !$report->{errors} ? percent($report->{todos}, $unit_count) :
                   (percent($report->{errors}, $unit_count) . "+" .
                    percent($report->{todos}, $unit_count));
-        $stats .= "      <th class=\"$class\"><a title=\"$unit_count unit tests, $report->{errors} have errors, $report->{todos} have todos\">$count<br>$prcnt\%</a></th>\n";
+        my $title = "$unit_count unit tests, $report->{errors} have errors";
+        $title .= ", $report->{todos} have todos" if $report->{todos};
+
+        $stats .= "      <th class=\"$class\"><a title=\"$title\">$count<br>$prcnt\%</a></th>\n";
     }
     chop $title;
     chop $stats;
@@ -493,7 +496,10 @@ sub get_result_title($$)
         my $mm_errors=min_to_max($result->{errors});
         my $mm_todos=min_to_max($result->{todos});
         my $mm_skips=min_to_max($result->{skips});
-        return "$mm_count tests, $mm_errors errors, $mm_todos todos, $mm_skips skips";
+        my $title = "$mm_count tests, $mm_errors errors";
+        $title .= ", $mm_todos todos" if ($mm_todos);
+        $title .= ", $mm_skips skips" if ($mm_skips);
+        return $title;
     }
     if ($result->{status} eq "dll missing")
     {
@@ -607,6 +613,34 @@ sub test_links($)
            " | <a href=\"../tests/$testname.html\" title=\"$testname results across all builds\">all&nbsp;builds</a></td>";
 }
 
+sub build_totals($)
+{
+    my ($reports)=@_;
+
+    if (!open TOTAL, ">$datadir/$build/total.txt.new")
+    {
+        print STDERR "$name0:error: unable to open '$datadir/$build/total.txt.new' for writing: $!\n";
+        return;
+    }
+    my $unit_count=scalar(keys %alltests);
+    foreach my $rep (@{$reports}) {
+        my $report=$rep;
+        my $report_count = 0;
+        if (exists $report->{reports}) {
+            $report_count = @{$report->{reports}};
+            if ($report_count == 1) {
+                $report = $report->{reports}->[0];
+            }
+        } elsif (exists $report->{name}) {
+            # Ignore groups with no reports
+            next;
+        }
+        printf TOTAL "%s %u %u %u %u\n", $report->{group}->{name}, $report_count, $unit_count, $report->{errors}, $report->{todos};
+    }
+    close TOTAL;
+    rename "$datadir/$build/total.txt.new", "$datadir/$build/total.txt" or unlink "$datadir/$build/total.txt";
+}
+
 # Create the Main Summary
 foreach my $testname (sort keys %alltests) {
     my $source = $alltests{$testname};
@@ -675,6 +709,8 @@ close OUT;
 close SUMMARY;
 rename "$datadir/$build/index.html.new", "$datadir/$build/index.html" or unlink "$datadir/$build/index.html.new";
 rename "$datadir/$build/summary.txt.new", "$datadir/$build/summary.txt" or unlink "$datadir/$build/summary.txt";
+
+build_totals(\@groups);
 
 DONE:
 if (!unlink $outdated) {
