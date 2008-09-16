@@ -83,18 +83,18 @@ my %versions = ();
 foreach my $build (@builds)
 {
     my %build_ver = ();
-    if (opendir( DIR, "./data/$build->{name}" ))
+    if (open TOTAL, "./data/$build->{name}/total.txt" )
     {
-        foreach my $run (readdir(DIR))
+        while (<TOTAL>)
         {
-            next unless -d "./data/$build->{name}/$run";
-            next unless $run =~ /^([0-9a-z]*)_.*/;
-            next unless defined $idmap{$1};
-            my $ver = $idmap{$1}->{name};
-            $versions{$ver}++;
-            $build_ver{$ver}++;
+            if (/^([A-Za-z0-9]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/)
+            {
+                my ($name, $runs, $tests, $errors, $todos) = ($1, $2, $3, $4, $5);
+                $versions{$name}++;
+                $build_ver{$name} = [ $runs, $tests, $errors, $todos ];
+            }
         }
-        closedir(DIR);
+        close TOTAL;
     }
     $build->{versions} = \%build_ver;
 }
@@ -205,46 +205,64 @@ print OUT <<"EOF";
 <html>
 <head>
   <title>Wine test runs</title>
-  <link rel="stylesheet" href="/index.css" type="text/css">
+  <link rel="stylesheet" href="/summary.css" type="text/css">
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 </head>
 <body>
+<div class="main">
+<h2>Wine test runs</h2>
 EOF
 
-print OUT "<table class=\"builds\"><tr><th class=\"build\">Build</th><th class=\"date\">Date</th>\n";
+print OUT "<table class=\"report\"><thead><tr><th class=\"test\">Build</th><th class=\"test\">Date</th>\n";
 foreach my $ver (@groups)
 {
     next unless defined($versions{$ver->{name}});
-    printf OUT "<th class=\"version\">%s</th>", $ver->{name};
+    printf OUT "<th class=\"test\">%s</th>", $ver->{name};
 }
-print OUT "<th class=\"commit\">Head commit</th></tr>\n";
+print OUT "<th colspan=\"3\">Failures</th><th></th></tr></thead>\n";
 
-my $odd = 0;
 foreach my $build (@builds)
 {
-    printf OUT "<tr class=\"%s\">\n", $odd ? "dark" : "light";
-    $odd = !$odd;
-    printf OUT "  <td class=\"build\"><a href=\"%s\" title=\"%s\">%s</a></td>\n", $build->{name}, $build->{name}, substr($build->{name},0,12);
+    printf OUT "  <tr><td class=\"build\"><a href=\"%s\" title=\"%s\">%s</a></td>\n", $build->{name}, $build->{name}, substr($build->{name},0,12);
     my @date = gmtime($build->{date});
     printf OUT "  <td class=\"date\">%02d-%s-%04d %02d:%02d</td>", $date[3], $months[$date[4]], $date[5] + 1900, $date[2], $date[1], $date[0];
+    my ($total_runs, $total_tests, $total_errors, $total_todos);
     foreach my $ver (@groups)
     {
         next unless defined($versions{$ver->{name}});
-        my $count = $build->{versions}->{$ver->{name}};
-        if (!$count)
+        my $counts = $build->{versions}->{$ver->{name}};
+        if (!defined @{$counts})
         {
-            printf OUT "<td class=\"version\">.</td>";
-        }
-        elsif ($count > 1)
-        {
-            printf OUT "<td class=\"version\"><a href=\"%s/#group_%s\">%u</a></td>", $build->{name}, $ver->{name}, $count;
+            printf OUT "<td class=\"note\"> </td>";
         }
         else
         {
-            printf OUT "<td class=\"version\"><a href=\"%s\">%u</a></td>", $build->{name}, $count;
+            my ($runs, $tests, $errors, $todos) = @{$counts};
+            my $href = $runs > 1 ? "$build->{name}/#group_$ver->{name}" : "$build->{name}";
+            my $title = $runs > 1 ? "$runs test runs, " : "";
+            $title .= "$tests unit tests, $errors have errors";
+            $title .= ", $todos have todos" if ($todos);
+            my $class = $errors ? ($todos ? "fail also-todo" : "fail") : ($todos ? "todo" : "pass");
+            printf OUT "<td class=\"result %s\"><a title=\"%s\" href=\"%s\">%u</a></td>", $class, $title, $href, $errors || $todos;
+            $total_runs++;
+            $total_tests += $tests;
+            $total_errors += $errors;
+            $total_todos += $todos;
         }
     }
-    print OUT "\n  <td class=\"commit\">";
+    if ($total_tests)
+    {
+        my $class = $total_errors ? "fail" : $total_todos ? "pass also-todo" : "pass";
+        my $title = sprintf "%u test runs, %u total unit tests, %u have errors", $total_runs, $total_tests, $total_errors;
+        $title .= ", $total_todos have todos" if $total_todos;
+        printf OUT "\n  <td>&nbsp;</td><td class=\"result %s\"><a title=\"%s\" href=\"%s\">%4.1f%%</a></td><td>&nbsp;</td>\n",
+                        $class, $title, $build->{name}, $total_errors * 100 / $total_tests;
+    }
+    else
+    {
+        print OUT "\n  <td>&nbsp;</td><td class=\"note\">&nbsp;</td><td>&nbsp;</td>\n";
+    }
+    print OUT "  <td class=\"commitlink\">";
     if ($build->{subj}) { printf OUT "<a href=\"$gitweb?a=shortlog;h=%s\">%s</a>", $build->{name}, escapeHTML($build->{subj}); }
     print OUT "</td></tr>\n";
 }

@@ -146,6 +146,15 @@ table.report td.test {
 table.report td.links {
         font-size: x-small;
 }
+table.report th.commitlink, td.commitlink {
+        text-align: left;
+}
+table.report td.build, td.date {
+        font-family: monospace;
+        font-size: medium;
+        padding-left: 5px;
+        padding-right: 5px;
+}
 form td {
         text-align: left;
 }
