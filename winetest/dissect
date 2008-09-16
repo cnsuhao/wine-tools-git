@@ -289,8 +289,7 @@ if (defined $dll) {
         $result = "failed filelimit - -";
         $box->{data} .= "<div class=\"test end\">test failed: file limit exceeded</div>\n";
     } else {
-        $result = "failed crash - -";
-        $box->{data} .= "<div class=\"test end\">test failed: winetest crash</div>\n";
+        mydie "report truncated (winetest crash?)\n"; 
     }
     goto FINISH;
 }
