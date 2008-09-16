@@ -266,7 +266,15 @@ foreach my $build (@builds)
     if ($build->{subj}) { printf OUT "<a href=\"$gitweb?a=shortlog;h=%s\">%s</a>", $build->{name}, escapeHTML($build->{subj}); }
     print OUT "</td></tr>\n";
 }
-print OUT "</table>\n</body></html>\n";
+
+print OUT <<"EOF";
+</table></div>
+<div class="navbar">
+To run the tests on your Windows machine, download the <a href="http://www.astro.gla.ac.uk/users/paulm/WRT/CrossBuilt/winetest-latest.exe">latest winetest.exe</a> build.
+</div>
+</body></html>
+EOF
+
 close OUT;
 
 rename "data/index.html.new", "data/index.html" or unlink "data/index.html.new";
