@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 #
 # Tool to send git commit notifications
 #
@@ -31,37 +31,42 @@ use Cwd 'realpath';
 binmode STDIN, ':utf8';
 binmode STDOUT, ':utf8';
 
-# some parameters you may want to change
+sub git_config($);
+sub get_repos_name();
 
-# base URL of the gitweb repository browser (can be set with the -u option)
-my $gitweb_url = "http://source.winehq.org/git";
+# some parameters you may want to change
 
 # set this to something that takes "-s"
 my $mailer = "/usr/bin/mail";
 
-# default repository name (can be changed with the -r option)
-my $repos_name = "";
-
-# max size of diffs in bytes (can be changed with the -s option)
-my $max_diff_size = 10000;
-
-# address for mail notices (can be set with -m option)
-my $commitlist_address;
-
-# project name for CIA notices (can be set with -c option)
-my $cia_project_name;
-
 # CIA notification address
 my $cia_address = "cia\@cia.navi.cx";
-
-# max number of individual notices before falling back to a single global notice (can be set with -n option)
-my $max_individual_notices = 100;
 
 # debug mode
 my $debug = 0;
 
+# configuration parameters
+
+# base URL of the gitweb repository browser (can be set with the -u option)
+my $gitweb_url = git_config( "notify.baseurl" );
+
+# default repository name (can be changed with the -r option)
+my $repos_name = git_config( "notify.repository" ) || get_repos_name();
+
+# max size of diffs in bytes (can be changed with the -s option)
+my $max_diff_size = git_config( "notify.maxdiff" ) || 10000;
+
+# address for mail notices (can be set with -m option)
+my $commitlist_address = git_config( "notify.mail" );
+
+# project name for CIA notices (can be set with -c option)
+my $cia_project_name = git_config( "notify.cia" );
+
+# max number of individual notices before falling back to a single global notice (can be set with -n option)
+my $max_individual_notices = git_config( "notify.maxnotices" ) || 100;
+
 # branches to exclude
-my @exclude_list = ();
+my @exclude_list = split /\s+/, git_config( "notify.exclude" ) || "";
 
 sub usage()
 {
@@ -106,6 +111,18 @@ sub format_date($$)
     return gmtime($time) . sprintf " %+05d", $tz;
 }
 
+# fetch a parameter from the git config file
+sub git_config($)
+{
+    my ($param) = @_;
+
+    open CONFIG, "-|" or exec "git", "config", $param;
+    my $ret = <CONFIG>;
+    chomp $ret if $ret;
+    close CONFIG or $ret = undef;
+    return $ret;
+}
+
 # parse command line options
 sub parse_options()
 {
@@ -120,11 +137,12 @@ sub parse_options()
         elsif ($arg eq '-r') { $repos_name = shift @ARGV; }
         elsif ($arg eq '-s') { $max_diff_size = shift @ARGV; }
         elsif ($arg eq '-u') { $gitweb_url = shift @ARGV; }
-        elsif ($arg eq '-x') { push @exclude_list, "^" . shift @ARGV; }
+        elsif ($arg eq '-x') { push @exclude_list, shift @ARGV; }
         elsif ($arg eq '-d') { $debug++; }
         else { usage(); }
     }
     if (@ARGV && $#ARGV != 2) { usage(); }
+    @exclude_list = map { "^$_"; } @exclude_list;
 }
 
 # send an email notification
@@ -159,8 +177,8 @@ sub get_repos_name()
     my $dir = `git rev-parse --git-dir`;
     chomp $dir;
     my $repos = realpath($dir);
-    $repos =~ s/(.*?)((\.git\/)?\.git)$/\1/;
-    $repos =~ s/(.*)\/([^\/]+)\/?$/\2/;
+    $repos =~ s/(.*?)((\.git\/)?\.git)$/$1/;
+    $repos =~ s/(.*)\/([^\/]+)\/?$/$2/;
     return $repos;
 }
 
@@ -221,8 +239,7 @@ sub send_commit_notice($$)
         "Module: $repos_name",
         "Branch: $ref",
         "Tag:    $obj",
-        "URL:    $gitweb_url/?a=tag;h=$obj",
-        "",
+        $gitweb_url ? "URL:    $gitweb_url/?a=tag;h=$obj\n" : "",
         "Tagger: " . $info{"tagger"},
         "Date:   " . format_date($info{"tagger_date"},$info{"tagger_tz"}),
         "",
@@ -235,8 +252,7 @@ sub send_commit_notice($$)
         "Module: $repos_name",
         "Branch: $ref",
         "Commit: $obj",
-        "URL:    $gitweb_url/?a=commit;h=$obj",
-        "",
+        $gitweb_url ? "URL:    $gitweb_url/?a=commit;h=$obj\n" : "",
         "Author: " . $info{"author"},
         "Date:   " . format_date($info{"author_date"},$info{"author_tz"}),
         "",
@@ -259,7 +275,7 @@ sub send_commit_notice($$)
         }
         else
         {
-            push @notice, "Diff:   $gitweb_url/?a=commitdiff;h=$obj",
+            push @notice, "Diff:   $gitweb_url/?a=commitdiff;h=$obj" if $gitweb_url;
         }
 
         $subject = $info{"author_name"} . ": " . ${$info{"log"}}[0];
@@ -315,7 +331,7 @@ sub send_cia_notice($$)
 
     push @cia_text,
         "      </files>",
-        "      <url>" . xml_escape("$gitweb_url/?a=commit;h=$commit") . "</url>",
+        $gitweb_url ? "      <url>" . xml_escape("$gitweb_url/?a=commit;h=$commit") . "</url>" : "",
         "    </commit>",
         "  </body>",
         "  <timestamp>" . $info{"author_date"} . "</timestamp>",
@@ -334,7 +350,7 @@ sub send_global_notice($$$)
     while (<LIST>)
     {
         chomp;
-        s/^commit /URL:    $gitweb_url\/?a=commit;h=/;
+        s/^commit /URL:    $gitweb_url\/?a=commit;h=/ if $gitweb_url;
         push @notice, $_;
     }
     close LIST;
@@ -379,11 +395,10 @@ sub send_all_notices($$$)
     }
 }
 
-$repos_name = get_repos_name();
 parse_options();
 
 # append repository path to URL
-$gitweb_url .= "/$repos_name.git";
+$gitweb_url .= "/$repos_name.git" if $gitweb_url;
 
 if (@ARGV)
 {
