@@ -10,9 +10,9 @@
 # the License, or (at your option) any later version.
 #
 #
-# This script is meant to be called from .git/hooks/update.
+# This script is meant to be called from .git/hooks/post-receive.
 #
-# Usage: git-notify [options] [--] refname old-sha1 new-sha1
+# Usage: git-notify [options] [--] old-sha1 new-sha1 refname
 #
 #   -c name   Send CIA notifications under specified project name
 #   -m addr   Send mail notifications to specified address
@@ -361,7 +361,7 @@ sub send_global_notice($$$)
 # send all the notices
 sub send_all_notices($$$)
 {
-    my ($ref, $old_sha1, $new_sha1) = @_;
+    my ($old_sha1, $new_sha1, $ref) = @_;
 
     $ref =~ s/^refs\/heads\///;
 
@@ -409,7 +409,7 @@ else  # read them from stdin
     while (<>)
     {
         chomp;
-        if (/^([0-9a-f]{40}) ([0-9a-f]{40}) (.*)$/) { send_all_notices( $3, $1, $2 ); }
+        if (/^([0-9a-f]{40}) ([0-9a-f]{40}) (.*)$/) { send_all_notices( $1, $2, $3 ); }
     }
 }
 
