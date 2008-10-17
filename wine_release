@@ -58,11 +58,12 @@ cd ../..
 
 (echo "wine-$version"; cat wine-versions) | uniq > wine-versions.new && mv -f wine-versions.new wine-versions
 
+cd wine-$version
+
 if [ "$branch" = "master" ]
 then
   # update man page and documentation
   echo "==== UPDATING DOCUMENTATION ===="
-  cd wine-$version
   ./configure --quiet --without-x --without-freetype
 
   manpages="\
@@ -89,10 +90,11 @@ then
   # Wine API Stats
   echo "==== UPDATING WINE API STATS PAGE ===="
   $tools_dir/winapi_stats > winapi_stats.template && mv -f winapi_stats.template $templates_dir/en/winapi_stats.template
+
+  # cleanup source tree
+  git clean -q -d -x -f
 fi
 
-# cleanup source tree
-git clean -q -d -x -f
 rm -rf .git
 
 # end
