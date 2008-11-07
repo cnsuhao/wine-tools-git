@@ -70,7 +70,7 @@ my @exclude_list = split /\s+/, git_config( "notify.exclude" ) || "";
 
 sub usage()
 {
-    print "Usage: $0 [options] [--] refname old-sha1 new-sha1\n";
+    print "Usage: $0 [options] [--] old-sha1 new-sha1 refname\n";
     print "   -c name   Send CIA notifications under specified project name\n";
     print "   -m addr   Send mail notifications to specified address\n";
     print "   -n max    Set max number of individual mails to send\n";
