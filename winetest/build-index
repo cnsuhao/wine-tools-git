@@ -270,7 +270,7 @@ foreach my $build (@builds)
 print OUT <<"EOF";
 </table></div>
 <div class="navbar">
-To run the tests on your Windows machine, download the <a href="http://www.astro.gla.ac.uk/users/paulm/WRT/CrossBuilt/winetest-latest.exe">latest winetest.exe</a> build.
+To run the tests on your Windows machine, download the <a href="/builds/winetest-latest.exe">latest winetest.exe</a> build.
 </div>
 </body></html>
 EOF
