@@ -1,0 +1,111 @@
+#!/bin/sh
+#
+# Script to build the published winetest.exe on winehq.org.
+# This should normally be run from a cron job.
+#
+# Copyright 2008 Alexandre Julliard
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or (at your option) any later version.
+#
+
+set -e
+
+usage()
+{
+    echo "Usage: $0 [options]"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help     Display this message"
+    echo "  -f, --force    Force rebuild even if up-to-date"
+    echo ""
+}
+
+force=0
+
+while [ $# -gt 0 ]
+do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -f|--force)
+            force=1
+            shift
+            ;;
+        *)
+            echo "Unknown option $1"
+            usage
+            exit 1
+            ;;
+  esac
+done
+
+destdir="/home/winehq/opt/winetest/builds"
+desturl="http://test.winehq.org/builds"
+servicedir="/home/winehq/opt/winetest/winehq-builds/winetest"
+
+mingw=i586-mingw32msvc
+logfile=LOG
+
+# if the log file exists, either a build is in progress or one has failed
+if [ -f $logfile -a $force -eq 0 ]
+then
+    exit 1
+fi
+
+(
+    (cd wine && git pull) || exit
+    head=$(cd wine && git rev-parse --short=12 HEAD) || exit
+
+    if [ -f $destdir/winetest-$head.exe -a $force -eq 0 ]
+    then
+        exit 0
+    fi
+
+    # first build the native tools
+
+    test -d build-native ||
+    (mkdir build-native &&
+     cd build-native &&
+     ../wine/configure --without-x --without-freetype) || exit
+
+    (cd build-native && make depend && make tools) || exit
+
+    # then cross-compile the tests
+
+    test -d build-mingw ||
+    (mkdir build-mingw &&
+     cd build-mingw &&
+     ../wine/configure --host=$mingw --with-wine-tools=../build-native --without-x --without-freetype) || exit
+
+    (cd build-mingw &&
+     make depend &&
+     make include &&
+     make -C dlls testsubdirs &&
+     cd programs/winetest &&
+     echo "$desturl/winetest-$head.exe" > tests.url &&
+     uname -a > build.nfo &&
+     make dist) || exit
+
+    # install everything
+
+    mv -f build-mingw/programs/winetest/winetest-dist.exe $destdir/winetest-$head.exe
+    ln -sf winetest-$head.exe $destdir/winetest-latest.exe
+    rm -f $servicedir/*.cookie $servicedir/*.url
+    sha1sum $destdir/winetest-latest.exe | cut -c1-40 > $servicedir/winetest-$head.cookie
+    echo "$desturl/winetest-$head.exe" > $servicedir/winetest-$head.url
+
+    echo "winetest-$head.exe built successfully."
+
+) >$logfile 2>&1 && rm -f $logfile
+
+# if the log file is still here, something failed
+if [ -f $logfile ]
+then
+    cat $logfile
+    exit 1
+fi
