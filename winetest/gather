@@ -112,7 +112,6 @@ exit 2 unless defined $outdated;
 # Read in the data
 
 my %alltests;                   # union of test names
-my $url = "";                   # archive url of winetest.exe
 foreach my $file (glob "$datadir/$build/*/summary.txt") {
     (my $dir = $file) =~ s|^\Q$datadir/$build\E/(.*?)/summary.txt$|$1|;
     (my $id, my @tag) = split /_/, $dir;
@@ -154,7 +153,6 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
         close TEST;
         next;
     }
-    $url = "href=\"" . escapeHTML($archive) . "\"" if (!$url && $archive =~ /^http:\/\//);
 
     while (<TEST>) {
         my ($dummy, $dll, $unit, $count, $todos, $errors, $skips,
@@ -452,7 +450,7 @@ print OUT <<"EOF";
 <p class="legend">This <span class="result pass also-todo">border</span> and this <span class="result todo">background</span> signal that the implementation needs some work.</p>
 </div>
 <div class="main">
-<h1>Main summary for build <a $url title="$build">$short_build</a></h1>
+<h1>Main summary for build <a href="/builds/winetest-$short_build.exe" title="$build">$short_build</a></h1>
 <table class="report">
 $header_footer
   <tbody onDblClick="clone();">
