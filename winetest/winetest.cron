@@ -19,5 +19,7 @@ if [ ! -f $lock ]; then
     do
         tar cfj $i.tar.bz2 $i && rm -rf $i
     done)
+    # remove 6-month old test builds
+    (cd builds && find . -mtime +180 -name winetest\*.exe -print0 | xargs -0 rm -f)
     rm $lock
 fi
