@@ -30,10 +30,6 @@ my %w2k8    = (name => "2008");
 my %unknown = (name => "Other");
 my %wine    = (name => "Wine");
 
-# Map dissect's IDs to the above hashes
-my %idmap = (95=>\%w95, 98=>\%w98, me=>\%me, nt3=>\%nt3, nt4=>\%nt4, 2000=>\%w2k,
-             xp=>\%xp, 2003=>\%w2k3, vista=>\%vista, 2008=>\%w2k8, unknown=>\%unknown, wine=>\%wine);
-
 # Define the order of version groups in the summary
 my @groups = (\%w95, \%w98, \%me, \%nt3, \%nt4, \%w2k, \%xp, \%w2k3, \%vista, \%w2k8, \%unknown, \%wine);
 
