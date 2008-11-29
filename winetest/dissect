@@ -248,7 +248,7 @@ while (<IN>) {
         $box->{data} .= sprintf "<div class=\"%s\">%s</div>\n", $class, escapeHTML($_);
     } elsif (/$dll:$unit done \((-?\d+)\)\r?$/) {
         chomp;                  # current test ended
-        if ($lines==0) {
+        if ($lines==0 || $1 < 0) {
             $result = "failed $1 - -";
             my $reason = "test failed: error $1";
             if ($1 == 258) { $reason = "test failed: timed out"; }
