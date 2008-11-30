@@ -169,7 +169,7 @@ function is_equal_unicode_or_id($unistr_or_int1, $unistr_or_int2)
     return TRUE;
 }
 
-function dump_resource_row($id, $resource, $master, $method_name, $diff_method_name, $lparam, $master_lparam = NULL)
+function dump_resource_row($id, &$resource, &$master, $method_name, $diff_method_name, $lparam, $master_lparam = NULL)
 {
     $extra = "";
     if ($master && $diff_method_name)
@@ -355,32 +355,23 @@ class StringTable extends Resource
         return $this->strings[$id];
     }
     
+    function dump_string($lparam)
+    {
+        dump_unicode_or_empty($this->strings[$lparam]);
+    }
+
+    function is_string_different(&$other, $lparam)
+    {
+        $uni_str = $this->strings[$lparam];
+        $other_uni_str = $other->strings[$lparam];
+        return ((!$other_uni_str && $uni_str) || ($other_uni_str && !$uni_str));
+    }
+
     function dump($master_res = NULL)
     {
-        for ($i=0; $i<16; $i++) {
-            $extra = "";
-
-            $uni_str = $this->strings[$i];
-            if ($master_res)
-            {
-                $master_uni_str = $master_res->strings[$i];
-                if ((!$master_uni_str && $uni_str) || ($master_uni_str && !$uni_str))
-                    $extra = " style=\"background-color: #ffb8d0\"";
-            }
-    
-            echo "<tr$extra><td valign=\"top\">".(($this->table_id-1)*16+$i)."</td><td>&nbsp;</td>";
-            echo "<td>";
-
-            dump_unicode_or_empty($uni_str);
-
-            if ($master_res)
-            {
-                echo "</td><td></td><td>";
-                dump_unicode_or_empty($master_uni_str);
-            }
-            echo "</td></tr>\n";
-        }
-
+        for ($i=0; $i<16; $i++)
+            dump_resource_row(($this->table_id-1)*16+$i, $this, $master_res,
+                "dump_string", "is_string_different", $i);
     }    
 }
 
@@ -567,6 +558,31 @@ class MenuResource extends Resource
             echo "</span>";
     }
 
+    function dump_menuitem($lparam)
+    {
+        $pos = $lparam[0];
+        $do_show = $lparam[1];
+        $tstate =& $lparam[2];
+        if (!$do_show)
+        {
+            $this->handle_indent($tstate, NULL);
+            return;
+        }
+
+        $this->handle_indent($tstate, $this->items[$pos]["resinfo"]);
+        $this->dump_title($this->items[$pos]);
+    }
+
+    function is_menuitem_different(&$other, $lparam, $other_lparam)
+    {
+        if (!$lparam[1] || !$other_lparam[1]) /* one of the items is not shown */
+            return TRUE;
+
+        $pos = $lparam[0];
+        $other_pos = $other_lparam[0];
+        return $this->items[$pos]["state"] != $other->items[$other_pos]["state"];
+    }
+
     function dump($master_res = NULL)
     {
         if ($master_res)
@@ -579,40 +595,16 @@ class MenuResource extends Resource
         $pos = 0;
         $master_pos = 0;
         for ($i=0; $i<count($show); $i++) {
-            $extra = "";
-
-            if ($master_res)
-            {
-                if ($show[$i] != 3 || $this->items[$pos]["state"] != $master_res->items[$master_pos]["state"])
-                    $extra = " style=\"background-color: #ffb8d0\"";
-            }
-
             $id = ($show[$i] & 1 ? $this->items[$pos]["id"] : $master_res->items[$master_pos]["id"]);
-            echo "<tr$extra><td valign=\"top\">$id</td><td>&nbsp;</td>";
-            echo "<td>";
+            dump_resource_row($id, $this, $master_res,
+                "dump_menuitem", "is_menuitem_different",
+                array($pos, $show[$i] & 1, &$tstate),
+                array($master_pos, $show[$i] & 2, &$tstate));
 
             if ($show[$i] & 1)
-            {
-                $this->handle_indent($tstate, $this->items[$pos]["resinfo"]);
-                $this->dump_title($this->items[$pos]);
                 $pos++;
-            }
-            else
-                $this->handle_indent($tstate, NULL);
-
-            if ($master_res)
-            {
-                echo "</td><td></td><td>";
-                if ($show[$i] & 2)
-                {
-                    $this->handle_indent($tstate_master, $master_res->items[$master_pos]["resinfo"]);
-                    $this->dump_title($master_res->items[$master_pos]);
-                    $master_pos++;
-                }
-                else
-                    $this->handle_indent($tstate_master, NULL);
-            }
-            echo "</td></tr>\n";
+            if ($show[$i] & 2)
+                $master_pos++;
         }
 
     }
@@ -813,7 +805,7 @@ class DialogResource extends Resource
         printf("$keyword 0x%x", $this->$field);
     }
 
-    function is_hex_different($other, $lparam)
+    function is_hex_different(&$other, $lparam)
     {
         $field = $lparam[0];
         return ($this->$field != $other->$field);
@@ -827,7 +819,7 @@ class DialogResource extends Resource
         dump_unicode_or_id($this->$field);
     }
 
-    function is_string_different($other, $lparam)
+    function is_string_different(&$other, $lparam)
     {
         $field = $lparam[0];
         return !is_equal_unicode_or_id($this->$field, $other->$field);
@@ -862,7 +854,7 @@ class DialogResource extends Resource
     }
 
     /* check if the row should be in red */
-    function is_control_different($other, $lparam, $other_lparam)
+    function is_control_different(&$other, $lparam, $other_lparam)
     {
         global $CONSTS;
         if (!$lparam[1] || !$other_lparam[1]) /* one item is missing */
