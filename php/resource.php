@@ -26,13 +26,18 @@ $compare = isset($_REQUEST['compare']);
 
 function load_resource(&$resources, $type, $id, $langid, &$res)
 {
-    $resdata = $resources->loadResource($type, $id, get_lang_binid($langid), is_lang_ignore_sublang($langid));
+    $file_type = $type & 0xff;  /* wrc adds 0x100 for *EX resource*/
+    $resdata = $resources->loadResource($file_type, $id, get_lang_binid($langid), is_lang_ignore_sublang($langid));
     if (!$resdata)
         die("Resource not found in *.res file\n");
     switch ($type)
     {
         case 4:   /* RT_MENU */
             $res = new MenuResource($resdata[0], $resdata[1]);
+            return TRUE;
+        case 5:   /* RT_DIALOG */
+        case 261: /* res_dialogex */
+            $res = new DialogResource($resdata[0], $resdata[1]);
             return TRUE;
         case 6:   /* RT_STRING*/
             $res = new StringTable($resdata[0], $resdata[1], $id);

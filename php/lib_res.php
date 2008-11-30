@@ -10,6 +10,19 @@ $CONSTS["MF_SEPARATOR"] = 0x0800;
 
 $CONSTS["MFT_DISABLED"] =   0x3;
 
+$CONSTS["DS_SETFONT"] = 0x0040;
+
+$CONSTS["BS_MULTILINE"] = 0x2000;
+
+function get_byte(&$data)
+{
+    if (strlen($data)  < 1)
+        die("not enough data");
+    $cx = unpack("Cc", $data);
+    $data = substr($data, 1);
+    return $cx["c"];
+}
+
 function get_word(&$data)
 {
     if (strlen($data)  < 2)
@@ -19,7 +32,16 @@ function get_word(&$data)
     return $cx["c"];
 }
 
-function get_stringorid($data, &$pos)
+function get_dword(&$data)
+{
+    if (strlen($data)  < 4)
+        die("not enough data");
+    $cx = unpack("Vc", $data);
+    $data = substr($data, 4);
+    return $cx["c"];
+}
+
+function get_stringorid_asascii($data, &$pos)
 {
     $len = strlen($data);
 
@@ -48,6 +70,34 @@ function get_stringorid($data, &$pos)
     return $ret;
 }
 
+/* same as get_stringorid, but uses 0xff00 as the marker of an oridinal */
+function get_stringorid($data, &$pos, $magic = 0xffff)
+{
+    $len = strlen($data);
+
+    if ((ord($data[$pos]) == $magic >> 8) && (ord($data[$pos + 1]) == ($magic & 0xff)))
+    {
+        if ($len < 4)
+            die("not enough data");
+        $pos += 4;
+        return (ord($data[$pos - 2]) + (ord($data[$pos - 1]) << 8));
+    }
+
+    $ret = array();
+    for ($i = $pos; (ord($data[$i]) != 0) || (ord($data[$i+1]) != 0); $i += 2)
+    {
+        $ret[] = (ord($data[$i]) + (ord($data[$i + 1]) << 8));
+    }
+
+    $pos = $i + 2;
+
+    if ($pos >= $len)
+        die("not enough data");
+
+    return $ret;
+}
+
+/* load NUL-terminated string */
 function get_string_nul(&$data)
 {
     $str = array();
@@ -94,6 +144,51 @@ function dump_unicode_or_empty($uni_str)
         echo "<span class=\"resmeta\">empty</span>";
 }
 
+function dump_unicode_or_id($unistr_or_int)
+{
+    if (is_int($unistr_or_int))
+        echo "<span class=\"resmeta\">".$unistr_or_int."</span>";
+    else
+        dump_unicode($unistr_or_int);
+}
+
+function is_equal_unicode_or_id($unistr_or_int1, $unistr_or_int2)
+{
+    if (is_int($unistr_or_int1))
+        return is_int($unistr_or_int2) && $unistr_or_int1 == $unistr_or_int2;
+        
+    if (is_int($unistr_or_int2))
+        return FALSE;
+
+    /* both arrays of UTF-16 */
+    if (count($unistr_or_int1) != count($unistr_or_int2))
+        return FALSE;
+    for ($i = 0; $i < count($unistr_or_int1); $i++)
+        if ($unistr_or_int1[$i] != $unistr_or_int2[$i])
+            return FALSE;
+    return TRUE;
+}
+
+function dump_resource_row($id, $resource, $master, $method_name, $diff_method_name, $lparam, $master_lparam = NULL)
+{
+    $extra = "";
+    if ($master && $diff_method_name)
+        if ($resource->$diff_method_name($master, $lparam, $master_lparam))
+            $extra = " style=\"background-color: #ffb8d0\"";
+
+    if ($master_lparam == NULL)
+        $master_lparam = $lparam;
+    echo "<tr$extra><td>$id</td><td></td>\n<td>";
+    call_user_func(array($resource, $method_name), $lparam);
+    if ($master)
+    {
+        echo "</td><td></td>\n<td>";
+        call_user_func(array($master, $method_name), $master_lparam);
+    }
+    echo "</td></tr>\n\n";
+}
+
+
 class ResFile
 {
     var $file;
@@ -128,8 +223,8 @@ class ResFile
                 die("Couldn't read header");
 
             $strpos = 0;
-            $header["type"] = get_stringorid($data, $strpos);
-            $header["name"] = get_stringorid($data, $strpos);
+            $header["type"] = get_stringorid_asascii($data, $strpos);
+            $header["name"] = get_stringorid_asascii($data, $strpos);
             if ($strpos & 3)  /* DWORD padding */
                 $strpos += 2;
             $data = substr($data, $strpos);
@@ -184,10 +279,10 @@ class ResFile
             assert($headerSize > 8 && $headerSize <= $len);
 
             $strpos = 8;
-            $res_type = get_stringorid($data, $strpos);
+            $res_type = get_stringorid_asascii($data, $strpos);
             if ($res_type == $type)
             {
-                $res_name = get_stringorid($data, $strpos);
+                $res_name = get_stringorid_asascii($data, $strpos);
                 if ($res_name == strtoupper($name))
                 {
                     if ($strpos & 3)  /* DWORD padding */
@@ -520,6 +615,299 @@ class MenuResource extends Resource
             echo "</td></tr>\n";
         }
 
+    }
+    
+}
+
+class DialogResource extends Resource
+{
+    var $extended;
+    var $style;
+    var $exStyle;
+    var $dwHelpId;
+    var $x, $y, $cx, $cy;
+    var $menuName;
+    var $className;
+    var $title;
+    var $fontSize;
+    var $fontWeight;
+    var $fontItalic;
+    var $fontCharset;
+    var $fontName;
+    var $items;
+
+    function DialogResource($header, $data)
+    {
+        global $CONSTS;
+        $orig_size = strlen($data);
+
+        $this->Resource($header);
+        $this->items = array();
+
+        $signature = get_dword($data);
+        $this->extended = ($signature == 0xffff0001);
+        if ($this->extended)       /* DIALOGEX resource*/
+        {
+            $this->dwHelpId = get_dword($data);
+            $this->exStyle = get_dword($data);
+            $this->style = get_dword($data);
+        } else                     /* DIALOG resource*/
+        {
+            $this->style = $signature;
+            $this->exStyle = get_dword($data);
+            $this->dwHelpId = 0;
+        }
+
+        $cItems = get_word($data);
+        $this->x = get_word($data);
+        $this->y = get_word($data);
+        $this->cx = get_word($data);
+        $this->cy = get_word($data);
+
+        $pos = 0;
+        $this->menuName = get_stringorid($data, $pos, 0xff00);
+        $this->className = get_stringorid($data, $pos, 0xff00);
+        $this->title = get_stringorid($data, $pos, 0xff00);
+        $data = substr($data, $pos);
+
+        if ($this->style & $CONSTS["DS_SETFONT"])
+        {
+            $this->fontSize = get_word($data);
+            if ($this->extended)
+            {
+                $this->fontWeight = get_word($data);
+                $this->fontItalic = get_byte($data);
+                $this->fontCharset = get_byte($data);
+            }
+            $this->fontName = get_string_nul($data);
+        }
+
+        $this->items = array();
+        for ($i = 0; $i < $cItems; $i++)
+        {
+            $item = array();
+
+            $align = (($orig_size - strlen($data)) & 3);  /* DWORD align */
+            if ($align > 0)
+                $data = substr($data, 4-$align);
+
+            if ($this->extended)
+            {
+                $item['dwHelpId'] = get_dword($data);
+                $item['exStyle'] = get_dword($data);
+                $item['style'] = get_dword($data);
+            }
+            else
+            {
+                $item['style'] = get_dword($data);
+                $item['exStyle'] = get_dword($data);
+                $item['dwHelpId'] = 0;
+            }
+            $item['x'] = get_word($data);
+            $item['y'] = get_word($data);
+            $item['cx'] = get_word($data);
+            $item['cy'] = get_word($data);
+            if ($this->extended)
+                $item['id'] = get_dword($data);
+            else
+                $item['id'] = get_word($data);
+            $pos = 0;
+            $item['className'] = get_stringorid($data, $pos);
+            $item['text'] = get_stringorid($data, $pos);
+
+            $data = substr($data, $pos);
+            $cbExtra = get_word($data);
+            if ($cbExtra > strlen($data))
+                die("Not enough data to skip cbExtra");
+            $data = substr($data, $cbExtra);
+            $this->items[] = $item;
+        }
+        if (strlen($data) >= 4)  /* small padding at the end is possible */
+            die("unexpected data in DIALOG resource (".strlen($data)." bytes)\n");
+    }
+
+    /* check if controls should be in different rows in the dump */    
+    function control_equals(&$res2, $i, $res2_i)
+    {
+        $this_ctrl = $this->items[$i];
+        $other_ctrl = $res2->items[$res2_i];
+        return ($this_ctrl['id'] == $other_ctrl['id']);
+    }
+    
+    /* Longest common subsequence - simple O(n^2) time and O(n^2) space algorithm,
+     * but nenus are small so this should be OK */
+    function diff_dialogs(&$res2)
+    {
+        $mincount = min(count($this->items), count($res2->items));
+        for ($start = 0; $start < $mincount; $start++)
+            if (!$this->control_equals($res2, $start, $start))
+                break;
+
+        if (($start == $mincount) && (count($this->items) == count($res2->items)))
+            return array_fill(0, $mincount, 3);
+
+        for ($end = 0; $end < $mincount; $end++)
+            if (!$this->control_equals($res2, count($this->items) - 1 - $end, count($res2->items) - 1 - $end))
+                break;
+
+        $out = array();
+        $tabdyn = array_fill(0, count($this->items) - $start - $end + 1,
+                    array_fill(0, count($res2->items) - $start - $end + 1, 0));
+
+        for ($i = 1; $i <= count($this->items) - $start - $end; $i++)
+        {
+            for ($j = 1; $j <= count($res2->items) - $start - $end; $j++)
+            {
+                if ($this->control_equals($res2, $start + $i - 1, $start + $j - 1))
+                    $tabdyn[$i][$j] = $tabdyn[$i-1][$j-1] + 1;
+                else if ($tabdyn[$i][$j-1] > $tabdyn[$i-1][$j])
+                    $tabdyn[$i][$j] = $tabdyn[$i][$j-1];
+                else
+                    $tabdyn[$i][$j] = $tabdyn[$i-1][$j];
+            }
+        }
+
+        /* backtrack (produces results in reverse order) */
+        $out = ($end > 0 ? array_fill(0, $end, 3) : array());
+        $i = count($this->items) - $start - $end;
+        $j = count($res2->items) - $start - $end;
+        while ($i > 0 || $j > 0) {
+            if ($i == 0)
+                $step = 2;
+            else if ($j == 0)
+                $step = 1;
+            else
+            {
+                if ($this->control_equals($res2, $start + $i - 1, $start + $j - 1))
+                    $step = 3;
+                else if ($tabdyn[$i][$j-1] > $tabdyn[$i-1][$j])
+                    $step = 2;
+                else
+                    $step = 1;
+            }
+
+            $out[] = $step;
+
+            if ($step & 1)
+                $i--;
+            if ($step & 2)
+                $j--;
+        }
+        if ($start > 0)
+            $out += array_fill(count($out), $start, 3);
+        return array_reverse($out);
+    }
+
+    function dump_header()
+    {
+        echo "DIALOG".($this->extended?"EX":""). " ".$this->x.", ".$this->y.
+            ", ".$this->cx.", ".$this->cy;
+        if ($this->extended)
+            echo ", ".$this->dwHelpId;
+    }
+
+    function dump_hex($lparam)
+    {
+        $field = $lparam[0];
+        $keyword = $lparam[1];
+        printf("$keyword 0x%x", $this->$field);
+    }
+
+    function is_hex_different($other, $lparam)
+    {
+        $field = $lparam[0];
+        return ($this->$field != $other->$field);
+    }
+
+    function dump_string($lparam)
+    {
+        $field = $lparam[0];
+        $keyword = $lparam[1];
+        echo "$keyword ";
+        dump_unicode_or_id($this->$field);
+    }
+
+    function is_string_different($other, $lparam)
+    {
+        $field = $lparam[0];
+        return !is_equal_unicode_or_id($this->$field, $other->$field);
+    }
+
+    function dump_font()
+    {
+        echo "FONT ".$this->fontSize.", ";
+        dump_unicode($this->fontName);
+        if ($this->extended)
+        {
+            echo ", ".$this->fontWeight;
+            echo ", ".$this->fontItalic;
+        }
+    }
+
+    function dump_control($lparam)
+    {
+        if (!$lparam[1])  /* don't show */
+            return;
+        $item = $this->items[$lparam[0]];
+        echo "&nbsp;&nbsp;&nbsp;&nbsp;CONTROL  ";
+        dump_unicode_or_id($item['text']);
+        echo ", ".$item['id'].", ";
+        dump_unicode_or_id($item['className']);
+        printf(", 0x%x, %d, %d, %d, %d, 0x%x", $item['style'], $item['x'],
+            $item['y'], $item['cx'], $item['cy'], $item['exStyle']);
+        if ($this->extended && $item['dwHelpId'])
+        {
+            echo ", ".$item['dwHelpId'];
+        }
+    }
+
+    /* check if the row should be in red */
+    function is_control_different($other, $lparam, $other_lparam)
+    {
+        global $CONSTS;
+        if (!$lparam[1] || !$other_lparam[1]) /* one item is missing */
+            return TRUE;
+
+        $this_ctrl = $this->items[$lparam[0]];
+        $other_ctrl = $other->items[$other_lparam[0]];
+
+        $ignore_style = 0;
+        if (is_int($this_ctrl['className']) && $this_ctrl['className'] == 0x80 /* button */)
+            $ignore_style = $CONSTS["BS_MULTILINE"];
+
+        return ($this_ctrl['id'] != $other_ctrl['id']) ||
+               (($this_ctrl['style'] | $ignore_style) != ($other_ctrl['style'] | $ignore_style)) ||
+               ($this_ctrl['exStyle'] != $other_ctrl['exStyle']) ||
+               !is_equal_unicode_or_id($this_ctrl['className'], $other_ctrl['className']);
+    }
+
+    function dump($master_res = NULL)
+    {
+        if ($master_res)
+            $show = $this->diff_dialogs($master_res);
+        else
+            $show = array_fill(0, count($this->items), 1);
+
+        dump_resource_row("", $this, $master_res, "dump_header", NULL, NULL);
+        dump_resource_row("", $this, $master_res, "dump_hex", "is_hex_different", array("style", "STYLE"));
+        dump_resource_row("", $this, $master_res, "dump_hex", "is_hex_different", array("exStyle", "EXSTYLE"));
+        dump_resource_row("", $this, $master_res, "dump_string", NULL, array("title", "CAPTION"));
+        dump_resource_row("", $this, $master_res, "dump_string", "is_string_different", array("className", "CLASS"));
+        dump_resource_row("", $this, $master_res, "dump_string", "is_string_different", array("menuName", "MENU"));
+        dump_resource_row("", $this, $master_res, "dump_font", NULL, NULL);
+        
+        $pos = 0;
+        $master_pos = 0;
+        for ($i = 0; $i < count($show); $i++)
+        {
+            dump_resource_row("", $this, $master_res, "dump_control", "is_control_different",
+                array($pos, $show[$i] & 1), array($master_pos, $show[$i] & 2));
+
+            if ($show[$i] & 1)
+                $pos++;
+            if ($show[$i] & 2)
+                $master_pos++;
+        }
     }
     
 }
