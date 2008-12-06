@@ -8,23 +8,36 @@ $file = fopen("$DATAROOT/langs/$lang", "r");
 $transl = array();
 $notransl = array();
 $partial = array();
+$curr_file = "";
 while ($line = fgets($file, 4096))
 {
     if (preg_match("/FILE ([A-Z]+) (.*) ([0-9]+) ([0-9]+) ([0-9]+)/", $line, $m))
     {
+        $curr_file = $m[2];
         if ($m[1] == "NONE")
         {
-            $notransl[$m[2]] = array($m[3], $m[4], $m[5], $m[2]);
+            $notransl[$curr_file] = array($m[3], $m[4], $m[5], 0);
             continue;
         }
         
         if ($m[4]>0 || $m[5]>0)
         {
-            $partial[$m[2]] = array($m[3], $m[4], $m[5], $m[2]);
+            $partial[$curr_file] = array($m[3], $m[4], $m[5], 0);
             continue;
         }
         
-        $transl[$m[2]] = array($m[3], $m[4], $m[5], $m[2]);
+        $transl[$curr_file] = array($m[3], $m[4], $m[5], 0);
+    }
+    if (preg_match(",$curr_file: Warning: ,", $line, $m))
+    {
+        if (array_key_exists($curr_file, $transl))
+        {
+            $partial[$curr_file] = $transl[$curr_file];
+            unset($transl[$curr_file]);
+        }
+
+        if (array_key_exists($curr_file, $partial)) /* should be true - warning for $notransl shouldn't happen */
+            $partial[$curr_file][3]++;
     }
     if (preg_match("/LOCALE ([0-9a-f]{3}:[0-9a-f]{2}) (.*) ([0-9]+) ([0-9]+) ([0-9]+)/", $line, $m))
     {
@@ -54,7 +67,10 @@ function dump_table($table)
     echo "<tr><th>File name</th><th>translated</th><th>missing</th><th>errors</th></tr>\n";
     foreach ($table as $key => $value)
     {
-        echo "<tr><td>".gen_resfile_a($lang, $value[3]).$key."</a></td>";
+        $extra = "";
+        if ($value[3] > 0)
+            $extra = "(<img src=\"img/icon-warning.png\" height=\"16\"> warnings: ".$value[3].")";
+        echo "<tr><td>".gen_resfile_a($lang, $key).$key."</a> $extra</td>";
         echo "<td>".$value[0]."</td>";
         echo "<td>".$value[1]."</td>";
         echo "<td>".$value[2]."</td>";
