@@ -188,6 +188,70 @@ function dump_resource_row($id, &$resource, &$master, $method_name, $diff_method
     echo "</td></tr>\n\n";
 }
 
+/* Longest common subsequence - simple O(n^2) time and O(n^2) space algorithm,
+ * but resources are small so this should be OK */
+function diff_sequences(&$res1, $count1, &$res2, $count2, $compare_method)
+{
+    $mincount = min($count1, $count2);
+    for ($start = 0; $start < $mincount; $start++)
+        if (!$res1->$compare_method($res2, $start, $start))
+            break;
+
+    if (($start == $mincount) && $count1 == $count2)
+        return array_fill(0, $mincount, 3);
+
+    for ($end = 0; $end < $mincount - $start; $end++)
+        if (!$res1->$compare_method($res2, $count1 - 1 - $end, $count2 - 1 - $end))
+            break;
+
+    $out = array();
+    $tabdyn = array_fill(0, $count1 - $start - $end + 1,
+                array_fill(0, $count2 - $start - $end + 1, 0));
+
+    for ($i = 1; $i <= $count1 - $start - $end; $i++)
+    {
+        for ($j = 1; $j <= $count2 - $start - $end; $j++)
+        {
+            if ($res1->$compare_method($res2, $start + $i - 1, $start + $j - 1))
+                $tabdyn[$i][$j] = $tabdyn[$i-1][$j-1] + 1;
+            else if ($tabdyn[$i][$j-1] > $tabdyn[$i-1][$j])
+                $tabdyn[$i][$j] = $tabdyn[$i][$j-1];
+            else
+                $tabdyn[$i][$j] = $tabdyn[$i-1][$j];
+        }
+    }
+
+    /* backtrack (produces results in reverse order) */
+    $out = ($end > 0 ? array_fill(0, $end, 3) : array());
+    $i = $count1 - $start - $end;
+    $j = $count2 - $start - $end;
+    while ($i > 0 || $j > 0) {
+        if ($i == 0)
+            $step = 2;
+        else if ($j == 0)
+            $step = 1;
+        else
+        {
+            if ($res1->$compare_method($res2, $start + $i - 1, $start + $j - 1))
+                $step = 3;
+            else if ($tabdyn[$i][$j-1] > $tabdyn[$i-1][$j])
+                $step = 2;
+            else
+                $step = 1;
+        }
+
+        $out[] = $step;
+
+        if ($step & 1)
+            $i--;
+        if ($step & 2)
+            $j--;
+    }
+    if ($start > 0)
+        $out += array_fill(count($out), $start, 3);
+    return array_reverse($out);
+}
+
 
 class ResFile
 {
@@ -443,70 +507,6 @@ class MenuResource extends Resource
             ($this->items[$i]["level"] == $res2->items[$j]["level"]) &&
             (($this->items[$i]["resinfo"]&1) == ($res2->items[$j]["resinfo"]&1)));
     }
-    
-    /* Longest common subsequence - simple O(n^2) time and O(n^2) space algorithm,
-     * but nenus are small so this should be OK */
-    function diff_menus(&$res2)
-    {
-        $mincount = min(count($this->items), count($res2->items));
-        for ($start = 0; $start < $mincount; $start++)
-            if (!$this->menuitem_equals($res2, $start, $start))
-                break;
-
-        if (($start == $mincount) && (count($this->items) == count($res2->items)))
-            return array_fill(0, $mincount, 3);
-
-        for ($end = 0; $end < $mincount; $end++)
-            if (!$this->menuitem_equals($res2, count($this->items) - 1 - $end, count($res2->items) - 1 - $end))
-                break;
-
-        $out = array();
-        $tabdyn = array_fill(0, count($this->items) - $start - $end + 1,
-                    array_fill(0, count($res2->items) - $start - $end + 1, 0));
-
-        for ($i = 1; $i <= count($this->items) - $start - $end; $i++)
-        {
-            for ($j = 1; $j <= count($res2->items) - $start - $end; $j++)
-            {
-                if ($this->menuitem_equals($res2, $start + $i - 1, $start + $j - 1))
-                    $tabdyn[$i][$j] = $tabdyn[$i-1][$j-1] + 1;
-                else if ($tabdyn[$i][$j-1] > $tabdyn[$i-1][$j])
-                    $tabdyn[$i][$j] = $tabdyn[$i][$j-1];
-                else
-                    $tabdyn[$i][$j] = $tabdyn[$i-1][$j];
-            }
-        }
-
-        /* backtrack (produces results in reverse order) */
-        $out = ($end > 0 ? array_fill(0, $end, 3) : array());
-        $i = count($this->items) - $start - $end;
-        $j = count($res2->items) - $start - $end;
-        while ($i > 0 || $j > 0) {
-            if ($i == 0)
-                $step = 2;
-            else if ($j == 0)
-                $step = 1;
-            else
-            {
-                if ($this->menuitem_equals($res2, $start + $i - 1, $start + $j - 1))
-                    $step = 3;
-                else if ($tabdyn[$i][$j-1] > $tabdyn[$i-1][$j])
-                    $step = 2;
-                else
-                    $step = 1;
-            }
-
-            $out[] = $step;
-
-            if ($step & 1)
-                $i--;
-            if ($step & 2)
-                $j--;
-        }
-        if ($start > 0)
-            $out += array_fill(count($out), $start, 3);
-        return array_reverse($out);
-    }
 
     function handle_indent(&$tstate, $resinfo)
     {
@@ -586,7 +586,11 @@ class MenuResource extends Resource
     function dump($master_res = NULL)
     {
         if ($master_res)
-            $show = $this->diff_menus($master_res);
+        {
+            $show = diff_sequences($this, count($this->items),
+                                   $master_res, count($master_res->items),
+                                   'menuitem_equals');
+        }
         else
             $show = array_fill(0, count($this->items), 1);
 
@@ -725,70 +729,6 @@ class DialogResource extends Resource
         $other_ctrl = $res2->items[$res2_i];
         return ($this_ctrl['id'] == $other_ctrl['id']);
     }
-    
-    /* Longest common subsequence - simple O(n^2) time and O(n^2) space algorithm,
-     * but nenus are small so this should be OK */
-    function diff_dialogs(&$res2)
-    {
-        $mincount = min(count($this->items), count($res2->items));
-        for ($start = 0; $start < $mincount; $start++)
-            if (!$this->control_equals($res2, $start, $start))
-                break;
-
-        if (($start == $mincount) && (count($this->items) == count($res2->items)))
-            return array_fill(0, $mincount, 3);
-
-        for ($end = 0; $end < $mincount; $end++)
-            if (!$this->control_equals($res2, count($this->items) - 1 - $end, count($res2->items) - 1 - $end))
-                break;
-
-        $out = array();
-        $tabdyn = array_fill(0, count($this->items) - $start - $end + 1,
-                    array_fill(0, count($res2->items) - $start - $end + 1, 0));
-
-        for ($i = 1; $i <= count($this->items) - $start - $end; $i++)
-        {
-            for ($j = 1; $j <= count($res2->items) - $start - $end; $j++)
-            {
-                if ($this->control_equals($res2, $start + $i - 1, $start + $j - 1))
-                    $tabdyn[$i][$j] = $tabdyn[$i-1][$j-1] + 1;
-                else if ($tabdyn[$i][$j-1] > $tabdyn[$i-1][$j])
-                    $tabdyn[$i][$j] = $tabdyn[$i][$j-1];
-                else
-                    $tabdyn[$i][$j] = $tabdyn[$i-1][$j];
-            }
-        }
-
-        /* backtrack (produces results in reverse order) */
-        $out = ($end > 0 ? array_fill(0, $end, 3) : array());
-        $i = count($this->items) - $start - $end;
-        $j = count($res2->items) - $start - $end;
-        while ($i > 0 || $j > 0) {
-            if ($i == 0)
-                $step = 2;
-            else if ($j == 0)
-                $step = 1;
-            else
-            {
-                if ($this->control_equals($res2, $start + $i - 1, $start + $j - 1))
-                    $step = 3;
-                else if ($tabdyn[$i][$j-1] > $tabdyn[$i-1][$j])
-                    $step = 2;
-                else
-                    $step = 1;
-            }
-
-            $out[] = $step;
-
-            if ($step & 1)
-                $i--;
-            if ($step & 2)
-                $j--;
-        }
-        if ($start > 0)
-            $out += array_fill(count($out), $start, 3);
-        return array_reverse($out);
-    }
 
     function dump_header()
     {
@@ -876,7 +816,11 @@ class DialogResource extends Resource
     function dump($master_res = NULL)
     {
         if ($master_res)
-            $show = $this->diff_dialogs($master_res);
+        {
+            $show = diff_sequences($this, count($this->items),
+                                   $master_res, count($master_res->items),
+                                   'control_equals');
+        }
         else
             $show = array_fill(0, count($this->items), 1);
 
