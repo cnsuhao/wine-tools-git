@@ -46,7 +46,7 @@ while (<ANNOUNCE>)
         if (/^What's new in this release/)
         {
             $whats_new = 1;
-            push @text, " <a href=\"?announce=$rel\">What's new</a> in this release:";
+            push @text, " <a href=\"{\$root}/announce/$rel\">What's new</a> in this release:";
             next;
         }
         if (/^\s*$/)
@@ -77,7 +77,7 @@ while (<ANNOUNCE>)
 }
 
 push @text, "<p>The source is <a href=\"http://prdownloads.sourceforge.net/wine/wine-$rel.tar.bz2\">available now</a>.\n";
-push @text, "Binary packages are in the process of being built, and will appear soon at their respective <a href=\"/site/download\">download locations</a>.\n";
+push @text, "Binary packages are in the process of being built, and will appear soon at their respective <a href=\"{\$root}/download\">download locations</a>.\n";
 push @text, "</p></body></news>\n";
 close ANNOUNCE;
 
