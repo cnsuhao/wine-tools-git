@@ -58,5 +58,5 @@ foreach my $dll (sort keys %stats)
 
 my $now = `date`;
 chomp $now;
-print "\n</table>\n</div>\n";
+print "\n</table>\n";
 print "<p>last modified: $now</p>\n";
