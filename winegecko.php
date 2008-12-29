@@ -23,7 +23,8 @@ $sFileName = "wine_gecko".($sVersion?'-'.$sVersion:'').".cab";
 $aFileSizes = array(
 	'default'=>5219822,
 	'0.0.1'=>5219822,
-	'0.1.0'=>5746895
+	'0.1.0'=>5746895,
+	'0.9.0'=>7806669
 );
 
 // Exact size of the file:
