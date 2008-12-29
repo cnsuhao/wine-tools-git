@@ -48,7 +48,8 @@ destdir="/home/winehq/opt/winetest/builds"
 desturl="http://test.winehq.org/builds"
 servicedir="/home/winehq/opt/winetest/winehq-builds/winetest"
 
-mingw=i586-mingw32msvc
+mingw32=i586-mingw32msvc
+mingw64=x86_64-pc-mingw32
 logfile=LOG
 
 # if the log file exists, either a build is in progress or one has failed
@@ -61,7 +62,7 @@ fi
     (cd wine && git pull) || exit
     head=$(cd wine && git rev-parse --short=12 HEAD) || exit
 
-    if [ -f $destdir/winetest-$head.exe -a $force -eq 0 ]
+    if [ -f $destdir/winetest-$head.exe -a -f $destdir/winetest64-$head.exe -a $force -eq 0 ]
     then
         exit 0
     fi
@@ -80,7 +81,7 @@ fi
     test -d build-mingw ||
     (mkdir build-mingw &&
      cd build-mingw &&
-     ../wine/configure --host=$mingw --with-wine-tools=../build-native --without-x --without-freetype) || exit
+     ../wine/configure --host=$mingw32 --with-wine-tools=../build-native --without-x --without-freetype) || exit
 
     (cd build-mingw &&
      make depend &&
@@ -100,6 +101,27 @@ fi
     echo "$desturl/winetest-$head.exe" > $servicedir/winetest-$head.url
 
     echo "winetest-$head.exe built successfully."
+
+    # now the same thing for 64-bit
+
+    test -d build-mingw64 ||
+    (mkdir build-mingw64 &&
+     cd build-mingw64 &&
+     ../wine/configure --host=$mingw64 --with-wine-tools=../build-native --without-x --without-freetype) || exit
+
+    (cd build-mingw64 &&
+     make depend &&
+     make include &&
+     make -C dlls testsubdirs &&
+     cd programs/winetest &&
+     echo "$desturl/winetest64-$head.exe" > tests.url &&
+     uname -a > build.nfo &&
+     make dist) || exit
+
+    mv -f build-mingw64/programs/winetest/winetest-dist.exe $destdir/winetest64-$head.exe
+    ln -sf winetest64-$head.exe $destdir/winetest64-latest.exe
+
+    echo "winetest64-$head.exe built successfully."
 
 ) >$logfile 2>&1 && rm -f $logfile
 
