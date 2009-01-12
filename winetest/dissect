@@ -168,13 +168,13 @@ if ($plid==1 && $major==4) {
         } elsif ($minor==2) {
             $version = "2003";
         }
-    } elsif ($major==6) {
+    } elsif ($major==6 && $minor== 0) {
         if      ($product==1) {
             $version = "vista";
         } elsif ($product==3) {
             $version = "2008";
         }
-	} 
+    } 
 } elsif ($plid==3) {
     $version = "ce$major$minor";
 }
