@@ -346,17 +346,20 @@ sub apply_commits()
 
     my $base = shell_output "git", "merge-base", $last_commit, $branch;
     my $commit = shell_output "git", "rev-parse", "$last_commit^\{commit\}";
+    my $tip = shell_output "git", "rev-parse", "$branch^\{commit\}";
     die "$last_commit is not a parent of $branch" unless ($base eq $commit);
+
+    return if ($tip eq $base);
 
     if (! -f $ENV{"GIT_INDEX_FILE"})
     {
         # read the tree of the first commit and make sure we are up to date
-        shell "git-read-tree", "--reset", $last_commit;
-        shell "git-update-index", "--refresh";
-        shell "git-checkout-index", "-q", "-f", "-u", "-a";
+        shell "git", "read-tree", "--reset", $last_commit;
+        shell "git", "update-index", "--refresh";
+        shell "git", "checkout-index", "-q", "-f", "-u", "-a";
     }
 
-    open LIST, "-|" or exec "git", "rev-list", "$last_commit..$branch" or die "cannot run git rev-list";
+    open LIST, "-|" or exec "git", "rev-list", "$base..$tip" or die "cannot run git rev-list";
     while (<LIST>)
     {
         chomp;
@@ -365,11 +368,10 @@ sub apply_commits()
     }
     close LIST;
 
-    unless (@commits)
-    {
-        print "No new commits to apply.\n";
-        return;
-    }
+    return unless (@commits);
+
+    read_tags();
+
     foreach my $commit (@commits)
     {
         apply_git_commit($commit);
@@ -380,13 +382,11 @@ sub apply_commits()
 # build a list of all commits that are pointed to by a tag
 sub read_tags()
 {
-    open LIST, "-|" or exec "git", "for-each-ref", "refs/tags/wine*" or die "cannot run git for-each-ref";
+    open LIST, "-|" or exec "git", "for-each-ref", "--format=%(object) %(refname)", "refs/tags/wine*" or die "cannot run git for-each-ref";
     while (<LIST>)
     {
-        next unless /^[0-9a-f]{40} tag\trefs\/tags\/(.*)$/;
-        my $tag = $1;
-        my $commit = shell_output "git", "rev-parse", "$tag^{commit}";
-        $tags{$commit} = $tag;
+        next unless /^([0-9a-f]{40}) refs\/tags\/(.*)$/;
+        $tags{$1} = $2;
     }
     close LIST;
 }
@@ -403,5 +403,4 @@ $ENV{"GIT_INDEX_FILE"} = "CVS/.git-index";
 -d $ENV{"GIT_DIR"} or die "Invalid git dir $ENV{GIT_DIR}";
 -w "." or die "No write access to current directory";
 
-read_tags();
 apply_commits();
