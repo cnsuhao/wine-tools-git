@@ -210,10 +210,11 @@ while ($_ = <IN>) {
     chomp;
     s/\r+$//;
     last if (!/^\s+([^ =]+)=(.*)\r?$/);
-    $dllinfo{$1} = { version => $2 };
-    if ($2 eq "dll is missing" || $2 eq "load error 1157")
+    my $module = $1;
+    $dllinfo{$module} = { version => $2 };
+    if ($2 eq "dll is missing" || $2 =~ /^load error/)
     {
-        print SUM "- $1 - missing - - - - -\n";
+        print SUM "- $module - missing - - - - -\n";
     }
 }
 
