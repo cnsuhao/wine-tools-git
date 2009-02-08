@@ -607,8 +607,8 @@ sub test_links($)
     my ($testname) = @_;
     my $source = $alltests{$testname};
     return "<td class=\"links\"><a href=\"$gitweb/?a=history;f=$source;hb=$build\" title=\"$source change history\">history</a>" .
-           " | <a href=\"$gitweb/?a=blob;f=$source;hb=$build\" title=\"$source source code\">source</a>" .
-           " | <a href=\"../tests/$testname.html\" title=\"$testname results across all builds\">all&nbsp;builds</a></td>";
+           "&nbsp;|&nbsp;<a href=\"$gitweb/?a=blob;f=$source;hb=$build\" title=\"$source source code\">source</a>" .
+           "&nbsp;|&nbsp;<a href=\"../tests/$testname.html\" title=\"$testname results across all builds\">all&nbsp;builds</a></td>";
 }
 
 sub build_totals($)
