@@ -7,6 +7,9 @@ tools=/home/winehq/opt/git-tools/winetest
 workdir=/home/winehq/opt/winetest
 lock=/tmp/winetest.lock
 
+# expiration age (in days) before results get archived
+expire=180
+
 if [ ! -f $lock ]; then
     touch $lock
     cd $workdir
@@ -14,12 +17,11 @@ if [ ! -f $lock ]; then
     while $tools/gather; do true; done
     $tools/build-index
 
-    # archive 6-month old results
-    (cd old-data && for i in `find . -maxdepth 1 -mtime +180 -type d -print`
-    do
-        tar cfj $i.tar.bz2 $i && rm -rf $i
-    done)
-    # remove 6-month old test builds
-    (cd builds && find . -mtime +180 -name winetest\*.exe -print0 | xargs -0 rm -f)
+    # archive old results
+    (cd old-data && dir=`find . -maxdepth 1 -mtime +$expire -type d -print -quit` &&
+        test -n "$dir" && tar cfj $dir.tar.bz2 $dir && touch -r $dir $dir.tar.bz2 && rm -rf $dir)
+
+    # remove old test builds
+    (cd builds && find . -mtime +$expire -name winetest\*.exe -print0 | xargs -0 rm -f)
     rm $lock
 fi
