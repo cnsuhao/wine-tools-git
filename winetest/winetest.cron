@@ -8,7 +8,7 @@ workdir=/home/winehq/opt/winetest
 lock=/tmp/winetest.lock
 
 # expiration age (in days) before results get archived
-expire=180
+expire=120
 
 if [ ! -f $lock ]; then
     touch $lock
