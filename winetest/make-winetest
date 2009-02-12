@@ -58,6 +58,8 @@ then
     exit 1
 fi
 
+umask 022
+
 (
     (cd wine && git pull) || exit
     head=$(cd wine && git rev-parse --short=12 HEAD) || exit
@@ -94,6 +96,7 @@ fi
 
     # install everything
 
+    chmod 644 build-mingw/programs/winetest/winetest-dist.exe
     mv -f build-mingw/programs/winetest/winetest-dist.exe $destdir/winetest-$head.exe
     ln -sf winetest-$head.exe $destdir/winetest-latest.exe
     rm -f $servicedir/*.cookie $servicedir/*.url
@@ -118,6 +121,7 @@ fi
      uname -a > build.nfo &&
      make dist) || exit
 
+    chmod 644 build-mingw64/programs/winetest/winetest-dist.exe
     mv -f build-mingw64/programs/winetest/winetest-dist.exe $destdir/winetest64-$head.exe
     ln -sf winetest64-$head.exe $destdir/winetest64-latest.exe
 
