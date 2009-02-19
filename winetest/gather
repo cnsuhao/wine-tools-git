@@ -147,14 +147,9 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
         close TEST;
         next;
     }
-    my $archive = <TEST>;
-    if ($archive !~ s/^Archive: (.*)\n$/$1/) {
-        print STDERR "$name0:error: wrong archive url in '$file': $archive";
-        close TEST;
-        next;
-    }
 
     while (<TEST>) {
+        next if /^Archive: /;
         my ($dummy, $dll, $unit, $count, $todos, $errors, $skips,
             $source, $rev) = split;
         my $testname = "$dll:$unit";

@@ -100,20 +100,19 @@ $testbuild =~ /^[0-9a-f]{40}$/ or mydie "not a valid commit id $testbuild\n";
 my $commit = `git rev-parse --verify $testbuild^0 2>/dev/null`;
 chomp $commit;
 $testbuild eq $commit or mydie "not an existing commit $testbuild\n";
+my $shortbuild = substr($testbuild,0,12);
+my $archive = "winetest-$shortbuild.exe";
 
 $_ = <IN>;
-/^Archive: (.*?)\r?$/ or mydie "no archive line: $_";
-my $archive = $1;
-print SUM "Archive: $1\n";
+if (/^Archive: /) { $_ = <IN>; }  # ignore Archive header
 
-$_ = <IN>;
 /^Tag: ([-.0-9a-zA-Z]*)\r?$/ or mydie "no tag line: $_";
 my $tag = $1 eq ""?"":"_$1";
 
 $_ = <IN>;
 /^Build info:\r?$/ or mydie "no Build info header: $_";
 my $box = create_box( "build", "build", "Build info" );
-$box->{data} .= sprintf "<div class=\"output\">Build: <a title=\"%s\" href=\"$gitweb/?a=shortlog;h=%s\">%s</a></div>\n", $testbuild, $testbuild, substr($testbuild,0,12);
+$box->{data} .= sprintf "<div class=\"output\">Build: <a title=\"%s\" href=\"$gitweb/?a=shortlog;h=%s\">%s</a></div>\n", $testbuild, $testbuild, $shortbuild;
 $box->{data} .= sprintf "<div class=\"output\">Tag: %s</div>\n", substr($tag,1);
 $box->{data} .= sprintf "<div class=\"output\"> </div>\n";
 while (($_ = <IN>) =~ s/^    //)
@@ -142,6 +141,8 @@ while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
         $product = $2;
     } elsif ($1 eq "WineBuild") {
         $wine_build = $2;
+    } elsif ($1 eq "Platform") {
+        $archive = "winetest64-$shortbuild.exe" if ($2 eq "x86_64");
     }
 }
 $box->{data} .= "</table>";
@@ -343,7 +344,7 @@ open REPORT, ">$tmpdir/report.html" or mydie "unable to open '$tmpdir/report.htm
 print REPORT start_html( -title => "Wine test run report", -style => {src=>"/report.css"} );
 print REPORT "<div class=\"navbar\">";
 print REPORT "<a href=\"report\">raw report</a> | <a href=\"..\">summary</a> | <a href=\"../..\">index</a>";
-if ($archive =~ /^http:\/\//) { printf REPORT " | <a href=\"%s\">test binary</a>", escapeHTML($archive); }
+printf REPORT " | <a href=\"/builds/%s\">test binary</a>", escapeHTML($archive) if $archive;
 print REPORT "</div>\n";
 
 for (my $i = 0; $i <= $#boxes; $i++)
