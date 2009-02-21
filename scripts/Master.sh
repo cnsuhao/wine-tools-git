@@ -26,6 +26,9 @@ if [ "$PREPARE_TREES" -eq 1 ]; then
     if [ "x$NOVERBOSE" = "x" ]; then
         echo -n "Preparing tree(s)..."
     fi
+    if [ ! -f "$WRCROOT/Makefile" ]; then
+        $WRCROOT/configure
+    fi
     make -C "$WRCROOT" depend >/dev/null 2>>"$WORKDIR/run.log" || die "make depend in wrc tree failed"
     make -C "$WRCROOT" tools >/dev/null 2>>"$WORKDIR/run.log" || die "make tools in wrc tree failed"
     make -C "$SOURCEROOT" depend >/dev/null 2>>"$WORKDIR/run.log" || die "make depend in source tree failed"
