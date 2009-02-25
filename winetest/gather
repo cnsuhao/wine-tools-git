@@ -116,10 +116,6 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
     (my $dir = $file) =~ s|^\Q$datadir/$build\E/(.*?)/summary.txt$|$1|;
     (my $id, my @tag) = split /_/, $dir;
     my $group = $idmap{$id};
-    if ($id eq "wine" && defined $tag[0]) {
-        $tag[0] = $idmap{$tag[0]}->{name};
-        $group = undef unless defined $tag[0]; # make the check below fail
-    }
     if (!defined $group) {
         print STDERR "$name0:error: unknown architecture '$id' in '$file'\n";
         next;

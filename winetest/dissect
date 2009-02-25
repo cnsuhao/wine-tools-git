@@ -180,7 +180,6 @@ if ($plid==1 && $major==4) {
     $version = "ce$major$minor";
 }
 if ($wine) {
-    $tag = "_$version$tag";
     $version = "wine";
 }
 if ($wine_build) {
