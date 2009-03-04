@@ -90,8 +90,7 @@ umask 022
      make include &&
      make -C dlls testsubdirs &&
      cd programs/winetest &&
-     echo "$desturl/winetest-$head.exe" > tests.url &&
-     uname -a > build.nfo &&
+     $mingw32-gcc -v 2> build.nfo &&
      make dist) || exit
 
     # install everything
@@ -117,8 +116,7 @@ umask 022
      make include &&
      make -C dlls testsubdirs &&
      cd programs/winetest &&
-     echo "$desturl/winetest64-$head.exe" > tests.url &&
-     uname -a > build.nfo &&
+     $mingw64-gcc -v 2> build.nfo &&
      make dist) || exit
 
     chmod 644 build-mingw64/programs/winetest/winetest-dist.exe
