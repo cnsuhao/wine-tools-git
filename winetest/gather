@@ -282,6 +282,7 @@ foreach my $group (@groups) {
     next unless exists $group->{reports};
     foreach my $report (@{$group->{reports}}, $group) {
         $report->{errors} = 0;
+        $report->{successes} = 0;
         $report->{todos} = 0;
         foreach my $testname (sort keys %alltests) {
             my $result = $report->{$testname};
@@ -297,6 +298,9 @@ foreach my $group (@groups) {
                 $report->{todos}++;
             }
         }
+    }
+    foreach my $report (@{$group->{reports}}) {
+        $group->{successes}++ if !$report->{errors};
     }
 }
 
@@ -624,7 +628,7 @@ sub build_totals($)
             # Ignore groups with no reports
             next;
         }
-        printf TOTAL "%s %u %u %u %u\n", $report->{group}->{name}, $report_count, $unit_count, $report->{errors}, $report->{todos};
+        printf TOTAL "%s %u %u %u %u %u\n", $report->{group}->{name}, $report_count, $unit_count, $report->{errors}, $report->{todos}, $report->{successes};
     }
     close TOTAL;
     rename "$datadir/$build/total.txt.new", "$datadir/$build/total.txt" or unlink "$datadir/$build/total.txt";

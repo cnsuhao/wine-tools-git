@@ -83,11 +83,11 @@ foreach my $build (@builds)
     {
         while (<TOTAL>)
         {
-            if (/^([A-Za-z0-9]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/)
+            if (/^([A-Za-z0-9]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)(?:\s+(\d+))?/)
             {
-                my ($name, $runs, $tests, $errors, $todos) = ($1, $2, $3, $4, $5);
+                my ($name, $runs, $tests, $errors, $todos, $successes) = ($1, $2, $3, $4, $5, $6);
                 $versions{$name}++;
-                $build_ver{$name} = [ $runs, $tests, $errors, $todos ];
+                $build_ver{$name} = [ $runs, $tests, $errors, $todos, $successes ];
             }
         }
         close TOTAL;
@@ -233,12 +233,13 @@ foreach my $build (@builds)
         }
         else
         {
-            my ($runs, $tests, $errors, $todos) = @{$counts};
+            my ($runs, $tests, $errors, $todos, $successes) = @{$counts};
             my $href = $runs > 1 ? "$build->{name}/#group_$ver->{name}" : "$build->{name}";
             my $title = $runs > 1 ? "$runs test runs, " : "";
             $title .= "$tests unit tests, $errors have errors";
             $title .= ", $todos have todos" if ($todos);
-            my $class = $errors ? ($todos ? "fail also-todo" : "fail") : ($todos ? "todo" : "pass");
+            my $class = $errors ? ($successes ? "mixed" : "fail") . ($todos ? " also-todo" : "")
+                                : ($todos ? "todo" : "pass");
             printf OUT "<td class=\"result %s\"><a title=\"%s\" href=\"%s\">%u</a></td>", $class, $title, $href, $errors || $todos;
             $total_runs++;
             $total_tests += $tests;
