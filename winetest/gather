@@ -359,7 +359,8 @@ $msg
       </th>
 EOF
 
-        my $class = $report->{errors} ? "fail" :
+        my $class = $report->{errors} ?
+                      ($report->{successes} ? "mixed" : "fail") . ($report->{todos} ? " also-todo" : "") :
                     $report->{todos} ? "todo" :
                     "pass";
         my $count=!$report->{todos} ? $report->{errors} :
@@ -373,7 +374,7 @@ EOF
         my $title = "$unit_count unit tests, $report->{errors} have errors";
         $title .= ", $report->{todos} have todos" if $report->{todos};
 
-        $stats .= "      <th class=\"$class\"><a title=\"$title\">$count<br>$prcnt\%</a></th>\n";
+        $stats .= "      <th class=\"result $class\"><a title=\"$title\">$count<br>$prcnt\%</a></th>\n";
     }
     chop $title;
     chop $stats;

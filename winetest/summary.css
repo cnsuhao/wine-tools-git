@@ -105,7 +105,8 @@ table.report {
 table.report th {
         line-height: 0.9;
         vertical-align: text-top;
-        border-width: thin;
+        border-top-width: thin;
+        border-bottom-width: thin;
 }
 table.report th.test {
         text-align: center;
