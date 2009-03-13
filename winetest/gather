@@ -122,16 +122,6 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
     }
 
     my $report = { group => $group};
-    # Read the dll information if present
-    my $dllinfo = "$datadir/$build/$dir/dllinfo.txt";
-    if (open DLLINFO, "<$dllinfo") {
-        while ($_ = <DLLINFO>) {
-            if (/^\s*([0-9a-zA-Z_.]+)=(dll is missing)\r?$/) {
-                $report->{dllmissing}->{$1} = 1;
-            }
-        }
-        close DLLINFO;
-    }
     $report->{tag} = @tag?"@tag":"";
     $report->{dir} = $dir;
     if (!open TEST, "<$file") {
@@ -335,7 +325,6 @@ sub build_header_footer($)
         my $group = $report->{group};
 
         if (!defined $msg) {
-            # If dllinfo.html exists we have html files
             if (-r "$datadir/$build/$report->{dir}/dllinfo.html") {
                 $msg = <<"EOF";
         $group->{name}<br><small>
@@ -343,18 +332,10 @@ sub build_header_footer($)
         <a href=\"$report->{dir}/dllinfo.html\">[info]</a>
         <a href=\"$report->{dir}/report.html\">[file]</a></small>
 EOF
-            }
-            elsif (-r "$datadir/$build/$report->{dir}/version.html") {
-                $msg = <<"EOF";
-        $group->{name}<br><small>
-        <a href=\"$report->{dir}/version.html\">$report->{tag}</a></small>
-EOF
             } else {
                 $msg = <<"EOF";
         $group->{name}<br><small>
-        <a href=\"$report->{dir}/version.txt\">$report->{tag}</a><br>
-        <a href=\"$report->{dir}/dllinfo.txt\">[info]</a>
-        <a href=\"$report->{dir}/report\">[file]</a></small>
+        <a href=\"$report->{dir}/version.html\">$report->{tag}</a></small>
 EOF
             }
             chop $msg;
@@ -536,10 +517,6 @@ sub singletest($$$) {
         if (-r "$datadir/$build/$report->{dir}/$testname.html")
         {
             $href = "$report->{dir}/$testname.html";
-        }
-        elsif (-r "$datadir/$build/$report->{dir}/$testname.txt")
-        {
-            $href = "$report->{dir}/$testname.txt";
         }
         else
         {
