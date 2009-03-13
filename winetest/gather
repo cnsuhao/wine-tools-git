@@ -343,6 +343,12 @@ sub build_header_footer($)
         <a href=\"$report->{dir}/dllinfo.html\">[info]</a>
         <a href=\"$report->{dir}/report.html\">[file]</a></small>
 EOF
+            }
+            elsif (-r "$datadir/$build/$report->{dir}/version.html") {
+                $msg = <<"EOF";
+        $group->{name}<br><small>
+        <a href=\"$report->{dir}/version.html\">$report->{tag}</a></small>
+EOF
             } else {
                 $msg = <<"EOF";
         $group->{name}<br><small>

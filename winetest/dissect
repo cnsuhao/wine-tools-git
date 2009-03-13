@@ -111,9 +111,11 @@ my $tag = $1 eq ""?"":"_$1";
 
 $_ = <IN>;
 /^Build info:\r?$/ or mydie "no Build info header: $_";
-my $box = create_box( "build", "build", "Build info" );
-$box->{data} .= sprintf "<div class=\"output\">Build: <a title=\"%s\" href=\"$gitweb/?a=shortlog;h=%s\">%s</a></div>\n", $testbuild, $testbuild, $shortbuild;
-$box->{data} .= sprintf "<div class=\"output\">Tag: %s</div>\n", substr($tag,1);
+my $box = create_box( "version", "version", sprintf "Version information for %s", substr($tag,1) );
+$box->{data} .= "<h2>Build version</h2>\n";
+$box->{data} .= "<table class=\"output\">\n";
+$box->{data} .= sprintf "<tr><td>Build</td><td><a title=\"%s\" href=\"$gitweb/?a=shortlog;h=%s\">%s</a></td></tr>\n", $testbuild, $testbuild, $shortbuild;
+$box->{data} .= sprintf "<tr><td>Tag</td><td><a title=\"Full report\" href=\"report.html\">%s</a></td></tr></table>\n", substr($tag,1);
 $box->{data} .= sprintf "<div class=\"output\"> </div>\n";
 while (($_ = <IN>) =~ s/^    //)
 {
@@ -121,11 +123,10 @@ while (($_ = <IN>) =~ s/^    //)
     s/\r+$//;
     $box->{data} .= "<div class=\"output\">" . escapeHTML($_) . "</div>\n";
 }
-$box->{data} .= "</div>";
 
 my ($wine, $wine_build, $version, $major, $minor, $plid, $product);
 /^Operating system version:\r?$/ or mydie "no OS header: $_";
-$box = create_box( "version", "version", "Operating system version" );
+$box->{data} .= "<h2>Operating system version</h2>\n";
 $box->{data} .= "<table class=\"output\">\n";
 while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
     $box->{data} .= sprintf "<tr><td>$1</td><td>%s</td></tr>\n", escapeHTML($2);
@@ -145,7 +146,7 @@ while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
         $archive = "winetest64-$shortbuild.exe" if ($2 eq "x86_64");
     }
 }
-$box->{data} .= "</table>";
+$box->{data} .= "</table>\n";
 
 $version = "unknown";
 if ($plid==1 && $major==4) {
@@ -205,7 +206,7 @@ if ($wine_build) {
 
 my %dllinfo;
 /^Dll info:\r?$/ or mydie "no Dll info header: $_";
-my $dllbox = create_box( "dllinfo", "dllinfo", "Dll info" );
+$box->{data} .= "<h2>DLL version</h2>\n";
 while ($_ = <IN>) {
     chomp;
     s/\r+$//;
@@ -224,13 +225,14 @@ my ($lines,$total, $todo, $failed, $skipped);
 $dll = undef;                   # state machine starts
 $total = $todo = $failed = $skipped = 0;
 $lines = 0;
+my $testbox;
 while (<IN>) {
     if (!defined $dll) {        # new test
         next if /^\s*$/;
         m[([_.a-z0-9]+):([_a-z0-9]+) start ([/_.a-z0-9]+) (-|[.0-9a-f]+)\r?$]
           or next;
         ($dll,$unit,$source,$rev) = ($1,$2,$3,$4);
-        $box = create_box( "$dll:$unit", "testfile", "<a href=\"$gitweb/?a=history;f=$source;hb=$testbuild\">$source</a>" );
+        $testbox = create_box( "$dll:$unit", "testfile", "<a href=\"$gitweb/?a=history;f=$source;hb=$testbuild\">$source</a>" );
         if (defined($dllinfo{$dll}->{version}) && !defined($dllinfo{$dll}->{first}))
         {
             $dllinfo{$dll}->{first} = "$dll:$unit";
@@ -246,7 +248,7 @@ while (<IN>) {
         my $class = "test result";
         if ($failed) { $class .= " failed"; }
         elsif ($todo) { $class .= " todo"; }
-        $box->{data} .= sprintf "<div class=\"%s\">%s</div>\n", $class, escapeHTML($_);
+        $testbox->{data} .= sprintf "<div class=\"%s\">%s</div>\n", $class, escapeHTML($_);
     } elsif (/$dll:$unit done \((-?\d+)\)\r?$/) {
         chomp;                  # current test ended
         if ($lines==0 || $1 < 0) {
@@ -254,13 +256,12 @@ while (<IN>) {
             my $reason = "test failed: error $1";
             if ($1 == 258) { $reason = "test failed: timed out"; }
             elsif ($1 < 0) { $reason = "test failed: crash"; }
-            $box->{data} .= "<div class=\"test end\">$reason</div>\n";
+            $testbox->{data} .= "<div class=\"test end\">$reason</div>\n";
         } else {
             $result = "$total $todo $failed $skipped";
         }
       FINISH:
         print SUM "- $dll $unit $result $source $rev\n";
-        $box->{data} .= "</div>";
         $dll = undef;
         $total = $todo = $failed = $skipped = 0;
         $lines = 0;
@@ -275,12 +276,12 @@ while (<IN>) {
             elsif ($text =~ /^Test succeeded inside todo block: /) { $class = "test failed"; }
             elsif ($text =~ /^Test marked todo: /) { $class = "test todo"; }
             elsif ($text =~ /^Tests skipped: /) { $class = "test skipped"; }
-            $box->{data} .= sprintf "<div class=\"%s\"><a href=%s/?a=blob;f=%s;hb=%s#l%u>%s.c:%u</a>: %s</div>\n",
+            $testbox->{data} .= sprintf "<div class=\"%s\"><a href=%s/?a=blob;f=%s;hb=%s#l%u>%s.c:%u</a>: %s</div>\n",
                                  $class, $gitweb, $source, $testbuild, $line, $unit, $line, escapeHTML($text);
         }
         else
         {
-            $box->{data} .= sprintf "<div class=\"test trace\">%s</div>\n", escapeHTML($_);
+            $testbox->{data} .= sprintf "<div class=\"test trace\">%s</div>\n", escapeHTML($_);
         }
     }
 }
@@ -289,7 +290,7 @@ if (defined $dll) {
     $_="";
     if ($filesize == $maxfilesize) {
         $result = "failed filelimit - -";
-        $box->{data} .= "<div class=\"test end\">test failed: file limit exceeded</div>\n";
+        $testbox->{data} .= "<div class=\"test end\">test failed: file limit exceeded</div>\n";
     } else {
         mydie "report truncated (winetest crash?)\n"; 
     }
@@ -300,33 +301,33 @@ close IN;
 
 # fill the dllinfo box
 
-$dllbox->{data} .= "<table class=\"output\">\n";
+$box->{data} .= "<table class=\"output\">\n";
 foreach my $dll (sort keys %dllinfo)
 {
     if ($dllinfo{$dll}->{version} eq "dll is missing")
     {
-        $dllbox->{data} .= sprintf "<tr><td>%s</td><td class=\"skipped\">missing</td></tr>\n", escapeHTML($dll);
+        $box->{data} .= sprintf "<tr><td>%s</td><td class=\"skipped\">missing</td></tr>\n", escapeHTML($dll);
     }
     elsif ($dllinfo{$dll}->{version} eq "load error 1157")
     {
-        $dllbox->{data} .= sprintf "<tr><td>%s</td><td class=\"skipped\">missing dependencies</td></tr>\n", escapeHTML($dll);
+        $box->{data} .= sprintf "<tr><td>%s</td><td class=\"skipped\">missing dependencies</td></tr>\n", escapeHTML($dll);
     }
     elsif ($dllinfo{$dll}->{version} =~ /^load error/)
     {
-        $dllbox->{data} .= sprintf "<tr><td>%s</td><td class=\"failed\">%s</td></tr>\n",
+        $box->{data} .= sprintf "<tr><td>%s</td><td class=\"failed\">%s</td></tr>\n",
                                    escapeHTML($dll), escapeHTML($dllinfo{$dll}->{version});
     }
     elsif (defined($dllinfo{$dll}->{first}))
     {
-        $dllbox->{data} .= sprintf "<tr><td><a href=\"report.html#%s\">%s</a></td><td>%s</td></tr>\n",
+        $box->{data} .= sprintf "<tr><td><a href=\"report.html#%s\">%s</a></td><td>%s</td></tr>\n",
                                     escapeHTML($dllinfo{$dll}->{first}), escapeHTML($dll), escapeHTML($dllinfo{$dll}->{version});
     }
     else
     {
-        $dllbox->{data} .= sprintf "<tr><td>%s</td><td>%s</td></tr>\n", escapeHTML($dll), escapeHTML($dllinfo{$dll}->{version});
+        $box->{data} .= sprintf "<tr><td>%s</td><td>%s</td></tr>\n", escapeHTML($dll), escapeHTML($dllinfo{$dll}->{version});
     }
 }
-$dllbox->{data} .= "</table>";
+$box->{data} .= "</table>";
 
 # add the prev/next links to all the boxes
 
@@ -367,8 +368,8 @@ for (my $i = 0; $i <= $#boxes; $i++)
     print FILE "<div class=\"navbar\">";
     print FILE $boxes[$i]->{prev} ? "<a href=\"./$boxes[$i]->{prev}.html\">prev</a> | " : "prev | ";
     print FILE $boxes[$i]->{next} ? "<a href=\"./$boxes[$i]->{next}.html\">next</a> | " : "next | ";
-    print FILE "<a href=\"report.html#$boxes[$i]->{id}\">full report</a> | ";
-    print FILE "<a href=\"..\">summary</a> | <a href=\"../..\">index</a></div>";
+    printf FILE "<a href=\"report.html%s\">full report</a> | ", $i ? "#$boxes[$i]->{id}" : "";
+    print FILE "<a href=\"..\">summary</a> | <a href=\"../..\">index</a></div>\n";
 
     printf FILE "<div id=\"%s\" class=\"%s\">\n", $boxes[$i]->{id}, $boxes[$i]->{class};
     printf FILE "<div class=\"updownbar\">%s</div>\n", $boxes[$i]->{title};
