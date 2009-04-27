@@ -314,7 +314,7 @@ sub build_header_footer($)
         if (exists $report->{reports}) {
             my $report_count = @{$report->{reports}};
             if ($report_count > 1) {
-                $msg = "        <a href=\"#group_$report->{name}\">$report->{name}<br><small>$report_count reports</small></a>";
+                $msg = "        <a href=\"index_$report->{name}.html\">$report->{name}<br><small>$report_count reports</small></a>";
             } else {
                 $report = $report->{reports}->[0];
             }
@@ -394,50 +394,15 @@ EOF
 my $header_footer=build_header_footer(\@groups);
 my $short_build = substr($build,0,12);
 
-if (!open OUT, ">$datadir/$build/index.html.new") {
-  print STDERR "$name0:error: unable to open '$datadir/$build/index.html.new' for writing: $!\n";
-  goto DONE;
-}
-if (!open SUMMARY, ">$datadir/$build/summary.txt.new")
-{
-  print STDERR "$name0:error: unable to open '$datadir/$build/summary.txt.new' for writing: $!\n";
-  goto DONE;
-}
-print OUT <<"EOF";
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
-                      "http://www.w3.org/TR/html4/strict.dtd">
-<html>
-<head>
-  <title>$short_build</title>
-  <link rel="stylesheet" href="/summary.css" type="text/css">
-
-  <meta http-equiv="Content-Type"
-        content="text/html; charset=utf-8">
-  <meta name="Author" content="gather">
-  <meta http-equiv="Content-Script-Type" content="text/javascript">
-</head>
-
-<body>
-<div class="navbar">
-<a href="/site?testing=prev&amp;current=$build">prev</a>
- | <a href="/site?testing=next&amp;current=$build">next</a>
- | <a href="..">index</a>
-<script type="text/javascript" src="/summary.js"></script>
-</div>
-<div class="legend">
+my $legend =
+"<div class=\"legend\">
 <h3>Legend</h3>
-<p class="legend">All tests <span class="result pass">pass</span> in all reports.</p>
-<p class="legend">Some tests <span class="result mixed">fail</span> in some reports.</p>
-<p class="legend">Some tests <span class="result fail">fail</span> in all reports.</p>
-<p class="legend">This <span class="result pass also-skip">border</span> signals that some tests are skipped.</p>
-<p class="legend">This <span class="result pass also-todo">border</span> and this <span class="result todo">background</span> signal that the implementation needs some work.</p>
-</div>
-<div class="main">
-<h1>Main summary for build <a href="/builds/winetest-$short_build.exe" title="$build">$short_build</a></h1>
-<table class="report">
-$header_footer
-  <tbody onDblClick="clone();">
-EOF
+<p class=\"legend\">All tests <span class=\"result pass\">pass</span> in all reports.</p>
+<p class=\"legend\">Some tests <span class=\"result mixed\">fail</span> in some reports.</p>
+<p class=\"legend\">Some tests <span class=\"result fail\">fail</span> in all reports.</p>
+<p class=\"legend\">This <span class=\"result pass also-skip\">border</span> signals that some tests are skipped.</p>
+<p class=\"legend\">This <span class=\"result pass also-todo\">border</span> and this <span class=\"result todo\">background</span> signal that the implementation needs some work.</p>
+</div>";
 
 sub min_to_max($)
 {
@@ -507,7 +472,7 @@ sub singletest($$$) {
     my ($class, $msg, $title, $mouseover, $href, $label);
     if ($group->{reports} and @{$group->{reports}} > 1)
     {
-        $href = $result->{omit} ? "" : "#group_$groupname:$testname";
+        $href = $result->{omit} ? "" : "index_$group->{name}.html#$testname";
         $label = $groupname;
     }
     else
@@ -581,12 +546,13 @@ sub singletest($$$) {
     }
 }
 
-sub test_links($)
+sub test_links($$)
 {
-    my ($testname) = @_;
+    my ($testname, $group) = @_;
     my $source = $alltests{$testname};
     return "<td class=\"links\"><a href=\"$gitweb/?a=history;f=$source;hb=$build\" title=\"$source change history\">history</a>" .
            "&nbsp;|&nbsp;<a href=\"$gitweb/?a=blob;f=$source;hb=$build\" title=\"$source source code\">source</a>" .
+           (defined($group) ? "&nbsp;|&nbsp;<a href=\"index.html#$testname\" title=\"summary of $testname results across platforms\">summary</a>" : "") .
            "&nbsp;|&nbsp;<a href=\"../tests/$testname.html\" title=\"$testname results across all builds\">all&nbsp;builds</a></td>";
 }
 
@@ -618,73 +584,118 @@ sub build_totals($)
     rename "$datadir/$build/total.txt.new", "$datadir/$build/total.txt" or unlink "$datadir/$build/total.txt";
 }
 
-# Create the Main Summary
-foreach my $testname (sort keys %alltests) {
-    my $source = $alltests{$testname};
-    my $class = get_result_class( $test_results{$testname}->{global} );
-    my $title = get_result_title( $testname, $test_results{$testname}->{global} );
-    print OUT <<"EOF";
-    <tr>
-      <td class="test $class">
-        <a href="../tests/$testname.html" title="$title">$testname</a></td><td>&nbsp;</td>
-EOF
-    foreach my $group (@groups) {
-        if (!exists $group->{reports}) {
-            # Do nothing
-        } else {
-            singletest($group, $testname, $group->{name});
-        }
+sub output_table($)
+{
+    my ($group) = @_;
+    my ($group_name, $header_footer, $title, $filename);
+
+    if (defined $group)
+    {
+        $group_name = $group->{name};
+        $header_footer = build_header_footer($group->{reports});
+        $title = "$group_name results for build $short_build";
+        $filename = "index_$group_name.html";
     }
-    printf OUT "      %s\n    </tr>\n", test_links($testname);
-}
-print OUT <<"EOF";
-  </tbody>
-</table>
-</div>
+    else
+    {
+        $group_name = "global";
+        $header_footer = build_header_footer(\@groups);
+        $title = "Summary for build $short_build";
+        $filename = "index.html";
+    }
+
+    my $idx_file = "$datadir/$build/$filename";
+    if (!open OUT, ">$idx_file.new") {
+        print STDERR "$name0:error: unable to open '$idx_file.new' for writing: $!\n";
+        return;
+    }
+
+    print OUT <<"EOF";
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+                      "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <title>$title</title>
+  <link rel="stylesheet" href="/summary.css" type="text/css">
+  <meta http-equiv="Content-Type"
+        content="text/html; charset=utf-8">
+  <meta name="Author" content="gather">
+  <meta http-equiv="Content-Script-Type" content="text/javascript">
+</head>
+<body>
 EOF
+
+    if (defined $group)
+    {
+        print OUT "<div class=\"navbar\">\n";
+        print OUT "<a href=\"/site?testing=prev&amp;group=$group_name&amp;current=$build\">prev</a>";
+        print OUT "&nbsp;|&nbsp;<a href=\"/site?testing=next&amp;group=$group_name&amp;current=$build\">next</a>";
+        print OUT "&nbsp;|&nbsp;<a href=\".\">summary</a>";
+        print OUT "&nbsp;|&nbsp;<a href=\"..\">index</a>\n";
+        print OUT "<script type=\"text/javascript\" src=\"/summary.js\"></script>\n</div>\n";
+        print OUT "<div class=\"group\">\n";
+        print OUT "<h1>$group_name results for build <a href=\".\" title=\"$build\">$short_build</a></h1>\n";
+        print OUT "<table class=\"report\">\n$header_footer\n  <tbody onDblClick=\"clone();\">\n";
+    }
+    else
+    {
+        print OUT "<div class=\"navbar\">\n";
+        print OUT "<a href=\"/site?testing=prev&amp;current=$build\">prev</a>";
+        print OUT "&nbsp;|&nbsp;<a href=\"/site?testing=next&amp;current=$build\">next</a>";
+        print OUT "&nbsp;|&nbsp;<a href=\"..\">index</a>";
+        print OUT "<script type=\"text/javascript\" src=\"/summary.js\"></script>\n</div>\n";
+        print OUT "<div class=\"main\">\n";
+        print OUT "<h1>Main summary for build <a href=\"/builds/winetest-$short_build.exe\" title=\"$build\">$short_build</a></h1>\n";
+        print OUT "<table class=\"report\">\n$header_footer\n  <tbody onDblClick=\"clone();\">\n";
+    }
+
+    foreach my $testname (sort keys %alltests)
+    {
+        next if ($group && $group->{$testname}->{omit});
+        my $source = $alltests{$testname};
+        my $class = get_result_class( $test_results{$testname}->{$group_name} );
+        my $title = get_result_title( $testname, $test_results{$testname}->{$group_name} );
+        print OUT "    <tr>\n      <td class=\"test $class\">\n";
+        print OUT "        <a href=\"../tests/$testname.html\" name=\"$testname\" title=\"$title\">$testname</a></td><td>&nbsp;</td>\n";
+        if (defined $group)
+        {
+            foreach my $report (@{$group->{reports}}) {
+                singletest($report, $testname, $group->{name});
+            }
+        }
+        else
+        {
+            foreach my $group (@groups) {
+                if (!exists $group->{reports}) {
+                    # Do nothing
+                } else {
+                    singletest($group, $testname, $group->{name});
+                }
+            }
+        }
+        printf OUT "      %s\n    </tr>\n", test_links($testname, $group);
+    }
+    print OUT "  </tbody>\n</table>\n</div>\n$legend\n</body>\n</html>";
+    close OUT;
+    rename "$idx_file.new", $idx_file or unlink "$idx_file.new";
+}
+
+
+if (!open SUMMARY, ">$datadir/$build/summary.txt.new")
+{
+  print STDERR "$name0:error: unable to open '$datadir/$build/summary.txt.new' for writing: $!\n";
+  goto DONE;
+}
 
 # Take the groups with multiple reports
 foreach my $group (@groups) {
     next unless exists $group->{reports} && @{$group->{reports}} > 1;
-
-    $header_footer = build_header_footer($group->{reports});
-
-    print OUT <<"EOF";
-<div class="group">
-<h2><a name="group_$group->{name}">$group->{name} differences</a></h2>
-<table class="report">
-$header_footer
-  <tbody onDblClick="clone();">
-EOF
-    foreach my $testname (sort keys %alltests) {
-        my $source = $alltests{$testname};
-        my $result = $group->{$testname};
-        my $class = get_result_class( $test_results{$testname}->{$group->{name}} );
-        my $title = get_result_title( $testname, $test_results{$testname}->{$group->{name}} );
-        next if ($result->{omit});
-        print OUT <<"EOF";
-    <tr>
-      <td class="test $class">
-        <a href="../tests/$testname.html" name="group_$group->{name}:$testname" title="$title">$testname</a></td><td>&nbsp;</td>
-EOF
-        foreach my $report (@{$group->{reports}}) {
-            singletest($report, $testname, $group->{name});
-        }
-        printf OUT "      %s\n    </tr>\n", test_links($testname);
-    }
-    print OUT <<"EOF";
-  </tbody>
-</table>
-</div>
-EOF
+    output_table( $group );
 }
-print OUT <<"EOF";
-</body>
-</html>
-EOF
-close OUT;
+
+output_table(undef);
+
 close SUMMARY;
-rename "$datadir/$build/index.html.new", "$datadir/$build/index.html" or unlink "$datadir/$build/index.html.new";
 rename "$datadir/$build/summary.txt.new", "$datadir/$build/summary.txt" or unlink "$datadir/$build/summary.txt";
 
 build_totals(\@groups);

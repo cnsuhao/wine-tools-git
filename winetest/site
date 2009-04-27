@@ -9,6 +9,8 @@
 use CGI qw(:standard);
 my $q = new CGI;
 
+my $build = "";
+
 # change url based on testing vars
 if ($q->param('testing')) {
 
@@ -34,19 +36,20 @@ if ($q->param('testing')) {
 
     # perform redirect based on vars
     if ($q->param('testing') eq "prev" and $curPos > 0) {
-        print $q->redirect("http://test.winehq.org/data/".$builds[$curPos - 1]->{name});
-        exit();
+        $build = $builds[$curPos - 1]->{name};
     } elsif ($q->param('testing') eq "next" and $curPos < $#builds) {
-        print $q->redirect("http://test.winehq.org/data/".$builds[$curPos + 1]->{name});
-        exit();
+        $build = $builds[$curPos + 1]->{name};
     } elsif ($q->param('testing') eq "latest") {
-        print $q->redirect("http://test.winehq.org/data/".$builds[$#builds]->{name});
-        exit();
+        $build = $builds[$#builds]->{name};
+    }
+    if ($build && $q->param('group') =~ /^[-_A-Za-z0-9]+$/) {
+        my $index = "/index_" . $q->param('group') . ".html";
+        $build .= $index if -f "./data/" . $build . $index;
     }
 }
 
 # redirect to data dir when no vars present
-print $q->redirect("http://test.winehq.org/data/");
+print $q->redirect("http://test.winehq.org/data/" . $build);
  
 # done
 exit();

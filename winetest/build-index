@@ -234,7 +234,7 @@ foreach my $build (@builds)
         else
         {
             my ($runs, $tests, $errors, $todos, $successes) = @{$counts};
-            my $href = $runs > 1 ? "$build->{name}/#group_$ver->{name}" : "$build->{name}";
+            my $href = $runs > 1 ? "$build->{name}/index_$ver->{name}.html" : "$build->{name}";
             my $title = $runs > 1 ? "$runs test runs, " : "";
             $title .= "$tests unit tests, $errors have errors";
             $title .= ", $todos have todos" if ($todos);
