@@ -603,16 +603,14 @@ class MenuResource extends Resource
             dump_resource_row($id, $this, $master_res,
                 "dump_menuitem", "is_menuitem_different",
                 array($pos, $show[$i] & 1, &$tstate),
-                array($master_pos, $show[$i] & 2, &$tstate));
+                array($master_pos, $show[$i] & 2, &$tstate_master));
 
             if ($show[$i] & 1)
                 $pos++;
             if ($show[$i] & 2)
                 $master_pos++;
         }
-
     }
-    
 }
 
 class DialogResource extends Resource
