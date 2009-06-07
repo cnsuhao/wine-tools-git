@@ -35,7 +35,7 @@ it needs to be found manually by the translators. If you would like to read abou
 improve Wine translations check <?php echo $WINE_WIKI_TRANSLATIONS ?>.
 </p>
 
-<table border="1">
+<table border="1" class="index">
 <tr><th></th><th>Language</th><th>Translated</th><th>Missing</th><th>Errors</th><th>&nbsp;</th></tr>
 <?php
 function draw_bar($tr, $err, $sum)
@@ -49,7 +49,7 @@ function draw_bar($tr, $err, $sum)
             $tr_len--;
     }
     $miss_len = 300 - $tr_len - $err_len;
-    echo '<td style="background-color: #D1DAF9">';
+    echo '<td class="bar">';
     if ($tr_len > 0)
 	echo "<img src=\"img/bar0.gif\" height=\"15\" width=\"$tr_len\">";
     if ($err_len > 0)

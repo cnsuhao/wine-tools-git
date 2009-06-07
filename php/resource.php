@@ -58,25 +58,25 @@ if ($compare)
 
 ?>
 
-<table style="background-color: #f0f0ff" cellpadding="0" cellspacing="0">
-<tr style="background-color: #e0e0ff"><th colspan="5"><?php echo get_resource_name($type, $id) ?></th></tr>
+<table class="resource" cellpadding="0" cellspacing="0">
+<tr class="header"><th colspan="5"><?php echo get_resource_name($type, $id) ?></th></tr>
 <?php
 
 if (!$compare)
 {
-    echo "<tr style=\"background-color: #e8e8ff\"><td colspan=\"3\" style=\"text-align: right\">";
+    echo "<tr class=\"subheader\"><td colspan=\"3\" style=\"text-align: right\">";
     echo "<small>".gen_resource_a($lang, $resfile, $type, $id, TRUE);
     echo "Compare with ".$MASTER_LANGUAGE_NAME." &gt;&gt;</a></small>";
     echo "</td></tr>";
 }
 else
 {
-    echo "<tr style=\"background-color: #e8e8ff\"><td colspan=\"5\" style=\"text-align: right\">";
+    echo "<tr class=\"subheader\"><td colspan=\"5\" style=\"text-align: right\">";
     echo "<small>".gen_resource_a($lang, $resfile, $type, $id, FALSE);
-    echo "&lt;&lt; Hide compare with ".get_lang_name($MASTER_LANGUAGE)."</a></small>";
+    echo "&lt;&lt; Hide compare with ".$MASTER_LANGUAGE_NAME."</a></small>";
     echo "</td></tr>";
 
-    echo "<tr style=\"background-color: #e8e8ff\"><td>id</td><td>&nbsp;</td><td>".get_lang_name($lang)."</td><td>&nbsp;</td><td>".get_lang_name($MASTER_LANGUAGE)."</td></tr>";
+    echo "<tr class=\"subheader\"><td>id</td><td>&nbsp;</td><td>".get_lang_name($lang)."</td><td>&nbsp;</td><td>".get_lang_name($MASTER_LANGUAGE)."</td></tr>";
 }
 
 $res->dump($master_res);

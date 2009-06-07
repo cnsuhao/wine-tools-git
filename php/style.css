@@ -21,3 +21,31 @@ p.note
     border-color: black;
     padding: 2px;
 }
+
+/* summary table on index page, bars column*/
+table.index td.bar
+{
+    background-color: #d1daf9;
+}
+
+/* table with a standard resource dump */
+table.resource
+{
+    background-color: #f0f0ff;
+}
+
+table.resource tr.header
+{
+    background-color: #e0e0ff;
+}
+
+table.resource tr.subheader
+{
+    background-color: #e8e8ff;
+}
+
+/* rows are different (in resource comparision mode) */
+table.resource tr.diff
+{
+    background-color: #ffb8d0;
+}

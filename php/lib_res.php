@@ -174,7 +174,7 @@ function dump_resource_row($id, &$resource, &$master, $method_name, $diff_method
     $extra = "";
     if ($master && $diff_method_name)
         if ($resource->$diff_method_name($master, $lparam, $master_lparam))
-            $extra = " style=\"background-color: #ffb8d0\"";
+            $extra = " class=\"diff\"";
 
     if ($master_lparam == NULL)
         $master_lparam = $lparam;
