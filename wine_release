@@ -65,6 +65,7 @@ then
   # update man page and documentation
   echo "==== UPDATING DOCUMENTATION ===="
   ./configure --quiet --without-x --without-freetype
+  cd tools && make makedep
 
   manpages="\
     loader/wine.man \
