@@ -38,9 +38,6 @@ git clone -l -s -n git/wine.git wine-$version
 rm -f wine
 ln -s wine-$version wine
 
-# add version to bugzilla table
-echo "INSERT INTO bugs.versions (value, product_id) VALUES(\"$version\",1)" | mysql
-
 # make cross reference database for LXR
 # note that we must have write permission in this directory
 echo "==== UPDATING LXR ===="
@@ -65,7 +62,7 @@ then
   # update man page and documentation
   echo "==== UPDATING DOCUMENTATION ===="
   ./configure --quiet --without-x --without-freetype
-  cd tools && make makedep
+  (cd tools && make makedep)
 
   manpages="\
     loader/wine.man \
@@ -97,5 +94,8 @@ then
 fi
 
 rm -rf .git
+
+# add version to bugzilla table
+echo "INSERT INTO bugs.versions (value, product_id) VALUES(\"$version\",1)" | mysql
 
 # end
