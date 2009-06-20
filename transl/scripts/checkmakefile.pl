@@ -75,65 +75,100 @@ sub prepare_file
     }
 }
 
-if ($ARGV[0] =~ m,programs/winetest/, || $ARGV[0] =~ m,/tests/,)
-{
-    if (not exists $ENV{"NOVERBOSE"})
-    {
-        print "--- Ignoring: ".$ARGV[0]."\n";
-    }
-    exit;
-}
-     
 srand();
 # Parse config file
-open(CONFIG, "<config");
-while (<CONFIG>)
+if (-f config)
 {
-    if (m/^([A-Z_]+)=([^\s]+)\s*$/)
+    open(CONFIG, "<config");
+    while (<CONFIG>)
     {
-        $CONFIG{$1} = $2;
+        if (m/^([A-Z_]+)=([^\s]+)\s*$/)
+        {
+            $CONFIG{$1} = $2;
+        }
+        elsif (!(m/^#/ || m/^$/))
+        {
+            print("checkmakefile.pl: Can't parse config line: $_\n");
+        }
     }
-    elsif (!(m/^#/ || m/^$/))
+    close(CONFIG);
+}
+
+while (@ARGV && $ARGV[0] =~ /^-/)
+{
+    my $opt = shift @ARGV;
+    if ($opt eq "-S") { $srcdir = shift @ARGV; }
+    elsif ($opt eq "-T") { $objdir = shift @ARGV; }
+    elsif ($opt eq "-s") { $scriptsdir = shift @ARGV; }
+    elsif ($opt eq "-t") { $toolsdir = shift @ARGV; }
+    elsif ($opt eq "-w") { $workdir = shift @ARGV; }
+    else
     {
-        print("checkmakefile.pl: Can't parse config line: $_\n");
+        print STDERR "Usage: $0 [options] [makefiles]\n\n";
+        print STDERR "  -S dir   Set the top of the Wine source tree\n";
+        print STDERR "  -T dir   Set the top of the Wine build tree\n";
+        print STDERR "  -t dir   Set the Wine tools directory\n";
+        print STDERR "  -s dir   Set the scripts directory\n";
+        print STDERR "  -w dir   Set the work directory\n";
+        exit 1;
     }
 }
-close(CONFIG);
 
-$srcdir = $CONFIG{"SOURCEROOT"};
-$objdir = $CONFIG{"BUILDROOT"} || $srcdir;
-$wrc = ($CONFIG{"WRCROOT"} || $objdir) . "/tools/wrc/wrc";
-$workdir = $CONFIG{"WORKDIR"};
-$scriptsdir = $CONFIG{"SCRIPTSDIR"} || ".";
+$srcdir ||= $CONFIG{"SOURCEROOT"};
+$objdir ||= $CONFIG{"BUILDROOT"} || $srcdir;
+$toolsdir ||= $CONFIG{"WRCROOT"} || $objdir;
+$workdir ||= $CONFIG{"WORKDIR"};
+$scriptsdir ||= $CONFIG{"SCRIPTSDIR"} || ".";
+$wrc = $toolsdir . "/tools/wrc/wrc";
 
 if ($srcdir eq "" || $wrc eq "/tools/wrc/wrc" || $workdir eq "")
 {
     die("Config entry for SOURCEROOT, WRCROOT or WORKDIR missing\n");
 }
 
-# parse the makefile
-open(MAKEFILE, "<".$ARGV[0]);
-$ARGV[0] =~ m,^(.*/)[^/]*$,;
-$path = $1;
-while (<MAKEFILE>)
+@makefiles = @ARGV;
+if (!@makefiles)
 {
-    if (m/^RC_SRCS *=/)
+    @makefiles = split(/\s/,`find $srcdir/ -name Makefile.in -print`);
+}
+
+# parse the makefiles
+foreach my $makefile (@makefiles)
+{
+    if ($makefile =~ m,programs/winetest/, || $makefile =~ m,/tests/,)
     {
-        while (m/\\$/)
+        if (not exists $ENV{"NOVERBOSE"})
         {
-            chop;
-            chop;
-            $_ .= <MAKEFILE>;
+            print "--- Ignoring: ".$makefile."\n";
         }
-        m/^RC_SRCS *=(.*)$/;
-        @file = split(/ /, $1);
-        foreach (@file)
-        {
-            next if ($_ eq "");
-            s/\s//;
-            &prepare_file("$path", "$_") if ($CONFIG{"PREPARE_TREES"} == 1);
-            &mycheck("$path$_");
-        }
-        exit;
+        next;
     }
+
+    open(MAKEFILE, "<$makefile");
+    $makefile =~ m,^(.*/)[^/]*$,;
+    $path = $1;
+    while (<MAKEFILE>)
+    {
+        last if m/EXTRARCFLAGS\s*=.*res16/;  # 16-bit resources not supported
+        if (m/^RC_SRCS *=/)
+        {
+            while (m/\\$/)
+            {
+                chop;
+                chop;
+                $_ .= <MAKEFILE>;
+            }
+            m/^RC_SRCS *=(.*)$/;
+            @file = split(/ /, $1);
+            foreach (@file)
+            {
+                next if ($_ eq "");
+                s/\s//;
+                &prepare_file("$path", "$_") if ($CONFIG{"PREPARE_TREES"} == 1);
+                &mycheck("$path$_");
+            }
+            last;
+        }
+    }
+    close MAKEFILE;
 }
