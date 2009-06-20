@@ -47,6 +47,8 @@ done
 destdir="/home/winehq/opt/winetest/builds"
 desturl="http://test.winehq.org/builds"
 servicedir="/home/winehq/opt/winetest/winehq-builds/winetest"
+toolsdir="/home/winehq/opt/git-tools"
+transldir="/home/winehq/opt/source/transl"
 
 mingw32=i586-mingw32msvc
 mingw64=x86_64-pc-mingw32
@@ -74,7 +76,7 @@ umask 022
     test -d build-native ||
     (mkdir build-native &&
      cd build-native &&
-     ../wine/configure --without-x --without-freetype) || exit
+     ../wine/configure --enable-win64 --without-x --without-freetype) || exit
 
     (cd build-native && make depend && make tools) || exit
 
@@ -124,6 +126,26 @@ umask 022
     ln -sf winetest64-$head.exe $destdir/winetest64-latest.exe
 
     echo "winetest64-$head.exe built successfully."
+
+    # update the translations status
+
+    rm -rf work
+    mkdir work work/langs work/dumps work/dumps/res work/new-langs
+    $toolsdir/transl/scripts/checkmakefile.pl -S ./wine -T ./build-mingw -t ./build-native -w ./work -s "$toolsdir/transl/scripts"
+    $toolsdir/transl/scripts/summary.pl ./work "$toolsdir/transl/scripts"
+    for i in work/new-langs/*
+    do
+        if [ -f "$i" ]
+        then
+            echo "note: New language:" `basename "$i"` | tee -a work/run.log
+        fi
+    done
+    mv -f $transldir/langs $transldir/langs.old
+    mv -f $transldir/dumps $transldir/dumps.old
+    mv -f work/langs $transldir/langs
+    mv -f work/dumps $transldir/dumps
+    mv -f work/run.log $transldir/dumps/run.log
+    rm -rf $transldir/langs.old $transldir/dumps.old
 
 ) >$logfile 2>&1 && rm -f $logfile
 
