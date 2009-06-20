@@ -3,11 +3,12 @@
 # Helper script - parse the results of wrc --verify-translation
 # and store then in $2/langs/* and $2/dumps/*
 
-die "This helper script takes three arguments" unless ($#ARGV == 2);
+die "This helper script takes at least three arguments" unless ($#ARGV >= 2);
 
 $filename = $ARGV[0];
 $workdir = $ARGV[1];
 $mode = $ARGV[2];
+$scriptsdir = $ARGV[3] || ".";
 
 $type=-1;
 $types[1] = "CURSOR";
@@ -64,7 +65,7 @@ sub collapse {
     $base_name =~ s/:[0-9a-f]{2}/:00/;
     if (not exists $tab_should_collapse{$name})
     {
-        open(NAMEFILE, "<conf/$base_name");
+        open(NAMEFILE, "<$scriptsdir/conf/$base_name");
         $content = <NAMEFILE>;
         close(NAMEFILE);
         if ($content =~  /\[ignore-sublang\]/) {
@@ -204,9 +205,9 @@ foreach $lang (@file_langs)
     {
         $basic_lang = $lang;
         $basic_lang =~ s/:[0-9a-f]{2}/:00/;
-        if (-e "conf/$lang") {
+        if (-e "$scriptsdir/conf/$lang") {
             open(LANGOUT, ">>$workdir/langs/$lang");
-        } elsif (-e "conf/$basic_lang") {
+        } elsif (-e "$scriptsdir/conf/$basic_lang") {
             open(LANGOUT, ">>$workdir/langs/$basic_lang");
         } else {
 #            print("Ignoring locale $lang\n");
@@ -214,7 +215,7 @@ foreach $lang (@file_langs)
         print LANGOUT "LOCALE $lang $filename ".($transl_count{$lang}+0)." ".($missing_count{$lang}+0)." ".($err_count{$lang}+0)."\n";
         $suffix = "#locale$lang";
     } else  {
-        if (-e "conf/$lang") {
+        if (-e "$scriptsdir/conf/$lang") {
             open(LANGOUT, ">>$workdir/langs/$lang");
         } else {
             open(LANGOUT, ">>$workdir/new-langs/$lang");
@@ -255,7 +256,7 @@ foreach $lang (@file_langs)
 
 if (!($mode eq "locale"))
 {
-    opendir(DIR, "conf");
+    opendir(DIR, "$scriptsdir/conf");
     @files = grep(!/^\./, readdir(DIR));
     closedir(DIR);
     foreach $lang (@files) {

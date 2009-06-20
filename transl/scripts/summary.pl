@@ -3,9 +3,10 @@
 # Helper script - create a summary for each language about how
 # many resources are translated
 
-die "This helper script take one argument" unless ($#ARGV == 0);
+die "This helper script takes two arguments" unless ($#ARGV == 1);
 
 $workdir = $ARGV[0];
+$scriptsdir = $ARGV[1];
 
 sub collapse {
     my($name) = shift @_;
@@ -13,7 +14,7 @@ sub collapse {
     $base_name =~ s/:[0-9a-f]{2}/:00/;
     if (not exists $tab_should_collapse{$name})
     {
-        open(NAMEFILE, "<conf/$base_name");
+        open(NAMEFILE, "<$scriptsdir/conf/$base_name");
         $content = <NAMEFILE>;
         close(NAMEFILE);
         if ($content =~  /\[ignore-sublang\]/) {
@@ -27,7 +28,7 @@ sub collapse {
     return $name;
 }
 
-opendir(DIR, "conf");
+opendir(DIR, "$scriptsdir/conf");
 @files = grep(!/^\./, readdir(DIR));
 closedir(DIR);
 

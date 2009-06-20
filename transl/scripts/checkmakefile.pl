@@ -29,26 +29,28 @@ sub mycheck
 
     # files in dlls/ are compiled with __WINESRC__    
     my($defs) = "";
-    $defs = "-D__WINESRC__" if ($name =~ m,^${winedir}/?dlls,);
+    $defs = "-D__WINESRC__" if ($name =~ m,^${srcdir}/?dlls,);
 
     log_string("*** $name [$defs]");
 
     my($respath) = dirname($name);
-    $ret = system("$wrc -I$respath -I$winedir/include -I$winedir/dlls/user32 --verify-translation $defs $name $workdir/tmp.res 2>>$workdir/run.log >$workdir/ver.txt");
+    my $srcincl = "-I$respath -I$srcdir/include -I$srcdir/dlls/user32";
+    (my $objincl = $srcincl) =~ s!I$srcdir!I$objdir!g;
+    $ret = system("$wrc $srcincl $objincl --verify-translation $defs $name $workdir/tmp.res 2>>$workdir/run.log >$workdir/ver.txt");
     if ($ret == 0)
     {
-        $name =~ s,$winedir,,;
+        $name =~ s,$srcdir/,,;
         if ($name eq "dlls/kernel32/kernel.rc") {
-            system("./ver.pl \"$name\" \"$workdir\" nonlocale <$workdir/ver.txt");
+            system("$scriptsdir/ver.pl \"$name\" \"$workdir\" nonlocale $scriptsdir <$workdir/ver.txt");
             log_string("*** $name [$defs] (locale run)");
-            system("./ver.pl \"$name\" \"$workdir\" locale <$workdir/ver.txt");
+            system("$scriptsdir/ver.pl \"$name\" \"$workdir\" locale $scriptsdir <$workdir/ver.txt");
         } else {
-            system("./ver.pl \"$name\" \"$workdir\" normal <$workdir/ver.txt");
+            system("$scriptsdir/ver.pl \"$name\" \"$workdir\" normal $scriptsdir <$workdir/ver.txt");
         }
         $norm_fn= $name;
         $norm_fn =~ s/\.rc$//;
         $norm_fn =~ s/[^a-zA-Z0-9]/-/g;
-        $ret = system("$wrc -I$respath -I$winedir/include -I$winedir/dlls/user32 $defs $winedir$name $workdir/dumps/res/$norm_fn.res 2>>$workdir/run.log >/dev/null");
+        $ret = system("$wrc $srcincl $objincl $defs $srcdir/$name $workdir/dumps/res/$norm_fn.res 2>>$workdir/run.log >/dev/null");
         if ($ret != 0)
         {
             print "!!!!!!! 2nd pass return value: ".$ret."\n";        
@@ -98,11 +100,13 @@ while (<CONFIG>)
 }
 close(CONFIG);
 
-$winedir = $CONFIG{"SOURCEROOT"}."/";
-$wrc = $CONFIG{"WRCROOT"}."/tools/wrc/wrc";
-$workdir = $CONFIG{"WORKDIR"}."/";
+$srcdir = $CONFIG{"SOURCEROOT"};
+$objdir = $CONFIG{"BUILDROOT"} || $srcdir;
+$wrc = ($CONFIG{"WRCROOT"} || $objdir) . "/tools/wrc/wrc";
+$workdir = $CONFIG{"WORKDIR"};
+$scriptsdir = $CONFIG{"SCRIPTSDIR"} || ".";
 
-if ($winedir eq "/" || $wrc eq "/tools/wrc/wrc" || $workdir eq "/")
+if ($srcdir eq "" || $wrc eq "/tools/wrc/wrc" || $workdir eq "")
 {
     die("Config entry for SOURCEROOT, WRCROOT or WORKDIR missing\n");
 }

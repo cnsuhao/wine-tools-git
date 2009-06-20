@@ -27,12 +27,12 @@ if [ "$PREPARE_TREES" -eq 1 ]; then
         echo -n "Preparing tree(s)..."
     fi
     if [ ! -f "$WRCROOT/Makefile" ]; then
-        $WRCROOT/configure
+        (cd $WRCROOT && $SOURCEROOT/configure)
     fi
     make -C "$WRCROOT" depend >/dev/null 2>>"$WORKDIR/run.log" || die "make depend in wrc tree failed"
     make -C "$WRCROOT" tools >/dev/null 2>>"$WORKDIR/run.log" || die "make tools in wrc tree failed"
-    make -C "$SOURCEROOT" depend >/dev/null 2>>"$WORKDIR/run.log" || die "make depend in source tree failed"
-    make -C "$SOURCEROOT" include/stdole2.tlb >/dev/null 2>>"$WORKDIR/run.log" || die "make depend in source tree failed"
+    make -C "$BUILDROOT" depend >/dev/null 2>>"$WORKDIR/run.log" || die "make depend in build tree failed"
+    make -C "$BUILDROOT" include/stdole2.tlb >/dev/null 2>>"$WORKDIR/run.log" || die "make depend in build tree failed"
     if [ "x$NOVERBOSE" = "x" ]; then
         echo " done"
     fi
@@ -48,8 +48,8 @@ mkdir $WORKDIR/dumps/res
 mkdir $WORKDIR/new-langs
 
 # Analyze all the Makefiles
-find $SOURCEROOT/ -name Makefile.in -exec ./checkmakefile.pl \{\} \;
-./summary.pl "$WORKDIR"
+find $SOURCEROOT/ -name Makefile.in -exec $SCRIPTSDIR/checkmakefile.pl \{\} \;
+$SCRIPTSDIR/summary.pl "$WORKDIR" "$SCRIPTSDIR"
 
 # Check for a new languages
 for i in $WORKDIR/new-langs/*; do
@@ -68,7 +68,7 @@ mv -f $WORKDIR/langs $DESTDIR/langs
 mv -f $WORKDIR/dumps $DESTDIR/dumps
 cp -f $WORKDIR/run.log $DESTDIR/dumps/run.log
 
-rsync -r --delete conf $DESTDIR
+rsync -r --delete $SCRIPTSDIR/conf $DESTDIR
 
 # Deleting can take a bit longer so we do it after the new version is set up
 rm -Rf $DESTDIR/langs.old
