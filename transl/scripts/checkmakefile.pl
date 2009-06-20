@@ -16,6 +16,7 @@ sub log_string
 
 sub mycheck
 {
+    my($dir) = shift(@_);
     my($name) = shift(@_);
 
     if ($name =~ m/version.rc$/) {
@@ -24,56 +25,45 @@ sub mycheck
     }
 
     if (not exists $ENV{"NOVERBOSE"}) {
-        print "*** ".$name."\n";
+        print "*** $dir$name\n";
     }
 
     # files in dlls/ are compiled with __WINESRC__    
     my($defs) = "";
-    $defs = "-D__WINESRC__" if ($name =~ m,^${srcdir}/?dlls,);
+    $defs = "-D__WINESRC__" if ($dir =~ m,^dlls,);
 
-    log_string("*** $name [$defs]");
+    log_string("*** $dir$name [$defs]");
 
-    my($respath) = dirname($name);
-    my $srcincl = "-I$respath -I$srcdir/include -I$srcdir/dlls/user32";
+    my $srcincl = "-I$srcdir/$dir -I$srcdir/include";
     (my $objincl = $srcincl) =~ s!I$srcdir!I$objdir!g;
-    $ret = system("$wrc $srcincl $objincl --verify-translation $defs $name $workdir/tmp.res 2>>$workdir/run.log >$workdir/ver.txt");
+    my $norm_fn = $dir.$name;
+    $norm_fn =~ s/\.rc$//;
+    $norm_fn =~ s/[^a-zA-Z0-9]/-/g;
+    (my $target = $name) =~ s/.rc$/.res/;
+    $ret = system("make -C $objdir/$dir -s $target 2>>$workdir/run.log && cp $objdir/$dir/$target $workdir/dumps/res/$norm_fn.res");
+    if ($ret)
+    {
+        log_string "make -C $objdir/$dir -s $target 2>>$workdir/run.log && cp $objdir/$dir/$target $workdir/dumps/res/$norm_fn.res";
+        print "!!!!!!! return value: $ret\n";
+        exit 1;
+    }
+
+    $ret = system("$wrc $srcincl $objincl --verify-translation $defs $srcdir/$dir$name $workdir/tmp.res 2>>$workdir/run.log >$workdir/ver.txt");
     if ($ret == 0)
     {
-        $name =~ s,$srcdir/,,;
-        if ($name eq "dlls/kernel32/kernel.rc") {
-            system("$scriptsdir/ver.pl \"$name\" \"$workdir\" nonlocale $scriptsdir <$workdir/ver.txt");
+        if ("$dir$name" eq "dlls/kernel32/kernel.rc") {
+            system("$scriptsdir/ver.pl \"$dir$name\" \"$workdir\" nonlocale $scriptsdir <$workdir/ver.txt");
             log_string("*** $name [$defs] (locale run)");
-            system("$scriptsdir/ver.pl \"$name\" \"$workdir\" locale $scriptsdir <$workdir/ver.txt");
+            system("$scriptsdir/ver.pl \"$dir$name\" \"$workdir\" locale $scriptsdir <$workdir/ver.txt");
         } else {
-            system("$scriptsdir/ver.pl \"$name\" \"$workdir\" normal $scriptsdir <$workdir/ver.txt");
-        }
-        $norm_fn= $name;
-        $norm_fn =~ s/\.rc$//;
-        $norm_fn =~ s/[^a-zA-Z0-9]/-/g;
-        $ret = system("$wrc $srcincl $objincl $defs $srcdir/$name $workdir/dumps/res/$norm_fn.res 2>>$workdir/run.log >/dev/null");
-        if ($ret != 0)
-        {
-            print "!!!!!!! 2nd pass return value: ".$ret."\n";
-            exit 1;
+            system("$scriptsdir/ver.pl \"$dir$name\" \"$workdir\" normal $scriptsdir <$workdir/ver.txt");
         }
     }
     else
     {
-        print "!!!!!!! return value: ".$ret."\n";
+        log_string "$wrc $srcincl $objincl --verify-translation $defs $srcdir/$dir$name $workdir/tmp.res 2>>$workdir/run.log >$workdir/ver.txt";
+        print "!!!!!!! return value: $ret\n";
         exit 1;
-    }
-}
-
-# if PREPARE_TREES is 1 in the config file this will make the *.res file to make
-# sure all the dependancies are built.
-sub prepare_file
-{
-    my($dir) = shift (@_);
-    my($file) = shift (@_);
-    $file =~ s/\.rc/\.res/;
-    if (($ret = system("make -C \"$dir\" \"$file\" >/dev/null 2>>$workdir/run.log")) != 0)
-    {
-        print "!!!!!!! make return value: ".$ret."\n";
     }
 }
 
@@ -137,18 +127,18 @@ if (!@makefiles)
 # parse the makefiles
 foreach my $makefile (@makefiles)
 {
-    if ($makefile =~ m,programs/winetest/, || $makefile =~ m,/tests/,)
+    next unless $makefile =~ m,^$srcdir/(.*/)Makefile.in$,;
+    my $path = $1;
+    if ($path eq "programs/winetest/" || $path =~ m,/tests/$,)
     {
         if (not exists $ENV{"NOVERBOSE"})
         {
-            print "--- Ignoring: ".$makefile."\n";
+            print "--- Ignoring: ".$path."Makefile.in\n";
         }
         next;
     }
 
-    open(MAKEFILE, "<$makefile");
-    $makefile =~ m,^(.*/)[^/]*$,;
-    $path = $1;
+    open(MAKEFILE, "<$makefile") or die "cannot open $makefile";
     while (<MAKEFILE>)
     {
         last if m/EXTRARCFLAGS\s*=.*res16/;  # 16-bit resources not supported
@@ -166,8 +156,7 @@ foreach my $makefile (@makefiles)
             {
                 next if ($_ eq "");
                 s/\s//;
-                &prepare_file("$path", "$_") if ($CONFIG{"PREPARE_TREES"} == 1);
-                &mycheck("$path$_");
+                &mycheck($path,$_);
             }
             last;
         }
