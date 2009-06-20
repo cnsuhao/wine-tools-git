@@ -53,12 +53,14 @@ sub mycheck
         $ret = system("$wrc $srcincl $objincl $defs $srcdir/$name $workdir/dumps/res/$norm_fn.res 2>>$workdir/run.log >/dev/null");
         if ($ret != 0)
         {
-            print "!!!!!!! 2nd pass return value: ".$ret."\n";        
+            print "!!!!!!! 2nd pass return value: ".$ret."\n";
+            exit 1;
         }
     }
     else
     {
         print "!!!!!!! return value: ".$ret."\n";
+        exit 1;
     }
 }
 

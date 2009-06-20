@@ -48,8 +48,8 @@ mkdir $WORKDIR/dumps/res
 mkdir $WORKDIR/new-langs
 
 # Analyze all the Makefiles
-$SCRIPTSDIR/checkmakefile.pl -S "$SOURCEROOT" -T "$BUILDROOT" -t "$WRCROOT" -s "$SCRIPTSDIR" -w "$WORKDIR"
-$SCRIPTSDIR/summary.pl "$WORKDIR" "$SCRIPTSDIR"
+$SCRIPTSDIR/checkmakefile.pl -S "$SOURCEROOT" -T "$BUILDROOT" -t "$WRCROOT" -s "$SCRIPTSDIR" -w "$WORKDIR" || exit
+$SCRIPTSDIR/summary.pl "$WORKDIR" "$SCRIPTSDIR" || exit
 
 # Check for a new languages
 for i in $WORKDIR/new-langs/*; do
