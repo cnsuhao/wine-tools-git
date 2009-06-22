@@ -14,62 +14,69 @@ sub log_string
     close(LOG);
 }
 
-sub mycheck
+sub shell($)
 {
-    my($dir) = shift(@_);
-    my($name) = shift(@_);
-
-    if ($name =~ m/version.rc$/) {
-        print "--- Ignoring ".$name."\n" unless (exists $ENV{"NOVERBOSE"});
-        return;
-    }
-
-    if (not exists $ENV{"NOVERBOSE"}) {
-        print "*** $dir$name\n";
-    }
-
-    # files in dlls/ are compiled with __WINESRC__    
-    my($defs) = "";
-    $defs = "-D__WINESRC__" if ($dir =~ m,^dlls,);
-
-    log_string("*** $dir$name [$defs]");
-
-    my $srcincl = "-I$srcdir/$dir -I$srcdir/include";
-    (my $objincl = $srcincl) =~ s!I$srcdir!I$objdir!g;
-    my $norm_fn = $dir.$name;
-    $norm_fn =~ s/\.rc$//;
-    $norm_fn =~ s/[^a-zA-Z0-9]/-/g;
-    (my $target = $name) =~ s/.rc$/.res/;
-    $ret = system("make -C $objdir/$dir -s $target 2>>$workdir/run.log && cp $objdir/$dir/$target $workdir/dumps/res/$norm_fn.res");
+    my $cmd = shift;
+    my $ret = system $cmd;
     if ($ret)
     {
-        log_string "make -C $objdir/$dir -s $target 2>>$workdir/run.log && cp $objdir/$dir/$target $workdir/dumps/res/$norm_fn.res";
-        print "!!!!!!! return value: $ret\n";
-        exit 1;
-    }
-
-    $ret = system("$wrc $srcincl $objincl --verify-translation $defs $srcdir/$dir$name $workdir/tmp.res 2>>$workdir/run.log >$workdir/ver.txt");
-    if ($ret == 0)
-    {
-        if ("$dir$name" eq "dlls/kernel32/kernel.rc") {
-            system("$scriptsdir/ver.pl \"$dir$name\" \"$workdir\" nonlocale $scriptsdir <$workdir/ver.txt");
-            log_string("*** $name [$defs] (locale run)");
-            system("$scriptsdir/ver.pl \"$dir$name\" \"$workdir\" locale $scriptsdir <$workdir/ver.txt");
-        } else {
-            system("$scriptsdir/ver.pl \"$dir$name\" \"$workdir\" normal $scriptsdir <$workdir/ver.txt");
-        }
-    }
-    else
-    {
-        log_string "$wrc $srcincl $objincl --verify-translation $defs $srcdir/$dir$name $workdir/tmp.res 2>>$workdir/run.log >$workdir/ver.txt";
+        log_string $cmd;
         print "!!!!!!! return value: $ret\n";
         exit 1;
     }
 }
 
+sub mycheck
+{
+    my($dir) = shift(@_);
+    my($defs) = shift(@_);
+    my @files = @_;
+
+    if (not exists $ENV{"NOVERBOSE"}) {
+        print "*** $dir\n";
+    }
+
+    my @rcfiles;
+    foreach my $f (@files)
+    {
+        next if $f =~ m/^\s*$/;
+        if ($f =~ m/version.rc$/) {
+            print "--- Ignoring ".$files[$i]."\n" unless (exists $ENV{"NOVERBOSE"});
+            next;
+        }
+        push @rcfiles, $f;
+    }
+    return unless @rcfiles;
+
+    # files in dlls/ are compiled with __WINESRC__    
+    $defs .= " -D__WINESRC__" if ($dir =~ m,^dlls,);
+
+    log_string("*** $dir [$defs]");
+
+    my $incl = "-I$srcdir/$dir -I$objdir/$dir -I$srcdir/include -I$objdir/include";
+    my $norm_fn = $dir;
+    $norm_fn =~ s/[^a-zA-Z0-9]/-/g;
+
+    my $targets = join( " ", map { (my $ret = $_) =~ s/.rc$/.res/; $ret; } @rcfiles );
+    my $srcs = join( " ", map { "$srcdir/$dir/$_"; } @rcfiles );
+    my $objs = join( " ", map { (my $ret = "$objdir/$dir/$_") =~ s/.rc$/.res/; $ret; } @rcfiles );
+
+    shell "make -C $objdir/$dir -s $targets 2>>$workdir/run.log";
+    shell "$toolsdir/tools/winebuild/winebuild --resources -o $workdir/dumps/res/$norm_fn.res $objs 2>>$workdir/run.log";
+    shell "$wrc $incl --verify-translation $defs $srcs >$workdir/ver.txt 2>>$workdir/run.log";
+
+    if ("$dir" eq "dlls/kernel32") {
+        shell "$scriptsdir/ver.pl \"$dir\" \"$workdir\" nonlocale $scriptsdir <$workdir/ver.txt";
+        log_string("*** $name [$defs] (locale run)");
+        shell "$scriptsdir/ver.pl \"$dir\" \"$workdir\" locale $scriptsdir <$workdir/ver.txt";
+    } else {
+        shell "$scriptsdir/ver.pl \"$dir\" \"$workdir\" normal $scriptsdir <$workdir/ver.txt";
+    }
+}
+
 srand();
 # Parse config file
-if (-f config)
+if (-f "config")
 {
     open(CONFIG, "<config");
     while (<CONFIG>)
@@ -127,21 +134,26 @@ if (!@makefiles)
 # parse the makefiles
 foreach my $makefile (@makefiles)
 {
-    next unless $makefile =~ m,^$srcdir/(.*/)Makefile.in$,;
+    next unless $makefile =~ m,^$srcdir/(.*)/Makefile.in$,;
     my $path = $1;
-    if ($path eq "programs/winetest/" || $path =~ m,/tests/$,)
+    if ($path eq "programs/winetest" || $path =~ m,/tests$,)
     {
         if (not exists $ENV{"NOVERBOSE"})
         {
-            print "--- Ignoring: ".$path."Makefile.in\n";
+            print "--- Ignoring: $path/Makefile.in\n";
         }
         next;
     }
 
+    my $defs = "";
     open(MAKEFILE, "<$makefile") or die "cannot open $makefile";
     while (<MAKEFILE>)
     {
-        last if m/EXTRARCFLAGS\s*=.*res16/;  # 16-bit resources not supported
+        if (m/EXTRARCFLAGS\s*=\s*(.*)/)
+        {
+            $defs = $1;
+            last if ($defs =~ /res16/);  # 16-bit resources not supported
+        }
         if (m/^RC_SRCS *=/)
         {
             while (m/\\$/)
@@ -150,14 +162,9 @@ foreach my $makefile (@makefiles)
                 chop;
                 $_ .= <MAKEFILE>;
             }
-            m/^RC_SRCS *=(.*)$/;
-            @file = split(/ /, $1);
-            foreach (@file)
-            {
-                next if ($_ eq "");
-                s/\s//;
-                &mycheck($path,$_);
-            }
+            m/^RC_SRCS\s*=\s*(.*)$/;
+            my @files = split(/\s+/, $1);
+            &mycheck($path,$defs,@files);
             last;
         }
     }
