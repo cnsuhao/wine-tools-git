@@ -11,12 +11,12 @@ $msgs = array();
 <html>
 <head>
     <link rel="stylesheet" href="style.css" type="text/css"/>
-    <title>File <?php echo $resfile?> - Wine translations</title>
+    <title>Module <?php echo $resfile?> - Wine translations</title>
 </head>
 
 <?php dump_menu_root() ?> &gt <?php dump_menu_lang($lang) ?> &gt <?php dump_menu_resfile($lang, $resfile, FALSE) ?>
 
-<h1>File <?php echo $resfile?></h1>
+<h1>Module <?php echo $resfile?></h1>
 
 <?php
 warn_if_lang_hidden($lang);
@@ -30,12 +30,12 @@ while ($line = fgets($file, 4096))
 }
 
 if (count($msgs) == 0) {
-    echo "<p>This file is not translated into ".get_lang_name($lang).".</p>\n";
-    echo "<ul><li>If you want to see what resources are in this file, check the "
+    echo "<p>This module is not translated into ".get_lang_name($lang).".</p>\n";
+    echo "<ul><li>If you want to see what resources are in this module, check the "
             .gen_resfile_a($MASTER_LANGUAGE, $resfile)."English (US) version</a>"
-            ." of this file</li>\n";
-    echo "<li>If you want to translate this file you should check the $resfile\n";
-    echo "file in the Wine source tree and make it include a new language file for\n";
+            ." of this module</li>\n";
+    echo "<li>If you want to translate this module you should check the $resfile\n";
+    echo "directory in the Wine source tree and make it include a new language file for\n";
     echo get_lang_name($lang)." (see $WINE_WIKI_TRANSLATIONS for a guide to\n";
     echo "translating)</li>";
     exit();

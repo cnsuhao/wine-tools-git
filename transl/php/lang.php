@@ -64,7 +64,7 @@ function dump_table($table)
         return;
     }
     echo "<table border=\"1\">\n";
-    echo "<tr><th>File name</th><th>translated</th><th>missing</th><th>errors</th></tr>\n";
+    echo "<tr><th>name</th><th>translated</th><th>missing</th><th>errors</th></tr>\n";
     foreach ($table as $key => $value)
     {
         $extra = "";
@@ -85,16 +85,16 @@ function dump_table($table)
 
 <?php warn_if_lang_hidden($lang) ?>
 
-<h2>Partially translated files</h2>
+<h2>Partially translated modules</h2>
 <?php dump_table($partial) ?>
 
-<h2>Files not translated</h2>
+<h2>Modules not translated</h2>
 <?php dump_table($notransl) ?>
 
 <h2>Locales data</h2>
 <?php dump_table($locale) ?>
 
-<h2>Fully translated files</h2>
+<h2>Fully translated modules</h2>
 <?php dump_table($transl) ?>
 
 </html>
