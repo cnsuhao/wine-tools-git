@@ -63,6 +63,7 @@ fi
 umask 022
 
 (
+    set -e
     (cd wine && git pull) || exit
     head=$(cd wine && git rev-parse --short=12 HEAD) || exit
 
@@ -131,7 +132,7 @@ umask 022
 
     rm -rf work
     mkdir work work/langs work/dumps work/dumps/res work/new-langs
-    $toolsdir/transl/scripts/checkmakefile.pl -S ./wine -T ./build-mingw -t ./build-native -w ./work -s "$toolsdir/transl/scripts"
+    $toolsdir/transl/scripts/checkmakefile.pl -S ./wine -T ./build-mingw -t ./build-native -w ./work -s "$toolsdir/transl/scripts" 2>>work/run.log
     $toolsdir/transl/scripts/summary.pl ./work "$toolsdir/transl/scripts"
     for i in work/new-langs/*
     do
@@ -146,6 +147,8 @@ umask 022
     mv -f work/dumps $transldir/dumps
     mv -f work/run.log $transldir/dumps/run.log
     rm -rf $transldir/langs.old $transldir/dumps.old
+
+    echo "translations updated"
 
 ) >$logfile 2>&1 && rm -f $logfile
 

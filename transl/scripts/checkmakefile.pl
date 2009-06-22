@@ -6,21 +6,13 @@
 use Cwd;
 use File::Basename;
 
-sub log_string
-{
-    my($string) = shift(@_);
-    open(LOG, ">>$workdir/run.log") || die "Couldn't open run.log\n";
-    print LOG $string."\n";
-    close(LOG);
-}
-
 sub shell($)
 {
     my $cmd = shift;
     my $ret = system $cmd;
     if ($ret)
     {
-        log_string $cmd;
+        print STDERR "$cmd\n";
         print "!!!!!!! return value: $ret\n";
         exit 1;
     }
@@ -51,7 +43,7 @@ sub mycheck
     # files in dlls/ are compiled with __WINESRC__    
     $defs .= " -D__WINESRC__" if ($dir =~ m,^dlls,);
 
-    log_string("*** $dir [$defs]");
+    print STDERR "*** $dir [$defs]\n";
 
     my $incl = "-I$srcdir/$dir -I$objdir/$dir -I$srcdir/include -I$objdir/include";
     my $norm_fn = $dir;
@@ -61,13 +53,13 @@ sub mycheck
     my $srcs = join( " ", map { "$srcdir/$dir/$_"; } @rcfiles );
     my $objs = join( " ", map { (my $ret = "$objdir/$dir/$_") =~ s/.rc$/.res/; $ret; } @rcfiles );
 
-    shell "make -C $objdir/$dir -s $targets 2>>$workdir/run.log";
-    shell "$toolsdir/tools/winebuild/winebuild --resources -o $workdir/dumps/res/$norm_fn.res $objs 2>>$workdir/run.log";
-    shell "$wrc $incl --verify-translation $defs $srcs >$workdir/ver.txt 2>>$workdir/run.log";
+    shell "make -C $objdir/$dir -s $targets";
+    shell "$toolsdir/tools/winebuild/winebuild --resources -o $workdir/dumps/res/$norm_fn.res $objs";
+    shell "$wrc $incl --verify-translation $defs $srcs >$workdir/ver.txt";
 
     if ("$dir" eq "dlls/kernel32") {
         shell "$scriptsdir/ver.pl \"$dir\" \"$workdir\" nonlocale $scriptsdir <$workdir/ver.txt";
-        log_string("*** $name [$defs] (locale run)");
+        print STDERR "*** $name [$defs] (locale run)\n";
         shell "$scriptsdir/ver.pl \"$dir\" \"$workdir\" locale $scriptsdir <$workdir/ver.txt";
     } else {
         shell "$scriptsdir/ver.pl \"$dir\" \"$workdir\" normal $scriptsdir <$workdir/ver.txt";
