@@ -15,7 +15,7 @@ $msgs = array();
 </head>
 
 <?php dump_menu_root() ?> &gt <?php dump_menu_lang($lang) ?> &gt <?php dump_menu_resfile($lang, $resfile, FALSE) ?>
-
+<div class="main">
 <h1>Module <?php echo $resfile?></h1>
 
 <?php
@@ -93,4 +93,5 @@ foreach ($msgs as $value)
     echo "</td><td>".$value."</td></tr>\n";
 }
 ?>
+</div>
 </html>

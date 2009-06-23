@@ -1,7 +1,68 @@
+body {
+    background-color: #E2E2E2;
+    color: #000000;
+    font-family: "bitstream vera sans", "verdana", "arial", "helvetica", sans-serif;
+    margin: 10px;
+    font-size: small;
+}
+
+a:link    { color: #A50D0D; text-decoration: none; }
+a:visited { color: #FF0000; }
+a:hover   { color: #FF6666; text-decoration: underline; }
+a:active  { color: #FF0000; }
+a.hidden  { text-decoration: none; color: #000000; }
+
+h1 { font-size: 180%; }
+h2 { font-size: 150%; }
+
+:link, :visited {
+        text-decoration: none;
+}
+
+h1, h2 {
+    text-align: center;
+    background-color: #601919;
+    color: #ffffff;
+    padding: 4px;
+    margin: 0;
+}
+
+h1 :link {
+    color: #ffe0e0;
+}
+
+div.main {
+    margin: 10px 0 0 0;
+    background-color: white;
+    width: 100%;
+    border: 1px solid #601919;
+}
+
+div.group {
+    margin: 10px 20% 10px 20%;
+    background-color: white;
+    border: 1px solid #601919;
+}
+
+td {
+        font-family: monospace;
+        font-size: medium;
+        padding-left: 5px;
+        padding-right: 5px;
+}
+
+th {
+        vertical-align: text-top;
+        border-top-width: thin;
+        border-bottom-width: thin;
+        border-bottom-style: solid;
+        border-bottom-color: #601919;
+}
+
 /* used to mark resource parts that are not literaly in the string, like \0, \n etc*/
 .resmeta
 {
-    color: #7f7fff;
+    color: #c34b4b;
     font-style: italic;
 }
 
@@ -22,30 +83,25 @@ p.note
     padding: 2px;
 }
 
-/* summary table on index page, bars column*/
-table.index td.bar
-{
-    background-color: #d1daf9;
-}
-
 /* table with a standard resource dump */
 table.resource
 {
-    background-color: #f0f0ff;
+    margin: 10px;
+    background-color: #f7e8e8;
 }
 
 table.resource tr.header
 {
-    background-color: #e0e0ff;
+    background-color: #f0d2d2;
 }
 
 table.resource tr.subheader
 {
-    background-color: #e8e8ff;
+    background-color: #f3dcdc;
 }
 
 /* rows are different (in resource comparision mode) */
 table.resource tr.diff
 {
-    background-color: #ffb8d0;
+    background-color: #e3acac;
 }

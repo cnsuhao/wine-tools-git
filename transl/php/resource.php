@@ -18,6 +18,7 @@ $compare = isset($_REQUEST['compare']);
 <body>
 <?php dump_menu_root() ?> &gt <?php dump_menu_lang($lang) ?> &gt <?php dump_menu_resfile($lang, $resfile) ?> &gt
 <?php dump_menu_resource($lang, $resfile, $type, $id) ?>
+<div class="main">
 <h1>Dump of <?php echo get_resource_name($type, $id) ?></h1>
 
 <?php
@@ -83,5 +84,6 @@ $res->dump($master_res);
 
 ?>
 </table>
+</div>
 </body>
 </html>

@@ -24,6 +24,7 @@ while ($line = fgets($summary, 1024))
     <link rel="stylesheet" href="style.css" type="text/css"/>
     <title>Wine translation statistics <?php echo $TITLE_APPENDIX ?></title>
 </head>
+<div class="main">
 <h1>Wine translation statistics <?php echo $TITLE_APPENDIX ?></h1>
 
 <?php echo $TITLE_DESCR ?>
@@ -35,7 +36,7 @@ it needs to be found manually by the translators. If you would like to read abou
 improve Wine translations check <?php echo $WINE_WIKI_TRANSLATIONS ?>.
 </p>
 
-<table border="1" class="index">
+<table class="index">
 <tr><th></th><th>Language</th><th>Translated</th><th>Missing</th><th>Errors</th><th>&nbsp;</th></tr>
 <?php
 function draw_bar($tr, $err, $sum)
@@ -97,7 +98,7 @@ for ($i = 0; $i < count($transl); $i++)
 <td><?php echo $errors_sum ?></td>
 <?php draw_bar($transl_sum, $errors_sum, ($nr-1)*$sum) ?>
 </table>
-
+</div>
 <?php
 if ($time = filemtime("$DATAROOT/langs/summary"))
 {

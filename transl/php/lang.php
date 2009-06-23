@@ -63,7 +63,7 @@ function dump_table($table)
         echo "none";
         return;
     }
-    echo "<table border=\"1\">\n";
+    echo "<table>\n";
     echo "<tr><th>name</th><th>translated</th><th>missing</th><th>errors</th></tr>\n";
     foreach ($table as $key => $value)
     {
@@ -81,20 +81,27 @@ function dump_table($table)
 
 ?>
 <p><?php dump_menu_root() ?> &gt; <?php dump_menu_lang($lang, FALSE)?> </p>
+<div class="main">
 <h1><?php echo "Language: ".get_lang_name($lang) ?></h1>
 
 <?php warn_if_lang_hidden($lang) ?>
 
+<div class="group">
 <h2>Partially translated modules</h2>
 <?php dump_table($partial) ?>
-
+</div>
+<div class="group">
 <h2>Modules not translated</h2>
 <?php dump_table($notransl) ?>
-
+</div>
+<div class="group">
 <h2>Locales data</h2>
 <?php dump_table($locale) ?>
-
+</div>
+<div class="group">
 <h2>Fully translated modules</h2>
 <?php dump_table($transl) ?>
+</div>
 
+</div>
 </html>
