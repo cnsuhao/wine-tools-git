@@ -638,16 +638,19 @@ class DialogResource extends Resource
         $this->Resource($header);
         $this->items = array();
 
-        $signature = get_dword($data);
-        $this->extended = ($signature == 0xffff0001);
+        $temp = substr($data, 0, 4);
+        $signature = get_word($temp);
+        $dlgver = get_word($temp);
+        $this->extended = ($signature == 1 && $dlgver == 0xffff);
         if ($this->extended)       /* DIALOGEX resource*/
         {
+            $dummy = get_dword($data);
             $this->dwHelpId = get_dword($data);
             $this->exStyle = get_dword($data);
             $this->style = get_dword($data);
         } else                     /* DIALOG resource*/
         {
-            $this->style = $signature;
+            $this->style = get_dword($data);
             $this->exStyle = get_dword($data);
             $this->dwHelpId = 0;
         }
