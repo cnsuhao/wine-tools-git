@@ -1,10 +1,14 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
 # Helper script - analyze one Makefile, run wrc --verify-translation
 # on resource files and call ver.pl to parse the results
 
+use strict;
 use Cwd;
 use File::Basename;
+
+# configuration parameters
+my (%CONFIG, $srcdir, $objdir, $toolsdir, $workdir, $scriptsdir, $wrc);
 
 sub shell($)
 {
@@ -29,12 +33,22 @@ sub mycheck
     }
 
     my @rcfiles;
+    my @srcs;
     foreach my $f (@files)
     {
         next if $f =~ m/^\s*$/;
         if ($f =~ m/version.rc$/) {
-            print "--- Ignoring ".$files[$i]."\n" unless (exists $ENV{"NOVERBOSE"});
+            print "--- Ignoring $f\n" unless (exists $ENV{"NOVERBOSE"});
             next;
+        }
+        if ($f =~ m/.mc$/)
+        {
+            $f .= ".rc";
+            push @srcs, "$objdir/$dir/$f";
+        }
+        else
+        {
+            push @srcs, "$srcdir/$dir/$f";
         }
         push @rcfiles, $f;
     }
@@ -50,7 +64,7 @@ sub mycheck
     $norm_fn =~ s/[^a-zA-Z0-9]/-/g;
 
     my $targets = join( " ", map { (my $ret = $_) =~ s/.rc$/.res/; $ret; } @rcfiles );
-    my $srcs = join( " ", map { "$srcdir/$dir/$_"; } @rcfiles );
+    my $srcs = join( " ", @srcs );
     my $objs = join( " ", map { (my $ret = "$objdir/$dir/$_") =~ s/.rc$/.res/; $ret; } @rcfiles );
 
     shell "make -C $objdir/$dir -s $targets";
@@ -59,7 +73,7 @@ sub mycheck
 
     if ("$dir" eq "dlls/kernel32") {
         shell "$scriptsdir/ver.pl \"$dir\" \"$workdir\" nonlocale $scriptsdir <$workdir/ver.txt";
-        print STDERR "*** $name [$defs] (locale run)\n";
+        print STDERR "*** $dir [$defs] (locale run)\n";
         shell "$scriptsdir/ver.pl \"$dir\" \"$workdir\" locale $scriptsdir <$workdir/ver.txt";
     } else {
         shell "$scriptsdir/ver.pl \"$dir\" \"$workdir\" normal $scriptsdir <$workdir/ver.txt";
@@ -117,7 +131,7 @@ if ($srcdir eq "" || $wrc eq "/tools/wrc/wrc" || $workdir eq "")
     die("Config entry for SOURCEROOT, WRCROOT or WORKDIR missing\n");
 }
 
-@makefiles = @ARGV;
+my @makefiles = @ARGV;
 if (!@makefiles)
 {
     @makefiles = split(/\s/,`find $srcdir/ -name Makefile.in -print`);
@@ -138,27 +152,26 @@ foreach my $makefile (@makefiles)
     }
 
     my $defs = "";
+    my @files = ();
     open(MAKEFILE, "<$makefile") or die "cannot open $makefile";
     while (<MAKEFILE>)
     {
+        while (m/\\$/)
+        {
+            chop;
+            chop;
+            $_ .= <MAKEFILE>;
+        }
         if (m/EXTRARCFLAGS\s*=\s*(.*)/)
         {
             $defs = $1;
             last if ($defs =~ /res16/);  # 16-bit resources not supported
         }
-        if (m/^RC_SRCS *=/)
+        if (m/^(MC|RC)_SRCS\s*=\s*(.*)$/)
         {
-            while (m/\\$/)
-            {
-                chop;
-                chop;
-                $_ .= <MAKEFILE>;
-            }
-            m/^RC_SRCS\s*=\s*(.*)$/;
-            my @files = split(/\s+/, $1);
-            &mycheck($path,$defs,@files);
-            last;
+            push @files, split(/\s+/, $2);
         }
     }
     close MAKEFILE;
+    &mycheck($path,$defs,@files) if @files;
 }
