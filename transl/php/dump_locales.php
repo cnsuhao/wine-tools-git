@@ -89,6 +89,7 @@ $LOCALE_NAMES["013:03"] = "Dutch (Surinam)";
 $LOCALE_NAMES["014:01"] = "Norwegian (Bokmal)";
 $LOCALE_NAMES["014:02"] = "Norwegian (Nynorsk)";
 $LOCALE_NAMES["015:01"] = "Polish";
+$LOCALE_NAMES["015:00"] = $LOCALE_NAMES["015:01"]; # ignore sublangs
 $LOCALE_NAMES["016:01"] = "Portuguese (Brazil)";
 $LOCALE_NAMES["016:02"] = "Portuguese (Portugal)";
 $LOCALE_NAMES["017:01"] = "Romansh (Switzerland)";
