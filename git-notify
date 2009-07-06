@@ -20,6 +20,7 @@
 #   -r name   Set the git repository name
 #   -s bytes  Set the maximum diff size in bytes (-1 for no limit)
 #   -u url    Set the URL to the gitweb browser
+#   -i branch If at least one -i is given, report only for specified branches
 #   -x branch Exclude changes to the specified branch from reports
 #
 
@@ -65,6 +66,9 @@ my $cia_project_name = git_config( "notify.cia" );
 # max number of individual notices before falling back to a single global notice (can be set with -n option)
 my $max_individual_notices = git_config( "notify.maxnotices" ) || 100;
 
+# branches to include
+my @include_list = split /\s+/, git_config( "notify.include" ) || "";
+
 # branches to exclude
 my @exclude_list = split /\s+/, git_config( "notify.exclude" ) || "";
 
@@ -77,6 +81,7 @@ sub usage()
     print "   -r name   Set the git repository name\n";
     print "   -s bytes  Set the maximum diff size in bytes (-1 for no limit)\n";
     print "   -u url    Set the URL to the gitweb browser\n";
+    print "   -i branch If at least one -i is given, report only for specified branches\n";
     print "   -x branch Exclude changes to the specified branch from reports\n";
     exit 1;
 }
@@ -137,6 +142,7 @@ sub parse_options()
         elsif ($arg eq '-r') { $repos_name = shift @ARGV; }
         elsif ($arg eq '-s') { $max_diff_size = shift @ARGV; }
         elsif ($arg eq '-u') { $gitweb_url = shift @ARGV; }
+        elsif ($arg eq '-i') { push @include_list, shift @ARGV; }
         elsif ($arg eq '-x') { push @exclude_list, shift @ARGV; }
         elsif ($arg eq '-d') { $debug++; }
         else { usage(); }
@@ -364,6 +370,8 @@ sub send_all_notices($$$)
     my ($old_sha1, $new_sha1, $ref) = @_;
 
     $ref =~ s/^refs\/heads\///;
+
+    return if (@include_list && !grep {$_ eq $ref} @include_list);
 
     if ($old_sha1 eq '0' x 40)  # new ref
     {
