@@ -22,6 +22,7 @@
 #   -u url    Set the URL to the gitweb browser
 #   -i branch If at least one -i is given, report only for specified branches
 #   -x branch Exclude changes to the specified branch from reports
+#   -X        Exclude merge commits
 #
 
 use strict;
@@ -72,6 +73,9 @@ my @include_list = split /\s+/, git_config( "notify.include" ) || "";
 # branches to exclude
 my @exclude_list = split /\s+/, git_config( "notify.exclude" ) || "";
 
+# Extra options to git rev-list
+my @revlist_options;
+
 sub usage()
 {
     print "Usage: $0 [options] [--] old-sha1 new-sha1 refname\n";
@@ -83,6 +87,7 @@ sub usage()
     print "   -u url    Set the URL to the gitweb browser\n";
     print "   -i branch If at least one -i is given, report only for specified branches\n";
     print "   -x branch Exclude changes to the specified branch from reports\n";
+    print "   -X        Exclude merge commits\n";
     exit 1;
 }
 
@@ -144,6 +149,7 @@ sub parse_options()
         elsif ($arg eq '-u') { $gitweb_url = shift @ARGV; }
         elsif ($arg eq '-i') { push @include_list, shift @ARGV; }
         elsif ($arg eq '-x') { push @exclude_list, shift @ARGV; }
+        elsif ($arg eq '-X') { push @revlist_options, "--no-merges"; }
         elsif ($arg eq '-d') { $debug++; }
         else { usage(); }
     }
@@ -352,7 +358,8 @@ sub send_global_notice($$$)
     my ($ref, $old_sha1, $new_sha1) = @_;
     my @notice = ();
 
-    open LIST, "-|" or exec "git", "rev-list", "--pretty", "^$old_sha1", "$new_sha1", @exclude_list or die "cannot exec git-rev-list";
+    push @revlist_options, "--pretty";
+    open LIST, "-|" or exec "git", "rev-list", @revlist_options, "^$old_sha1", "$new_sha1", @exclude_list or die "cannot exec git-rev-list";
     while (<LIST>)
     {
         chomp;
@@ -381,7 +388,7 @@ sub send_all_notices($$$)
 
     my @commits = ();
 
-    open LIST, "-|" or exec "git", "rev-list", "^$old_sha1", "$new_sha1", @exclude_list or die "cannot exec git-rev-list";
+    open LIST, "-|" or exec "git", "rev-list", @revlist_options, "^$old_sha1", "$new_sha1", @exclude_list or die "cannot exec git-rev-list";
     while (<LIST>)
     {
         chomp;
