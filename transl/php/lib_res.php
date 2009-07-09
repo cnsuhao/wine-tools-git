@@ -117,8 +117,9 @@ function dump_unicode($unistr, $quoted = TRUE)
         echo "&quot;";
     for ($i = 0; $i < count($unistr); $i++)
     {
-        if (($unistr[$i] >= ord('a') && $unistr[$i] < ord('z'))
-                || ($unistr[$i] >= ord('A') && $unistr[$i] < ord('Z'))
+        if (($unistr[$i] >= ord('a') && $unistr[$i] <= ord('z'))
+                || ($unistr[$i] >= ord('A') && $unistr[$i] <= ord('Z'))
+                || ($unistr[$i] >= ord('0') && $unistr[$i] <= ord('9'))
                 || $unistr[$i] == ord(' '))
             echo chr($unistr[$i]);
         else if ($unistr[$i] == 10) { 
