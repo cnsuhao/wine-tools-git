@@ -43,6 +43,9 @@ function load_resource(&$resources, $type, $id, $langid, &$res)
         case 6:   /* RT_STRING*/
             $res = new StringTable($resdata[0], $resdata[1], $id);
             return TRUE;
+        case 11:  /* RT_MESSAGETABLE */
+            $res = new MessageTable($resdata[0], $resdata[1], $id);
+            return TRUE;
         default:
             die("Unhandled resource type $type");
     }

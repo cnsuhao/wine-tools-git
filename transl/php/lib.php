@@ -153,7 +153,7 @@ function get_resource_name($type, $name)
 
 function is_dumpable_type($type)
 {
-    return ($type == 4) || ($type == 5) || ($type == 6) || ($type == 261 /* wrc for DIALOGEX */);
+    return ($type == 4) || ($type == 5) || ($type == 6) || ($type == 11) || ($type == 261 /* wrc for DIALOGEX */);
 }
 
 function update_lang_from_resfile($lang, $resfile)

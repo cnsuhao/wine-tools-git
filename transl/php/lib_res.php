@@ -439,6 +439,80 @@ class StringTable extends Resource
     }    
 }
 
+class MessageTable extends Resource
+{
+    var $strings;
+    var $table_id;
+    var $message_count;
+
+    function MessageTable($header, $data, $table_id)
+    {
+        $this->Resource($header);
+        $this->strings = array();
+        $this->table_id = $table_id;
+        $this->message_count = 0;
+
+        // First skip some header information (basically ignore)
+        $dummy = get_dword($data);
+        $dummy = get_dword($data);
+        $dummy = get_dword($data);
+        // Where can we find the first message string
+        $offset = get_dword($data);
+        // This block shows where there are gaps between message id's (with offsets to the next one)
+        for ($i = 0; $i < ($offset - 16) / 4; $i++)
+            $dummy = get_dword($data);
+
+        for ($i = 0; strlen($data) > 0; $i++)
+        {
+            $counter = 0;
+            $str = array();
+
+            // Were can we find the next message string
+            $offset = get_word($data);
+            $counter += 2;
+
+            // Ansi = 0; Unicode = 1 ?
+            $unicode = get_word($data);
+            $counter += 2;
+
+            while ($char = get_word($data))
+            {
+                $counter += 2;
+                $str[] = $char;
+            }
+            $counter += 2;
+            $this->strings[] = $str;
+            $this->message_count++;
+            for ($j = 0; $j < ($offset - $counter) / 2; $j++)
+                $dummy = get_word($data);
+        }
+    }
+    
+    function getString($id)
+    {
+        return $this->strings[$id];
+    }
+    
+    function dump_string($lparam)
+    {
+        dump_unicode_or_empty($this->strings[$lparam]);
+    }
+
+    function is_string_different(&$other, $lparam)
+    {
+        $uni_str = $this->strings[$lparam];
+        $other_uni_str = $other->strings[$lparam];
+        return ((!$other_uni_str && $uni_str) || ($other_uni_str && !$uni_str));
+    }
+
+    function dump($master_res = NULL)
+    {
+        for ($i=0; $i<$this->message_count; $i++)
+            dump_resource_row(($this->table_id-1)*16+$i, $this, $master_res,
+                "dump_string", "is_string_different", $i);
+    }    
+}
+
 class MenuResource extends Resource
 {
     var $items;
