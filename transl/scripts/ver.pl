@@ -87,6 +87,11 @@ $norm_fn =~ s/[^a-zA-Z0-9]/-/g;
 #$deflangs{"009:00"} = TRUE;
 $deflangs{"009:01"} = TRUE;
 
+# Get just the sublangs
+opendir(DIR, "$scriptsdir/conf");
+@languages = grep(!/(^\.|.:00)/, readdir(DIR));
+closedir(DIR);
+
 while (<STDIN>)
 {
     if (m/^TYPE NEXT/)
@@ -115,7 +120,38 @@ while (<STDIN>)
     if (m/^EXIST ([0-9a-f]{3}:[0-9a-f]{2})/)
     {
         $lang = collapse($1);
-        if (not defined $deflangs{$lang})
+
+        # Don't add neutral langs (nn:00) to the file_langs array
+        # if we have sublangs (nn:xx) in the conf directory, add
+        # it's sublangs instead (if present).
+        #
+        # English:Neutral (009:00) is an exception to this rule.
+        #
+        if (($lang =~ /^[0-9a-f]{3}:00/) && ($lang ne "009:00"))
+        {
+            # Find the sublangs
+            $primary_lang = $lang;
+            $primary_lang =~ s/:00//;
+            $found = 0;
+            foreach $language (@languages)
+            {
+                if ($language =~ /$primary_lang:./)
+                {
+                    if (not defined $deflangs{$language})
+                    {
+                        $deflangs{$language} = TRUE;
+                        push @file_langs, $language;
+                    }
+                    $found = 1;
+                }
+            }
+            if ((!$found) && (not defined $deflangs{$lang}))
+            {
+                $deflangs{$lang} = TRUE;
+                push @file_langs, $lang;
+            }
+        }
+        elsif (not defined $deflangs{$lang})
         {
             $deflangs{$lang} = TRUE;
             push @file_langs, $lang;
