@@ -429,7 +429,9 @@ class StringTable extends Resource
     {
         $uni_str = $this->strings[$lparam];
         $other_uni_str = $other->strings[$lparam];
-        return ((!$other_uni_str && $uni_str) || ($other_uni_str && !$uni_str));
+        return ((!$other_uni_str && $uni_str) ||
+                ($other_uni_str && !$uni_str) ||
+                (($uni_str && $other_uni_str) && ($uni_str == $other_uni_str)));
     }
 
     function dump($master_res = NULL)
@@ -503,7 +505,9 @@ class MessageTable extends Resource
     {
         $uni_str = $this->strings[$lparam];
         $other_uni_str = $other->strings[$lparam];
-        return ((!$other_uni_str && $uni_str) || ($other_uni_str && !$uni_str));
+        return ((!$other_uni_str && $uni_str) ||
+                ($other_uni_str && !$uni_str) ||
+                (($uni_str && $other_uni_str) && ($uni_str == $other_uni_str)));
     }
 
     function dump($master_res = NULL)
