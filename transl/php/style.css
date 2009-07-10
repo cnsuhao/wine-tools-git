@@ -59,6 +59,14 @@ th {
         border-bottom-color: #601919;
 }
 
+table.index th {
+        background-color: #f0d2d2;
+}
+
+table.index td {
+        background-color: #fff4f4;
+}
+
 /* used to mark resource parts that are not literaly in the string, like \0, \n etc*/
 .resmeta
 {
