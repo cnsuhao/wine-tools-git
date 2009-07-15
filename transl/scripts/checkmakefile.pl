@@ -487,3 +487,30 @@ foreach my $makefile (@makefiles)
         mycheck("normal", $path,$defs,@files);
     }
 }
+
+# create the summary file
+opendir(DIR, "$scriptsdir/conf");
+my @files = grep(!/^\./, readdir(DIR));
+closedir(DIR);
+
+open(OUT, ">$workdir/langs/summary");
+foreach my $lang (@files)
+{
+    next if (!($lang eq collapse($lang)));
+    my $transl = 0;
+    my $missing = 0;
+    my $errors = 0;
+    open(FILE, "<$workdir/langs/$lang");
+    while (<FILE>)
+    {
+        if (m/^FILE [A-Z]+ .* ([0-9]+) ([0-9]+) ([0-9]+)$/) {
+            $transl += $1;
+            $missing += $2;
+            $errors += $3;
+        }
+    }
+    close(FILE);
+    my $sum = $transl + $missing + $errors;
+    print OUT "LANG $lang $sum $transl $missing $errors\n";
+}
+close(OUT);

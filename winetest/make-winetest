@@ -133,7 +133,6 @@ umask 022
     rm -rf work
     mkdir work work/langs work/dumps work/dumps/res work/new-langs
     $toolsdir/transl/scripts/checkmakefile.pl -S ./wine -T ./build-mingw -t ./build-native -w ./work -s "$toolsdir/transl/scripts" 2>>work/run.log
-    $toolsdir/transl/scripts/summary.pl ./work "$toolsdir/transl/scripts"
     for i in work/new-langs/*
     do
         if [ -f "$i" ]
