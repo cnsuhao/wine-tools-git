@@ -10,7 +10,7 @@ while ($line = fgets($summary, 1024))
         die("couldn't parse line $line");
     }
 
-    if (has_lang_flag($m[1], "hide"))
+    if ($m[3] == 0)
         continue;
     
     $sum = $m[2]+0;

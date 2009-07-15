@@ -60,6 +60,44 @@ function get_lang_base($id)
     return preg_replace("/:[0-9a-f]{2}/", ":00", $id);
 }
 
+function get_sublangs($id)
+{
+    if (preg_match("/:00/", $id))
+    {
+        global $LOCALE_NAMES;
+        include_once("dump_locales.php");
+
+        $base = preg_replace("/:00/", "", $id);
+        $sublangs = array();
+        foreach ($LOCALE_NAMES as $key => $value)
+            if (preg_match("/$base/", $key) && ($key != $id))
+                $sublangs[] = $key;
+        return $sublangs;
+    }
+    else
+        return NULL;
+}
+
+function show_sublangs($id)
+{
+    echo "<p class=\"note\"><b>Note:</b> This is the '".get_lang_name($id)."' locale which ".
+         "is not used directly but has resources inherited by sublanguages.<br />".
+         "You can still use this locale in translations but the results will show up at the ".
+         "sublanguages (see below).</p>";
+
+    echo "<div class=\"group\">";
+    echo "<h2>Sublanguages</h2>";
+    echo "<table>\n";
+    echo "<tr><th>Sublanguage</th></tr>\n";
+    $sublangs = get_sublangs($id);
+    foreach ($sublangs as $key)
+    {
+        echo "<tr><td>".gen_lang_a($key).get_lang_name($key)."</a></td></tr>";
+    }
+    echo "</table>\n";
+    echo "</div>";
+}
+
 function has_lang_flag($id, $flag)
 {
     return is_int(strpos(get_raw_lang_name($id), "[".$flag."]"));
@@ -77,18 +115,6 @@ function get_lang_binid($lang)
     if (!preg_match("/([0-9a-f]{3}):([0-9a-f]{2})/", $lang, $m))
         die("Couldn't pare language code");
     return hexdec($m[1]) + (hexdec($m[2]) << 10);
-}
-
-/* Make sure people are not suprised if they see Portugese (Neutral) has nearly
- * no resources */
-function warn_if_lang_hidden($lang)
-{
-    if (has_lang_flag($lang, "hide"))
-    {
-        echo "<p class=\"note\"><b>Note:</b> this is the ".get_lang_name($lang)." locale which\n".
-            "is not supposed to be used directly but only to have some resources\n".
-            "inherited by sublanguages.</p>";
-    }
 }
 
 function get_locale_name($localeid)

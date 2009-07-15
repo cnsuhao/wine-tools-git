@@ -19,7 +19,6 @@ $msgs = array();
 <h1>Module <?php echo $resfile?></h1>
 
 <?php
-warn_if_lang_hidden($lang);
 
 while ($line = fgets($file, 4096))
 {
@@ -29,7 +28,14 @@ while ($line = fgets($file, 4096))
     }
 }
 
-if (count($msgs) == 0) {
+if (count($msgs) == 0)
+{
+    if (preg_match("/:00/", $lang))
+    {
+        show_sublangs($lang);
+        exit();
+    }
+
     echo "<p>This module is not translated into ".get_lang_name($lang).".</p>\n";
     echo "<ul><li>If you want to see what resources are in this module, check the "
             .gen_resfile_a($MASTER_LANGUAGE, $resfile)."English (US) version</a>"

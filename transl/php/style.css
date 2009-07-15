@@ -89,6 +89,7 @@ p.note
     border-style: solid;
     border-color: black;
     padding: 2px;
+    text-align: center;
 }
 
 /* table with a standard resource dump */

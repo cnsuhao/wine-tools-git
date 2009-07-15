@@ -84,7 +84,14 @@ function dump_table($table)
 <div class="main">
 <h1><?php echo "Language: ".get_lang_name($lang) ?></h1>
 
-<?php warn_if_lang_hidden($lang) ?>
+<?php
+$translations = count($partial) + count($transl);
+if (preg_match("/:00/", $lang) && $translations == 0)
+{
+    show_sublangs($lang);
+    exit();
+}
+?>
 
 <div class="group">
 <h2>Partially translated modules</h2>
