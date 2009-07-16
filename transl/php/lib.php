@@ -6,6 +6,60 @@ $MASTER_LANGUAGE_NAME = "English (US)";
 
 $WINE_WIKI_TRANSLATIONS = "<a href=\"redirect.php?url=http://wiki.winehq.org/Translating\">http://wiki.winehq.org/Translating</a>";
 
+static $LOCALE_NAMES = array();
+
+// These resources are retrieved as a sequence of words that need to be converted to a string
+function convert_to_unicode($words)
+{
+    $unistr= '';
+
+    foreach ($words as $word)
+        $unistr .= html_entity_decode('&#'.$word.';',ENT_NOQUOTES,'UTF-8');
+
+    return $unistr;
+}
+
+function res_enum($header, $f)
+{
+    global $LOCALE_NAMES;
+
+    // We are only interested in a STRINGTABLE
+    if ($header["type"] != 6)
+        return FALSE;
+
+    // Look for LOCALE_SLANGUAGE or LOCALE_SENGLANGUAGE
+    if ($header["name"] != 1 && $header["name"] != 257)
+        return FALSE;
+
+    $data = fread($f, $header["resSize"]);
+    $str = new StringTable($header, $data, 0);
+    $langid = sprintf("%03x:%02x", $header["language"] & 0x3ff, $header["language"] >> 10);
+
+    if ($header["name"] == 1)
+    {
+        $LOCALE_NAMES[$langid] = convert_to_unicode($str->getString(2));
+    }
+    else if ($header["name"] == 257)
+    {
+        $baseid = get_lang_base($langid);
+        $LOCALE_NAMES[$baseid] = convert_to_unicode($str->getString(1));
+    }
+}
+
+function enum_locale_names()
+{
+    include_once "lib_res.php";
+    global $LOCALE_NAMES;
+
+    if (!empty($LOCALE_NAMES))
+    {
+        return;
+    }
+    $res = new ResFile("dumps/res/dlls-kernel32.res");
+    $res->enumResources("res_enum");
+    ksort($LOCALE_NAMES);
+}
+
 function validate_lang($id)
 {
     global $DATAROOT;
@@ -52,7 +106,7 @@ function get_raw_lang_name($id)
 
 function get_lang_name($id)
 {
-    return preg_replace("/\[[A-za-z0-9-]+\]/", "", get_raw_lang_name($id));
+    return get_locale_name($id);
 }
 
 function get_lang_base($id)
@@ -65,7 +119,7 @@ function get_sublangs($id)
     if (preg_match("/:00/", $id))
     {
         global $LOCALE_NAMES;
-        include_once("dump_locales.php");
+        enum_locale_names();
 
         $base = preg_replace("/:00/", "", $id);
         $sublangs = array();
@@ -120,7 +174,7 @@ function get_lang_binid($lang)
 function get_locale_name($localeid)
 {
     global $LOCALE_NAMES;
-    include_once("dump_locales.php");
+    enum_locale_names();
     return $LOCALE_NAMES[$localeid];
 }
 
