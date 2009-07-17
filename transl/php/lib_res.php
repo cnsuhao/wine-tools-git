@@ -890,7 +890,18 @@ class DialogResource extends Resource
         return ($this_ctrl['id'] != $other_ctrl['id']) ||
                (($this_ctrl['style'] | $ignore_style) != ($other_ctrl['style'] | $ignore_style)) ||
                ($this_ctrl['exStyle'] != $other_ctrl['exStyle']) ||
-               !is_equal_unicode_or_id($this_ctrl['className'], $other_ctrl['className']);
+               (!is_equal_unicode_or_id($this_ctrl['className'], $other_ctrl['className'])) ||
+               // We should have either id's or text in both
+               (is_int($this_ctrl['text']) ^ is_int($other_ctrl['text'])) ||
+               // If it's an id they should be equal
+               (is_int($this_ctrl['text']) &&
+                !is_equal_unicode_or_id($this_ctrl['text'], $other_ctrl['text'])) ||
+               // If either text is empty they should be equal
+               (!is_int($this_ctrl['text']) && ((count($this_ctrl['text']) == 0) || (count($other_ctrl['text']) == 0)) &&
+                !is_equal_unicode_or_id($this_ctrl['text'], $other_ctrl['text'])) ||
+               // If we have text in both they should not be equal
+               (!is_int($this_ctrl['text']) && ((count($this_ctrl['text']) != 0) && (count($other_ctrl['text']) != 0)) &&
+                is_equal_unicode_or_id($this_ctrl['text'], $other_ctrl['text']));
     }
 
     function dump($master_res = NULL)
