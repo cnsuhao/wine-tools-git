@@ -3,6 +3,8 @@ include_once("config.php");
 include_once("lib.php");
 
 $summary = fopen("$DATAROOT/langs/summary", "r");
+$transl = array();
+$sum = 0;
 while ($line = fgets($summary, 1024))
 {
     if (!preg_match("/LANG ([0-9a-f]+:[0-9a-f]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)/", $line, $m))
@@ -13,10 +15,9 @@ while ($line = fgets($summary, 1024))
     if ($m[3] == 0)
         continue;
     
-    $sum = $m[2]+0;
-    $transl[$m[1]] = $m[3];
-    $missing[$m[1]] = $m[4];
-    $errors[$m[1]] = $m[5];    
+    $sum = $m[2];
+    $transl[] = array('langid' => $m[1], 'name' => get_locale_name($m[1]), 'translated' => $m[3],
+                      'missing' => $m[4], 'errors' => $m[5]);
 }
 ?>
 <html>
@@ -59,36 +60,48 @@ function draw_bar($tr, $err, $sum)
     echo "</td></tr>";
 }
 
-arsort($transl, SORT_NUMERIC);
+function nicesort($a, $b)
+{
+    if ($a['translated'] != $b['translated'])
+        return ($a['translated'] < $b['translated']);
+
+    // English (Unites States) always on top
+    if ($a['langid'] == "009:01")
+        return 0;
+    if ($b['langid'] == "009:01")
+        return 1;
+    return strcasecmp($a['name'], $b['name']);
+}
+
+usort($transl, 'nicesort');
 $nr = 1;
 $missing_sum = 0;
 $errors_sum = 0;
 $transl_sum = 0;
 $serial = 0;
-$transl_keys = array_keys($transl);
 for ($i = 0; $i < count($transl); $i++)
 {
-    $langid = $transl_keys[$i];
-    $value = $transl[$langid];
+    extract($transl[$i]);
+
     echo "<tr>";
     if ($serial == 0)
     {
         for ($j = $i; $j < count($transl); $j++)
-            if ($transl[$langid] != $transl[$transl_keys[$j]])
+            if ($translated != $transl[$j]['translated'])
                 break;
         $serial = $j - $i;
         echo "<td rowspan=\"$serial\" style=\"text-align: center\">$nr";
         echo "</td>";
     }
-    echo "<td>".gen_lang_a($langid).get_lang_name($langid)."</a></td>";
-    printf("<td>%d (%.1f%%)</td>", $value, ($value*100)/$sum);
-    echo "<td>".$missing[$langid]."</td><td>".$errors[$langid]."</td>\n";
-    draw_bar($value, $errors[$langid], $sum);
+    echo "<td>".gen_lang_a($langid).$name."</a></td>";
+    printf("<td>%d (%.1f%%)</td>", $translated, ($translated*100)/$sum);
+    echo "<td>".$missing."</td><td>".$errors."</td>\n";
+    draw_bar($translated, $errors, $sum);
     
     $nr++;
-    $missing_sum += $missing[$langid];
-    $errors_sum += $errors[$langid];
-    $transl_sum += $value;
+    $transl_sum += $translated;
+    $missing_sum += $missing;
+    $errors_sum += $errors;
     $serial--;
 }
 ?>
