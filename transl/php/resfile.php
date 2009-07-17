@@ -64,7 +64,7 @@ foreach ($msgs as $value)
         unset($icon);
     }
     if (isset($icon))
-        echo "<img src=\"img/icon-".$icon."\" width=\"32\">";
+        echo "<img src=\"img/icon-".$icon."\" width=\"32\" alt=\"".$value."\">";
 
     $line_lang = $lang;
     if (preg_match("/@LANG\(([0-9a-f]{3}:[0-9a-f]{2})\)/", $value, $m))

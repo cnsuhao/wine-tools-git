@@ -20,6 +20,7 @@ while ($line = fgets($summary, 1024))
                       'missing' => $m[4], 'errors' => $m[5]);
 }
 ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
     <link rel="stylesheet" href="style.css" type="text/css"/>
@@ -53,9 +54,9 @@ function draw_bar($tr, $err, $sum)
     $miss_len = 300 - $tr_len - $err_len;
     echo '<td class="bar">';
     if ($tr_len > 0)
-	echo "<img src=\"img/bar0.gif\" height=\"15\" width=\"$tr_len\">";
+	echo "<img src=\"img/bar0.gif\" height=\"15\" width=\"$tr_len\" alt=\"translations\">";
     if ($err_len > 0)
-	echo "<img src=\"img/bar1.gif\" height=\"15\" width=\"$err_len\">";
+	echo "<img src=\"img/bar1.gif\" height=\"15\" width=\"$err_len\" alt=\"errors\">";
 //    echo "<img src=\"img/bar6.gif\" height=\"15\" width=\"$miss_len\">";
     echo "</td></tr>";
 }
