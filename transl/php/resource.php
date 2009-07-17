@@ -68,10 +68,13 @@ if ($compare)
 
 if (!$compare)
 {
-    echo "<tr class=\"subheader\"><td colspan=\"3\" style=\"text-align: right\">";
-    echo "<small>".gen_resource_a($lang, $resfile, $type, $id, TRUE);
-    echo "Compare with ".$MASTER_LANGUAGE_NAME." &gt;&gt;</a></small>";
-    echo "</td></tr>";
+    if ($lang != $MASTER_LANGUAGE)
+    {
+        echo "<tr class=\"subheader\"><td colspan=\"3\" style=\"text-align: right\">";
+        echo "<small>".gen_resource_a($lang, $resfile, $type, $id, TRUE);
+        echo "Compare with ".$MASTER_LANGUAGE_NAME." &gt;&gt;</a></small>";
+        echo "</td></tr>";
+    }
 }
 else
 {
