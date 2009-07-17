@@ -238,7 +238,6 @@ sub mycheck
 
     my %missing_rl;
     my %notes_rl;
-    my %warn_rl;
     my %missing_count;
 
     foreach $resource (@resources)
@@ -337,11 +336,6 @@ sub mycheck
             foreach my $msg (@{$errs_rl{$resource}{$lang}})
             {
                 print LANGOUT "$dir$suffix: Error: resource ".resource_name2($resource).": $msg\n";
-            }
-
-            foreach my $msg (@{$warn_rl{$resource}{$lang}})
-            {
-                print LANGOUT "$dir$suffix: Warning: resource ".resource_name2($resource).": $msg\n";
             }
 
             foreach my $msg (@{$missing_rl{$resource}{$lang}})
