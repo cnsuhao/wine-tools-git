@@ -62,11 +62,13 @@ function enum_locale_names()
 
 function validate_lang($id)
 {
-    global $DATAROOT;
-    
-    $lang = preg_replace("/[^0-9a-f:]/", "-", $id);
-    if (!file_exists("$DATAROOT/conf/$lang") || !file_exists("$DATAROOT/langs/$lang"))
+    global $LOCALE_NAMES;
+    enum_locale_names();
+
+    if (!isset($LOCALE_NAMES[$id]))
         die("Invalid lang parameter");
+
+    $lang = preg_replace("/[^0-9a-f:]/", "-", $id);
     return $lang;
 }
 
