@@ -24,8 +24,6 @@ $compare = isset($_REQUEST['compare']);
 
 <?php
 
-//include_once("stopwatch.php");
-
 function load_resource(&$resources, $type, $id, $langid, &$res)
 {
     $file_type = $type & 0xff;  /* wrc adds 0x100 for *EX resource*/

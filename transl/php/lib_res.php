@@ -305,27 +305,8 @@ class ResFile
         return FALSE;
     }
 
-    function load_resource_helper($header, $f, $params)
-    {
-        $curr_lang = ($params[5] ? ($header["language"] & 0x3ff) : $header["language"]); /* check the ignore_sublang */
-        if ($header["type"] == $params[0] && $header["name"] == $params[1] && $curr_lang == $params[2])
-        {
-            $params[3] = $header;
-            $params[4] = fread($f, $header["resSize"]);
-            return TRUE;
-        }
-        return FALSE;
-    }
-
     function loadResource($type, $name, $language, $ignore_sublang = FALSE)
     {
-//        $sw = new Stopwatch();
-/*      too slow
-        if ($this->enumResources(array($this, 'load_resource_helper'), array($type, $name, $language, &$header, &$out, $ignore_sublang)))
-        {
-            return array($header, $out);
-        }*/
-        
         fseek($this->file, 0);
         $pos = 0;
 
@@ -360,7 +341,6 @@ class ResFile
                     {
                         fseek($this->file, $pos + $headerSize);
                         $out = fread($this->file, $resSize);
-//                        $sw->stop();
                         return array($header, $out);
                     }
                 }
