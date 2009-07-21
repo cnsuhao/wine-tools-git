@@ -177,7 +177,7 @@ function get_locale_name($localeid)
 {
     global $LOCALE_NAMES;
     enum_locale_names();
-    return $LOCALE_NAMES[$localeid];
+    return htmlspecialchars($LOCALE_NAMES[$localeid],ENT_QUOTES,'UTF-8');
 }
 
 function get_res_path($resfile)

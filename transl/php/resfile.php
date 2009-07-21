@@ -11,6 +11,7 @@ $msgs = array();
 <html>
 <head>
     <link rel="stylesheet" href="style.css" type="text/css"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Module <?php echo $resfile?> - Wine translations</title>
 </head>
 
