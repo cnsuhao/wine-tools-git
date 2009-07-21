@@ -433,6 +433,7 @@ if (!@makefiles)
     @makefiles = split(/\s/,`find $srcdir/ -name Makefile.in -print`);
 }
 
+my %checks = ();
 # parse the makefiles
 foreach my $makefile (@makefiles)
 {
@@ -470,6 +471,15 @@ foreach my $makefile (@makefiles)
     }
     close MAKEFILE;
     next unless @files;
+
+    $checks{$path}{defines} = $defs;
+    $checks{$path}{files} = [ @files ];
+}
+
+foreach my $path (keys %checks)
+{
+    my $defs = $checks{$path}{defines};
+    my @files = @{$checks{$path}{files}};
 
     if ("$path" eq "dlls/kernel32")
     {
