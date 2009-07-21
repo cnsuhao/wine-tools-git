@@ -4,55 +4,56 @@ include_once("lib.php");
 
 $lang = validate_lang($_REQUEST['lang']);
 
-$file = fopen("$DATAROOT/langs/$lang", "r");
 $transl = array();
 $notransl = array();
 $partial = array();
-$curr_file = "";
-while ($line = fgets($file, 4096))
+
+function parse_file($lang)
 {
-    if (preg_match("/FILE ([A-Z]+) (.*) ([0-9]+) ([0-9]+) ([0-9]+)/", $line, $m))
-    {
-        $curr_file = $m[2];
-        if ($m[1] == "NONE")
-        {
-            $notransl[$curr_file] = array($m[3], $m[4], $m[5], 0);
-            continue;
-        }
-        
-        if ($m[4]>0 || $m[5]>0)
-        {
-            $partial[$curr_file] = array($m[3], $m[4], $m[5], 0);
-            continue;
-        }
-        
-        $transl[$curr_file] = array($m[3], $m[4], $m[5], 0);
-    }
-    if (preg_match(",$curr_file: Warning: ,", $line, $m))
-    {
-        if (array_key_exists($curr_file, $transl))
-        {
-            $partial[$curr_file] = $transl[$curr_file];
-            unset($transl[$curr_file]);
-        }
+    global $transl, $partial, $notransl;
+    global $DATAROOT;
+    if (!file_exists("$DATAROOT/langs/$lang"))
+        return;
 
-        if (array_key_exists($curr_file, $partial)) /* should be true - warning for $notransl shouldn't happen */
-            $partial[$curr_file][3]++;
+    $file = fopen("$DATAROOT/langs/$lang", "r");
+    $curr_file = "";
+    while ($line = fgets($file, 4096))
+    {
+        if (preg_match("/FILE ([A-Z]+) (.*) ([0-9]+) ([0-9]+) ([0-9]+)/", $line, $m))
+        {
+            $curr_file = $m[2];
+            if ($m[1] == "NONE")
+            {
+                $notransl[$curr_file] = array($m[3], $m[4], $m[5], 0);
+                continue;
+            }
+
+            if ($m[4]>0 || $m[5]>0)
+            {
+                $partial[$curr_file] = array($m[3], $m[4], $m[5], 0);
+                continue;
+            }
+
+            $transl[$curr_file] = array($m[3], $m[4], $m[5], 0);
+        }
+        if (preg_match(",$curr_file: Warning: ,", $line, $m))
+        {
+            if (array_key_exists($curr_file, $transl))
+            {
+                $partial[$curr_file] = $transl[$curr_file];
+                unset($transl[$curr_file]);
+            }
+
+            if (array_key_exists($curr_file, $partial)) /* should be true - warning for $notransl shouldn't happen */
+                $partial[$curr_file][3]++;
+        }
     }
+    fclose($file);
+    ksort($transl);
+    ksort($partial);
+    ksort($notransl);
 }
-fclose($file);
-ksort($transl);
-ksort($partial);
-ksort($notransl);
-?>
-<html>
-<head>
-    <link rel="stylesheet" href="style.css" type="text/css"/>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title><?php echo get_lang_name($lang) ?> language - Wine translations</title>
-</head>
 
-<?php
 function dump_table($table)
 {
     global $lang;
@@ -75,13 +76,21 @@ function dump_table($table)
     }
     echo "</table>\n";
 }
-
 ?>
+
+<html>
+<head>
+    <link rel="stylesheet" href="style.css" type="text/css">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title><?php echo get_lang_name($lang) ?> language - Wine translations</title>
+</head>
+
 <p><?php dump_menu_root() ?> &gt; <?php dump_menu_lang($lang, FALSE)?> </p>
 <div class="main">
 <h1><?php echo "Language: ".get_lang_name($lang) ?></h1>
 
 <?php
+parse_file($lang);
 $translations = count($partial) + count($transl);
 if (preg_match("/:00/", $lang) && $translations == 0)
 {
