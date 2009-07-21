@@ -39,10 +39,6 @@ while ($line = fgets($file, 4096))
         if (array_key_exists($curr_file, $partial)) /* should be true - warning for $notransl shouldn't happen */
             $partial[$curr_file][3]++;
     }
-    if (preg_match("/LOCALE ([0-9a-f]{3}:[0-9a-f]{2}) (.*) ([0-9]+) ([0-9]+) ([0-9]+)/", $line, $m))
-    {
-        $locale["Locale data for: ".get_locale_name($m[1])] = array($m[3], $m[4], $m[5], $m[2]."#locale".$m[1]);
-    }
 }
 fclose($file);
 ksort($transl);
@@ -100,10 +96,6 @@ if (preg_match("/:00/", $lang) && $translations == 0)
 <div class="group">
 <h2>Modules not translated</h2>
 <?php dump_table($notransl) ?>
-</div>
-<div class="group">
-<h2>Locales data</h2>
-<?php dump_table($locale) ?>
 </div>
 <div class="group">
 <h2>Fully translated modules</h2>

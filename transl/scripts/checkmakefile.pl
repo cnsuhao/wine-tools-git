@@ -22,15 +22,6 @@ sub shell($)
     }
 }
 
-sub mode_skip
-{
-    my ($mode, $type) = @_;
-    return 0 if ($mode eq "normal");
-    return ($type != 6) if ($mode eq "locale");
-    return ($type == 6) if ($mode eq "nonlocale");
-    die("Unknown mode");
-}
-
 sub resource_name
 {
     my ($type, $name) = @_;
@@ -44,35 +35,7 @@ sub resource_name2
     return resource_name(split(/ /, $args));
 }
 
-my %tab_should_collapse = ();
-sub collapse
-{
-    my($name) = shift @_;
-    my $base_name = $name;
-    $base_name =~ s/:[0-9a-f]{2}/:00/;
-    if (not exists $tab_should_collapse{$name})
-    {
-        $tab_should_collapse{$name} = 0;
-        if (-e "$scriptsdir/conf/$base_name")
-        {
-            open(NAMEFILE, "<$scriptsdir/conf/$base_name");
-            my $content = <NAMEFILE>;
-            close(NAMEFILE);
-            if ($content =~  /\[ignore-sublang\]/)
-            {
-                $tab_should_collapse{$name} = 1;
-            }
-        }
-    }
-
-    if ($tab_should_collapse{$name} == 1)
-    {
-        $name = $base_name;
-    }
-    return $name;
-}
-
-my @languages = ();
+my %languages = ();
 sub mycheck
 {
     my($mode, $dir, $defs, @files) = @_;
@@ -134,17 +97,31 @@ sub mycheck
     my %errs_rl = ();
     my %warns = ();
 
+    if ($mode eq "locale")
+    {
+        open(VERIFY, "$wrc $incl --verify-translation $defs $srcs|");
+        while (<VERIFY>)
+        {
+            if (m/^EXIST ([0-9a-f]{3}:[0-9a-f]{2})/)
+            {
+                my $lang = $1;
+
+                if ($lang !~ /^[0-9a-f]{3}:00/)
+                {
+                    $languages{$lang} = 1;
+                }
+            }
+        }
+        close(VERIFY);
+        return;
+    }
+
     open(VERIFY, "$wrc $incl --verify-translation $defs $srcs|");
     while (<VERIFY>)
     {
         if (m/^TYPE NEXT/)
         {
             $type++;
-            next;
-        }
-
-        if (mode_skip($mode, $type))
-        {
             next;
         }
 
@@ -163,21 +140,19 @@ sub mycheck
 
         if (m/^EXIST ([0-9a-f]{3}:[0-9a-f]{2})/)
         {
-            my $lang = collapse($1);
+            my $lang = $1;
 
             # Don't add neutral langs (nn:00) to the file_langs hash
-            # if we have sublangs (nn:xx) in the conf directory, add
-            # it's sublangs instead (if present).
+            # if we have existing sublangs (nn:xx), add it's sublangs
+            # instead.
             #
-            # English:Neutral (009:00) is an exception to this rule.
-            #
-            if (($lang =~ /^[0-9a-f]{3}:00/) && ($lang ne "009:00"))
+            if ($lang =~ /^[0-9a-f]{3}:00/)
             {
                 # Find the sublangs
                 my $primary_lang = $lang;
                 $primary_lang =~ s/:00//;
                 my $found = 0;
-                my @sublanguages = grep(/$primary_lang/, @languages);
+                my @sublanguages = grep(/$primary_lang/, keys %languages);
                 foreach my $language (@sublanguages)
                 {
                     $file_langs{$language} = 1;
@@ -199,7 +174,7 @@ sub mycheck
 
         if (m/^DIFF ([0-9a-f]{3}:[0-9a-f]{2})/)
         {
-            my $lang = collapse($1);
+            my $lang = $1;
             push @{$errs_rl{$type." ".$resource}{$lang}}, "Translation out of sync";
             $transl_count{$lang}--;
             $err_count{$lang}++;
@@ -208,7 +183,7 @@ sub mycheck
 
         if (m/^EXTRA ([0-9a-f]{3}:[0-9a-f]{2})/)
         {
-            my $lang = collapse($1);
+            my $lang = $1;
             push @{$warns{$lang}}, "Extra resource found not available in master language: ".resource_name($type, $resource);
             if ($resources[$#resources] eq $type." ".$resource)
             {
@@ -277,86 +252,52 @@ sub mycheck
     }
     foreach my $lang (keys %file_langs)
     {
-        my $suffix;
-
         if (!exists $transl_count{$lang}) { $transl_count{$lang} = 0; }
         if (!exists $missing_count{$lang}) { $missing_count{$lang} = 0; }
         if (!exists $err_count{$lang}) { $err_count{$lang} = 0; }
 
-        if ($mode eq "locale")
-        {
-            my $basic_lang = $lang;
-            $basic_lang =~ s/:[0-9a-f]{2}/:00/;
-            if (-e "$scriptsdir/conf/$lang")
-            {
-                open(LANGOUT, ">>$workdir/langs/$lang");
-            }
-            elsif (-e "$scriptsdir/conf/$basic_lang")
-            {
-                open(LANGOUT, ">>$workdir/langs/$basic_lang");
-            }
-            else
-            {
-#                print("Ignoring locale $lang\n");
-                next;
-            }
-            print LANGOUT "LOCALE $lang $dir ".($transl_count{$lang}+0)." ".($missing_count{$lang}+0)." ".($err_count{$lang}+0)."\n";
-            $suffix = "#locale$lang";
-        }
-        else
-        {
-            if (-e "$scriptsdir/conf/$lang")
-            {
-                open(LANGOUT, ">>$workdir/langs/$lang");
-            }
-            else
-            {
-                open(LANGOUT, ">>$workdir/new-langs/$lang");
-            }
-            print LANGOUT "FILE STAT $dir ".($transl_count{$lang}+0)." ".($missing_count{$lang}+0)." ".($err_count{$lang}+0)."\n";
-            $suffix = "";
-        }
+        my $basic_lang = $lang;
+        $basic_lang =~ s/:[0-9a-f]{2}/:00/;
+
+        next if ($lang eq $basic_lang);
+
+        open(LANGOUT, ">>$workdir/langs/$lang");
+        print LANGOUT "FILE STAT $dir ".($transl_count{$lang}+0)." ".($missing_count{$lang}+0)." ".($err_count{$lang}+0)."\n";
+
         foreach my $warn (@{$warns{$lang}})
         {
-            print LANGOUT "$dir$suffix: Warning: $warn\n";
+            print LANGOUT "$dir: Warning: $warn\n";
         }
 
         foreach $resource (@resources)
         {
             foreach my $msg (@{$errs_rl{$resource}{$lang}})
             {
-                print LANGOUT "$dir$suffix: Error: resource ".resource_name2($resource).": $msg\n";
+                print LANGOUT "$dir: Error: resource ".resource_name2($resource).": $msg\n";
             }
 
             foreach my $msg (@{$missing_rl{$resource}{$lang}})
             {
-                print LANGOUT "$dir$suffix: Missing: resource ".resource_name2($resource).": $msg\n";
+                print LANGOUT "$dir: Missing: resource ".resource_name2($resource).": $msg\n";
             }
 
             foreach my $msg (@{$notes_rl{$resource}{$lang}})
             {
-                print LANGOUT "$dir$suffix: note: resource ".resource_name2($resource).": $msg\n";
+                print LANGOUT "$dir: note: resource ".resource_name2($resource).": $msg\n";
             }
         }
         close(LANGOUT);
     }
 
-    if (!($mode eq "locale"))
+    foreach my $lang (keys %languages)
     {
-        opendir(DIR, "$scriptsdir/conf");
-        my @files = grep(!/^\./, readdir(DIR));
-        closedir(DIR);
-        foreach my $lang (@files)
+        next if (exists $transl_count{"009:01"} && $transl_count{"009:01"} == 0);
+        my @transl = grep {$_ eq $lang} keys %file_langs;
+        if ($#transl == -1)
         {
-            next if (!($lang eq collapse($lang)));
-            next if ($transl_count{"009:01"} == 0);
-            my @transl = grep {$_ eq $lang} keys %file_langs;
-            if ($#transl == -1)
-            {
-                open(LANGOUT, ">>$workdir/langs/$lang");
-                print LANGOUT "FILE NONE $dir 0 ".$transl_count{"009:01"}." 0\n";
-                close(LANGOUT);
-            }
+            open(LANGOUT, ">>$workdir/langs/$lang");
+            print LANGOUT "FILE NONE $dir 0 ".$transl_count{"009:01"}." 0\n";
+            close(LANGOUT);
         }
     }
 }
@@ -412,11 +353,6 @@ if ($srcdir eq "" || $wrc eq "/tools/wrc/wrc" || $workdir eq "")
     die("Config entry for SOURCEROOT, WRCROOT or WORKDIR missing\n");
 }
 
-# Get just the sublangs defined in the conf directory
-opendir(DIR, "$scriptsdir/conf");
-@languages = grep(!/(^\.|.:00)/, readdir(DIR));
-closedir(DIR);
-
 my @makefiles = @ARGV;
 if (!@makefiles)
 {
@@ -466,31 +402,35 @@ foreach my $makefile (@makefiles)
     $checks{$path}{files} = [ @files ];
 }
 
+# Check the kernel32 resources for all available languages
+#
+# %languages should contain all the sublanguages found in the kernel32 resources
+#
+if (exists $checks{"dlls/kernel32"})
+{
+    my $defs = $checks{"dlls/kernel32"}{defines};
+    my @files = @{$checks{"dlls/kernel32"}{files}};
+
+    mycheck("locale", "dlls/kernel32",$defs,@files);
+    die("Could not retrieve languages from kernel32 resources\n") if ((keys %languages == 0));
+}
+else
+{
+    die("kernel32 resource can't be found\n");
+}
+
 foreach my $path (keys %checks)
 {
     my $defs = $checks{$path}{defines};
     my @files = @{$checks{$path}{files}};
 
-    if ("$path" eq "dlls/kernel32")
-    {
-        mycheck("nonlocale", $path,$defs,@files);
-        mycheck("locale", $path,$defs,@files);
-    }
-    else
-    {
-        mycheck("normal", $path,$defs,@files);
-    }
+    mycheck("normal", $path,$defs,@files);
 }
 
 # create the summary file
-opendir(DIR, "$scriptsdir/conf");
-my @files = grep(!/^\./, readdir(DIR));
-closedir(DIR);
-
 open(OUT, ">$workdir/langs/summary");
-foreach my $lang (@files)
+foreach my $lang (keys %languages)
 {
-    next if (!($lang eq collapse($lang)));
     my $transl = 0;
     my $missing = 0;
     my $errors = 0;
