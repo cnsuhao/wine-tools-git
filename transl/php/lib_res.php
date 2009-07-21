@@ -305,7 +305,7 @@ class ResFile
         return FALSE;
     }
 
-    function loadResource($type, $name, $language, $ignore_sublang = FALSE)
+    function loadResource($type, $name, $language)
     {
         fseek($this->file, 0);
         $pos = 0;
@@ -336,7 +336,7 @@ class ResFile
                     $data = substr($data, $strpos);
                     $header = unpack("VdataVersion/vmemoryOptions/vlanguage/Vversion/Vcharacteristics", $data);
 
-                    $curr_lang = ($ignore_sublang ? ($header["language"] & 0x3ff) : $header["language"]); /* check the ignore_sublang */
+                    $curr_lang = $header["language"];
                     if ($curr_lang == $language)
                     {
                         fseek($this->file, $pos + $headerSize);

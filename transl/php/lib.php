@@ -93,19 +93,6 @@ function validate_id($id)
     return $id;
 }
 
-function get_raw_lang_name($id)
-{
-    static $lang_cache = array();
-    if (empty($lang_cache[$id]))
-    {
-        global $DATAROOT;
-
-        $name = file_get_contents("$DATAROOT/conf/$id");
-        $lang_cache[$id] = $name;
-    }
-    return $lang_cache[$id];
-}
-
 function get_lang_name($id)
 {
     return get_locale_name($id);
@@ -152,18 +139,6 @@ function show_sublangs($id)
     }
     echo "</table>\n";
     echo "</div>";
-}
-
-function has_lang_flag($id, $flag)
-{
-    return is_int(strpos(get_raw_lang_name($id), "[".$flag."]"));
-}
-
-function is_lang_ignore_sublang($lang)
-{
-    if (!preg_match("/:00/", $lang))
-        return FALSE;
-    return has_lang_flag($lang, "ignore-sublang");
 }
 
 function get_lang_binid($lang)

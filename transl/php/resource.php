@@ -27,7 +27,7 @@ $compare = isset($_REQUEST['compare']);
 function load_resource(&$resources, $type, $id, $langid, &$res)
 {
     $file_type = $type & 0xff;  /* wrc adds 0x100 for *EX resource*/
-    $resdata = $resources->loadResource($file_type, $id, get_lang_binid($langid), is_lang_ignore_sublang($langid));
+    $resdata = $resources->loadResource($file_type, $id, get_lang_binid($langid));
     if (!$resdata)
         die("Resource not found in *.res file\n");
     switch ($type)
