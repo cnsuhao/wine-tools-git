@@ -8,6 +8,7 @@ $resfile = validate_resfile($_REQUEST['resfile']);
 $file = fopen("$DATAROOT/langs/$lang", "r");
 $msgs = array();
 ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
     <link rel="stylesheet" href="style.css" type="text/css">
