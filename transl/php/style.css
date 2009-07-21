@@ -38,6 +38,10 @@ div.main {
     border: 1px solid #601919;
 }
 
+div.contents {
+    margin: 5px;
+}
+
 div.group {
     margin: 10px 20% 10px 20%;
     background-color: white;

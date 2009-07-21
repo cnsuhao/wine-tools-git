@@ -29,6 +29,7 @@ while ($line = fgets($summary, 1024))
 </head>
 <div class="main">
 <h1>Wine translation statistics <?php echo $TITLE_APPENDIX ?></h1>
+<div class="contents">
 
 <?php echo $TITLE_DESCR ?>
 
@@ -113,6 +114,7 @@ for ($i = 0; $i < count($transl); $i++)
 <td><?php echo $errors_sum ?></td>
 <?php draw_bar($transl_sum, $errors_sum, ($nr-1)*$sum) ?>
 </table>
+</div>
 </div>
 <?php
 if ($time = filemtime("$DATAROOT/langs/summary"))

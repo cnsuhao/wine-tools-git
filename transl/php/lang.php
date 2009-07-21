@@ -92,15 +92,21 @@ if (preg_match("/:00/", $lang) && $translations == 0)
 
 <div class="group">
 <h2>Partially translated modules</h2>
+<div class="contents">
 <?php dump_table($partial) ?>
+</div>
 </div>
 <div class="group">
 <h2>Modules not translated</h2>
+<div class="contents">
 <?php dump_table($notransl) ?>
+</div>
 </div>
 <div class="group">
 <h2>Fully translated modules</h2>
+<div class="contents">
 <?php dump_table($transl) ?>
+</div>
 </div>
 
 </div>
