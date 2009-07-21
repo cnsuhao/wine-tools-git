@@ -23,7 +23,7 @@ while ($line = fgets($summary, 1024))
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-    <link rel="stylesheet" href="style.css" type="text/css"/>
+    <link rel="stylesheet" href="style.css" type="text/css">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Wine translation statistics <?php echo $TITLE_APPENDIX ?></title>
 </head>

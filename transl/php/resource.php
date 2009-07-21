@@ -12,7 +12,7 @@ $compare = isset($_REQUEST['compare']);
 ?>
 <html>
 <head>
-    <link rel="stylesheet" href="style.css" type="text/css"/>
+    <link rel="stylesheet" href="style.css" type="text/css">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title><?php echo get_resource_name($type, $id) ?> from <?php echo $resfile?> - Wine translation</title>
 </head>
