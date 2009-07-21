@@ -121,13 +121,11 @@ sub mycheck
 
     my $type = -1;
     my $resource;
-    my %deflangs = ();
-    my @file_langs = ();
+
+    my %file_langs = ();
+    $file_langs{"009:01"} = 1;
+
     my %reslangs = ();
-
-    @file_langs = ("009:01");
-    $deflangs{"009:01"} = 1;
-
     my @resources = ();
 
     my %transl_count = ();
@@ -167,7 +165,7 @@ sub mycheck
         {
             my $lang = collapse($1);
 
-            # Don't add neutral langs (nn:00) to the file_langs array
+            # Don't add neutral langs (nn:00) to the file_langs hash
             # if we have sublangs (nn:xx) in the conf directory, add
             # it's sublangs instead (if present).
             #
@@ -179,28 +177,20 @@ sub mycheck
                 my $primary_lang = $lang;
                 $primary_lang =~ s/:00//;
                 my $found = 0;
-                foreach my $language (@languages)
+                my @sublanguages = grep(/$primary_lang/, @languages);
+                foreach my $language (@sublanguages)
                 {
-                    if ($language =~ /$primary_lang:./)
-                    {
-                        if (not defined $deflangs{$language})
-                        {
-                            $deflangs{$language} = 1;
-                            push @file_langs, $language;
-                        }
-                        $found = 1;
-                    }
+                    $file_langs{$language} = 1;
+                    $found = 1;
                 }
-                if ((!$found) && (not defined $deflangs{$lang}))
+                if (!$found)
                 {
-                    $deflangs{$lang} = 1;
-                    push @file_langs, $lang;
+                    $file_langs{$lang} = 1;
                 }
             }
-            elsif (not defined $deflangs{$lang})
+            else
             {
-                $deflangs{$lang} = 1;
-                push @file_langs, $lang;
+                $file_langs{$lang} = 1;
             }
             $reslangs{$type." ".$resource}{$lang} = 1;
             $transl_count{$lang}++;
@@ -244,7 +234,7 @@ sub mycheck
     {
         next if ($notransl{$resource});
 
-        foreach my $lang (@file_langs)
+        foreach my $lang (keys %file_langs)
         {
             my $basic_lang = $lang;
             $basic_lang=~s/:[0-9a-f][0-9a-f]/:00/;
@@ -285,7 +275,7 @@ sub mycheck
             }
         }
     }
-    foreach my $lang (@file_langs)
+    foreach my $lang (keys %file_langs)
     {
         my $suffix;
 
@@ -360,7 +350,7 @@ sub mycheck
         {
             next if (!($lang eq collapse($lang)));
             next if ($transl_count{"009:01"} == 0);
-            my @transl = grep {$_ eq $lang} @file_langs;
+            my @transl = grep {$_ eq $lang} keys %file_langs;
             if ($#transl == -1)
             {
                 open(LANGOUT, ">>$workdir/langs/$lang");
