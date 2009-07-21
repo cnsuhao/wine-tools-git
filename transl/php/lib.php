@@ -42,7 +42,7 @@ function res_enum($header, $f)
     else if ($header["name"] == 257)
     {
         $baseid = get_lang_base($langid);
-        $LOCALE_NAMES[$baseid] = convert_to_unicode($str->getString(1));
+        $LOCALE_NAMES[$baseid] = convert_to_unicode($str->getString(1))." (Neutral)";
     }
 }
 
