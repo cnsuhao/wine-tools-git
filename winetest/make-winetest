@@ -132,7 +132,7 @@ umask 022
 
     rm -rf work
     mkdir work work/langs work/dumps work/dumps/res
-    $toolsdir/transl/scripts/checkmakefile.pl -S ./wine -T ./build-mingw -t ./build-native -w ./work -s "$toolsdir/transl/scripts" 2>>work/run.log
+    $toolsdir/transl/scripts/checkmakefile.pl -S ./wine -T ./build-mingw -t ./build-native -w ./work 2>>work/run.log
     mv -f $transldir/langs $transldir/langs.old
     mv -f $transldir/dumps $transldir/dumps.old
     mv -f work/langs $transldir/langs

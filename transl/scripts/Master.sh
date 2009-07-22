@@ -46,7 +46,7 @@ mkdir $WORKDIR/dumps
 mkdir $WORKDIR/dumps/res
 
 # Analyze all the Makefiles
-$SCRIPTSDIR/checkmakefile.pl -S "$SOURCEROOT" -T "$BUILDROOT" -t "$WRCROOT" -s "$SCRIPTSDIR" -w "$WORKDIR" 2>>"$WORKDIR/run.log" || exit
+$SCRIPTSDIR/checkmakefile.pl -S "$SOURCEROOT" -T "$BUILDROOT" -t "$WRCROOT" -w "$WORKDIR" 2>>"$WORKDIR/run.log" || exit
 
 # Show any changes in the log
 diff -u $WORKDIR/run.log.old $WORKDIR/run.log

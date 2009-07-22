@@ -8,7 +8,7 @@ use Cwd;
 use File::Basename;
 
 # configuration parameters
-my (%CONFIG, $srcdir, $objdir, $toolsdir, $workdir, $scriptsdir, $wrc);
+my (%CONFIG, $srcdir, $objdir, $toolsdir, $workdir, $wrc);
 
 sub shell($)
 {
@@ -326,7 +326,6 @@ while (@ARGV && $ARGV[0] =~ /^-/)
     my $opt = shift @ARGV;
     if ($opt eq "-S") { $srcdir = shift @ARGV; }
     elsif ($opt eq "-T") { $objdir = shift @ARGV; }
-    elsif ($opt eq "-s") { $scriptsdir = shift @ARGV; }
     elsif ($opt eq "-t") { $toolsdir = shift @ARGV; }
     elsif ($opt eq "-w") { $workdir = shift @ARGV; }
     else
@@ -335,7 +334,6 @@ while (@ARGV && $ARGV[0] =~ /^-/)
         print STDERR "  -S dir   Set the top of the Wine source tree\n";
         print STDERR "  -T dir   Set the top of the Wine build tree\n";
         print STDERR "  -t dir   Set the Wine tools directory\n";
-        print STDERR "  -s dir   Set the scripts directory\n";
         print STDERR "  -w dir   Set the work directory\n";
         exit 1;
     }
@@ -345,7 +343,6 @@ $srcdir ||= $CONFIG{"SOURCEROOT"};
 $objdir ||= $CONFIG{"BUILDROOT"} || $srcdir;
 $toolsdir ||= $CONFIG{"WRCROOT"} || $objdir;
 $workdir ||= $CONFIG{"WORKDIR"};
-$scriptsdir ||= $CONFIG{"SCRIPTSDIR"} || ".";
 $wrc = $toolsdir . "/tools/wrc/wrc";
 
 if ($srcdir eq "" || $wrc eq "/tools/wrc/wrc" || $workdir eq "")

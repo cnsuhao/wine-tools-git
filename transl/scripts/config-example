@@ -9,9 +9,6 @@ BUILDROOT=/path/to/wine-src
 # Path to the Wine tree to take wrc from. Usually the same as SOURCEROOT. 
 WRCROOT=/path/to/wine-src
 
-# Directory containing the various scripts
-SCRIPTSDIR=.
-
 # The directory where to store the generated langs/ and dumps/. Usually the
 # directory with the PHP scripts.
 DESTDIR=../php
