@@ -41,21 +41,12 @@ fi
 # Do cleanup for new run
 rm -Rf $WORKDIR/langs
 rm -Rf $WORKDIR/dumps
-rm -Rf $WORKDIR/new-langs
 mkdir $WORKDIR/langs
 mkdir $WORKDIR/dumps
 mkdir $WORKDIR/dumps/res
-mkdir $WORKDIR/new-langs
 
 # Analyze all the Makefiles
 $SCRIPTSDIR/checkmakefile.pl -S "$SOURCEROOT" -T "$BUILDROOT" -t "$WRCROOT" -s "$SCRIPTSDIR" -w "$WORKDIR" 2>>"$WORKDIR/run.log" || exit
-
-# Check for a new languages
-for i in $WORKDIR/new-langs/*; do
-    if [ -f "$i" ]; then
-        echo "note: New language:" `basename "$i"` | tee -a $WORKDIR/run.log
-    fi
-done
 
 # Show any changes in the log
 diff -u $WORKDIR/run.log.old $WORKDIR/run.log
@@ -66,8 +57,6 @@ mv -f $DESTDIR/dumps $DESTDIR/dumps.old
 mv -f $WORKDIR/langs $DESTDIR/langs
 mv -f $WORKDIR/dumps $DESTDIR/dumps
 cp -f $WORKDIR/run.log $DESTDIR/dumps/run.log
-
-rsync -r --delete $SCRIPTSDIR/conf $DESTDIR
 
 # Deleting can take a bit longer so we do it after the new version is set up
 rm -Rf $DESTDIR/langs.old

@@ -131,15 +131,8 @@ umask 022
     # update the translations status
 
     rm -rf work
-    mkdir work work/langs work/dumps work/dumps/res work/new-langs
+    mkdir work work/langs work/dumps work/dumps/res
     $toolsdir/transl/scripts/checkmakefile.pl -S ./wine -T ./build-mingw -t ./build-native -w ./work -s "$toolsdir/transl/scripts" 2>>work/run.log
-    for i in work/new-langs/*
-    do
-        if [ -f "$i" ]
-        then
-            echo "note: New language:" `basename "$i"` | tee -a work/run.log
-        fi
-    done
     mv -f $transldir/langs $transldir/langs.old
     mv -f $transldir/dumps $transldir/dumps.old
     mv -f work/langs $transldir/langs
