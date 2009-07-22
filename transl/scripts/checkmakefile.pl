@@ -261,6 +261,8 @@ sub mycheck
 
         next if ($lang eq $basic_lang);
 
+        next if (($lang eq "009:01") && ($transl_count{$lang} == 0));
+
         open(LANGOUT, ">>$workdir/langs/$lang");
         print LANGOUT "FILE STAT $dir ".($transl_count{$lang}+0)." ".($missing_count{$lang}+0)." ".($err_count{$lang}+0)."\n";
 
@@ -291,7 +293,7 @@ sub mycheck
 
     foreach my $lang (keys %languages)
     {
-        next if (exists $transl_count{"009:01"} && $transl_count{"009:01"} == 0);
+        next if ($transl_count{"009:01"} == 0);
         my @transl = grep {$_ eq $lang} keys %file_langs;
         if ($#transl == -1)
         {
