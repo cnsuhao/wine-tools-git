@@ -10,13 +10,12 @@ use File::Basename;
 # configuration parameters
 my (%CONFIG, $srcdir, $objdir, $toolsdir, $workdir, $wrc);
 
-sub shell($)
+sub shell(@)
 {
-    my $cmd = shift;
-    my $ret = system $cmd;
+    my $ret = system @_;
     if ($ret)
     {
-        print STDERR "$cmd\n";
+        print STDERR join(" ", @_) . "\n";
         print "!!!!!!! return value: $ret\n";
         exit 1;
     }
@@ -66,21 +65,21 @@ sub mycheck
     }
     return unless @rcfiles;
 
-    # files in dlls/ are compiled with __WINESRC__    
-    $defs .= " -D__WINESRC__" if ($dir =~ m,^dlls,);
+    # files in dlls/ are compiled with __WINESRC__
+    my @defs = split /s+/, $defs;
+    push @defs, "-D__WINESRC__" if ($dir =~ m,^dlls,);
 
-    print STDERR "*** $dir [$defs]\n";
+    printf STDERR "*** $dir [%s]\n", join( " ", @defs );
 
-    my $incl = "-I$srcdir/$dir -I$objdir/$dir -I$srcdir/include -I$objdir/include";
+    my @incl = ("-I$srcdir/$dir", "-I$objdir/$dir", "-I$srcdir/include", "-I$objdir/include");
     my $norm_fn = $dir;
     $norm_fn =~ s/[^a-zA-Z0-9]/-/g;
 
-    my $targets = join( " ", map { (my $ret = $_) =~ s/.rc$/.res/; $ret; } @rcfiles );
-    my $srcs = join( " ", @srcs );
-    my $objs = join( " ", map { (my $ret = "$objdir/$dir/$_") =~ s/.rc$/.res/; $ret; } @rcfiles );
+    my @targets = map { (my $ret = $_) =~ s/.rc$/.res/; $ret; } @rcfiles;
+    my @objs = map { (my $ret = "$objdir/$dir/$_") =~ s/.rc$/.res/; $ret; } @rcfiles;
 
-    shell "make -C $objdir/$dir -s $targets";
-    shell "$toolsdir/tools/winebuild/winebuild --resources -o $workdir/res/$norm_fn.res $objs";
+    shell "make", "-C", "$objdir/$dir", "-s", @targets;
+    shell "$toolsdir/tools/winebuild/winebuild", "--resources", "-o", "$workdir/res/$norm_fn.res", @objs;
 
     my $type = -1;
     my $resource;
@@ -99,7 +98,7 @@ sub mycheck
 
     if ($mode eq "locale")
     {
-        open(VERIFY, "$wrc $incl --verify-translation $defs $srcs|");
+        open VERIFY, "-|" or exec $wrc, "--verify-translation", @incl, @defs, @srcs;
         while (<VERIFY>)
         {
             if (m/^EXIST ([0-9a-f]{3}:[0-9a-f]{2})/)
@@ -116,7 +115,7 @@ sub mycheck
         return;
     }
 
-    open(VERIFY, "$wrc $incl --verify-translation $defs $srcs|");
+    open VERIFY, "-|" or exec $wrc, "--verify-translation", @incl, @defs, @srcs;
     while (<VERIFY>)
     {
         if (m/^TYPE NEXT/)
