@@ -105,14 +105,16 @@ function get_sublangs($id)
 {
     if (preg_match("/:00/", $id))
     {
+        global $MASTER_LANGUAGE;
         global $LOCALE_NAMES;
         enum_locale_names();
 
         $base = preg_replace("/:00/", "", $id);
         $sublangs = array();
         foreach ($LOCALE_NAMES as $key => $value)
-            if (preg_match("/$base/", $key) && ($key != $id))
-                $sublangs[] = $key;
+            if (preg_match("/$base/", $key) && ($key != $id) && ($key != $MASTER_LANGUAGE))
+                $sublangs[$key] = $value;
+        asort($sublangs);
         return $sublangs;
     }
     else
@@ -131,7 +133,7 @@ function show_sublangs($id)
     echo "<table>\n";
     echo "<tr><th>Sublanguage</th></tr>\n";
     $sublangs = get_sublangs($id);
-    foreach ($sublangs as $key)
+    foreach ($sublangs as $key => $value)
     {
         echo "<tr><td>".gen_lang_a($key).get_lang_name($key)."</a></td></tr>";
     }
