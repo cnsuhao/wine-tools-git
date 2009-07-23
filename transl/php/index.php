@@ -65,13 +65,14 @@ function draw_bar($tr, $err, $sum)
 
 function nicesort($a, $b)
 {
+    global $MASTER_LANGUAGE;
     if ($a['translated'] != $b['translated'])
         return ($a['translated'] < $b['translated']);
 
     // English (Unites States) always on top
-    if ($a['langid'] == "009:01")
+    if ($a['langid'] == $MASTER_LANGUAGE)
         return 0;
-    if ($b['langid'] == "009:01")
+    if ($b['langid'] == $MASTER_LANGUAGE)
         return 1;
     return strcasecmp($a['name'], $b['name']);
 }
