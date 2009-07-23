@@ -5,7 +5,6 @@ include("lib.php");
 $lang = validate_lang($_REQUEST['lang']);
 $resfile = validate_resfile($_REQUEST['resfile']);
 
-$file = fopen("$DATAROOT/langs/$lang", "r");
 $msgs = array();
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -22,6 +21,15 @@ $msgs = array();
 
 <?php
 
+if (preg_match("/:00/", $lang))
+{
+    echo "<div class=\"contents\">";
+    show_sublangs($lang);
+    echo "</div>";
+    exit();
+}
+
+$file = fopen("$DATAROOT/langs/$lang", "r");
 while ($line = fgets($file, 4096))
 {
     if (preg_match("@$resfile: (.*)@", $line, $m))
@@ -32,12 +40,6 @@ while ($line = fgets($file, 4096))
 
 if (count($msgs) == 0)
 {
-    if (preg_match("/:00/", $lang))
-    {
-        show_sublangs($lang);
-        exit();
-    }
-
     echo "<div class=\"contents\">";
     echo "<p>This module is not translated into ".get_lang_name($lang).".</p>\n";
     echo "<ul><li>If you want to see what resources are in this module, check the "
