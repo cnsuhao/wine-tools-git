@@ -102,6 +102,7 @@ foreach ($msgs as $value)
 
     echo "</td><td>".$value."</td></tr>\n";
 }
+echo "</table>\n";
 ?>
 </div>
 </html>

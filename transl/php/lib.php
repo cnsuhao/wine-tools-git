@@ -227,16 +227,17 @@ function gen_lang_a($lang)
 
 function gen_resfile_a($lang, $resfile)
 {
-    return "<a href=\"resfile.php?lang=".urlencode($lang)."&resfile=".urlencode($resfile)."\">";
+    return "<a href=\"resfile.php?lang=".urlencode($lang)."&amp;resfile=".urlencode($resfile)."\">";
 }
 
 function gen_resource_a($lang, $resfile, $type, $id, $compare=FALSE)
 {
     if ($compare)
-        $extra = "&compare=";
+        $extra = "&amp;compare=";
     else
         $extra = "";
-    return "<a href=\"resource.php?lang=".urlencode($lang)."&resfile=".urlencode($resfile)."&type=".urlencode($type)."&id=".urlencode($id)."$extra\">";
+    return "<a href=\"resource.php?lang=".urlencode($lang)."&amp;resfile=".urlencode($resfile).
+           "&amp;type=".urlencode($type)."&amp;id=".urlencode($id)."$extra\">";
 }
 
 function dump_menu_root()
