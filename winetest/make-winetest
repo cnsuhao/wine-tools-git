@@ -130,15 +130,12 @@ umask 022
 
     # update the translations status
 
-    rm -rf work
-    mkdir work work/langs work/dumps work/dumps/res
-    $toolsdir/transl/scripts/checkmakefile.pl -S ./wine -T ./build-mingw -t ./build-native -w ./work 2>>work/run.log
-    mv -f $transldir/langs $transldir/langs.old
-    mv -f $transldir/dumps $transldir/dumps.old
-    mv -f work/langs $transldir/langs
-    mv -f work/dumps $transldir/dumps
-    mv -f work/run.log $transldir/dumps/run.log
-    rm -rf $transldir/langs.old $transldir/dumps.old
+    rm -rf data
+    mkdir data data/res
+    $toolsdir/transl/scripts/checkmakefile.pl -S ./wine -T ./build-mingw -t ./build-native -w ./data 2>>data/run.log
+    mv -f $transldir/data $transldir/data.old
+    mv -f data $transldir/data
+    rm -rf $transldir/data.old
 
     echo "translations updated"
 

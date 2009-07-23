@@ -39,28 +39,23 @@ if [ "$PREPARE_TREES" -eq 1 ]; then
 fi
 
 # Do cleanup for new run
-rm -Rf $WORKDIR/langs
-rm -Rf $WORKDIR/dumps
-mkdir $WORKDIR/langs
-mkdir $WORKDIR/dumps
-mkdir $WORKDIR/dumps/res
+rm -Rf $WORKDIR/data
+mkdir $WORKDIR/data
+mkdir $WORKDIR/data/res
 
 # Analyze all the Makefiles
-$SCRIPTSDIR/checkmakefile.pl -S "$SOURCEROOT" -T "$BUILDROOT" -t "$WRCROOT" -w "$WORKDIR" 2>>"$WORKDIR/run.log" || exit
+./checkmakefile.pl -S "$SOURCEROOT" -T "$BUILDROOT" -t "$WRCROOT" -w "$WORKDIR/data" 2>>"$WORKDIR/run.log" || exit
 
 # Show any changes in the log
 diff -u $WORKDIR/run.log.old $WORKDIR/run.log
 
 # Copy the new data from the working directory to the PHP scripts input
-mv -f $DESTDIR/langs $DESTDIR/langs.old
-mv -f $DESTDIR/dumps $DESTDIR/dumps.old
-mv -f $WORKDIR/langs $DESTDIR/langs
-mv -f $WORKDIR/dumps $DESTDIR/dumps
-cp -f $WORKDIR/run.log $DESTDIR/dumps/run.log
+mv -f $DESTDIR/data $DESTDIR/data.old
+mv -f $WORKDIR/data $DESTDIR/data
+cp -f $WORKDIR/run.log $DESTDIR/data/run.log
 
 # Deleting can take a bit longer so we do it after the new version is set up
-rm -Rf $DESTDIR/langs.old
-rm -Rf $DESTDIR/dumps.old
+rm -Rf $DESTDIR/data.old
 
 # Optional hooks
 if [ -x ./local-posthook.sh ]; then

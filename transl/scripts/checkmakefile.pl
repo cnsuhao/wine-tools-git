@@ -80,7 +80,7 @@ sub mycheck
     my $objs = join( " ", map { (my $ret = "$objdir/$dir/$_") =~ s/.rc$/.res/; $ret; } @rcfiles );
 
     shell "make -C $objdir/$dir -s $targets";
-    shell "$toolsdir/tools/winebuild/winebuild --resources -o $workdir/dumps/res/$norm_fn.res $objs";
+    shell "$toolsdir/tools/winebuild/winebuild --resources -o $workdir/res/$norm_fn.res $objs";
 
     my $type = -1;
     my $resource;
@@ -263,7 +263,7 @@ sub mycheck
 
         next if (($lang eq "009:01") && ($transl_count{$lang} == 0));
 
-        open(LANGOUT, ">>$workdir/langs/$lang");
+        open(LANGOUT, ">>$workdir/$lang");
         print LANGOUT "FILE STAT $dir ".($transl_count{$lang}+0)." ".($missing_count{$lang}+0)." ".($err_count{$lang}+0)."\n";
 
         foreach my $warn (@{$warns{$lang}})
@@ -297,7 +297,7 @@ sub mycheck
         my @transl = grep {$_ eq $lang} keys %file_langs;
         if ($#transl == -1)
         {
-            open(LANGOUT, ">>$workdir/langs/$lang");
+            open(LANGOUT, ">>$workdir/$lang");
             print LANGOUT "FILE NONE $dir 0 ".$transl_count{"009:01"}." 0\n";
             close(LANGOUT);
         }
@@ -344,7 +344,7 @@ while (@ARGV && $ARGV[0] =~ /^-/)
 $srcdir ||= $CONFIG{"SOURCEROOT"};
 $objdir ||= $CONFIG{"BUILDROOT"} || $srcdir;
 $toolsdir ||= $CONFIG{"WRCROOT"} || $objdir;
-$workdir ||= $CONFIG{"WORKDIR"};
+$workdir ||= $CONFIG{"WORKDIR"} . "/data";
 $wrc = $toolsdir . "/tools/wrc/wrc";
 
 if ($srcdir eq "" || $wrc eq "/tools/wrc/wrc" || $workdir eq "")
@@ -427,13 +427,13 @@ foreach my $path (keys %checks)
 }
 
 # create the summary file
-open(OUT, ">$workdir/langs/summary");
+open(OUT, ">$workdir/summary");
 foreach my $lang (keys %languages)
 {
     my $transl = 0;
     my $missing = 0;
     my $errors = 0;
-    open(FILE, "<$workdir/langs/$lang");
+    open(FILE, "<$workdir/$lang");
     while (<FILE>)
     {
         if (m/^FILE [A-Z]+ .* ([0-9]+) ([0-9]+) ([0-9]+)$/) {

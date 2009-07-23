@@ -2,5 +2,4 @@
 /scripts/config
 /scripts/local-posthook.sh
 /scripts/local-prehook.sh
-/php/dumps
-/php/langs
+/php/data

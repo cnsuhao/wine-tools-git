@@ -2,7 +2,7 @@
 include_once("config.php");
 include_once("lib.php");
 
-$summary = fopen("$DATAROOT/langs/summary", "r");
+$summary = fopen("$DATAROOT/summary", "r");
 $transl = array();
 $sum = 0;
 while ($line = fgets($summary, 1024))
@@ -118,7 +118,7 @@ for ($i = 0; $i < count($transl); $i++)
 </div>
 </div>
 <?php
-if ($time = filemtime("$DATAROOT/langs/summary"))
+if ($time = filemtime("$DATAROOT/summary"))
 {
     echo "<p><small>Generated on ".gmdate("j M Y, G:i:s T", $time)." (see <a href=\"runlog.php\">run log</a>)</small></p>";
 }

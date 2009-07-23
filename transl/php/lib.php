@@ -47,13 +47,14 @@ function res_enum($header, $f)
 function enum_locale_names()
 {
     include_once "lib_res.php";
+    include "config.php";
     global $LOCALE_NAMES;
 
     if (!empty($LOCALE_NAMES))
     {
         return;
     }
-    $res = new ResFile("dumps/res/dlls-kernel32.res");
+    $res = new ResFile("$DATAROOT/res/dlls-kernel32.res");
     $res->enumResources("res_enum");
     ksort($LOCALE_NAMES);
 }
@@ -160,7 +161,7 @@ function get_res_path($resfile)
     global $DATAROOT;
 
     $resfile = preg_replace("/\\.rc(#.*)?$/", "", $resfile);
-    return "$DATAROOT/dumps/res/".preg_replace("/[^a-zA-Z0-9]/", "-", $resfile).".res";
+    return "$DATAROOT/res/".preg_replace("/[^a-zA-Z0-9]/", "-", $resfile).".res";
 }
 
 function get_resfile_name($resfile)

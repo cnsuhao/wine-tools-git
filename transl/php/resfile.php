@@ -29,7 +29,7 @@ if (preg_match("/:00/", $lang))
     exit();
 }
 
-$file = fopen("$DATAROOT/langs/$lang", "r");
+$file = fopen("$DATAROOT/$lang", "r");
 while ($line = fgets($file, 4096))
 {
     if (preg_match("@$resfile: (.*)@", $line, $m))

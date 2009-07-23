@@ -12,10 +12,10 @@ function parse_file($lang)
 {
     global $transl, $partial, $notransl;
     global $DATAROOT;
-    if (!file_exists("$DATAROOT/langs/$lang"))
+    if (!file_exists("$DATAROOT/$lang"))
         return;
 
-    $file = fopen("$DATAROOT/langs/$lang", "r");
+    $file = fopen("$DATAROOT/$lang", "r");
     $curr_file = "";
     while ($line = fgets($file, 4096))
     {
