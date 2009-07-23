@@ -38,6 +38,7 @@ if (count($msgs) == 0)
         exit();
     }
 
+    echo "<div class=\"contents\">";
     echo "<p>This module is not translated into ".get_lang_name($lang).".</p>\n";
     echo "<ul><li>If you want to see what resources are in this module, check the "
             .gen_resfile_a($MASTER_LANGUAGE, $resfile).get_locale_name($MASTER_LANGUAGE)." version</a>"
@@ -46,6 +47,7 @@ if (count($msgs) == 0)
     echo "directory in the Wine source tree and make it include a new language file for\n";
     echo get_lang_name($lang)." (see $WINE_WIKI_TRANSLATIONS for a guide to\n";
     echo "translating)</li>";
+    echo "</div>";
     exit();
 }
 
