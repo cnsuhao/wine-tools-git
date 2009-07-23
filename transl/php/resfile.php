@@ -40,7 +40,7 @@ if (count($msgs) == 0)
 
     echo "<p>This module is not translated into ".get_lang_name($lang).".</p>\n";
     echo "<ul><li>If you want to see what resources are in this module, check the "
-            .gen_resfile_a($MASTER_LANGUAGE, $resfile)."English (US) version</a>"
+            .gen_resfile_a($MASTER_LANGUAGE, $resfile).get_locale_name($MASTER_LANGUAGE)." version</a>"
             ." of this module</li>\n";
     echo "<li>If you want to translate this module you should check the $resfile\n";
     echo "directory in the Wine source tree and make it include a new language file for\n";
@@ -91,7 +91,7 @@ foreach ($msgs as $value)
             $value = preg_replace("/@RES\(([^:\)]+):([^:\)]+)\)/", get_resource_name($m[1], $m[2]), $value);
             if (is_dumpable_type($m[1]) && (strpos($value, "Missing: ") === 0))
                 $value .= " (see ".gen_resource_a($MASTER_LANGUAGE, $resfile, $m[1], $m[2])
-                    .$MASTER_LANGUAGE_NAME." resource</a>)";
+                    .get_locale_name($MASTER_LANGUAGE)." resource</a>)";
         }
     }
     

@@ -1,7 +1,6 @@
 <?php
 
 $MASTER_LANGUAGE = "009:01";
-$MASTER_LANGUAGE_NAME = "English (US)";
 
 $WINE_WIKI_TRANSLATIONS = "<a href=\"redirect.php?url=http://wiki.winehq.org/Translating\">http://wiki.winehq.org/Translating</a>";
 

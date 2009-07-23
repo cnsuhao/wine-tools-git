@@ -72,7 +72,7 @@ if (!$compare)
     {
         echo "<tr class=\"subheader\"><td colspan=\"3\" style=\"text-align: right\">";
         echo "<small>".gen_resource_a($lang, $resfile, $type, $id, TRUE);
-        echo "Compare with ".$MASTER_LANGUAGE_NAME." &gt;&gt;</a></small>";
+        echo "Compare with ".get_locale_name($MASTER_LANGUAGE)." &gt;&gt;</a></small>";
         echo "</td></tr>";
     }
 }
@@ -80,7 +80,7 @@ else
 {
     echo "<tr class=\"subheader\"><td colspan=\"5\" style=\"text-align: right\">";
     echo "<small>".gen_resource_a($lang, $resfile, $type, $id, FALSE);
-    echo "&lt;&lt; Hide compare with ".$MASTER_LANGUAGE_NAME."</a></small>";
+    echo "&lt;&lt; Hide compare with ".get_locale_name($MASTER_LANGUAGE)."</a></small>";
     echo "</td></tr>";
 
     echo "<tr class=\"subheader\"><td>id</td><td>&nbsp;</td><td>".get_lang_name($lang)."</td><td>&nbsp;</td><td>".get_lang_name($MASTER_LANGUAGE)."</td></tr>";
