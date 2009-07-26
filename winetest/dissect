@@ -276,7 +276,7 @@ while (<IN>) {
             elsif ($text =~ /^Test succeeded inside todo block: /) { $class = "test failed"; }
             elsif ($text =~ /^Test marked todo: /) { $class = "test todo"; }
             elsif ($text =~ /^Tests skipped: /) { $class = "test skipped"; }
-            $testbox->{data} .= sprintf "<div class=\"%s\"><a href=%s/?a=blob;f=%s;hb=%s#l%u>%s.c:%u</a>: %s</div>\n",
+            $testbox->{data} .= sprintf "<div class=\"%s\"><a href=\"%s/?a=blob;f=%s;hb=%s#l%u\">%s.c:%u</a>: %s</div>\n",
                                  $class, $gitweb, $source, $testbuild, $line, $unit, $line, escapeHTML($text);
         }
         else
