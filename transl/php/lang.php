@@ -58,7 +58,9 @@ function dump_table($table)
 {
     global $lang;
     if (count($table) == 0) {
+        echo "<div class=\"contents\">";
         echo "none";
+        echo "</div>";
         return;
     }
     echo "<table>\n";
@@ -95,28 +97,24 @@ parse_file($lang);
 $translations = count($partial) + count($transl);
 if (preg_match("/:00/", $lang) && $translations == 0)
 {
+    echo "<div class=\"contents\">";
     show_sublangs($lang);
+    echo "</div>";
     exit();
 }
 ?>
 
 <div class="group">
 <h2>Partially translated modules</h2>
-<div class="contents">
 <?php dump_table($partial) ?>
-</div>
 </div>
 <div class="group">
 <h2>Modules not translated</h2>
-<div class="contents">
 <?php dump_table($notransl) ?>
-</div>
 </div>
 <div class="group">
 <h2>Fully translated modules</h2>
-<div class="contents">
 <?php dump_table($transl) ?>
-</div>
 </div>
 
 </div>
