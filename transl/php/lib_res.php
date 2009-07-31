@@ -721,8 +721,8 @@ class DialogResource extends Resource
         $this->cy = get_word($data);
 
         $pos = 0;
-        $this->menuName = get_stringorid($data, $pos, 0xff00);
-        $this->className = get_stringorid($data, $pos, 0xff00);
+        $this->menuName = get_stringorid($data, $pos);
+        $this->className = get_stringorid($data, $pos);
         $this->title = get_stringorid($data, $pos, 0xff00);
         $data = substr($data, $pos);
 
