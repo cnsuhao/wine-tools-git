@@ -168,7 +168,11 @@ if ($plid==1 && $major==4) {
         } elsif ($minor==1) {
             $version = "xp";
         } elsif ($minor==2) {
-            $version = "2003";
+            if ($product==1) {
+                $version = "xp";
+            } else {
+                $version = "2003";
+            }
         }
     } elsif ($major==6 && $minor== 0) {
         if      ($product==1) {
