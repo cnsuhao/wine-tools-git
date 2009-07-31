@@ -25,32 +25,6 @@ $compare = isset($_REQUEST['compare']);
 
 <?php
 
-function load_resource(&$resources, $type, $id, $langid, &$res)
-{
-    $file_type = $type & 0xff;  /* wrc adds 0x100 for *EX resource*/
-    $resdata = $resources->loadResource($file_type, $id, get_lang_binid($langid));
-    if (!$resdata)
-        die("Resource not found in *.res file\n");
-    switch ($type)
-    {
-        case 4:   /* RT_MENU */
-            $res = new MenuResource($resdata[0], $resdata[1]);
-            return TRUE;
-        case 5:   /* RT_DIALOG */
-        case 261: /* res_dialogex */
-            $res = new DialogResource($resdata[0], $resdata[1]);
-            return TRUE;
-        case 6:   /* RT_STRING*/
-            $res = new StringTable($resdata[0], $resdata[1], $id);
-            return TRUE;
-        case 11:  /* RT_MESSAGETABLE */
-            $res = new MessageTable($resdata[0], $resdata[1], $id);
-            return TRUE;
-        default:
-            die("Unhandled resource type $type");
-    }
-}
-
 $resources = new ResFile(get_res_path($resfile));
 
 $res_lang = update_lang_from_resfile($lang, $resfile);
