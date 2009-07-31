@@ -94,7 +94,10 @@ for ($i = 0; $i < count($transl); $i++)
             if ($translated != $transl[$j]['translated'])
                 break;
         $serial = $j - $i;
-        echo "<td rowspan=\"$serial\" style=\"text-align: center\">$nr";
+        if ($serial > 1)
+            echo "<td rowspan=\"$serial\" style=\"text-align: center; border-right: thin solid #601919;\">$nr";
+        else
+            echo "<td rowspan=\"$serial\" style=\"text-align: center\">$nr";
         echo "</td>";
     }
     echo "<td>".gen_lang_a($langid).$name."</a></td>";
