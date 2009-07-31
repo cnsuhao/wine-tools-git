@@ -49,10 +49,9 @@ div.group {
 }
 
 td {
-        font-family: monospace;
-        font-size: medium;
-        padding-left: 5px;
-        padding-right: 5px;
+    font-size: small;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 
 th {
