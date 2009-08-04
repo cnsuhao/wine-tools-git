@@ -12,9 +12,13 @@
  * Copyright (c) 2006 Jonathan Ernst
  */
 
-// Chek if a specific version was passed
-if(isset($_GET['v']))
+// Check if a specific version was passed
+if(isset($_GET['v'])) {
 	$sVersion = $_GET['v'];
+
+	if(isset($_GET['arch']))
+		$sVersion = $sVersion.'-'.$_GET['arch'];
+}
 
 // Name of the file
 $sFileName = "wine_gecko".($sVersion?'-'.$sVersion:'').".cab";
@@ -25,11 +29,16 @@ $aFileSizes = array(
 	'0.0.1'=>5219822,
 	'0.1.0'=>5746895,
 	'0.9.0'=>7806669,
-	'0.9.1'=>7806837
+	'0.9.1'=>7806837,
+	'1.0.0-x86'=>8119486
 );
 
 // Exact size of the file:
-$iFileSize = ($sVersion?$aFileSizes[$sVersion]:$aFileSizes['default']);
+$iFileSize = $aFileSizes[$sVersion ? $sVersion : 'default'];
+if(!$iFileSize) {
+	header("HTTP/1.0 404 Not Found");
+	exit;
+}
 
 // List of additional locations (commonly used locations are already in download.inc.php)
 $aList = array();
