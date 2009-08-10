@@ -174,8 +174,16 @@ function dump_resource_row($id, &$resource, &$master, $method_name, $diff_method
 {
     $extra = "";
     if ($master && $diff_method_name)
-        if ($resource->$diff_method_name($master, $lparam, $master_lparam))
-            $extra = " class=\"diff\"";
+        if ($master_lparam == NULL)
+        {
+            if ($resource->$diff_method_name($master, $lparam, TRUE))
+                $extra = " class=\"diff\"";
+        }
+        else
+        {
+            if ($resource->$diff_method_name($master, $lparam, $master_lparam, TRUE))
+                $extra = " class=\"diff\"";
+        }
 
     if ($master_lparam == NULL)
         $master_lparam = $lparam;
@@ -430,13 +438,18 @@ class StringTable extends Resource
         dump_unicode_or_empty($this->strings[$lparam]);
     }
 
-    function is_string_different(&$other, $lparam)
+    function is_string_different(&$other, $lparam, $pedantic = TRUE)
     {
         $uni_str = $this->strings[$lparam];
         $other_uni_str = $other->strings[$lparam];
-        return ((!$other_uni_str && $uni_str) ||
-                ($other_uni_str && !$uni_str) ||
-                (($uni_str && $other_uni_str) && ($uni_str == $other_uni_str)));
+
+        $generic = (!$other_uni_str && $uni_str) || ($other_uni_str && !$uni_str);
+
+        if ($pedantic != TRUE)
+            return $generic;
+
+        return $generic ||
+               (($uni_str && $other_uni_str) && ($uni_str == $other_uni_str));
     }
 
     function dump($master_res = NULL)
@@ -506,13 +519,18 @@ class MessageTable extends Resource
         dump_unicode_or_empty($this->strings[$lparam]);
     }
 
-    function is_string_different(&$other, $lparam)
+    function is_string_different(&$other, $lparam, $pedantic = TRUE)
     {
         $uni_str = $this->strings[$lparam];
         $other_uni_str = $other->strings[$lparam];
-        return ((!$other_uni_str && $uni_str) ||
-                ($other_uni_str && !$uni_str) ||
-                (($uni_str && $other_uni_str) && ($uni_str == $other_uni_str)));
+
+        $generic = (!$other_uni_str && $uni_str) || ($other_uni_str && !$uni_str);
+
+        if ($pedantic != TRUE)
+            return $generic;
+
+        return $generic ||
+               (($uni_str && $other_uni_str) && ($uni_str == $other_uni_str));
     }
 
     function dump($master_res = NULL)
@@ -879,7 +897,7 @@ class DialogResource extends Resource
     }
 
     /* check if the row should be in red */
-    function is_control_different(&$other, $lparam, $other_lparam)
+    function is_control_different(&$other, $lparam, $other_lparam, $pedantic = TRUE)
     {
         global $CONSTS;
         if (!$lparam[1] || !$other_lparam[1]) /* one item is missing */
@@ -892,18 +910,23 @@ class DialogResource extends Resource
         if (is_int($this_ctrl['className']) && $this_ctrl['className'] == 0x80 /* button */)
             $ignore_style = $CONSTS["BS_MULTILINE"];
 
-        return ($this_ctrl['id'] != $other_ctrl['id']) ||
-               (($this_ctrl['style'] | $ignore_style) != ($other_ctrl['style'] | $ignore_style)) ||
-               ($this_ctrl['exStyle'] != $other_ctrl['exStyle']) ||
-               (!is_equal_unicode_or_id($this_ctrl['className'], $other_ctrl['className'])) ||
-               // We should have either id's or text in both
-               (is_int($this_ctrl['text']) ^ is_int($other_ctrl['text'])) ||
-               // If it's an id they should be equal
-               (is_int($this_ctrl['text']) &&
-                !is_equal_unicode_or_id($this_ctrl['text'], $other_ctrl['text'])) ||
-               // If either text is empty they should be equal
-               (!is_int($this_ctrl['text']) && ((count($this_ctrl['text']) == 0) || (count($other_ctrl['text']) == 0)) &&
-                !is_equal_unicode_or_id($this_ctrl['text'], $other_ctrl['text'])) ||
+        $generic = ($this_ctrl['id'] != $other_ctrl['id']) ||
+                   (($this_ctrl['style'] | $ignore_style) != ($other_ctrl['style'] | $ignore_style)) ||
+                   ($this_ctrl['exStyle'] != $other_ctrl['exStyle']) ||
+                   (!is_equal_unicode_or_id($this_ctrl['className'], $other_ctrl['className'])) ||
+                   // We should have either id's or text in both
+                   (is_int($this_ctrl['text']) ^ is_int($other_ctrl['text'])) ||
+                   // If it's an id they should be equal
+                   (is_int($this_ctrl['text']) &&
+                    !is_equal_unicode_or_id($this_ctrl['text'], $other_ctrl['text'])) ||
+                   // If either text is empty they should be equal
+                   (!is_int($this_ctrl['text']) && ((count($this_ctrl['text']) == 0) || (count($other_ctrl['text']) == 0)) &&
+                    !is_equal_unicode_or_id($this_ctrl['text'], $other_ctrl['text']));
+
+        if ($pedantic != TRUE)
+            return $generic;
+
+        return $generic ||
                // If we have text in both they should not be equal
                (!is_int($this_ctrl['text']) && ((count($this_ctrl['text']) != 0) && (count($other_ctrl['text']) != 0)) &&
                 is_equal_unicode_or_id($this_ctrl['text'], $other_ctrl['text']));
@@ -941,7 +964,6 @@ class DialogResource extends Resource
                 $master_pos++;
         }
     }
-    
 }
 
 ?>
