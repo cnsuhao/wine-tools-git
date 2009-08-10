@@ -44,7 +44,7 @@ function res_enum($header, $f)
     }
 }
 
-function enum_locale_names()
+function enum_locale_names($kernel32_res = "")
 {
     include_once "lib_res.php";
     include "config.php";
@@ -54,7 +54,11 @@ function enum_locale_names()
     {
         return;
     }
-    $res = new ResFile("$DATAROOT/res/dlls-kernel32.res");
+
+    if ($kernel32_res == "")
+        $kernel32_res = "$DATAROOT/res/dlls-kernel32.res";
+
+    $res = new ResFile($kernel32_res);
     $res->enumResources("res_enum");
     ksort($LOCALE_NAMES);
 }
