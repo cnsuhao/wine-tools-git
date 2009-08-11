@@ -458,6 +458,22 @@ class StringTable extends Resource
             dump_resource_row(($this->table_id-1)*16+$i, $this, $master_res,
                 "dump_string", "is_string_different", $i);
     }    
+
+    function getcounts($master_res)
+    {
+        $count = array('errors' => 0, 'warnings' => 0);
+
+        for ($i=0; $i<16; $i++)
+        {
+            $uni_str = $this->strings[$i];
+            $other_uni_str = $master_res->strings[$i];
+
+            $count['errors']   += $this->is_string_different($master_res, $i, FALSE);
+            $count['warnings'] += $this->is_string_different($master_res, $i, TRUE);
+        }
+
+        return $count;
+    }
 }
 
 class MessageTable extends Resource
@@ -539,6 +555,22 @@ class MessageTable extends Resource
             dump_resource_row(($this->table_id-1)*16+$i, $this, $master_res,
                 "dump_string", "is_string_different", $i);
     }    
+
+    function getcounts($master_res)
+    {
+        $count = array('errors' => 0, 'warnings' => 0);
+
+        for ($i=0; $i<$this->message_count; $i++)
+        {
+            $uni_str = $this->strings[$i];
+            $other_uni_str = $master_res->strings[$i];
+
+            $count['errors']   += $this->is_string_different($master_res, $i, FALSE);
+            $count['warnings'] += $this->is_string_different($master_res, $i, TRUE);
+        }
+
+        return $count;
+    }
 }
 
 class MenuResource extends Resource
@@ -712,6 +744,34 @@ class MenuResource extends Resource
             if ($show[$i] & 2)
                 $master_pos++;
         }
+    }
+
+    function getcounts($master_res)
+    {
+        $count = array('errors' => 0, 'warnings' => 0);
+
+        $show = diff_sequences($this, count($this->items),
+                               $master_res, count($master_res->items),
+                               'menuitem_equals');
+
+        $tstate = array(TRUE);
+        $tstate_master = array(TRUE);
+        $pos = 0;
+        $master_pos = 0;
+        for ($i=0; $i<count($show); $i++)
+        {
+            $count['errors'] += $this->is_menuitem_different($master_res, array($pos, $show[$i] & 1, &$tstate), array($master_pos, $show[$i] & 2, &$tstate_master));
+
+            if ($show[$i] & 1)
+                $pos++;
+            if ($show[$i] & 2)
+                $master_pos++;
+        }
+
+        // FIXME : No pedantic mode for menu's yet
+        $count['warnings'] = $count['errors'];
+
+        return $count;
     }
 }
 
@@ -963,6 +1023,38 @@ class DialogResource extends Resource
             if ($show[$i] & 2)
                 $master_pos++;
         }
+    }
+
+    function getcounts($master_res)
+    {
+        $count = array('errors' => 0, 'warnings' => 0);
+
+        $count['errors'] += $this->is_hex_different($master_res, array("style", "STYLE"));
+        $count['errors'] += $this->is_hex_different($master_res, array("exStyle", "EXSTYLE"));
+        $count['errors'] += $this->is_string_different($master_res, array("className", "CLASS"));
+        $count['errors'] += $this->is_string_different($master_res, array("menuName", "MENU"));
+
+        $count['warnings'] = $count['errors'];
+
+        $show = diff_sequences($this, count($this->items),
+                               $master_res, count($master_res->items),
+                               'control_equals');
+
+        $pos = 0;
+        $master_pos = 0;
+        for ($i = 0; $i < count($show); $i++)
+        {
+
+            $count['errors']   += $this->is_control_different($master_res, array($pos, $show[$i] & 1), array($master_pos, $show[$i] & 2), FALSE);
+            $count['warnings'] += $this->is_control_different($master_res, array($pos, $show[$i] & 1), array($master_pos, $show[$i] & 2), TRUE);
+
+            if ($show[$i] & 1)
+                $pos++;
+            if ($show[$i] & 2)
+                $master_pos++;
+        }
+
+        return $count;
     }
 }
 

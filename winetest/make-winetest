@@ -132,7 +132,7 @@ umask 022
 
     rm -rf data
     mkdir data data/res
-    $toolsdir/transl/scripts/checkmakefile.pl -S ./wine -T ./build-mingw -t ./build-native -w ./data 2>>data/run.log
+    php $toolsdir/transl/scripts/parse_resfiles.php -S ./wine -T ./build-mingw -t ./build-native -w ./data 2>>data/run.log
     mv -f $transldir/data $transldir/data.old
     mv -f data $transldir/data
     rm -rf $transldir/data.old
