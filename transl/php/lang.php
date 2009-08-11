@@ -19,7 +19,7 @@ function parse_file($lang)
     $curr_file = "";
     while ($line = fgets($file, 4096))
     {
-        if (preg_match("/FILE ([A-Z]+) (.*) ([0-9]+) ([0-9]+) ([0-9]+)/", $line, $m))
+        if (preg_match("/FILE ([A-Z]+) (.*) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)/", $line, $m))
         {
             $curr_file = $m[2];
             if ($m[1] == "NONE")

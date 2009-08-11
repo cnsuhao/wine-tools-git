@@ -285,7 +285,7 @@ foreach (array_keys($checks) as $dir)
         if (!isset($file_langs[$lang]) && !isset($file_langs[$basic_lang]))
         {
             $langout = fopen("$workdir/$lang", "a+");
-            fwrite($langout, "FILE NONE $dir 0 $mastercount 0\n");
+            fwrite($langout, "FILE NONE $dir 0 $mastercount 0 0 0 0\n");
             fclose($langout);
             continue;
         }
@@ -293,7 +293,9 @@ foreach (array_keys($checks) as $dir)
         $translated = 0;
         $missing = 0;
         $errors = 0;
+        $total_errors = 0;
         $warnings = 0;
+        $total_warnings = 0;
 
         $errors_rl = array();
         $missing_rl = array();
@@ -328,6 +330,9 @@ foreach (array_keys($checks) as $dir)
                                       ": Translation inherited from @LANG($basic_lang)";
                         $translated++;
                     }
+
+                    if ($res_warnings)
+                        $warnings++;
                 }
             }
             else
@@ -347,11 +352,17 @@ foreach (array_keys($checks) as $dir)
                                   ": Resource translated";
                     $translated++;
                 }
+
+                if ($res_warnings)
+                    $warnings++;
             }
+
+            $total_errors += $res_errors;
+            $total_warnings += $res_warnings;
         }
 
         $langout = fopen("$workdir/$lang", "a+");
-        fwrite($langout, "FILE STAT $dir $translated $missing $errors\n");
+        fwrite($langout, "FILE STAT $dir $translated $missing $errors $total_errors $warnings $total_warnings\n");
         foreach ($errors_rl as $msg)
             fwrite($langout, "$msg\n");
         foreach ($missing_rl as $msg)
@@ -369,19 +380,25 @@ foreach ($languages as $lang)
     $transl = 0;
     $missing = 0;
     $errors = 0;
+    $total_errors = 0;
+    $warnings = 0;
+    $total_warnings = 0;
     $file = fopen("$workdir/$lang", "r");
     while ($line = fgets($file, 4096))
     {
-        if (preg_match("/^FILE [A-Z]+ .* ([0-9]+) ([0-9]+) ([0-9]+)$/", $line, $m))
+        if (preg_match("/^FILE [A-Z]+ .* ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)$/", $line, $m))
         {
             $transl += $m[1];
             $missing += $m[2];
             $errors += $m[3];
+            $total_errors += $m[4];
+            $warnings += $m[5];
+            $total_warnings += $m[6];
         }
     }
     fclose($file);
     $sum = $transl + $missing + $errors;
-    fwrite($summary, "LANG $lang $sum $transl $missing $errors\n");
+    fwrite($summary, "LANG $lang $sum $transl $missing $errors $total_errors $warnings $total_warnings\n");
 }
 fclose($summary);
 ?>
