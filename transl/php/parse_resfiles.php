@@ -1,6 +1,6 @@
 <?php
-include("../php/lib.php");
-include("../php/lib_res.php");
+require("lib.php");
+require("lib_res.php");
 
 function resource_name2($resource)
 {

@@ -6,12 +6,12 @@ SOURCEROOT=/path/to/wine-src
 # Path to the Wine build tree (if different from SOURCEROOT)
 BUILDROOT=/path/to/wine-src
 
-# Path to the Wine tree to take wrc from. Usually the same as SOURCEROOT. 
+# Path to the Wine tree to take wrc from. Usually the same as SOURCEROOT.
 WRCROOT=/path/to/wine-src
 
 # The directory where to store the generated langs/ and dumps/. Usually the
 # directory with the PHP scripts.
-DESTDIR=../php
+DESTDIR=.
 
 # Temporary directory for some scratch files. Must be writable.
 WORKDIR=../work
