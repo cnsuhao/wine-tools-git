@@ -8,7 +8,7 @@ $resfile = validate_resfile($_REQUEST['resfile']);
 $type = validate_type($_REQUEST['type']);
 $id = validate_id($_REQUEST['id']);
 $compare = isset($_REQUEST['compare']);
-    
+
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>

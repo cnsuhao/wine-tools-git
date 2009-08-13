@@ -122,11 +122,11 @@ function dump_unicode($unistr, $quoted = TRUE)
                 || ($unistr[$i] >= ord('0') && $unistr[$i] <= ord('9'))
                 || $unistr[$i] == ord(' '))
             echo chr($unistr[$i]);
-        else if ($unistr[$i] == 10) { 
+        else if ($unistr[$i] == 10) {
             echo "<span class=\"resmeta\">\\n</span>";
             if ($i < count($unistr) - 1)
                 echo "<br/>\n";
-        } else if ($unistr[$i] == 9) { 
+        } else if ($unistr[$i] == 9) {
             echo "<span class=\"resmeta\">\\t</span>";
         } else if ($unistr[$i] == 0) {
             echo "<span class=\"resmeta\">\\0</span>";
@@ -157,7 +157,7 @@ function is_equal_unicode_or_id($unistr_or_int1, $unistr_or_int2)
 {
     if (is_int($unistr_or_int1))
         return is_int($unistr_or_int2) && $unistr_or_int1 == $unistr_or_int2;
-        
+
     if (is_int($unistr_or_int2))
         return FALSE;
 
@@ -297,7 +297,7 @@ class ResFile
         if ($this->file == NULL)
             die("Couldn't open resource file");
     }
-    
+
     function enumResources($callback, $lparam = 0)
     {
         fseek($this->file, 0);
@@ -327,7 +327,7 @@ class ResFile
                 $strpos += 2;
             $data = substr($data, $strpos);
             $header += unpack("VdataVersion/vmemoryOptions/vlanguage/Vversion/Vcharacteristics", $data);
-        
+
             $pos += ($header["headerSize"] + $header["resSize"] + 3) & 0xfffffffc;
 
             if (call_user_func($callback, $header, $this->file, $lparam))
@@ -378,12 +378,12 @@ class ResFile
                     }
                 }
             }
-            
+
             $pos += ($headerSize + $resSize + 3) & 0xfffffffc;
-            
+
             fseek($this->file, $pos);
         } while (true);
-        
+
         return FALSE;
     }
 }
@@ -427,12 +427,12 @@ class StringTable extends Resource
         if (strlen($data) > 0)
             die("unexpected data in STRINGTABLE resource\n");
     }
-    
+
     function getString($id)
     {
         return $this->strings[$id];
     }
-    
+
     function dump_string($lparam)
     {
         dump_unicode_or_empty($this->strings[$lparam]);
@@ -457,7 +457,7 @@ class StringTable extends Resource
         for ($i=0; $i<16; $i++)
             dump_resource_row(($this->table_id-1)*16+$i, $this, $master_res,
                 "dump_string", "is_string_different", $i);
-    }    
+    }
 
     function getcounts($master_res)
     {
@@ -524,12 +524,12 @@ class MessageTable extends Resource
                 $dummy = get_word($data);
         }
     }
-    
+
     function getString($id)
     {
         return $this->strings[$id];
     }
-    
+
     function dump_string($lparam)
     {
         dump_unicode_or_empty($this->strings[$lparam]);
@@ -554,7 +554,7 @@ class MessageTable extends Resource
         for ($i=0; $i<$this->message_count; $i++)
             dump_resource_row(($this->table_id-1)*16+$i, $this, $master_res,
                 "dump_string", "is_string_different", $i);
-    }    
+    }
 
     function getcounts($master_res)
     {
@@ -629,7 +629,7 @@ class MenuResource extends Resource
         if (strlen($data) > 0)
             die("unexpected data in MENU resource\n");
     }
-    
+
     function draw_tree_img($name)
     {
         echo "<img src=\"img/tree-$name.png\" align=\"center\" height=\"28\"/>";
@@ -671,17 +671,17 @@ class MenuResource extends Resource
                 array_pop($tstate);
         }
     }
-    
+
     function dump_title($item)
     {
         global $CONSTS;
-        if (($item["state"] & $CONSTS["MF_SEPARATOR"]) || 
+        if (($item["state"] & $CONSTS["MF_SEPARATOR"]) ||
             (empty($item["text"]) && !($item["resinfo"] & 0x1)))
         {
             echo " <span class=\"resmeta\">SEPARATOR</span>";
             return;
         }
-        
+
         if ($item["state"] & $CONSTS["MF_CHECKED"])
             echo "<img src=\"img/iconsm-check.png\"/>";
 
@@ -885,7 +885,7 @@ class DialogResource extends Resource
             die("unexpected data in DIALOG resource (".strlen($data)." bytes)\n");
     }
 
-    /* check if controls should be in different rows in the dump */    
+    /* check if controls should be in different rows in the dump */
     function control_equals(&$res2, $i, $res2_i)
     {
         $this_ctrl = $this->items[$i];
@@ -1010,7 +1010,7 @@ class DialogResource extends Resource
         dump_resource_row("", $this, $master_res, "dump_string", "is_string_different", array("className", "CLASS"));
         dump_resource_row("", $this, $master_res, "dump_string", "is_string_different", array("menuName", "MENU"));
         dump_resource_row("", $this, $master_res, "dump_font", NULL, NULL);
-        
+
         $pos = 0;
         $master_pos = 0;
         for ($i = 0; $i < count($show); $i++)

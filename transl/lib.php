@@ -210,7 +210,7 @@ function get_resource_name($type, $name)
 
     if ($type == 6)
         $ret .= " (strings ".($name*16 - 16)."..".($name*16 - 1).")";
-    return $ret;    
+    return $ret;
 }
 
 function is_dumpable_type($type)

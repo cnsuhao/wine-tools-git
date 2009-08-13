@@ -85,7 +85,7 @@ foreach ($msgs as $value)
         if (is_dumpable_type($m[1]) && (strpos($value, "Missing: ") !== 0))
         {
             $error = (strpos($value, "Error: ") === 0);
-            $value = preg_replace("/@RES\(([^:\)]+):([^:\)]+)\)/", 
+            $value = preg_replace("/@RES\(([^:\)]+):([^:\)]+)\)/",
                 gen_resource_a($line_lang, $resfile, $m[1], $m[2], $error).
                 get_resource_name($m[1], $m[2])."</a>",
                 $value);
@@ -98,7 +98,7 @@ foreach ($msgs as $value)
                     .get_locale_name($MASTER_LANGUAGE)." resource</a>)";
         }
     }
-    
+
     if (strpos($value, "note: ") === 0)
         $value = substr($value, 6);
 

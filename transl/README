@@ -1,12 +1,12 @@
-To run the scripts, copy scripts/config-example to scripts/config and edit it
-to setup the paths. Then, in scripts/, run ./Master.sh to generate the
-statistics. If, in scripts/config, you have set to store results in the
-directory with PHP scripts from php/, they should be able to display the
-statistics. If you want to keep the generated data in a different directory
-than the PHP scripts, edit php/config.php so that they can to find it.
+To run the scripts, copy config-example to config and edit it to setup
+the paths. Then, run ./Master.sh to generate the statistics. If, in
+config, you have set to store results in the directory with the PHP
+scripts, they should be able to display the statistics. If you want to
+keep the generated data in a different directory than the PHP scripts,
+edit config.php so that they can to find it.
 
-You can create files scripts/local-prehook.sh and scripts/local-posthook.sh if
-you want to automate e.g. fetching the Git tree before generating the statistics
-or push the results to a server after it. Running the scripts with the
-environment variable NOVERBOSE set should make them silent enough to make them
-usable as a cron job.
+You can create files local-prehook.sh and local-posthook.sh if you
+want to automate e.g. fetching the Git tree before generating the
+statistics or push the results to a server after it. Running the
+scripts with the environment variable NOVERBOSE set should make them
+silent enough to make them usable as a cron job.

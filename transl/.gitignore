@@ -1,5 +1,5 @@
-/work/*
-/php/config
-/php/local-posthook.sh
-/php/local-prehook.sh
-/php/data
+/config
+/data
+/local-posthook.sh
+/local-prehook.sh
+/work

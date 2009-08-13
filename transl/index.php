@@ -14,7 +14,7 @@ while ($line = fgets($summary, 1024))
 
     if ($m[3] == 0)
         continue;
-    
+
     $sum = $m[2];
     $transl[] = array('langid' => $m[1], 'name' => get_locale_name($m[1]), 'translated' => $m[3],
                       'missing' => $m[4], 'errors' => $m[5]);
@@ -104,7 +104,7 @@ for ($i = 0; $i < count($transl); $i++)
     printf("<td>%d (%.1f%%)</td>", $translated, ($translated*100)/$sum);
     echo "<td>".$missing."</td><td>".$errors."</td>\n";
     draw_bar($translated, $errors, $sum);
-    
+
     $nr++;
     $transl_sum += $translated;
     $missing_sum += $missing;
