@@ -11,7 +11,6 @@ function resource_name2($resource)
 function create_resfiles($dir, $check)
 {
     global $objdir, $srcdir, $toolsdir, $workdir;
-    global $wrc;
 
     $srcs = "";
     $targets = "";
@@ -55,30 +54,6 @@ function create_resfiles($dir, $check)
     system("$toolsdir/tools/winebuild/winebuild --resources -o $workdir/res/$norm_fn.res $objs");
 }
 
-// Parse config file
-$CONFIG = array();
-if (file_exists("config"))
-{
-    $config = fopen("config", "r");
-    while ($line = fgets($config, 4096))
-    {
-        if (preg_match("/^([A-Z_]+)=([^\s]+)\s*$/", $line, $m))
-        {
-            $CONFIG[$m[1]] = $m[2];
-        }
-        else if (!preg_match("/(^#|^$)/", $line))
-        {
-            print("checkmakefile.pl: Can't parse config line: $line\n");
-        }
-    }
-    fclose($config);
-}
-
-$srcdir = isset($CONFIG['SOURCEROOT']) ? $CONFIG['SOURCEROOT'] : "";
-$objdir = isset($CONFIG['BUILDROOT']) ? $CONFIG['BUILDROOT'] : "";
-$toolsdir = isset($CONFIG['WRCROOT']) ? $CONFIG['WRCROOT'] : "";
-$workdir = isset($CONFIG['WORKDIR']) ? $CONFIG['WORKDIR'] : "";
-
 $script = $argv[0];
 array_shift($argv);
 while (count($argv) != 0 && preg_match("/^-/", $argv[0]))
@@ -108,9 +83,7 @@ if ($objdir == "")
 if ($toolsdir == "")
     $toolsdir = $objdir;
 
-$wrc = "$toolsdir/tools/wrc/wrc";
-
-if ($srcdir == "" || $wrc == "/tools/wrc/wrc" || $workdir == "")
+if ($srcdir == "" || $toolsdir == "" || $workdir == "")
 {
     die("Config entry for SOURCEROOT, WRCROOT or WORKDIR missing\n");
 }
