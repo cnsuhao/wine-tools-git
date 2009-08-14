@@ -25,28 +25,17 @@ function parse_file($lang)
             $curr_file = $m[2];
             if ($m[1] == "NONE")
             {
-                $notransl[$curr_file] = array($m[3], $m[4], $m[5], 0);
+                $notransl[$curr_file] = array($m[3], $m[4], $m[5], $m[6], $m[7], $m[8]);
                 continue;
             }
 
             if ($m[4]>0 || $m[5]>0)
             {
-                $partial[$curr_file] = array($m[3], $m[4], $m[5], 0);
+                $partial[$curr_file] = array($m[3], $m[4], $m[5], $m[6], $m[7], $m[8]);
                 continue;
             }
 
-            $transl[$curr_file] = array($m[3], $m[4], $m[5], 0);
-        }
-        if (preg_match(",$curr_file: Warning: ,", $line, $m))
-        {
-            if (array_key_exists($curr_file, $transl))
-            {
-                $partial[$curr_file] = $transl[$curr_file];
-                unset($transl[$curr_file]);
-            }
-
-            if (array_key_exists($curr_file, $partial)) /* should be true - warning for $notransl shouldn't happen */
-                $partial[$curr_file][3]++;
+            $transl[$curr_file] = array($m[3], $m[4], $m[5], $m[6], $m[7], $m[8]);
         }
     }
     fclose($file);
@@ -58,6 +47,8 @@ function parse_file($lang)
 function dump_table($table)
 {
     global $lang;
+    global $pedantic;
+
     if (count($table) == 0) {
         echo "<div class=\"contents\">";
         echo "none";
@@ -65,17 +56,45 @@ function dump_table($table)
         return;
     }
     echo "<table>\n";
-    echo "<tr><th>name</th><th>translated</th><th>missing</th><th>errors</th></tr>\n";
+    echo "<tr>";
+    // Make room for a possible icon
+    if ($pedantic)
+        echo "<th></th>";
+    echo "<th>name</th><th>translated</th><th>missing</th><th>errors</th>\n";
+    // Make room for the warning count
+    if ($pedantic)
+        echo "<th>warnings</th>";
+    echo "</tr>\n";
+
     foreach ($table as $key => $value)
     {
         $extra = "";
-        if ($value[3] > 0)
-            $extra = "(<img src=\"img/icon-warning.png\" height=\"16\"> warnings: ".$value[3].")";
-        echo "<tr><td>".gen_resfile_a($lang, $key).$key."</a> $extra</td>";
+        echo "<tr>";
+        if ($pedantic)
+        {
+            $title = "title=\"";
+            if ($value[2] > 0) $title .= "$value[3] errors in $value[2] resources";
+            else $title .= "No errors";
+            if ($value[4] > 0) $title .= ", $value[5] warnings in $value[4] resources";
+            else $title .= ", No warnings";
+            $title .= "\"";
+
+            if ($value[2] > 0)
+                echo "<td><img src=\"img/icon-error.png\" $title height=\"16\" alt=\"errors\"></td>";
+            else if ($value[4] > 0)
+                echo "<td><img src=\"img/icon-warning.png\" $title height=\"16\" alt=\"warnings\"></td>";
+            else if ($value[1] > 0)
+                echo "<td><img src=\"img/icon-missing.gif\" $title height=\"16\" alt=\"missing\"></td>";
+            else
+                echo "<td><img src=\"img/icon-ok.png\" height=\"16\" alt=\"ok\"></td>";
+        }
+        echo "<td>".gen_resfile_a($lang, $key).$key."</a> $extra</td>";
         echo "<td>".$value[0]."</td>";
         echo "<td>".$value[1]."</td>";
         echo "<td>".$value[2]."</td>";
-        echo "</tr>";
+        if ($pedantic)
+            echo "<td>$value[4]</td>";
+        echo "</tr>\n";
     }
     echo "</table>\n";
 }
