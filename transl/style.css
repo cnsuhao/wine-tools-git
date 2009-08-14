@@ -31,6 +31,14 @@ h1 :link {
     color: #ffe0e0;
 }
 
+div.navbar {
+    background-color: #E2E2E2;
+    margin: 10px 0;
+    padding: 0;
+    text-align: left;
+    width: 100%;
+}
+
 div.main {
     margin: 10px 0 0 0;
     background-color: white;

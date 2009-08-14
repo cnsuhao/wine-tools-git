@@ -245,9 +245,13 @@ function gen_resource_a($lang, $resfile, $type, $id, $compare=FALSE)
            "&amp;type=".urlencode($type)."&amp;id=".urlencode($id)."$extra\">";
 }
 
-function dump_menu_root()
+function dump_menu_root($link = TRUE)
 {
-    echo "<a href=\"index.php\">Wine translations</a>";
+    if ($link)
+        echo "<a href=\"index.php\">";
+    echo "Wine translations";
+    if ($link)
+        echo "</a>";
 }
 
 function dump_menu_lang($lang, $link = TRUE)

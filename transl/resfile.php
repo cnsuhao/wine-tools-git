@@ -15,7 +15,9 @@ $msgs = array();
     <title>Module <?php echo $resfile?> - Wine translations</title>
 </head>
 
+<div class="navbar">
 <?php dump_menu_resfile($lang, $resfile, FALSE); ?>
+</div>
 <div class="main">
 <h1>Module <?php echo $resfile?></h1>
 

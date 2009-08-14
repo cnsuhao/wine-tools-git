@@ -27,6 +27,9 @@ while ($line = fgets($summary, 1024))
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Wine translation statistics <?php echo $TITLE_APPENDIX ?></title>
 </head>
+<div class="navbar">
+<?php dump_menu_root(FALSE); ?>
+</div>
 <div class="main">
 <h1>Wine translation statistics <?php echo $TITLE_APPENDIX ?></h1>
 <div class="contents">
