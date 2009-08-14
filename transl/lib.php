@@ -262,6 +262,12 @@ function dump_menu_root($link = TRUE)
     echo "Wine translations";
     if ($link)
         echo "</a>";
+
+    if (strpos($_SERVER['PHP_SELF'], "index.php"))
+    {
+        $url = "index.php";
+        dump_pedantic($url, TRUE);
+    }
 }
 
 function dump_menu_lang($lang, $link = TRUE)
@@ -274,6 +280,12 @@ function dump_menu_lang($lang, $link = TRUE)
     echo get_lang_name($lang);
     if ($link)
         echo "</a>";
+
+    if (strpos($_SERVER['PHP_SELF'], "lang.php"))
+    {
+        $url = "lang.php?lang=".urlencode($lang);
+        dump_pedantic($url, FALSE);
+    }
 }
 
 function dump_menu_resfile($lang, $resfile, $link = TRUE)
@@ -286,6 +298,12 @@ function dump_menu_resfile($lang, $resfile, $link = TRUE)
     echo get_resfile_name($resfile);
     if ($link)
         echo "</a>";
+
+    if (strpos($_SERVER['PHP_SELF'], "resfile.php"))
+    {
+        $url = "resfile.php?lang=".urlencode($lang)."&amp;resfile=".urlencode($resfile);
+        dump_pedantic($url, FALSE);
+    }
 }
 
 function dump_menu_resource($lang, $resfile, $type, $id)
@@ -294,6 +312,28 @@ function dump_menu_resource($lang, $resfile, $type, $id)
     echo " &gt; ";
 
     echo get_resource_name($type, $id);
+
+    $url = "resource.php?lang=".urlencode($lang)."&amp;resfile=".urlencode($resfile)."&amp;type=".urlencode($type)."&amp;id=".urlencode($id);
+    dump_pedantic($url, FALSE);
+}
+
+function dump_pedantic($url, $highest_level = FALSE)
+{
+    echo "<a style=\"float: right; margin-top: -13px;\" href=\"".$url;
+    if (is_pedantic())
+    {
+        echo "\" title=\"'Normal' mode will only show errors.\"";
+        echo ">Switch to 'Normal' mode</a>";
+    }
+    else
+    {
+        if ($highest_level)
+            echo "?pedantic=\"";
+        else
+            echo "&amp;pedantic=\"";
+        echo "title=\"'Pedantic' mode will show more potential translation issues.\"";
+        echo ">Switch to 'Pedantic' mode</a>";
+    }
 }
 
 ?>

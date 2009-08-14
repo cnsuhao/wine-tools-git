@@ -40,10 +40,11 @@ while ($line = fgets($summary, 1024))
 <?php echo $TITLE_DESCR ?>
 
 <p>This page shows the state of the translations of <a href="http://www.winehq.org/">Wine</a>.
-Note that some resources marked as translated may be in fact in English - sometimes developers
-add new English resources into every language file. This automatic tool doesn't detect this -
-it needs to be found manually by the translators. If you would like to read about how to
-improve Wine translations check <?php echo $WINE_WIKI_TRANSLATIONS ?>.
+Note that some resources marked as translated may in fact still be English. Sometimes developers
+add new English resources into every language file. This automatic tool has a 'Pedantic' mode that
+detects most of these but currently has a lot of false positives. If you would like to read about
+how to improve Wine translations check
+<?php echo $WINE_WIKI_TRANSLATIONS ?>.
 </p>
 
 <table class="index">
