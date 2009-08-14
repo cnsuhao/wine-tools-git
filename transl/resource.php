@@ -25,24 +25,43 @@ $pedantic = isset($_REQUEST['pedantic']);
 <div class="main">
 <h1>Dump of <?php echo get_resource_name($type, $id) ?></h1>
 
+<table class="resource" cellpadding="0" cellspacing="0">
+<tr class="header"><th colspan="5"><?php echo get_resource_name($type, $id) ?></th></tr>
+
 <?php
 
 $resources = new ResFile(get_res_path($resfile));
-
-$res_lang = update_lang_from_resfile($lang, $resfile);
-load_resource($resources, $type, $id, $res_lang, $res);
+load_resource($resources, $type, $id, $lang, $res);
 
 $master_res = NULL;
 if ($compare)
     load_resource($resources, $type, $id, $MASTER_LANGUAGE, $master_res);
 
-?>
+$warnings = 0;
+if ($pedantic && ($lang != "$MASTER_LANGUAGE"))
+{
+    if (!$master_res)
+        load_resource($resources, $type, $id, $MASTER_LANGUAGE, $master_res);
+    $counts = $res->getcounts($master_res);
+    $warnings = $counts['warnings'];
+}
 
-<table class="resource" cellpadding="0" cellspacing="0">
-<tr class="header"><th colspan="5"><?php echo get_resource_name($type, $id) ?></th></tr>
-<?php
+if ($compare || ($pedantic && $warnings != 0))
+{
+    if ($compare)
+    {
+        echo "<tr class=\"subheader\"><td colspan=\"5\" style=\"text-align: right\">";
+        echo "<small>".gen_resource_a($lang, $resfile, $type, $id, FALSE);
+        echo "&lt;&lt; Hide compare with ".get_locale_name($MASTER_LANGUAGE)."</a></small>";
+        echo "</td></tr>";
+    }
 
-if (!$compare)
+    echo "<tr class=\"subheader\"><td>id</td><td>&nbsp;</td><td>".get_lang_name($lang).
+         "</td><td>&nbsp;</td><td>".get_lang_name($MASTER_LANGUAGE)."</td></tr>";
+
+    $res->dump($master_res);
+}
+else
 {
     if ($lang != $MASTER_LANGUAGE)
     {
@@ -51,20 +70,12 @@ if (!$compare)
         echo "Compare with ".get_locale_name($MASTER_LANGUAGE)." &gt;&gt;</a></small>";
         echo "</td></tr>";
     }
-}
-else
-{
-    echo "<tr class=\"subheader\"><td colspan=\"5\" style=\"text-align: right\">";
-    echo "<small>".gen_resource_a($lang, $resfile, $type, $id, FALSE);
-    echo "&lt;&lt; Hide compare with ".get_locale_name($MASTER_LANGUAGE)."</a></small>";
-    echo "</td></tr>";
 
-    echo "<tr class=\"subheader\"><td>id</td><td>&nbsp;</td><td>".get_lang_name($lang)."</td><td>&nbsp;</td><td>".get_lang_name($MASTER_LANGUAGE)."</td></tr>";
+    $res->dump(NULL);
 }
-
-$res->dump($master_res);
 
 ?>
+
 </table>
 </div>
 </body>
