@@ -2,6 +2,8 @@
 include_once("config.php");
 include_once("lib.php");
 
+$pedantic = isset($_REQUEST['pedantic']);
+
 $summary = fopen("$DATAROOT/summary", "r");
 $transl = array();
 $sum = 0;

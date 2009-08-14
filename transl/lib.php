@@ -6,6 +6,15 @@ $WINE_WIKI_TRANSLATIONS = "<a href=\"redirect.php?url=http://wiki.winehq.org/Tra
 
 static $LOCALE_NAMES = array();
 
+function is_pedantic()
+{
+    global $pedantic;
+
+    if ($pedantic)
+        return TRUE;
+    return FALSE;
+}
+
 // These resources are retrieved as a sequence of words that need to be converted to a string
 function convert_to_unicode($words)
 {
@@ -227,28 +236,29 @@ function update_lang_from_resfile($lang, $resfile)
 
 function gen_lang_a($lang)
 {
-    return "<a href=\"lang.php?lang=".urlencode($lang)."\">";
+    $extra = is_pedantic() ? "&amp;pedantic=" : "";
+    return "<a href=\"lang.php?lang=".urlencode($lang)."$extra\">";
 }
 
 function gen_resfile_a($lang, $resfile)
 {
-    return "<a href=\"resfile.php?lang=".urlencode($lang)."&amp;resfile=".urlencode($resfile)."\">";
+    $extra = is_pedantic() ? "&amp;pedantic=" : "";
+    return "<a href=\"resfile.php?lang=".urlencode($lang)."&amp;resfile=".urlencode($resfile)."$extra\">";
 }
 
 function gen_resource_a($lang, $resfile, $type, $id, $compare=FALSE)
 {
-    if ($compare)
-        $extra = "&amp;compare=";
-    else
-        $extra = "";
+    $extra = ($compare) ? "&amp;compare=" : "";
+    $extra .= is_pedantic() ? "&amp;pedantic=" : "";
     return "<a href=\"resource.php?lang=".urlencode($lang)."&amp;resfile=".urlencode($resfile).
            "&amp;type=".urlencode($type)."&amp;id=".urlencode($id)."$extra\">";
 }
 
 function dump_menu_root($link = TRUE)
 {
+    $extra = is_pedantic() ? "?pedantic=" : "";
     if ($link)
-        echo "<a href=\"index.php\">";
+        echo "<a href=\"index.php$extra\">";
     echo "Wine translations";
     if ($link)
         echo "</a>";

@@ -3,6 +3,7 @@ include_once("config.php") ;
 include_once("lib.php");
 
 $lang = validate_lang($_REQUEST['lang']);
+$pedantic = isset($_REQUEST['pedantic']);
 
 $transl = array();
 $notransl = array();

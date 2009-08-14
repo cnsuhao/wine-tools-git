@@ -4,6 +4,7 @@ include("lib.php");
 
 $lang = validate_lang($_REQUEST['lang']);
 $resfile = validate_resfile($_REQUEST['resfile']);
+$pedantic = isset($_REQUEST['pedantic']);
 
 $msgs = array();
 ?>
