@@ -88,7 +88,7 @@ function dump_table($table)
     <title><?php echo get_lang_name($lang) ?> language - Wine translations</title>
 </head>
 
-<p><?php dump_menu_root() ?> &gt; <?php dump_menu_lang($lang, FALSE)?> </p>
+<p><?php dump_menu_lang($lang, FALSE); ?> </p>
 <div class="main">
 <h1><?php echo "Language: ".get_lang_name($lang) ?></h1>
 

@@ -18,8 +18,7 @@ $compare = isset($_REQUEST['compare']);
     <title><?php echo get_resource_name($type, $id) ?> from <?php echo $resfile?> - Wine translation</title>
 </head>
 <body>
-<?php dump_menu_root() ?> &gt <?php dump_menu_lang($lang) ?> &gt <?php dump_menu_resfile($lang, $resfile) ?> &gt
-<?php dump_menu_resource($lang, $resfile, $type, $id) ?>
+<?php dump_menu_resource($lang, $resfile, $type, $id); ?>
 <div class="main">
 <h1>Dump of <?php echo get_resource_name($type, $id) ?></h1>
 

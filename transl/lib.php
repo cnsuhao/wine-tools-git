@@ -252,6 +252,9 @@ function dump_menu_root()
 
 function dump_menu_lang($lang, $link = TRUE)
 {
+    dump_menu_root();
+    echo " &gt; ";
+
     if ($link)
         echo gen_lang_a($lang);
     echo get_lang_name($lang);
@@ -261,6 +264,9 @@ function dump_menu_lang($lang, $link = TRUE)
 
 function dump_menu_resfile($lang, $resfile, $link = TRUE)
 {
+    dump_menu_lang($lang);
+    echo " &gt; ";
+
     if ($link)
         echo gen_resfile_a($lang, $resfile);
     echo get_resfile_name($resfile);
@@ -270,6 +276,9 @@ function dump_menu_resfile($lang, $resfile, $link = TRUE)
 
 function dump_menu_resource($lang, $resfile, $type, $id)
 {
+    dump_menu_resfile($lang, $resfile);
+    echo " &gt; ";
+
     echo get_resource_name($type, $id);
 }
 
