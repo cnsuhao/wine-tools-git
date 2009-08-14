@@ -35,11 +35,10 @@ if (preg_match("/:00/", $lang))
 $file = fopen("$DATAROOT/$lang", "r");
 while ($line = fgets($file, 4096))
 {
-    if (preg_match("@$resfile: (.*)@", $line, $m))
-    {
-        $msgs[] = $m[1];
-    }
+    if (preg_match("@$resfile: (.*) \(([0-9]+) ([0-9]+)\)@", $line, $m))
+        $msgs[] = array($m[1], $m[2], $m[3]);
 }
+fclose($file);
 
 if (count($msgs) == 0)
 {
@@ -60,52 +59,63 @@ echo "<table>\n";
 sort($msgs);
 foreach ($msgs as $value)
 {
-    echo "<tr><td>";
-    if (strpos($value, "Error: ") === 0) {
+    $org_value = $value[0];
+    if (strpos($value[0], "Error: ") === 0) {
         $icon = "error.png";
-    } else if (strpos($value, "Warning: ") === 0) {
-        $icon = "warning.png";
-    } else if (strpos($value, "note: ") === 0) {
+    } else if (strpos($value[0], "note: ") === 0) {
         $icon = "ok.png";
-    } else if (strpos($value, "Missing: ") === 0) {
+    } else if (strpos($value[0], "Missing: ") === 0) {
         $icon = "missing.gif";
     } else {
         unset($icon);
     }
-    if (isset($icon))
-        echo "<img src=\"img/icon-".$icon."\" width=\"32\" alt=\"".$value."\">";
 
     $line_lang = $lang;
-    if (preg_match("/@LANG\(([0-9a-f]{3}:[0-9a-f]{2})\)/", $value, $m))
+    if (preg_match("/@LANG\(([0-9a-f]{3}:[0-9a-f]{2})\)/", $value[0], $m))
     {
         validate_lang($m[1]);
         $line_lang = $m[1];
-        $value = preg_replace("/@LANG\(([0-9a-f]{3}:[0-9a-f]{2})\)/", get_lang_name($m[1]), $value);
+        $value[0] = preg_replace("/@LANG\(([0-9a-f]{3}:[0-9a-f]{2})\)/", get_lang_name($m[1]), $value[0]);
     }
 
-    if (preg_match("/@RES\(([^:\)]+):([^:\)]+)\)/", $value, $m))
+    if (preg_match("/@RES\(([^:\)]+):([^:\)]+)\)/", $value[0], $m))
     {
-        if (is_dumpable_type($m[1]) && (strpos($value, "Missing: ") !== 0))
+        if (is_dumpable_type($m[1]) && (strpos($value[0], "Missing: ") !== 0))
         {
-            $error = (strpos($value, "Error: ") === 0);
-            $value = preg_replace("/@RES\(([^:\)]+):([^:\)]+)\)/",
+            $error = (strpos($value[0], "Error: ") === 0);
+            $value[0] = preg_replace("/@RES\(([^:\)]+):([^:\)]+)\)/",
                 gen_resource_a($line_lang, $resfile, $m[1], $m[2], $error).
                 get_resource_name($m[1], $m[2])."</a>",
-                $value);
+                $value[0]);
+
+            if ($pedantic && ($lang != "$MASTER_LANGUAGE"))
+            {
+                if ($value[2])
+                {
+                    if ($icon != "error.png")
+                        $icon = "warning.png";
+                    $value[0] .= ", there are $value[2] potential translation problems";
+                }
+            }
         }
         else
         {
-            $value = preg_replace("/@RES\(([^:\)]+):([^:\)]+)\)/", get_resource_name($m[1], $m[2]), $value);
-            if (is_dumpable_type($m[1]) && (strpos($value, "Missing: ") === 0))
-                $value .= " (see ".gen_resource_a($MASTER_LANGUAGE, $resfile, $m[1], $m[2])
+            $value[0] = preg_replace("/@RES\(([^:\)]+):([^:\)]+)\)/", get_resource_name($m[1], $m[2]), $value[0]);
+            if (is_dumpable_type($m[1]) && (strpos($value[0], "Missing: ") === 0))
+                $value[0] .= " (see ".gen_resource_a($MASTER_LANGUAGE, $resfile, $m[1], $m[2])
                     .get_locale_name($MASTER_LANGUAGE)." resource</a>)";
         }
     }
 
-    if (strpos($value, "note: ") === 0)
-        $value = substr($value, 6);
+    if (strpos($value[0], "note: ") === 0)
+        $value[0] = substr($value[0], 6);
 
-    echo "</td><td>".$value."</td></tr>\n";
+    echo "<tr><td>";
+
+    if (isset($icon))
+        echo "<img src=\"img/icon-".$icon."\" width=\"32\" alt=\"".$org_value."\">";
+
+    echo "</td><td>".$value[0]."</td></tr>\n";
 }
 echo "</table>\n";
 ?>

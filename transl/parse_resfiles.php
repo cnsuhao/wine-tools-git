@@ -281,7 +281,7 @@ foreach (array_keys($checks) as $dir)
                 if (!isset($resources[$basic_lang][$resource]))
                 {
                     $missing_rl[] = "$dir: Missing: resource ".resource_name2($resource).
-                                    ": No translation";
+                                    ": No translation (0 0)";
                     $missing++;
                 }
                 else
@@ -294,13 +294,13 @@ foreach (array_keys($checks) as $dir)
                     if ($res_errors)
                     {
                         $errors_rl[] = "$dir: Error: resource ".resource_name2($resource).
-                                     ": Translation inherited from @LANG($basic_lang): translation out of sync";
+                                     ": Translation inherited from @LANG($basic_lang): translation out of sync ($res_errors $res_warnings)";
                         $errors++;
                     }
                     else
                     {
                         $notes_rl[] = "$dir: note: resource ".resource_name2($resource).
-                                      ": Translation inherited from @LANG($basic_lang)";
+                                      ": Translation inherited from @LANG($basic_lang) ($res_errors $res_warnings)";
                         $translated++;
                     }
 
@@ -316,13 +316,13 @@ foreach (array_keys($checks) as $dir)
                 if ($res_errors)
                 {
                     $errors_rl[] = "$dir: Error: resource ".resource_name2($resource).
-                                 ": Translation out of sync";
+                                 ": Translation out of sync ($res_errors $res_warnings)";
                     $errors++;
                 }
                 else
                 {
-                    $notes_rl[] = "$dir: note: resoure ".resource_name2($resource).
-                                  ": Resource translated";
+                    $notes_rl[] = "$dir: note: resource ".resource_name2($resource).
+                                  ": Resource translated ($res_errors $res_warnings)";
                     $translated++;
                 }
 
