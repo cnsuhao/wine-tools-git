@@ -8,14 +8,13 @@ function resource_name2($resource)
     return "@RES($result[0]:$result[1])";
 }
 
-function create_resfiles($dir, $check)
+function create_resfiles($dir, $files)
 {
-    global $objdir, $srcdir, $toolsdir, $workdir;
+    global $objdir, $toolsdir, $workdir;
 
-    $srcs = "";
     $targets = "";
     $objs = "";
-    foreach (preg_split("/\s+/", $check['files']) as $file)
+    foreach (preg_split("/\s+/", $files) as $file)
     {
         if (preg_match("/^\s*$/", $file))
             continue;
@@ -29,11 +28,6 @@ function create_resfiles($dir, $check)
         if (preg_match("/.mc$/", $file))
         {
             $file .= ".rc";
-            $srcs .= " $objdir/$dir/$file";
-        }
-        else
-        {
-            $srcs .= " $srcdir/$dir/$file";
         }
         $targets .= preg_replace("/\.rc$/", ".res", $file). " ";
         $objs .= "$objdir/$dir/" . preg_replace("/\.rc$/", ".res", $file) . " ";
@@ -41,13 +35,8 @@ function create_resfiles($dir, $check)
     if ($targets == "")
         return;
 
-    $defs = $check['defines'];
-    if (preg_match("/^dlls/", $dir))
-        $defs .= "-D__WINESRC__";
+    fwrite(STDERR, "*** $dir\n");
 
-    fwrite(STDERR, "*** $dir [$defs]\n");
-
-    $incl = "-I$srcdir/$dir -I$objdir/$dir -I$srcdir/include -I$objdir/include";
     $norm_fn = preg_replace("/[^a-zA-Z0-9]/", "-", $dir);
 
     system("make -C $objdir/$dir -s $targets");
@@ -59,9 +48,7 @@ array_shift($argv);
 while (count($argv) != 0 && preg_match("/^-/", $argv[0]))
 {
     $opt = array_shift($argv);
-    if ($opt == "-S")
-        $srcdir = array_shift($argv);
-    else if ($opt == "-T")
+    if ($opt == "-T")
         $objdir = array_shift($argv);
     else if ($opt == "-t")
         $toolsdir = array_shift($argv);
@@ -70,7 +57,6 @@ while (count($argv) != 0 && preg_match("/^-/", $argv[0]))
     else
     {
         fwrite(STDERR, "Usage: $script [options] [makefiles]\n\n");
-        fwrite(STDERR, "  -S dir   Set the top of the Wine source tree\n");
         fwrite(STDERR, "  -T dir   Set the top of the Wine build tree\n");
         fwrite(STDERR, "  -t dir   Set the Wine tools directory\n");
         fwrite(STDERR, "  -w dir   Set the work directory\n");
@@ -78,32 +64,29 @@ while (count($argv) != 0 && preg_match("/^-/", $argv[0]))
     }
 }
 
-if ($objdir == "")
-    $objdir = $srcdir;
 if ($toolsdir == "")
     $toolsdir = $objdir;
 
-if ($srcdir == "" || $toolsdir == "" || $workdir == "")
+if ($objdir == "" || $toolsdir == "" || $workdir == "")
 {
-    die("Config entry for SOURCEROOT, WRCROOT or WORKDIR missing\n");
+    die("Config entry for BUILDROOT, WRCROOT or WORKDIR missing\n");
 }
 
 $makefiles = array();
-exec("find $srcdir/ -name Makefile.in -print", $makefiles);
+exec("find $objdir/ -name Makefile -print", $makefiles);
 
 // Parse the makefiles and create the .res files
 $checks = array();
 sort($makefiles);
 foreach ($makefiles as $makefile)
 {
-    $path = str_replace("$srcdir/", "", dirname($makefile));
-    if ($path == "programs/winetest" || $path == $srcdir || preg_match("/\/tests$/", $path))
+    $path = str_replace("$objdir/", "", dirname($makefile));
+    if ($path == "programs/winetest" || $path == $objdir || preg_match("/\/tests$/", $path))
     {
-        echo "--- Ignoring: $path/Makefile.in\n";
+        echo "--- Ignoring: $path/Makefile\n";
         continue;
     }
 
-    $defs = "";
     $files = "";
     $file = fopen("$makefile", "r") or die("Cannot open $makefile");
     while ($line = fgets($file, 4096))
@@ -114,12 +97,8 @@ foreach ($makefiles as $makefile)
             $line .= fgets($file, 4096);
         }
 
-        if (preg_match("/EXTRARCFLAGS\s*=\s*(.*)/", $line, $m))
-        {
-            $defs = $m[1];
-            if (preg_match("/res16/", $defs))
-                break;
-        }
+        if (preg_match("/EXTRARCFLAGS\s*=.*res16/", $line))
+            break;
 
         if (preg_match("/^(MC|RC)_SRCS\s*=\s*(.*)$/", $line, $m))
             $files .= " $m[2]";
@@ -129,9 +108,8 @@ foreach ($makefiles as $makefile)
     if ($files == "")
         continue;
 
-    $checks[$path]['defines'] = $defs;
-    $checks[$path]['files'] = $files;
-    create_resfiles($path, $checks[$path]);
+    $checks[$path] = 1;
+    create_resfiles($path, $files);
 }
 
 // Get all the possible languages (from kernel32) and filter

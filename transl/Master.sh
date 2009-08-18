@@ -44,7 +44,7 @@ mkdir $WORKDIR/data
 mkdir $WORKDIR/data/res
 
 # Analyze all the Makefiles
-php ./parse_resfiles.php -S "$SOURCEROOT" -T "$BUILDROOT" -t "$WRCROOT" -w "$WORKDIR/data" 2>>"$WORKDIR/run.log" || exit
+php ./parse_resfiles.php -T "$BUILDROOT" -t "$WRCROOT" -w "$WORKDIR/data" 2>>"$WORKDIR/run.log" || exit
 
 # Show any changes in the log
 diff -u $WORKDIR/run.log.old $WORKDIR/run.log
