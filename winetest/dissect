@@ -174,7 +174,7 @@ if ($plid==1 && $major==4) {
                 $version = "2003";
             }
         }
-    } elsif ($major==6)
+    } elsif ($major==6) {
         if      ($minor == 0) {
             if      ($product==1) {
                 $version = "vista";
