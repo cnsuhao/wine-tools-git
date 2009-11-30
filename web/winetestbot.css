@@ -1,0 +1,270 @@
+/* sidebar styles copied from forum.winehq.org */
+/* sidebar navigation */
+#sidebar            {
+                     position: absolute;
+                     z-index: 6;
+                     top: 200px;
+                     left: 0px;
+                     margin: 0px;
+                     padding: 0px;
+                     width: 156px;
+                    }
+#sidebar UL         {
+                     list-style: none;
+                     width: 156px;
+                     padding: 0;
+                     margin: 0 0 10px 0;
+                    }
+#sidebar LI         {
+                     width: 156px;
+                     margin: 0;
+                     padding: 5px 0 0 0;
+                     background-image: url('winehq/images/side_menu_bg.png');
+                     background-repeat: repeat-y;
+                     font-size: 10px;
+                     color: white;
+                    }
+#sidebar LI P       { margin: 0; padding: 0 15px 5px 15px; }
+#sidebar LI.top     {
+                     height: 33px;
+                     margin: 0;
+                     padding: 0;
+                     background-image: url('winehq/images/side_menu_top.png');
+                     background-repeat: no-repeat;
+                     font-weight: bold;
+                     font-size: 10px;
+                    }
+#sidebar LI.top P   { margin: 0; padding: 10px 0 0 5px; }
+#sidebar LI.bot     {
+                     height: 16px;
+                     margin: 0;
+                     padding: 0;
+                     background-image: url('winehq/images/side_menu_bot.png');
+                     background-repeat: no-repeat;
+                    }
+#sidebar A          { font-size: 10px; color: white; text-decoration: none; }
+#sidebar A:hover    { font-size: 10px; text-decoration: underline; }
+
+
+/* General text */
+A:visited
+{
+  color: #A50D0D;
+  text-decoration: none;
+}
+
+A
+{
+  color: #A50D0D;
+  text-decoration: none;
+}
+
+A:hover
+{
+  color: #FF6666;
+  text-decoration: underline;
+}
+
+.Required
+{
+   color: #FFA34F;
+   position: relative;
+   bottom: 0.5em;
+   font-size: 0.8em;
+}         
+
+h1, h2
+{
+  color: #FFA34F;
+  font-weight : bold;
+  text-align: center;
+  background-color: #601919;
+}
+
+h1
+{
+   padding: 5px;
+   margin-bottom: 2em;
+}
+
+h2
+{
+  padding: 2px;
+  font-size: 14pt;
+}
+
+.DetailsBody p 
+{
+   text-align: center;
+}
+
+.DetailProperty
+{
+   display: block;
+   width: 100%;
+   margin-bottom: 0.25em;
+}
+
+.DetailProperty label
+{
+   width: 45%;
+   display: block;
+   float: left;
+   text-align: right;
+   margin-right: 6px;
+}
+
+.DetailActions
+{
+  display: block;
+  width: 100%;
+  text-align: center;
+  height: 2em;
+  margin-top: 2em
+}
+
+.ItemBody p 
+{
+   text-align: center;
+}
+
+.ItemProperty
+{
+   display: block;
+   width: 100%;
+   margin-bottom: 0.25em;
+}
+
+.ItemProperty label
+{
+  width: 45%;
+  display: inline-block;
+  vertical-align: top;
+  text-align: right;
+  padding-right: 6px;
+}
+
+.ItemValue
+{
+  display: inline-block;
+  /* The joys of IE. Got the following 2 lines from
+     http://blog.mozilla.com/webdev/2009/02/20/cross-browser-inline-block/ */
+  zoom: 1;
+  *display: inline;
+}
+
+.ItemActions
+{
+  display: block;
+  width: 100%;
+  text-align: center;
+  height: 2em;
+  margin-top: 2em
+}
+
+.CollectionBlock table
+{
+  margin-left: auto;
+  margin-right: auto;
+  padding: 4px;
+  border: 1px solid #601919;
+}
+
+.CollectionBlock th
+{
+  text-align: left;
+  background-color: #601919;
+  color: white;
+  padding: 4px;
+  margin: 0;
+  border: 1px solid white;
+}
+
+.CollectionBlock td
+{
+  border: 1px solid white;
+}
+
+.CollectionBlock tr.even
+{
+  background-color: #fff8f8;
+  color: black;
+}
+
+.CollectionBlock tr.odd
+{
+  background-color: #f8e8e8;
+  color: black;
+}
+
+.CollectionBlockActions
+{
+  display: block;
+  width: 100%;
+  text-align: center;
+  height: 2em;
+  margin-top: 2em
+}
+
+.GeneralStatus
+{
+  text-align: center;
+}
+
+.GeneralStatusItem
+{
+  display: inline-block;
+  zoom: 1;
+  *display: inline;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.GeneralStatusItemText
+{
+  display: inline;
+/*
+  vertical-align: middle;
+*/
+  margin-left: 4px;
+}
+
+.Screenshot
+{
+  display: block;
+  text-align: center;
+  margin-bottom: 0.75em;
+}
+
+.TaskMoreInfoLinks
+{
+  display: block;
+  margin-bottom: 0.25em;
+}
+
+.TaskMoreInfoLink
+{
+  display: inline;
+  margin-right: 2em;
+}
+
+.LogDllName
+{
+  font-weight: bold;
+  padding-top: 0.5em;
+  padding-bottom: 0.1em;
+}
+
+pre
+{
+  margin: 0;
+  padding: 0;
+}
+
+#errormessage
+{
+   font-weight: bold;
+   padding: 0.5em;
+   margin-bottom: 2em;
+   background-color: red;
+}
