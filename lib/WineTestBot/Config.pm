@@ -53,7 +53,7 @@ $VixGuestUsername = "";
 $VixGuestPassword = "";
 
 $MaxRevertingVMs = 3;
-$MaxRunningVMs = 4;
+$MaxRunningVMs = 2;
 $SleepAfterRevert = 30;
 
 $AdminEMail = "";
