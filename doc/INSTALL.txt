@@ -1,0 +1,40 @@
+Dependencies:
+
+Apache2 with mod_perl
+MySQL
+Perl DBD and DBI::mysql modules
+Sendmail
+
+MySQL setup:
+- Create a new database 'winetestbot' and create tables in that db using the
+  ddl/winetestbot.sql script
+- Create a new user (e.g. 'winetestbot') and grant that user SELECT, INSERT,
+  UPDATE and DELETE on all tables in the database. The user does not need any
+  data definition grants
+
+Apache setup:
+- Create a new virtual host, use vhost_winetestbot.conf in this dir as template.
+- If you want to enable SSL, make sure you have your certificate set up. If
+  you don't want SSL, edit lib/WineTestBot/Config.pm and set UseSSL to "!1".
+- On OpenSUSE, I had to add "perl" to APACHE_MODULES in /etc/sysconfig/apache2.
+
+General setup:
+- Create a new account (e.g. 'winetest')
+- Unpack winetestbot source to /usr/lib/winetestbot (so this document should
+  be available as /usr/lib/winetestbot/doc/INSTALL.txt)
+- Install scripts/initd in /etc/init.d/winetestbot and activate it (on OpenSUSE:
+  "chkconfig winetestbot on", "service winetestbot start")
+- Set up a crontab entry for root to periodically run
+  scripts/CheckWIneTestBot.pl
+- Edit lib/WineTestBot/Config.pm and lib/Config.pl
+- Restart Apache, you should now be able to browse to the home page
+- Register a new account for yourself
+- Using the mysql client, set the ResetCode in your Users entry to a known
+  value, e.g.
+  mysql> update Users set ResetCode = 'a' where Name = '<username>';
+- Browse to http://server.name/ResetPassword.pl and enter your username,
+  the resetcode you just updated and a new password.
+- Make yourself admin by adding a row to UserRoles:
+  mysql> insert into UserRoles values('<username>', 'admin');
+- When you refresh the home page, you should now have an "Admin" menu in the
+  sidebar
