@@ -182,7 +182,11 @@ if ($plid==1 && $major==4) {
                 $version = "2008";
             }
         } elsif ($minor == 1) {
-            $version = "win7";
+            if      ($product==1) {
+                $version = "win7";
+            } elsif ($product==3) {
+                $version = "2008";
+            }
         }
     } 
 } elsif ($plid==3) {
