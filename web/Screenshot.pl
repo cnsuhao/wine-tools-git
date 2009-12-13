@@ -2,8 +2,6 @@
 
 use strict;
 
-require "Config.pl";
-
 use Apache2::Const -compile => qw(REDIRECT);
 use CGI;
 use CGI::Cookie;

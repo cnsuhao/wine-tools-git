@@ -18,8 +18,6 @@
 
 use strict;
 
-require "Config.pl";
-
 package SubmitPage1;
 
 use CGI qw(:standard);

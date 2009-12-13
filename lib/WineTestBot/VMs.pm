@@ -57,10 +57,9 @@ sub GetHostHandle
 
   my $Err = VIX_OK;
   ($Err, $self->{HostHandle}) = HostConnect(VIX_API_VERSION,
-                                            VIX_SERVICEPROVIDER_VMWARE_VI_SERVER,
-                                            $VixHostName, 0, $VixHostUsername,
-                                            $VixHostPassword, 0,
-                                            VIX_INVALID_HANDLE);
+                                            $VixHostType, $VixHostName, 0,
+                                            $VixHostUsername, $VixHostPassword,
+                                            0, VIX_INVALID_HANDLE);
   if ($Err != VIX_OK)
   {
     $self->{HostHandle} = VIX_INVALID_HANDLE;

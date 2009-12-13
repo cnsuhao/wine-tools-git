@@ -4,6 +4,7 @@ Apache2 with mod_perl
 MySQL
 Perl DBD and DBI::mysql modules
 Sendmail
+VMware Vix API (http://www.vmware.com/support/developer/vix-api)
 
 MySQL setup:
 - Create a new database 'winetestbot' and create tables in that db using the
@@ -19,14 +20,23 @@ Apache setup:
 - On OpenSUSE, I had to add "perl" to APACHE_MODULES in /etc/sysconfig/apache2.
 
 General setup:
-- Create a new account (e.g. 'winetest')
+- Create a new system group 'winetest' and a system user 'winetest', make sure
+  to make user winetest a member of group winetest
 - Unpack winetestbot source to /usr/lib/winetestbot (so this document should
   be available as /usr/lib/winetestbot/doc/INSTALL.txt)
+- Create directory /var/lib/winetestbot, create subdirs 'jobs', 'latest',
+  'socket' and 'staging' within this dir. Set owner/group to winetest/winetest
+  for jobs, latest, socket, but set owner/group to wwwrun/winetest for staging
+  (where 'wwwrun' is the account your apache server runs under). Run
+  chmod g+w /var/lib/winetestbot/*
+- Create an empty logfile /var/log/winetestbot/log and make it writeable to
+  group winetest.
 - Install scripts/initd in /etc/init.d/winetestbot and activate it (on OpenSUSE:
   "chkconfig winetestbot on", "service winetestbot start")
 - Set up a crontab entry for root to periodically run
-  scripts/CheckWIneTestBot.pl
-- Edit lib/WineTestBot/Config.pm and lib/Config.pl
+  scripts/CheckWineTestBot.pl
+- Copy lib/WineTestBot/ConfigLocalTemplate.pl and to
+  lib/WineTestBot/ConfigLocal.pl and edit it.
 - Restart Apache, you should now be able to browse to the home page
 - Register a new account for yourself
 - Using the mysql client, set the ResetCode in your Users entry to a known

@@ -18,8 +18,6 @@
 
 use strict;
 
-require "Config.pl";
-
 package VMsListPage;
 
 use ObjectModel::PropertyDescriptor;

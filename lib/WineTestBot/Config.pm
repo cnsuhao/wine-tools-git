@@ -26,40 +26,46 @@ WineTestBot::Config - Configuration settings
 
 package WineTestBot::Config;
 
-use vars qw (@ISA @EXPORT $UseSSL $LogDir $DataDir $BinDir $VixHostName
-             $VixHostUsername $VixHostPassword $VixGuestUsername
-             $VixGuestPassword $MaxRevertingVMs $MaxRunningVMs
-             $SleepAfterRevert $AdminEMail $SuiteTimeout $SingleTimeout
-             $OverheadTimeout);
+use ObjectModel::DBIBackEnd;
+
+use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
+             $VixHostType $VixHostName $VixHostUsername $VixHostPassword
+             $VixGuestUsername $VixGuestPassword $DbDataSource $DbUsername
+             $DbPassword $MaxRevertingVMs $MaxRunningVMs $SleepAfterRevert
+             $AdminEMail $SuiteTimeout $SingleTimeout $OverheadTimeout);
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw($UseSSL $LogDir $DataDir $BinDir $VixHostName $VixHostUsername
-             $VixHostPassword $VixGuestUsername $VixGuestPassword
-             $MaxRevertingVMs $MaxRunningVMs $SleepAfterRevert $AdminEMail
-             $SuiteTimeout $SingleTimeout $OverheadTimeout); 
-
-$UseSSL = 1;
+@EXPORT = qw($UseSSL $LogDir $DataDir $BinDir $VixHostType $VixHostName
+             $VixHostUsername $VixHostPassword $VixGuestUsername
+             $VixGuestPassword $MaxRevertingVMs $MaxRunningVMs
+             $SleepAfterRevert $AdminEMail $SuiteTimeout $SingleTimeout
+             $OverheadTimeout); 
+@EXPORT_OK = qw($DbDataSource $DbUsername $DbPassword);
 
 $LogDir = "/var/log/winetestbot";
 $DataDir = "/var/lib/winetestbot";
 $BinDir = "/usr/lib/winetestbot/bin";
 
-die "Please set connection details in WineTestBot/Config.pm";
-$VixHostName = "";
-$VixHostUsername = "";
-$VixHostPassword = "";
-$VixGuestUsername = "";
-$VixGuestPassword = "";
-
 $MaxRevertingVMs = 3;
 $MaxRunningVMs = 2;
 $SleepAfterRevert = 30;
 
-$AdminEMail = "";
-
 $SuiteTimeout = 30 * 60;
 $SingleTimeout = 5 * 60;
 $OverheadTimeout = 3 * 60;
+
+eval 'require "WineTestBot/ConfigLocal.pl";';
+if ($@)
+{
+  print STDERR "Please create a valid lib/WineTestBot/ConfigLocal.pl, use " .
+               "lib/WineTestBot/ConfigLocalTemplate.pl as template\n";
+  exit;
+}
+
+ObjectModel::DBIBackEnd->UseDBIBackEnd($DbDataSource, $DbUsername, $DbPassword, 
+                                       { RaiseError => 1 });
+
+umask 002;
 
 1;

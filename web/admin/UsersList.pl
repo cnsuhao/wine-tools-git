@@ -18,9 +18,6 @@
 
 use strict;
 
-require "Config.pl";
-#use Apache2::Reload;
-
 package UsersListPage;
 
 use ObjectModel::PropertyDescriptor;

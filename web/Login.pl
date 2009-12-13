@@ -18,8 +18,6 @@
 
 use strict;
 
-require "Config.pl";
-
 package LoginPage;
 
 use CGI qw(:standard escapeHTML);

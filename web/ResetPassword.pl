@@ -18,8 +18,6 @@
 
 use strict;
 
-require "Config.pl";
-
 package ResetPasswordPage;
 
 use CGI qw(:standard escapeHTML);

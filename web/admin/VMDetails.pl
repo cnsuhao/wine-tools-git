@@ -18,8 +18,6 @@
 
 use strict;
 
-require "Config.pl";
-
 package VMDetailsPage;
 
 use ObjectModel::CGI::ItemPage;

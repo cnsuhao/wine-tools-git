@@ -18,8 +18,6 @@
 
 use strict;
 
-require "Config.pl";
-
 package LogoutPage;
 
 use ObjectModel::CGI::Page;

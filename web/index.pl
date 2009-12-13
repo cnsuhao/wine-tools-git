@@ -18,8 +18,6 @@
 
 use strict;
 
-require "Config.pl";
-
 package JobStatusBlock;
 
 use ObjectModel::CGI::CollectionBlock;

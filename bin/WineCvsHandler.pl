@@ -4,7 +4,14 @@
 
 use strict;
 
-use lib("/usr/lib/winetestbot/lib");
+my $Dir;
+sub BEGIN
+{
+  $0 =~ m=^(.*)/[^/]*$=;
+  $Dir = $1;
+}
+use lib "$Dir/../lib";
+
 use WineTestBot::Engine::Notify;
 
 ExpectWinetestUpdate();
