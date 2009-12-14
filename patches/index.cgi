@@ -54,7 +54,7 @@ my @legend =
  [ "applyfail",  "<ul><li>The patch got mangled in transit.</li>" .
                  "<li>It's not relative to the latest git.</li>" .
                  "<li>Someone else sent a patch that changes the same area and causes conflicts.</li>" .
-                 "<li>The patch is relative to a subdirectory (using 'git format-patch' is strongly recommended).</ul>" ],
+                 "<li>The patch is relative to a subdirectory (using 'git format-patch' is strongly recommended).</li></ul>" ],
  [ "buildfail",  "<ul><li>Syntax error or other compile problem.</li>" .
                  "<li>You forgot to include some changes or new files required for compilation.</li>" .
                  "<li>The patch causes compiler warnings (maintainer mode implies -Werror).</li></ul>" ],
@@ -147,7 +147,7 @@ print "<div class=\"legend\"><h2><a name=\"legend\">Legend</a></h2>\n";
 print "<table class=\"legend\"><tr><th class=\"status\">Status</th><th class=\"causes\">Possible causes</th></tr>\n";
 foreach my $status (@legend)
 {
-    printf "<tr class=\"%s\"><td class=\"status %s\">%s</td><td class=\"causes\">%s</td>\n",
+    printf "<tr class=\"%s\"><td class=\"status %s\">%s</td><td class=\"causes\">%s</td></tr>\n",
            $row & 1 ? "odd" : "even", $status->[0], $status_descr{$status->[0]}, $status->[1];
     $row++;
     
