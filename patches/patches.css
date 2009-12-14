@@ -1,0 +1,59 @@
+/* WineHQ-ish look */
+body {
+    background-color: #E2E2E2;
+    color: black;
+    font-family: "bitstream vera sans", "verdana", "arial", "helvetica", sans-serif;
+    margin: 10px;
+    font-size: small;
+}
+
+a:link    { text-decoration: none; }
+a:visited { text-decoration: none; }
+a:hover   { text-decoration: underline; }
+
+div.main, div.legend {
+    margin: 10px 0 0 0;
+    background-color: white;
+    width: 100%;
+    border: 1px solid #601919;
+}
+
+h1, h2 {
+    text-align: center;
+    background-color: #601919;
+    color: #ffffff;
+    padding: 4px;
+    margin: 0;
+}
+
+table th {
+    text-align: left;
+    background-color: #601919;
+    color: white;
+    padding: 4px;
+    margin: 0;
+}
+
+table.main, table.legend { width: 100%; }
+
+table.legend ul { margin: 2px 0; }
+
+tr.even { background-color: #fff8f8; }
+tr.odd { background-color: #f8e8e8; }
+
+.id, .status { text-align: center; }
+.id, .status, .author { white-space: nowrap; padding: 0 3px; }
+
+.nil,        .nil :link,        .nil :visited        { color: blue; font-weight: bold; }
+.pending,    .pending :link,    .pending :visited    { color: blue; }
+.committed,  .committed :link,  .committed :visited  { color: green; }
+.depend,     .depend :link,     .depend :visited     { color: #e08000; }
+.superseded, .superseded :link, .superseded :visited { color: #e08000; }
+.other,      .other :link,      .other :visited      { color: #e08000; }
+.applyfail,  .applyfail :link,  .applyfail :visited  { color: red; }
+.buildfail,  .buildfail :link,  .buildfail :visited  { color: red; }
+.formatting, .formatting :link, .formatting :visited { color: red; }
+.nopatch,    .nopatch :link,    .nopatch :visited    { color: red; }
+.rejected,   .rejected :link,   .rejected :visited   { color: red; }
+.split,      .split :link,      .split :visited      { color: red; }
+.testfail,   .testfail :link,   .testfail :visited   { color: red; }

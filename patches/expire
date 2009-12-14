@@ -1,0 +1,159 @@
+#!/usr/bin/perl -w
+#
+# Patches expiration script
+#
+# Copyright 2009 Alexandre Julliard
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
+# age of last status change before expiry, in days
+my %status_expiry =
+(
+ "nil"        => 30,
+ "pending"    => 30,
+ "applied"    => 30,
+ "committed"  => 1,
+ "applyfail"  => 7,
+ "buildfail"  => 7,
+ "formatting" => 7,
+ "other"      => 7,
+ "nopatch"    => 3,
+ "rejected"   => 7,
+ "split"      => 7,
+ "depend"     => 7,
+ "superseded" => 1,
+ "testfail"   => 7,
+);
+
+sub usage()
+{
+    print STDERR "Usage: $0 [-n] [-v] [directory]\n";
+    exit 1;
+}
+
+my $dir = ".";
+my $dry_run = 0;
+my $quiet = 1;
+my $now = time();
+
+foreach my $arg (@ARGV)
+{
+    if ($arg eq "-n") { $dry_run = 1; }
+    elsif ($arg eq "-v") { $quiet = 0; }
+    elsif ($arg =~ /^-/) { usage(); }
+    else { $dir = $arg; }
+}
+
+sub get_patch_subject($)
+{
+    my $file = shift;
+    my $ret;
+
+    return undef unless open PATCH, "<$dir/$file";
+    while (<PATCH>)
+    {
+        if (/^Subject: (.*)$/)
+        {
+            $ret = $1;
+            last;
+        }
+    }
+    close PATCH;
+    return $ret;
+}
+
+sub get_patch_state($)
+{
+    my $file = shift;
+    my $status = "nil";
+    my $mtime = 0;
+
+    if (open STATUS, "<$dir/$file.status")
+    {
+        $status = <STATUS>;
+        chomp $status;
+        $mtime = (stat STATUS)[9] unless ($status eq "nil" || $status eq "pending");
+        close STATUS;
+    }
+    if (!$mtime && $file !~ /^OLD\//)
+    {
+        $mtime = (stat "$dir/$file")[9];
+    }
+    return ($status, $mtime);
+}
+
+# expire current patches
+
+opendir DIR, $dir;
+foreach my $file (sort readdir DIR)
+{
+    next unless $file =~ /^[0-9]+$/;
+    my ($status, $mtime) = get_patch_state( "$file" );
+    my $limit = $status_expiry{$status} || 7;
+
+    if (($now - $mtime - 12*60*60) / (24*60*60) > $limit)
+    {
+        if ($status eq "nil" || $status eq "pending")
+        {
+            # move to OLD
+            printf "rename $file -> OLD   %s  %s\n", $status, get_patch_subject( "$file" ) unless $quiet;
+            unless ($dry_run)
+            {
+                rename "$dir/$file",        "$dir/OLD/$file";
+                rename "$dir/$file.status", "$dir/OLD/$file.status";
+                rename "$dir/$file.order",  "$dir/OLD/$file.order";
+            }
+        }
+        else
+        {
+            printf "unlink $file   %s  %s\n", $status, get_patch_subject( "$file" ) unless $quiet;
+            unless ($dry_run)
+            {
+                unlink "$dir/$file";
+                unlink "$dir/$file.status";
+                unlink "$dir/$file.order";
+            }
+        }
+    }
+}
+closedir DIR;
+
+# expire old patches whose status has changed
+
+opendir DIR, "$dir/OLD";
+foreach my $file (sort readdir DIR)
+{
+    next unless $file =~ /^[0-9]+$/;
+    my ($status, $mtime) = get_patch_state( "OLD/$file" );
+
+    if ($status eq "pending")
+    {
+        # remove status file
+        printf "unlink OLD/$file.status\n" unless $quiet;
+        unlink "$dir/OLD/$file.status" unless $dry_run;
+    }
+    elsif ($status ne "nil")
+    {
+        printf "unlink OLD/$file   %s  %s\n", $status, get_patch_subject( "OLD/$file" ) unless $quiet;
+        unless ($dry_run)
+        {
+            unlink "$dir/OLD/$file";
+            unlink "$dir/OLD/$file.status";
+            unlink "$dir/OLD/$file.order";
+        }
+    }
+}
+closedir DIR;
