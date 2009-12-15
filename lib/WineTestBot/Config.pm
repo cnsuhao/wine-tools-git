@@ -47,7 +47,7 @@ $LogDir = "/var/log/winetestbot";
 $DataDir = "/var/lib/winetestbot";
 $BinDir = "/usr/lib/winetestbot/bin";
 
-$MaxRevertingVMs = 3;
+$MaxRevertingVMs = 1;
 $MaxRunningVMs = 2;
 $SleepAfterRevert = 30;
 
