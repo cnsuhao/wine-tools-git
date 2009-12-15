@@ -33,6 +33,15 @@ sub _initialize
   $self->SUPER::_initialize(@_, CreateUsers());
 }
 
+sub SortKeys
+{
+  my $self = shift;
+  my ($CollectionBlock, $Keys) = @_;
+
+  my @SortedKeys = sort { $a cmp $b } @$Keys;
+  return \@SortedKeys;
+}
+
 sub DisplayProperty
 {
   my $self = shift;
