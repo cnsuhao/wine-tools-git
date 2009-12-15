@@ -43,10 +43,18 @@ sub GenerateField
     return;
   }
 
+  my $Bits = $self->GetPropertyValue($PropertyDescriptor);
+  if (! defined($Bits))
+  {
+    $Bits = 0;
+  }
   print "<div class='ItemValue'><input type='radio' name='", $PropertyDescriptor->GetName(),
-        "' value='32' />32 bits<br>\n";
+        "' value='32' ", $Bits == 32 ? "checked='checked' " : "",
+        "/>32 bits<br>\n";
   print "<input type='radio' name='", $PropertyDescriptor->GetName(),
-        "' value='64' />64 bits</div>\n";
+        "' value='64' ", $Bits == 64 ? "checked='checked' " : "",
+        "/>64 bits<br>\n";
+  print "</div>\n";
 }
 
 package main;
