@@ -493,16 +493,14 @@ BEGIN
   $PropertyDescriptors[3] =
     CreateBasicPropertyDescriptor("Bits", "32 or 64 bits", !1, 1, "N", 2);
   $PropertyDescriptors[4] =
-    CreateBasicPropertyDescriptor("MemSize", "Memory size (MB)", !1, 1, "N", 5);
-  $PropertyDescriptors[5] =
     CreateBasicPropertyDescriptor("Status", "Current status", !1, 1, "A", 9);
-  $PropertyDescriptors[6] =
+  $PropertyDescriptors[5] =
     CreateBasicPropertyDescriptor("VmxFilePath", "Path to .vmx file", !1, 1, "A", 64);
-  $PropertyDescriptors[7] =
+  $PropertyDescriptors[6] =
     CreateBasicPropertyDescriptor("IdleSnapshot", "Name of idle snapshot", !1, 1, "A", 32);
-  $PropertyDescriptors[8] =
+  $PropertyDescriptors[7] =
     CreateBasicPropertyDescriptor("Interactive", "Needs interactive flag", !1, 1, "B", 1);
-  $PropertyDescriptors[9] =
+  $PropertyDescriptors[8] =
     CreateBasicPropertyDescriptor("Description", "Description", !1, !1, "A", 40);
 }
 

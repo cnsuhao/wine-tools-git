@@ -47,7 +47,6 @@ CREATE TABLE VMs
   BaseOS       ENUM('Y', 'N')   NOT NULL,
   SortOrder    INT(3)           NOT NULL,
   Bits         ENUM('32', '64') NOT NULL,
-  MemSize      INT(5)           UNSIGNED NOT NULL,
   Status       ENUM('reverting', 'sleeping', 'idle', 'running', 'dirty', 'offline') NOT NULL,
   VmxFilePath  VARCHAR(64)      NOT NULL,
   IdleSnapshot VARCHAR(32)      NOT NULL,
