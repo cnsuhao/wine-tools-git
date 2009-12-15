@@ -139,6 +139,7 @@ use ObjectModel::PropertyDescriptor;
 use WineTestBot::Config;
 use WineTestBot::Log;
 use WineTestBot::Steps;
+use WineTestBot::Users;
 use WineTestBot::VMs;
 
 use vars qw(@ISA @EXPORT @PropertyDescriptors);
@@ -213,49 +214,49 @@ sub Schedule
   $self->AddFilter("Status", ["queued", "running"]);
   my @SortedJobs = sort CompareJobPriority @{$self->GetItems()};
 
-  if ($RevertingVMs == 0)
+  my $RevertPriority;
+  foreach my $Job (@SortedJobs)
   {
-    foreach my $Job (@SortedJobs)
+    my $Steps = $Job->Steps;
+    $Steps->AddFilter("Status", ["queued", "running"]);
+    my @SortedSteps = sort { $a->No <=> $b->No } @{$Steps->GetItems()};
+    if (@SortedSteps != 0)
     {
-      my $Steps = $Job->Steps;
-      $Steps->AddFilter("Status", ["queued", "running"]);
-      my @SortedSteps = sort { $a->No <=> $b->No } @{$Steps->GetItems()};
-      if (@SortedSteps != 0)
+      my $Step = $SortedSteps[0];
+      $Step->HandleStaging($Job->GetKey());
+      my $Tasks = $Step->Tasks;
+      $Tasks->AddFilter("Status", ["queued", "running"]);
+      my @SortedTasks = sort CompareTaskStatus @{$Tasks->GetItems()};
+      foreach my $Task (@SortedTasks)
       {
-        my $Step = $SortedSteps[0];
-        $Step->HandleStaging($Job->GetKey());
-        my $Tasks = $Step->Tasks;
-        $Tasks->AddFilter("Status", ["queued", "running"]);
-        my @SortedTasks = sort CompareTaskStatus @{$Tasks->GetItems()};
-        foreach my $Task (@SortedTasks)
+        if ($Task->Status eq "queued")
         {
-          if ($Task->Status eq "queued")
+          if ($Task->VM->Status eq "idle" &&
+              (! defined($MaxRunningVMs) || $RunningVMs < $MaxRunningVMs) &&
+              $RevertingVMs == 0 &&
+              (! defined($RevertPriority) || $Job->Priority <= $RevertPriority))
           {
-            if ($Task->VM->Status eq "idle" &&
-                (! defined($MaxRunningVMs) || $RunningVMs < $MaxRunningVMs))
+            $Task->VM->Status("running");
+            my ($ErrProperty, $ErrMessage) = $Task->VM->Save();
+            if (defined($ErrMessage))
             {
-              $Task->VM->Status("running");
-              my ($ErrProperty, $ErrMessage) = $Task->VM->Save();
-              if (defined($ErrMessage))
-              {
-                return $ErrMessage;
-              }
-              $ErrMessage = $Task->Run($Job->Id, $Step->No);
-              if (defined($ErrMessage))
-              {
-                return $ErrMessage;
-              }
-              $Job->UpdateStatus;
-              $RunningVMs++;
+              return $ErrMessage;
             }
-            elsif ($Task->VM->Status eq "dirty")
+            $ErrMessage = $Task->Run($Job->Id, $Step->No);
+            if (defined($ErrMessage))
             {
-              my $VMKey = $Task->VM->GetKey();
-              if (! defined($DirtyVMsBlockingJobs{$VMKey}) ||
-                  $Job->Priority < $DirtyVMsBlockingJobs{$VMKey})
-              {
-                $DirtyVMsBlockingJobs{$VMKey} = $Job->Priority;
-              }
+              return $ErrMessage;
+            }
+            $Job->UpdateStatus;
+            $RunningVMs++;
+          }
+          elsif ($Task->VM->Status eq "dirty")
+          {
+            my $VMKey = $Task->VM->GetKey();
+            if (! defined($DirtyVMsBlockingJobs{$VMKey}) ||
+                $Job->Priority < $DirtyVMsBlockingJobs{$VMKey})
+            {
+              $DirtyVMsBlockingJobs{$VMKey} = $Job->Priority;
             }
           }
         }
@@ -281,11 +282,12 @@ sub Schedule
   }
   foreach $VMKey (@{$VMs->GetKeys()})
   {
+    my $VM = $VMs->GetItem($VMKey);
     if (! defined($DirtyVMsBlockingJobs{$VMKey}) &&
         (! defined($MaxRevertingVMs) || $RevertingVMs < $MaxRevertingVMs) &&
-        $VMs->GetItem($VMKey)->Status eq 'dirty')
+        $VM->Status eq 'dirty' && $VM->BaseOS)
     {
-      $VMs->GetItem($VMKey)->RunRevert();
+      $VM->RunRevert();
       $RevertingVMs++;
     }
   }

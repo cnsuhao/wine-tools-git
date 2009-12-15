@@ -32,6 +32,10 @@ sub FatalError
     $Task->Save();
     $Job->UpdateStatus();
 
+    if (! $Task->VM->BaseOS)
+    {
+      $Task->VM->PowerOff();
+    }
     $Task->VM->Status('dirty');
     $Task->VM->Save();
   }
@@ -221,6 +225,10 @@ $Task->Ended(time);
 $Task->TestFailures(CountFailures($FullRptFileName));
 $Task->Save();
 $Job->UpdateStatus();
+if (! $Task->VM->BaseOS)
+{
+  $Task->VM->PowerOff();
+}
 $VM->Status('dirty');
 $VM->Save();
 
