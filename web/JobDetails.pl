@@ -121,7 +121,7 @@ sub GenerateBody
     my $FullLogParamName = "log_$Key";
     my $LogName = "$TaskDir/log";
     print "<div class='TaskMoreInfoLinks'>\n";
-    if ($VM->Status eq "running")
+    if ($Item->Status eq "running")
     {
       my $URI = "/Screenshot.pl?VMName=" . uri_escape($VM->Name);
       print "<div class='Screenshot'><img src='" .
