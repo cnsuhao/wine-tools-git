@@ -330,14 +330,50 @@ sub DeleteItem
   my $self = shift;
   my $Item = shift;
 
+  my $ErrMessage = $Item->OnDelete();
+  if (defined($ErrMessage))
+  {
+    return $ErrMessage;
+  }
   my $Key = $Item->GetKey();
-  my $ErrMessage = $ActiveBackEnd->DeleteItem($Item);
+  $ErrMessage = $ActiveBackEnd->DeleteItem($Item);
   if (defined($ErrMessage))
   {
     return $ErrMessage;
   }
 
   if (defined($self->{Items}{$Key}))
+  {
+    delete($self->{Items}{$Key});
+  }
+
+  return undef;
+}
+
+sub DeleteAll
+{
+  my $self = shift;
+
+  if (! $self->{Loaded})
+  {
+    $self->Load();
+  }
+  foreach my $Item (values %{$self->{Items}})
+  {
+    my $ErrMessage = $Item->OnDelete();
+    if (defined($ErrMessage))
+    {
+      return $ErrMessage;
+    }
+  }
+
+  my $ErrMessage = $ActiveBackEnd->DeleteAll($self);
+  if (defined($ErrMessage))
+  {
+    return $ErrMessage;
+  }
+
+  foreach my $Key (keys %{$self->{Items}})
   {
     delete($self->{Items}{$Key});
   }

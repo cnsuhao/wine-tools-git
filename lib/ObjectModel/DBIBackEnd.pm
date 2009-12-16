@@ -499,6 +499,32 @@ sub DeleteItem
   return undef;
 }
 
+sub DeleteAll
+{
+  my $self = shift;
+  my $Collection = shift;
+
+  my $Where = "";
+  my @Data;
+  my ($MasterColNames, $MasterColValues) = $Collection->GetMasterCols();
+  if (defined($MasterColNames))
+  {
+    $Where = join(" = ? AND ", @{$MasterColNames}) . " = ?";
+    push(@Data, @{$MasterColValues});
+  }
+
+  my $Query = "DELETE FROM " . $Collection->GetTableName();
+  if ($Where ne "")
+  {
+    $Query .= " WHERE " . $Where;
+  }
+  my $Statement = $self->{Db}->prepare($Query);
+  $Statement->execute(@Data);
+  $Statement->finish();
+
+  return undef;
+}
+
 sub UseDBIBackEnd
 {
   my $class = shift;

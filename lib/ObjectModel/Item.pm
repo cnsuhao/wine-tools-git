@@ -342,6 +342,26 @@ sub Validate
   return (undef, undef);
 }
 
+sub OnDelete
+{
+  my $self = shift;
+  foreach my $PropertyDescriptor (@{$self->{PropertyDescriptors}})
+  {
+    if ($PropertyDescriptor->GetClass() eq "Detailref")
+    {
+      my $PropertyName = $PropertyDescriptor->GetName();
+      my $Detailref = $self->$PropertyName;
+      my $ErrMessage = $Detailref->DeleteAll();
+      if (defined($ErrMessage))
+      {
+        return $ErrMessage;
+      }
+    }
+  }
+
+  return undef;
+}
+
 sub OnSaved
 {
   my $self = shift;
