@@ -214,6 +214,7 @@ sub Schedule
   $self->AddFilter("Status", ["queued", "running"]);
   my @SortedJobs = sort CompareJobPriority @{$self->GetItems()};
 
+  my $DirtyIndex = 0;
   my $RevertPriority;
   foreach my $Job (@SortedJobs)
   {
@@ -256,7 +257,8 @@ sub Schedule
             if (! defined($DirtyVMsBlockingJobs{$VMKey}) ||
                 $Job->Priority < $DirtyVMsBlockingJobs{$VMKey})
             {
-              $DirtyVMsBlockingJobs{$VMKey} = $Job->Priority;
+              $DirtyVMsBlockingJobs{$VMKey} = $DirtyIndex;
+              $DirtyIndex++;
             }
           }
         }
@@ -270,9 +272,9 @@ sub Schedule
   }
 
   my $VMs = CreateVMs();
-  my @DirtyVMsByPriority = sort { $DirtyVMsBlockingJobs{$a} <=> $DirtyVMsBlockingJobs{$b} } keys %DirtyVMsBlockingJobs;
+  my @DirtyVMsByIndex = sort { $DirtyVMsBlockingJobs{$a} <=> $DirtyVMsBlockingJobs{$b} } keys %DirtyVMsBlockingJobs;
   my $VMKey;
-  foreach $VMKey (@DirtyVMsByPriority)
+  foreach $VMKey (@DirtyVMsByIndex)
   {
     if (! defined($MaxRevertingVMs) || $RevertingVMs < $MaxRevertingVMs)
     {
