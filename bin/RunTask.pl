@@ -93,7 +93,7 @@ sub CountFailures
   my $Line;
   while (defined($Line = <REPORTFILE>))
   {
-    if ($Line =~ m/: \d+ tests executed \(\d+ marked as todo, (\d+) failures\), \d+ skipped\./)
+    if ($Line =~ m/: \d+ tests? executed \(\d+ marked as todo, (\d+) failures?\), \d+ skipped\./)
     {
       $Failures += $1;
     }
