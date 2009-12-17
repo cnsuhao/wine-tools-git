@@ -120,6 +120,7 @@ sub GenerateBody
     my $ScreenshotParamName = "scrshot_$Key";
     my $FullLogParamName = "log_$Key";
     my $LogName = "$TaskDir/log";
+    my $ErrName = "$TaskDir/err";
     print "<div class='TaskMoreInfoLinks'>\n";
     if ($Item->Status eq "running")
     {
@@ -149,10 +150,6 @@ sub GenerateBody
         print "<div class='TaskMoreInfoLink'><a href='" .
               $self->CGI->escapeHTML($URI) .
               "'>Show final screenshot</a></div>";
-#        if (! -r $LogName || defined($self->GetParam($FullLogParamName)))
-#        {
-#          print "<br>";
-#        }
         print "\n";
       }
     }
@@ -193,7 +190,8 @@ sub GenerateBody
         {
           $CurrentDll = $1;
         }
-        if ($FullLog || $Line =~ m/: Test failed: / || $Line =~ m/ done \(-/)
+        if ($FullLog || $Line =~ m/: Test failed: / || $Line =~ m/ done \(-/ ||
+            $Line =~ m/ done \(258\)/)
         {
           if ($PrintedDll ne $CurrentDll && ! $FullLog)
           {
@@ -217,6 +215,10 @@ sub GenerateBody
           {
             print "$1: Crashed\n";
           }
+          elsif (! $FullLog && $Line =~ m/^[^:]+:([^ ]+) done \(258\)/)
+          {
+            print "$1: Timeout\n";
+          }
           else
           {
             print $self->escapeHTML($Line), "\n";
@@ -224,6 +226,29 @@ sub GenerateBody
         }
       }
       close LOGFILE;
+
+      if (open ERRFILE, "<$ErrName")
+      {
+        if (! $First)
+        {
+          print "</code></pre>\n";
+          $First = 1;
+        }
+        while (defined($Line = <ERRFILE>))
+        {
+          $HasLogEntries = 1;
+          chomp($Line);
+          if ($First)
+          {
+            print "<br>\n";
+            print "<pre><code>";
+            $First = !1;
+          }
+          print $self->escapeHTML($Line), "\n";
+        }
+        close ERRFILE;
+      }
+
       if (! $First)
       {
         print "</code></pre>\n";
@@ -232,6 +257,31 @@ sub GenerateBody
       {
         print $HasLogEntries ? "No test failures found" : "Empty log";
       }
+    }
+    elsif (open ERRFILE, "<$ErrName")
+    {
+      my $HasErrEntries = !1;
+      my $Line;
+      while (defined($Line = <ERRFILE>))
+      {
+        chomp($Line);
+        if (! $HasErrEntries)
+        {
+          print "<pre><code>";
+          $HasErrEntries = 1;
+        }
+        print $self->escapeHTML($Line), "\n";
+      }
+      close LOGFILE;
+      if ($HasErrEntries)
+      {
+        print "</code></pre>\n";
+      }
+      else
+      {
+        print "Empty log";
+      }
+      close ERRFILE;
     }
     else
     {

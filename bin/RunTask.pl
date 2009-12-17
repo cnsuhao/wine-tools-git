@@ -89,11 +89,15 @@ sub CountFailures
     return undef;
   }
 
-  my $Failures = 0;
+  my $Failures;
   my $Line;
   while (defined($Line = <REPORTFILE>))
   {
-    if ($Line =~ m/: Test failed: / || $Line =~ m/ done \(-/)
+    if ($Line =~ m/: \d+ tests executed \(\d+ marked as todo, (\d+) failures\), \d+ skipped\./)
+    {
+      $Failures += $1;
+    }
+    elsif ($Line =~ m/ done \(-/ || $Line =~ m/ done \(258\)/)
     {
       $Failures++;
     }
@@ -165,7 +169,8 @@ LogMsg "RunTask: task $JobId/$StepNo/$TaskNo (" . $VM->Name . ") started\n";
 my $RptFileName = $VM->Name . ".rpt";
 my $StepDir = "$DataDir/jobs/$JobId/$StepNo";
 my $TaskDir = "$StepDir/$TaskNo";
-my $FullRptFileName = "$TaskDir/log";
+my $FullLogFileName = "$TaskDir/log";
+my $FullErrFileName = "$TaskDir/err";
 my $FullScreenshotFileName = "$TaskDir/screenshot.png";
 
 $VM->Status('running');
@@ -173,7 +178,7 @@ my ($ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
 {
   FatalError "Can't set VM status to running: $ErrMessage\n",
-             $FullRptFileName, $Job, $Step, $Task;
+             $FullErrFileName, $Job, $Step, $Task;
 }
 my $FileName = $Step->FileName;
 $ErrMessage = $VM->CopyFileFromHostToGuest("$StepDir/$FileName",
@@ -181,7 +186,7 @@ $ErrMessage = $VM->CopyFileFromHostToGuest("$StepDir/$FileName",
 if (defined($ErrMessage))
 {
   FatalError "Can't copy exe to VM: $ErrMessage\n",
-             $FullRptFileName, $Job, $Step, $Task;
+             $FullErrFileName, $Job, $Step, $Task;
 }
 my $Script = "\@cd \\winetest\r\n\@$FileName ";
 if ($Task->Type eq "single")
@@ -202,27 +207,41 @@ $ErrMessage = $VM->RunScriptInGuestTimeout("", $Script, $Task->Timeout);
 if (defined($ErrMessage))
 {
   $VM->CopyFileFromGuestToHost("C:\\winetest\\$RptFileName",
-                               $FullRptFileName);
+                               $FullLogFileName);
   TakeScreenshot $VM, $FullScreenshotFileName;
-  chmod 0664, $FullRptFileName;
+  chmod 0664, $FullLogFileName;
   FatalError "Failure running script in VM: $ErrMessage\n",
-             $FullRptFileName, $Job, $Step, $Task;
+             $FullErrFileName, $Job, $Step, $Task;
 }
 TakeScreenshot $VM, $FullScreenshotFileName;
 
 $ErrMessage = $VM->CopyFileFromGuestToHost("C:\\winetest\\$RptFileName",
-                                           $FullRptFileName);
-chmod 0664, $FullRptFileName;
+                                           $FullLogFileName);
+chmod 0664, $FullLogFileName;
 if (defined($ErrMessage))
 {
-  FatalError "Can't copy log from VM: $ErrMessage\n", $FullRptFileName,
+  FatalError "Can't copy log from VM: $ErrMessage\n", $FullErrFileName,
              $Job, $Step, $Task;
 }
 
 $Task->Status("completed");
 $Task->ChildPid(undef);
 $Task->Ended(time);
-$Task->TestFailures(CountFailures($FullRptFileName));
+my $TestFailures = CountFailures($FullLogFileName);
+if (defined($TestFailures))
+{
+  $Task->TestFailures($TestFailures);
+}
+else
+{
+  my $OldUMask = umask(002);
+  if (open ERRFILE, ">>$FullErrFileName")
+  {
+    print ERRFILE "No test summary line found\n";
+    close ERRFILE;
+  }
+  umask($OldUMask);
+}
 $Task->Save();
 $Job->UpdateStatus();
 if (! $Task->VM->BaseOS)
