@@ -32,15 +32,16 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
              $VixHostType $VixHostName $VixHostUsername $VixHostPassword
              $VixGuestUsername $VixGuestPassword $DbDataSource $DbUsername
              $DbPassword $MaxRevertingVMs $MaxRunningVMs $SleepAfterRevert
-             $AdminEMail $SuiteTimeout $SingleTimeout $OverheadTimeout);
+             $AdminEMail $RobotEMail $SuiteTimeout $SingleTimeout
+             $OverheadTimeout);
 
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw($UseSSL $LogDir $DataDir $BinDir $VixHostType $VixHostName
              $VixHostUsername $VixHostPassword $VixGuestUsername
              $VixGuestPassword $MaxRevertingVMs $MaxRunningVMs
-             $SleepAfterRevert $AdminEMail $SuiteTimeout $SingleTimeout
-             $OverheadTimeout); 
+             $SleepAfterRevert $AdminEMail $RobotEMail $SuiteTimeout
+             $SingleTimeout $OverheadTimeout); 
 @EXPORT_OK = qw($DbDataSource $DbUsername $DbPassword);
 
 $LogDir = "/var/log/winetestbot";

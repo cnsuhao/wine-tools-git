@@ -67,4 +67,7 @@ $WineTestBot::Config::DbPassword = "";
 # Email address of the WineTestBot administrator
 $WineTestBot::Config::AdminEMail = undef;
 
+# From address of mails sent by WineTestBot to users
+$WineTestBot::Config::RobotEMail = undef;
+
 1;
