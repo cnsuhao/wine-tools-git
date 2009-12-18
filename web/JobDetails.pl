@@ -272,7 +272,6 @@ sub GenerateBody
         }
         print $self->escapeHTML($Line), "\n";
       }
-      close LOGFILE;
       if ($HasErrEntries)
       {
         print "</code></pre>\n";
