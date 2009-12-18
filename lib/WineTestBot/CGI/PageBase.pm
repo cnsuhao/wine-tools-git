@@ -27,6 +27,7 @@ WineTestBot::CGI::PageBase - Base class for web pages
 package WineTestBot::CGI::PageBase;
 
 use Apache2::Const -compile => qw(REDIRECT);
+use Apache2::ServerRec;
 use CGI::Cookie;
 use URI::Escape;
 use WineTestBot::CGI::Sessions;
