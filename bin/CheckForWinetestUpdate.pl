@@ -26,65 +26,100 @@ use WineTestBot::Engine::Notify;
 
 sub AddJob
 {
-  my ($BaseJob, $FileNameRandomPart) = @_;
+  my ($BaseJob, $FileNameRandomPart, $Bits) = @_;
 
   # First create a new job
   my $Jobs = WineTestBot::Jobs->CreateJobs();
   my $NewJob = $Jobs->Add();
   $NewJob->User(WineTestBot::Users->GetBatchUser());
-  $NewJob->Priority($BaseJob ? 1 : 7);
+  $NewJob->Priority($BaseJob && $Bits == 32 ? 1 : 7);
   $NewJob->Remarks("http://test.winehq.org job - " .
-                   ($BaseJob ? "base" : "other") . " VMs");
+                   ($Bits == 32 ? ($BaseJob ? "base" : "other") : "64-bit") .
+                   " VMs");
 
   # Add a step to the job
   my $Steps = $NewJob->Steps;
   my $NewStep = $Steps->Add();
-  $NewStep->FileName("${FileNameRandomPart} winetest-latest.exe");
+  my $BitsSuffix = ($Bits == 64 ? "64" : "");
+  $NewStep->FileName("${FileNameRandomPart} winetest${BitsSuffix}-latest.exe");
   $NewStep->InStaging(1);
 
   # Add a task for each VM
   my $Tasks = $NewStep->Tasks;
+  my $HasTasks = !1;
   my $VMs = CreateVMs();
   foreach my $VMKey (@{$VMs->SortKeysBySortOrder($VMs->GetKeys())})
   {
     my $VM = $VMs->GetItem($VMKey);
-    if (($BaseJob && $VM->BaseOS) || (! $BaseJob && ! $VM->BaseOS))
+    my $AddThisVM;
+    if ($Bits == 32)
+    {
+      $AddThisVM = ($BaseJob && $VM->BaseOS) || (! $BaseJob && ! $VM->BaseOS);
+    }
+    else
+    {
+      $AddThisVM = ($VM->Bits == 64);
+    }
+    if ($AddThisVM)
     {
       my $Task = $Tasks->Add();
       $Task->VM($VM);
       $Task->Type("suite");
       $Task->Timeout($SuiteTimeout);
+      $HasTasks = 1;
     }
   }
 
   # Now save the whole thing
-  (my $ErrKey, my $ErrProperty, my $ErrMessage) = $Jobs->Save();
-  if (defined($ErrMessage))
+  if ($HasTasks)
   {
-    LogMsg "CheckForWinetestUpdate: Failed to save job: $ErrMessage\n";
-    exit 1;
-  }
+    (my $ErrKey, my $ErrProperty, my $ErrMessage) = $Jobs->Save();
+    if (defined($ErrMessage))
+    {
+      LogMsg "CheckForWinetestUpdate: Failed to save job: $ErrMessage\n";
+      exit 1;
+    }
 
-  $NewStep->HandleStaging($NewJob->Id);
+    $NewStep->HandleStaging($NewJob->Id);
+  }
 }
 
-my $WINETEST_URL = "http://test.winehq.org/builds/winetest-latest.exe";
+my $WINETEST32_URL = "http://test.winehq.org/builds/winetest-latest.exe";
+my $WINETEST64_URL = "http://test.winehq.org/builds/winetest64-latest.exe";
+
+my $Bits = $ARGV[0];
+if (! $Bits)
+{
+  die "Usage: CheckForWinetestUpdate.pl <bits>";
+}
+
+if ($Bits =~ m/^(32|64)$/)
+{
+  $Bits = $1;
+}
+else
+{
+  die "Invalid number of bits $Bits";
+}
+
+my $WinetestUrl = ($Bits == 64 ? $WINETEST64_URL : $WINETEST32_URL);
+my $BitsSuffix = ($Bits == 64 ? "64" : "");
 
 umask 002;
 mkdir "$DataDir/latest";
 mkdir "$DataDir/staging";
 
-my $LatestFileName = "$DataDir/latest/winetest-latest.exe";
+my $LatestFileName = "$DataDir/latest/winetest${BitsSuffix}-latest.exe";
 my $FileNameRandomPart = GenerateRandomString(32);
-while (-e "$DataDir/staging/${FileNameRandomPart}_winetest-latest.exe")
+while (-e "$DataDir/staging/${FileNameRandomPart}_winetest${BitsSuffix}-latest.exe")
 {
   $FileNameRandomPart = GenerateRandomString(32);
 }
-my $StagingFileName = "$DataDir/staging/${FileNameRandomPart}_winetest-latest.exe";
+my $StagingFileName = "$DataDir/staging/${FileNameRandomPart}_winetest${BitsSuffix}-latest.exe";
 
 my $UA = LWP::UserAgent->new();
 $UA->agent("WineTestBot");
-my $Request = HTTP::Request->new(GET => $WINETEST_URL);
+my $Request = HTTP::Request->new(GET => $WinetestUrl);
 my $NowDate = gmtime;
 if (-r $LatestFileName)
 {
@@ -126,24 +161,31 @@ if (! copy($StagingFileName, $LatestFileName))
 }
 utime time, $Response->last_modified, $LatestFileName;
 
-AddJob(1, $FileNameRandomPart);
-
-$FileNameRandomPart = GenerateRandomString(32);
-while (-e "$DataDir/staging/${FileNameRandomPart}_winetest-latest.exe")
+if ($Bits == 32)
 {
+  AddJob(1, $FileNameRandomPart, $Bits);
+  
   $FileNameRandomPart = GenerateRandomString(32);
-}
-$StagingFileName = "$DataDir/staging/${FileNameRandomPart}_winetest-latest.exe";
-if (! copy($LatestFileName, $StagingFileName))
-{
-  LogMsg "CheckForWinetestUpdate: Can't copy $LatestFileName to $StagingFileName: $!\n";
+  while (-e "$DataDir/staging/${FileNameRandomPart}_winetest-latest.exe")
+  {
+    $FileNameRandomPart = GenerateRandomString(32);
+  }
+  $StagingFileName = "$DataDir/staging/${FileNameRandomPart}_winetest-latest.exe";
+  if (! copy($LatestFileName, $StagingFileName))
+  {
+    LogMsg "CheckForWinetestUpdate: Can't copy $LatestFileName to $StagingFileName: $!\n";
+  }
+  else
+  {
+    AddJob(!1, $FileNameRandomPart, $Bits);
+  }
 }
 else
 {
-  AddJob(!1, $FileNameRandomPart);
+  AddJob(1, $FileNameRandomPart, $Bits);
 }
 
-FoundWinetestUpdate();
+FoundWinetestUpdate($Bits);
 
 LogMsg "CheckForWinetestUpdate: submitted jobs\n";
 

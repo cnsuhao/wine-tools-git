@@ -204,7 +204,13 @@ if ($Task->Type eq "single")
 }
 elsif ($Task->Type eq "suite")
 {
-  $Script .= "-q -o $RptFileName -t wtb-" . lc($VM->Name) . "\r\n" .
+  my $Tag = "wtb-" . lc($VM->Name);
+  $Tag =~ s/[^a-zA-Z0-9]/-/g;
+  if ($VM->Bits == 64)
+  {
+    $Tag .= "-" . ($FileName eq "winetest64-latest.exe" ? "64" : "32");
+  }
+  $Script .= "-q -o $RptFileName -t $Tag\r\n" .
              "\@$FileName -q -s $RptFileName\r\n";
 }
 $ErrMessage = $VM->RunScriptInGuestTimeout("", $Script, $Task->Timeout);

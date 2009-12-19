@@ -163,7 +163,9 @@ sub ExpectWinetestUpdate
 
 sub FoundWinetestUpdate
 {
-  my $Reply = SendCmdReceiveReply("foundwinetestupdate\n");
+  my $Bits = $_[0];
+
+  my $Reply = SendCmdReceiveReply("foundwinetestupdate $Bits\n");
   if (length($Reply) < 1)
   {
     return "Unrecognized reply received from engine";

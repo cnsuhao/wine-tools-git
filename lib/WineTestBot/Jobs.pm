@@ -65,7 +65,7 @@ sub Status
   }
 
   my $NewStatus = $_[0];
-  if ($NewStatus ne $CurrentStatus)
+  if (! defined($CurrentStatus) || $NewStatus ne $CurrentStatus)
   {
     $self->SUPER::Status($NewStatus);
     $self->{OldStatus} = $CurrentStatus;

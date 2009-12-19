@@ -163,10 +163,12 @@ sub HandleVMStatusChange
 
 sub CheckForWinetestUpdate
 {
+  my $Bits = $_[0];
+
   my $Pid = fork;
   if (defined($Pid) && ! $Pid)
   {
-    exec("$BinDir/CheckForWinetestUpdate.pl");
+    exec("$BinDir/CheckForWinetestUpdate.pl $Bits");
   }
   if (defined($Pid) && ! $Pid)
   {
@@ -179,9 +181,20 @@ sub CheckForWinetestUpdate
   }
 }
 
+sub CheckForWinetestUpdate32
+{
+  CheckForWinetestUpdate(32);
+}
+
+sub CheckForWinetestUpdate64
+{
+  CheckForWinetestUpdate(64);
+}
+
 sub GiveUpOnWinetestUpdate
 {
-  DeleteEvent("CheckForWinetestUpdate");
+  DeleteEvent("CheckForWinetestUpdate32");
+  DeleteEvent("CheckForWinetestUpdate64");
   LogMsg "Engine: Giving up on winetest.exe update\n";
 }
 
@@ -193,7 +206,8 @@ sub HandleExpectWinetestUpdate
   }
   else
   {
-    AddEvent("CheckForWinetestUpdate", 300, 1, \&CheckForWinetestUpdate);
+    AddEvent("CheckForWinetestUpdate32", 300, 1, \&CheckForWinetestUpdate32);
+    AddEvent("CheckForWinetestUpdate64", 300, 1, \&CheckForWinetestUpdate64);
   }
   AddEvent("GiveUpOnWinetestUpdate", 3660, 0, \&GiveUpOnWinetestUpdate);
 
@@ -202,8 +216,24 @@ sub HandleExpectWinetestUpdate
 
 sub HandleFoundWinetestUpdate
 {
-  DeleteEvent("CheckForWinetestUpdate");
-  DeleteEvent("GiveUpOnWinetestUpdate");
+  my $Bits = $_[0];
+
+  if ($Bits =~ m/^(32|64)$/)
+  {
+    $Bits = $1;
+  }
+  else
+  {
+    LogMsg "Engine: invalid number of bits in foundwinetestupdate message\n";
+    return "0Invalid number of bits";
+  }
+
+  DeleteEvent("CheckForWinetestUpdate${Bits}");
+  if (! EventScheduled("CheckForWinetestUpdate32") &&
+      ! EventScheduled("CheckForWinetestUpdate64"))
+  {
+    DeleteEvent("GiveUpOnWinetestUpdate");
+  }
 
   my $ErrMessage = CreateJobs()->Schedule();
   if (defined($ErrMessage))
