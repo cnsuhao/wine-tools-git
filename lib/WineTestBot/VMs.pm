@@ -232,7 +232,7 @@ sub RevertToSnapshot
     return GetErrorText($Err);
   }
 
-  $Err = VMRevertToSnapshot($VMHandle, $SnapshotHandle, VIX_VMPOWEROP_NORMAL,
+  $Err = VMRevertToSnapshot($VMHandle, $SnapshotHandle, VIX_VMPOWEROP_LAUNCH_GUI,
                             VIX_INVALID_HANDLE);
   ReleaseHandle($SnapshotHandle);
   if ($Err != VIX_OK)
