@@ -85,6 +85,47 @@ sub HandleJobSubmit
   return "1OK";
 }
 
+sub HandleJobStatusChange
+{
+  my ($JobKey, $OldStatus, $NewStatus) = @_;
+
+  if (! defined($OldStatus) || ! defined($NewStatus))
+  {
+    LogMsg "Engine: invalid status in jobstatuschange message\n";
+    return "0Invalid status";
+  }
+
+  # Untaint parameters
+  if ($JobKey =~ /^(\d+)$/)
+  {
+    $JobKey = $1;
+  }
+  else
+  {
+    LogMsg "Engine: Invalid JobKey $JobKey in jobstatuschange message\n";
+  }
+
+  if ($OldStatus eq "running" && $NewStatus ne "running")
+  {
+    my $Pid = fork;
+    if (defined($Pid) && ! $Pid)
+    {
+      exec("$BinDir/SendLog.pl $JobKey");
+    }
+    if (defined($Pid) && ! $Pid)
+    {
+      LogMsg "Engine: Unable to exec SendLog.pl : $!\n";
+      exit;
+    }
+    if (! defined($Pid))
+    {
+      LogMsg "Engine: Unable to fork for SendLog.pl : $!\n";
+    }
+  }
+
+  return "1OK";
+}
+
 sub HandleTaskComplete
 {
   my $ErrMessage = CreateJobs()->Schedule();
@@ -183,6 +224,10 @@ sub HandleClientCmd
   if ($Cmd eq "jobsubmit")
   {
     return HandleJobSubmit(@_);
+  }
+  if ($Cmd eq "jobstatuschange")
+  {
+    return HandleJobStatusChange(@_);
   }
   if ($Cmd eq "taskcomplete")
   {

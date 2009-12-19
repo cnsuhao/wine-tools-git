@@ -28,11 +28,21 @@ WineTestBot::Jobs - Job collection
 package WineTestBot::Job;
 
 use ObjectModel::Item;
+use WineTestBot::Engine::Notify;
 
 use vars qw(@ISA @EXPORT);
 
 require Exporter;
 @ISA = qw(ObjectModel::Item Exporter);
+
+sub _initialize
+{
+  my $self = shift;
+
+  $self->SUPER::_initialize(@_);
+
+  $self->{OldStatus} = undef;
+}
 
 sub InitializeNew
 {
@@ -42,6 +52,42 @@ sub InitializeNew
   $self->Submitted(time());
 
   $self->SUPER::InitializeNew();
+}
+
+sub Status
+{
+  my $self = shift;
+
+  my $CurrentStatus = $self->SUPER::Status;
+  if (! @_)
+  {
+    return $CurrentStatus;
+  }
+
+  my $NewStatus = $_[0];
+  if ($NewStatus ne $CurrentStatus)
+  {
+    $self->SUPER::Status($NewStatus);
+    $self->{OldStatus} = $CurrentStatus;
+  }
+
+  return $NewStatus;
+}
+
+sub OnSaved
+{
+  my $self = shift;
+
+  $self->SUPER::OnSaved(@_);
+
+  if (defined($self->{OldStatus}))
+  {
+    my $NewStatus = $self->Status;
+    if ($NewStatus ne $self->{OldStatus})
+    {
+      JobStatusChange($self->GetKey(), $self->{OldStatus}, $NewStatus);
+    }
+  }
 }
 
 sub UpdateStatus
