@@ -314,6 +314,14 @@ sub OnNext
     return !1;
   }
 
+  if (! $self->GetParam("CmdLineArg"))
+  {
+    $self->{ErrMessage} = "You did not specify a command line argument. " .
+                          "This is most likely not correct, you probably " .
+                          "want to specify the test set to run. To correct, " .
+                          'press "< Prev".';
+  }
+
   return 1;
 }
 
