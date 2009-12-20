@@ -64,6 +64,34 @@ sub GenerateList
   my $self = shift;
 
   my $Collection = $self->{Collection};
+  my $PropertyDescriptors = $Collection->GetPropertyDescriptors();
+  my $HasDT = !1;
+  foreach my $PropertyDescriptor (@{$PropertyDescriptors})
+  {
+    if ($PropertyDescriptor->GetClass() eq "Basic" &&
+        $PropertyDescriptor->GetType() eq "DT")
+    {
+      $HasDT = 1;
+    }
+  }
+  if ($HasDT)
+  {
+  print <<"EOF";
+<script type='text/javascript'><!--\
+function Pad2(n)
+{
+    return n < 10 ? '0' + n : n;
+}
+function ShowDateTime(Sec1970)
+{
+  var Dt = new Date(Sec1970 * 1000);
+  document.write(Dt.getFullYear() + '/' + Pad2(Dt.getMonth() + 1) + '/' +
+                 Pad2(Dt.getDate()) + ' ' + Pad2(Dt.getHours()) + ':' +
+                 Pad2(Dt.getMinutes()) + ':' + Pad2(Dt.getSeconds()));
+}
+//--></script>
+EOF
+  }
 
   print "<div class='CollectionBlock'>\n";
   $self->CallGenerateFormStart();
@@ -72,7 +100,6 @@ sub GenerateList
   print "<table border='0' cellpadding='5' cellspacing='0' summary='" .
         "Overview of " . $Collection->GetCollectionName() . "'>\n";
   print "<tbody>\n";
-  my $PropertyDescriptors = $Collection->GetPropertyDescriptors();
   my $Actions = $self->CallGetItemActions();
   $self->CallGenerateHeaderRow($PropertyDescriptors, $Actions);
 
@@ -295,8 +322,7 @@ sub GenerateDataCell
     }
     print "<a href='", $self->escapeHTML($Query), "'>";
   }
-  print $self->escapeHTML($self->CallGetDisplayValue($Item,
-                                                     $PropertyDescriptor));
+  print $self->CallGetEscapedDisplayValue($Item, $PropertyDescriptor);
   if ($NeedLink)
   {
     print "</a>";
@@ -370,6 +396,13 @@ sub DisplayProperty
   return $PropertyDescriptor->GetClass ne "Detailref";
 }
 
+sub CallGetEscapedDisplayValue
+{
+  my $self = shift;
+
+  return $self->GetEscapedDisplayValue(@_);
+}
+
 sub CallGetDisplayValue
 {
   my $self = shift;
@@ -408,9 +441,43 @@ sub GetDisplayValue
     {
       if (defined($Value))
       {
-        $Value = strftime("%Y/%m/%d %H:%M:%S", localtime($Value));
+$Value = 
+         "<noscript><div>" .
+         strftime("%Y/%m/%d %H:%M:%S", localtime($Value)) . "</div></noscript>\n" .
+"<script type='text/javascript'><!--\n" .
+         "ShowDateTime($Value);\n" .
+         "//--></script>\n";
       }
     }
+  }
+
+  return $Value;
+}
+
+sub GetEscapedDisplayValue
+{
+  my $self = shift;
+  my ($Item, $PropertyDescriptor) = @_;
+
+  my $PropertyName = $PropertyDescriptor->GetName();
+  my $Value = $Item->$PropertyName;
+
+  if ($PropertyDescriptor->GetClass() eq "Basic" &&
+      $PropertyDescriptor->GetType() eq "DT")
+  {
+    if (defined($Value))
+    {
+      $Value = "<script type='text/javascript'><!--\n" .
+               "ShowDateTime($Value);\n" .
+               "//--></script><noscript><div>" .
+               strftime("%Y/%m/%d %H:%M:%S", localtime($Value)) .
+               "</div></noscript>\n";
+    }
+  }
+  else
+  {
+    $Value = $self->escapeHTML($self->CallGetDisplayValue($Item,
+                                                          $PropertyDescriptor));
   }
 
   return $Value;
