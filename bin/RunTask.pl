@@ -192,7 +192,13 @@ if (defined($ErrMessage))
   FatalError "Can't copy exe to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
-my $Script = "\@cd \\winetest\r\n\@$FileName ";
+my $Script = "\@cd \\winetest\r\n\@set WINETEST_DEBUG=" . $Step->DebugLevel .
+             "\r\n";
+if ($Step->ReportSuccessfulTests)
+{
+  $Script .= "\@set WINETEST_REPORT_SUCCESS=1\r\n";
+}
+$Script .= "\@$FileName ";
 if ($Task->Type eq "single")
 {
   my $CmdLineArg = $Task->CmdLineArg;

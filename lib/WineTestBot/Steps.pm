@@ -44,6 +44,8 @@ sub InitializeNew
   my $Keys = $Collection->GetKeys();
   $self->No(scalar @$Keys + 1);
   $self->InStaging(1);
+  $self->DebugLevel(1);
+  $self->ReportSuccessfulTests(!1);
 
   $self->SUPER::InitializeNew(@_);
 }
@@ -107,6 +109,10 @@ BEGIN
   $PropertyDescriptors[3] =
     CreateBasicPropertyDescriptor("InStaging", "File is in staging area", !1, 1, "B", 1);
   $PropertyDescriptors[4] =
+    CreateBasicPropertyDescriptor("DebugLevel", "Debug level (WINETEST_DEBUG)", !1, 1, "N", 2);
+  $PropertyDescriptors[5] =
+    CreateBasicPropertyDescriptor("ReportSuccessfulTests", "Report successfull tests (WINETEST_REPORT_SUCCESS)", !1, 1, "B", 1);
+  $PropertyDescriptors[6] =
     CreateDetailrefPropertyDescriptor("Tasks", "Tasks", !1, !1, \&CreateTasks);
 }
 

@@ -72,11 +72,13 @@ ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE Steps
 (
-  JobId     INT(5) NOT NULL,
-  No        INT(2) NOT NULL,
-  Status    ENUM('queued', 'running', 'completed', 'failed') NOT NULL,
-  FileName  VARCHAR(64) NOT NULL,
-  InStaging ENUM('Y', 'N') NOT NULL,
+  JobId                 INT(5) NOT NULL,
+  No                    INT(2) NOT NULL,
+  Status                ENUM('queued', 'running', 'completed', 'failed') NOT NULL,
+  FileName              VARCHAR(64) NOT NULL,
+  InStaging             ENUM('Y', 'N') NOT NULL,
+  DebugLevel            INT(2) NOT NULL,
+  ReportSuccessfulTests ENUM('Y', 'N') NOT NULL,
   PRIMARY KEY (JobId, No),
   FOREIGN KEY (JobId) REFERENCES Jobs(Id)
 )

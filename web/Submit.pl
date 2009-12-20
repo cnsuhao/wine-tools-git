@@ -1,4 +1,4 @@
-# WineTestBot logout page
+# WineTestBot job submit page
 #
 # Copyright 2009 Ge van Geldorp
 #
@@ -18,7 +18,7 @@
 
 use strict;
 
-package SubmitPage1;
+package SubmitPage;
 
 use CGI qw(:standard);
 use IO::Handle;
@@ -30,7 +30,7 @@ use WineTestBot::Engine::Notify;
 use WineTestBot::Utils;
 use WineTestBot::VMs;
 
-@SubmitPage1::ISA = qw(ObjectModel::CGI::FreeFormPage);
+@SubmitPage::ISA = qw(ObjectModel::CGI::FreeFormPage);
 
 sub _initialize
 {
@@ -39,6 +39,11 @@ sub _initialize
   my @PropertyDescriptors;
   $PropertyDescriptors[0] = CreateBasicPropertyDescriptor("CmdLineArg", "Command line arguments", !1, !1, "A", 50);
   $PropertyDescriptors[1] = CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "A", 50);
+  $PropertyDescriptors[2] =
+    CreateBasicPropertyDescriptor("DebugLevel", "Debug level (WINETEST_DEBUG)", !1, 1, "N", 2);
+  $PropertyDescriptors[3] =
+    CreateBasicPropertyDescriptor("ReportSuccessfulTests", "Report successfull tests (WINETEST_REPORT_SUCCESS)", !1, 1, "B", 1);
+
 
   $self->{Page} = $self->GetParam("Page") || 1;
   if ($self->{Page} == 2)
@@ -108,6 +113,13 @@ sub GenerateFields
           $self->CGI->escapeHTML($self->GetParam("Remarks")), "'></div>\n";
     print "<div><input type='hidden' name='FileName' value='",
           $self->{FileName}, "'></div>\n";
+    print "<div><input type='hidden' name='DebugLevel' value='",
+          $self->CGI->escapeHTML($self->GetParam("DebugLevel")), "'></div>\n";
+    if (defined($self->GetParam("ReportSuccessfulTests")))
+    {
+      print "<div><input type='hidden' name='ReportSuccessfulTests' value='",
+            $self->CGI->escapeHTML($self->GetParam("ReportSuccessfulTests")), "'></div>\n";
+    }
     if ($self->{ShowAll})
     {
       print "<div><input type='hidden' name='ShowAll' value='1'></div>\n";
@@ -215,6 +227,19 @@ sub DisplayProperty
   }
 
   return $self->SUPER::DisplayProperty(@_);
+}
+
+sub GetPropertyValue
+{
+  my $self = shift;
+  my $PropertyDescriptor = $_[0];
+
+  if ($self->{Page} == 1 && $PropertyDescriptor->GetName() eq "DebugLevel")
+  {
+    return 1;
+  }
+
+  return $self->SUPER::GetPropertyValue(@_);
 }
 
 sub GetStagingFileName
@@ -379,6 +404,8 @@ sub OnSubmit
   my $NewStep = $Steps->Add();
   $NewStep->FileName($FileNameRandomPart . " " . $self->GetParam("FileName"));
   $NewStep->InStaging(1);
+  $NewStep->DebugLevel($self->GetParam("DebugLevel"));
+  $NewStep->ReportSuccessfulTests(defined($self->GetParam("ReportSuccessfulTests")));
   
   # Add a task for each selected VM
   my $Tasks = $NewStep->Tasks;
@@ -495,5 +522,5 @@ package main;
 
 my $Request = shift;
 
-my $SubmitPage1 = SubmitPage1->new($Request, "wine-devel");
-$SubmitPage1->GeneratePage();
+my $SubmitPage = SubmitPage->new($Request, "wine-devel");
+$SubmitPage->GeneratePage();
