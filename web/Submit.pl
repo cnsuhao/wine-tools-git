@@ -347,6 +347,13 @@ sub OnNext
                           'press "< Prev".';
   }
 
+  if (! ($self->GetParam("File") =~ /.exe$/i))
+  {
+    $self->{ErrMessage} = "You did not upload a .exe-file. " .
+                          "This is most likely not correct. To correct, " .
+                          'press "< Prev".';
+  }
+
   return 1;
 }
 
