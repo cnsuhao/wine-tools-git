@@ -311,6 +311,7 @@ sub GenerateErrorPopup
   {
     print "<script type='text/javascript'>\n";
     print "<!--\n";
+    $ErrMessage =~ s/'/\\'/g;
     print "function ShowError() { alert('", $ErrMessage, "'); }\n";
     my $ErrField = $Page->GetErrField();
     if ($ErrField)
