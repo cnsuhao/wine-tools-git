@@ -56,11 +56,11 @@ sub AddJob
     if ($Bits == 32)
     {
       $AddThisVM = ($BaseJob && $VM->Type eq "base") ||
-                   (! $BaseJob && $VM->Type ne "base");
+                   (! $BaseJob && $VM->Type eq "extra");
     }
     else
     {
-      $AddThisVM = ($VM->Bits == 64);
+      $AddThisVM = ($VM->Bits == 64 && $VM->Type ne "build");
     }
     if ($AddThisVM)
     {
@@ -82,6 +82,47 @@ sub AddJob
     }
 
     $NewStep->HandleStaging($NewJob->Id);
+  }
+}
+
+sub AddReconfigJob
+{
+  # First create a new job
+  my $Jobs = WineTestBot::Jobs->CreateJobs();
+  my $NewJob = $Jobs->Add();
+  $NewJob->User(WineTestBot::Users->GetBatchUser());
+  $NewJob->Priority(3);
+  $NewJob->Remarks("Update Wine to latest git");
+
+  # Add a step to the job
+  my $Steps = $NewJob->Steps;
+  my $NewStep = $Steps->Add();
+  $NewStep->Type("reconfig");
+  $NewStep->FileName("-");
+  $NewStep->InStaging(!1);
+
+  # Add a task for the build VM
+  my $Tasks = $NewStep->Tasks;
+  my $HasTasks = !1;
+  my $VMs = CreateVMs();
+  foreach my $VMKey (@{$VMs->SortKeysBySortOrder($VMs->GetKeys())})
+  {
+    my $VM = $VMs->GetItem($VMKey);
+    if ($VM->Type eq "build")
+    {
+      my $Task = $Tasks->Add();
+      $Task->VM($VM);
+      $Task->Timeout($ReconfigTimeout);
+      last;
+    }
+  }
+
+  # Now save the whole thing
+  (my $ErrKey, my $ErrProperty, my $ErrMessage) = $Jobs->Save();
+  if (defined($ErrMessage))
+  {
+    LogMsg "CheckForWinetestUpdate: Failed to save reconfig job: $ErrMessage\n";
+    exit 1;
   }
 }
 
@@ -180,6 +221,8 @@ if ($Bits == 32)
   {
     AddJob(!1, $FileNameRandomPart, $Bits);
   }
+
+  AddReconfigJob();
 }
 else
 {

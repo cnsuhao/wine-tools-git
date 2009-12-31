@@ -243,6 +243,49 @@ sub RevertToSnapshot
   return $self->UpdateStatus($VMHandle);
 }
 
+sub CreateSnapshot
+{
+  my $self = shift;
+  my $SnapshotName = $_[0];
+
+  my ($ErrMessage, $VMHandle) = $self->GetVMHandle();
+  if (defined($ErrMessage))
+  {
+    return $ErrMessage;
+  }
+
+  my ($Err, $SnapshotHandle) = VMCreateSnapshot($VMHandle, $SnapshotName, "",
+                                                VIX_SNAPSHOT_INCLUDE_MEMORY,
+                                                VIX_INVALID_HANDLE);
+  if ($Err != VIX_OK)
+  {
+    ReleaseHandle($SnapshotHandle);
+  }
+  return $self->CheckError($Err);
+}
+
+sub RemoveSnapshot
+{
+  my $self = shift;
+  my $SnapshotName = $_[0];
+
+  my ($ErrMessage, $VMHandle) = $self->GetVMHandle();
+  if (defined($ErrMessage))
+  {
+    return $ErrMessage;
+  }
+
+  my ($Err, $SnapshotHandle) = VMGetNamedSnapshot($VMHandle, $SnapshotName);
+  if ($Err != VIX_OK)
+  {
+    return GetErrorText($Err);
+  }
+
+  $Err = VMRemoveSnapshot($VMHandle, $SnapshotHandle, 0);
+  ReleaseHandle($SnapshotHandle);
+  return $self->CheckError($Err);
+}
+
 sub PowerOn
 {
   my $self = shift;

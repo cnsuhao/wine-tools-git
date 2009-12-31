@@ -67,6 +67,10 @@ sub Run
     {
       $RunScript = "$BinDir/RunBuild.pl";
     }
+    elsif ($Step->Type eq "reconfig")
+    {
+      $RunScript = "$BinDir/RunReconfig.pl";
+    }
     else
     {
       $RunScript = "$BinDir/RunTask.pl";

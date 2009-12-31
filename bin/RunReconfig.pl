@@ -24,7 +24,7 @@ sub FatalError
   my $StepKey = defined($Step) ? $Step->GetKey() : "0";
   my $TaskKey = defined($Task) ? $Task->GetKey() : "0";
 
-  LogMsg "RunBuild: $JobKey/$StepKey/$TaskKey $ErrMessage";
+  LogMsg "RunReconfig: $JobKey/$StepKey/$TaskKey $ErrMessage";
 
   if ($Task)
   {
@@ -67,7 +67,7 @@ sub ProcessRawlog
         while (defined($Line = <RAWLOG>))
         {
           chomp($Line);
-          if ($Line =~ m/^BuildSingleTest: (.*)$/)
+          if ($Line =~ m/^Reconfig: (.*)$/)
           {
             if ($1 eq "ok")
             {
@@ -107,7 +107,7 @@ delete $ENV{ENV};
 my ($JobId, $StepNo, $TaskNo) = @ARGV;
 if (! $JobId || ! $StepNo || ! $TaskNo)
 {
-  die "Usage: RunBuild.pl JobId StepNo TaskNo";
+  die "Usage: RunReconfig.pl JobId StepNo TaskNo";
 }
 
 # Untaint parameters
@@ -160,128 +160,71 @@ mkdir "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
 
 my $VM = $Task->VM;
 
-LogMsg "RunBuild: task $JobId/$StepNo/$TaskNo started\n";
+LogMsg "RunReconfig: task $JobId/$StepNo/$TaskNo started\n";
 
-my $RptFileName = $VM->Name . ".rpt";
 my $StepDir = "$DataDir/jobs/$JobId/$StepNo";
 my $TaskDir = "$StepDir/$TaskNo";
 my $FullRawlogFileName = "$TaskDir/rawlog";
 my $FullLogFileName = "$TaskDir/log";
 my $FullErrFileName = "$TaskDir/err";
 
-my $DllBaseName;
-my $Run64 = !1;
-foreach my $StepKey (@{$Job->Steps->GetKeys()})
-{
-  my $OtherStep = $Job->Steps->GetItem($StepKey);
-  if ($OtherStep->No != $StepNo)
-  {
-    my $OtherFileName = $OtherStep->FileName;
-    if ($OtherFileName =~ m/^([\w_\-]+)_test(|64)\.exe$/)
-    {
-      if (defined($DllBaseName) && $DllBaseName ne $1)
-      {
-        FatalError "$1 doesn't match previously found $DllBaseName\n",
-                   $FullErrFileName, $Job, $Step, $Task;
-      }
-      $DllBaseName = $1;
-      if ($2 eq "64")
-      {
-        $Run64 = 1;
-      }
-    }
-  }
-}
-if (! defined($DllBaseName))
-{
-  FatalError "Can't determine DLL base name\n",
-             $FullErrFileName, $Job, $Step, $Task;
-}
-
-my $ErrMessage = $Step->HandleStaging($JobId);
-if (defined($ErrMessage))
-{
-  FatalError "$ErrMessage\n",
-             $FullErrFileName, $Job, $Step, $Task;
-}
-
 $VM->Status('running');
-my $ErrProperty;
-($ErrProperty, $ErrMessage) = $VM->Save();
+my ($ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
 {
   FatalError "Can't set VM status to running: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
-my $FileName = $Step->FileName;
-$ErrMessage = $VM->CopyFileFromHostToGuest("$StepDir/$FileName",
-                                           "$DataDir/staging/$FileName");
-if (defined($ErrMessage))
-{
-  FatalError "Can't copy exe to VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Step, $Task;
-}
-my $Script = "#!/bin/sh\n";
-$Script .= "$BinDir/BuildSingleTest.pl $FileName $DllBaseName 32";
-if ($Run64)
-{
-  $Script .= ",64";
-}
-$Script .= "\n";
+my $Script = "#!/bin/sh\n$BinDir/Reconfig.pl\n";
 $ErrMessage = $VM->RunScriptInGuestTimeout("", $Script, $Task->Timeout);
 if (defined($ErrMessage))
 {
-  $VM->CopyFileFromGuestToHost("$LogDir/BuildSingleTest.log",
+  $VM->CopyFileFromGuestToHost("$LogDir/Reconfig.log",
                                $FullRawlogFileName);
   ProcessRawlog($FullRawlogFileName, $FullLogFileName, $FullErrFileName);
   FatalError "Failure running script in VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
 
-$ErrMessage = $VM->CopyFileFromGuestToHost("$LogDir/BuildSingleTest.log",
+$ErrMessage = $VM->CopyFileFromGuestToHost("$LogDir/Reconfig.log",
                                            $FullRawlogFileName);
 if (defined($ErrMessage))
 {
   FatalError "Can't copy log from VM: $ErrMessage\n", $FullErrFileName,
              $Job, $Step, $Task;
 }
-my $NewStatus = ProcessRawlog($FullRawlogFileName, $FullLogFileName,
-                              $FullErrFileName) ? "completed" : "failed";
+my $ReconfigSucceeded = ProcessRawlog($FullRawlogFileName, $FullLogFileName,
+                                      $FullErrFileName);
 
-foreach my $StepKey (@{$Job->Steps->GetKeys()})
+if ($ReconfigSucceeded)
 {
-  my $OtherStep = $Job->Steps->GetItem($StepKey);
-  if ($OtherStep->No != $StepNo)
+  $ErrMessage = $VM->RemoveSnapshot($VM->IdleSnapshot);
+  if (defined($ErrMessage))
   {
-    my $OtherFileName = $OtherStep->FileName;
-    if ($OtherFileName =~ m/^[\w_\-]+_test(|64)\.exe$/)
-    {
-      my $OtherStepDir = "$DataDir/jobs/$JobId/" . $OtherStep->No;
-      mkdir $OtherStepDir;
-
-      my $Bits = $1;
-      if ($Bits eq "")
-      {
-        $Bits = "32";
-      }
-      $ErrMessage = $VM->CopyFileFromGuestToHost("$DataDir/build-mingw$Bits/dlls/$DllBaseName/tests/${DllBaseName}_test.exe",
-                                                 "$OtherStepDir/$OtherFileName");
-      if (defined($ErrMessage))
-      {
-        FatalError "Can't copy generated executable from VM: $ErrMessage\n",
-                   $FullErrFileName, $Job, $Step, $Task;
-      }
-      chmod 0664, "$OtherStepDir/$OtherFileName";
-    }
+    FatalError "Can't remove snapshot: $ErrMessage\n", $FullErrFileName,
+               $Job, $Step, $Task;
   }
+
+  $ErrMessage = $VM->CreateSnapshot($VM->IdleSnapshot);
+  if (defined($ErrMessage))
+  {
+    FatalError "Can't take snapshot: $ErrMessage\n", $FullErrFileName,
+               $Job, $Step, $Task;
+  }
+
+  $VM->Status("idle");
+  $Task->Status("completed");
+}
+else
+{
+  $Task->Status("failed");
+  $VM->Status("dirty");
 }
 
-$Task->Status($NewStatus);
 $Task->ChildPid(undef);
 $Task->Ended(time);
 $Task->Save();
 $Job->UpdateStatus();
-$VM->Status('dirty');
 $VM->Save();
 
 $Task = undef;
@@ -291,6 +234,6 @@ $Jobs = undef;
 
 TaskComplete($JobId, $StepNo, $TaskNo);
 
-LogMsg "RunBuild: task $JobId/$StepNo/$TaskNo completed\n";
+LogMsg "RunReconfig: task $JobId/$StepNo/$TaskNo completed\n";
 
 exit;
