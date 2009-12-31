@@ -34,7 +34,7 @@ if (! PingEngine())
   
   open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
   print SENDMAIL <<"EOF";
-From: <$AdminEMail> (Marvin)
+From: <$RobotEMail> (Marvin)
 To: $AdminEMail
 Subject: WineTestBot engine died
 

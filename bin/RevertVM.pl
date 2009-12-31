@@ -30,7 +30,7 @@ sub FatalError
 
   open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
   print SENDMAIL <<"EOF";
-From: <$AdminEMail> (Marvin)
+From: <$RobotEMail> (Marvin)
 To: $AdminEMail
 Subject: VM $VMKey offline
 
