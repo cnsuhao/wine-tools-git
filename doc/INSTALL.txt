@@ -48,3 +48,13 @@ General setup:
   mysql> insert into UserRoles values('<username>', 'admin');
 - When you refresh the home page, you should now have an "Admin" menu in the
   sidebar
+
+Wine build VM setup:
+- Create a new system group 'winetest' and a system user 'winetest', make sure
+  to make user winetest a member of group winetest
+- Unpack winetestbot source to /usr/lib/winetestbot (so this document should
+  be available as /usr/lib/winetestbot/doc/INSTALL.txt)
+- Create directory /var/lib/winetestbot
+- Create an empty logfile /var/log/winetestbot/log and make it writeable to
+  group winetest.
+- Clone Wine git repo to /var/lib/winetestbot/wine.git
