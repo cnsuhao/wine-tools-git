@@ -44,7 +44,7 @@ ENGINE=InnoDB DEFAULT CHARSET=utf8;
 CREATE TABLE VMs
 (
   Name         VARCHAR(20)      NOT NULL,
-  BaseOS       ENUM('Y', 'N')   NOT NULL,
+  Type         ENUM('base', 'extra', 'build') NOT NULL,
   SortOrder    INT(3)           NOT NULL,
   Bits         ENUM('32', '64') NOT NULL,
   Status       ENUM('reverting', 'sleeping', 'idle', 'running', 'dirty', 'offline') NOT NULL,
@@ -74,7 +74,8 @@ CREATE TABLE Steps
 (
   JobId                 INT(5) NOT NULL,
   No                    INT(2) NOT NULL,
-  Status                ENUM('queued', 'running', 'completed', 'failed') NOT NULL,
+  Type                  ENUM('suite', 'single', 'build', 'reconfig') NOT NULL,
+  Status                ENUM('queued', 'running', 'completed', 'failed', 'skipped') NOT NULL,
   FileName              VARCHAR(64) NOT NULL,
   InStaging             ENUM('Y', 'N') NOT NULL,
   DebugLevel            INT(2) NOT NULL,
@@ -89,9 +90,8 @@ CREATE TABLE Tasks
   JobId        INT(5) NOT NULL,
   StepNo       INT(2) NOT NULL,
   No           INT(2) NOT NULL,
-  Status       ENUM('queued', 'running', 'completed', 'failed') NOT NULL,
+  Status       ENUM('queued', 'running', 'completed', 'failed', 'skipped') NOT NULL,
   VMName       VARCHAR(20) NOT NULL,
-  Type         ENUM('suite', 'single') NOT NULL,
   Timeout      INT(4) NOT NULL,
   CmdLineArg   VARCHAR(256) NULL,
   ChildPid     INT(5) NULL,

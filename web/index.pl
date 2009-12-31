@@ -77,8 +77,9 @@ sub DisplayProperty
   my $PropertyDescriptor = $_[0];
 
   my $PropertyName = $PropertyDescriptor->GetName();
-  return $PropertyName eq "Name" || $PropertyName eq "Bits" ||
-         $PropertyName eq "Status" || $PropertyName eq "Description";
+  return $PropertyName eq "Name" || $PropertyName eq "Type" ||
+         $PropertyName eq "Bits" || $PropertyName eq "Status" ||
+         $PropertyName eq "Description";
 }
 
 sub GetDetailsPage

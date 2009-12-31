@@ -33,7 +33,7 @@ sub FatalError
     $Task->Save();
     $Job->UpdateStatus();
 
-    if (! $Task->VM->BaseOS)
+    if ($Task->VM->Type eq "extra")
     {
       $Task->VM->PowerOff();
     }
@@ -199,7 +199,7 @@ if ($Step->ReportSuccessfulTests)
   $Script .= "\@set WINETEST_REPORT_SUCCESS=1\r\n";
 }
 $Script .= "\@$FileName ";
-if ($Task->Type eq "single")
+if ($Step->Type eq "single")
 {
   my $CmdLineArg = $Task->CmdLineArg;
   if ($CmdLineArg)
@@ -208,7 +208,7 @@ if ($Task->Type eq "single")
   }
   $Script .= "> $RptFileName\r\n";
 }
-elsif ($Task->Type eq "suite")
+elsif ($Step->Type eq "suite")
 {
   my $Tag = "wtb-" . lc($VM->Name);
   $Tag =~ s/[^a-zA-Z0-9]/-/g;
@@ -260,7 +260,7 @@ else
 }
 $Task->Save();
 $Job->UpdateStatus();
-if (! $Task->VM->BaseOS)
+if ($Task->VM->Type eq "extra")
 {
   $Task->VM->PowerOff();
 }

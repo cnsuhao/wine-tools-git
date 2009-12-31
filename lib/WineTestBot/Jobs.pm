@@ -99,9 +99,9 @@ sub UpdateStatus
   my $HasRunningStep = !1;
   my $HasCompletedStep = !1;
   my $HasFailedStep = !1;
-  foreach my $StepKey (@{$Steps->GetKeys()})
+  my @SortedSteps = sort { $a->No <=> $b->No } @{$Steps->GetItems()};
+  foreach my $Step (@SortedSteps)
   {
-    my $Step = $Steps->GetItem($StepKey);
     my $Status = $Step->Status;
     if ($Status eq "queued" || $Status eq "running")
     {
@@ -114,13 +114,22 @@ sub UpdateStatus
       {
         my $Task = $Tasks->GetItem($TaskKey);
         $Status = $Task->Status;
+        if ($HasFailedStep && $Status eq "queued")
+        {
+          $Status = "skipped";
+          $Task->Status("skipped");
+        }
         $HasQueuedTask = $HasQueuedTask || $Status eq "queued";
         $HasRunningTask = $HasRunningTask || $Status eq "running";
         $HasCompletedTask = $HasCompletedTask || $Status eq "completed";
         $HasFailedTask = $HasFailedTask || $Status eq "failed";
       }
-      if ($HasRunningTask || ($HasQueuedTask && ($HasCompletedTask ||
-                                                 $HasFailedTask)))
+      if ($HasFailedStep)
+      {
+        $Step->Status("skipped");
+      }
+      elsif ($HasRunningTask || ($HasQueuedTask && ($HasCompletedTask ||
+                                                    $HasFailedTask)))
       {
         $Step->Status("running");
       }
@@ -333,7 +342,7 @@ sub Schedule
     my $VM = $VMs->GetItem($VMKey);
     if (! defined($DirtyVMsBlockingJobs{$VMKey}) &&
         (! defined($MaxRevertingVMs) || $RevertingVMs < $MaxRevertingVMs) &&
-        $VM->Status eq 'dirty' && $VM->BaseOS)
+        $VM->Status eq 'dirty' && $VM->Type ne "extra")
     {
       $VM->RunRevert();
       $RevertingVMs++;
@@ -356,9 +365,9 @@ sub Check
     my $HasRunningStep = !1;
     my $HasCompletedStep = !1;
     my $HasFailedStep = !1;
-    foreach my $StepKey (@{$Steps->GetKeys()})
+    my @SortedSteps = sort { $a->No <=> $b->No } @{$Steps->GetItems()};
+    foreach my $Step (@SortedSteps)
     {
-      my $Step = $Steps->GetItem($StepKey);
       my $Status = $Step->Status;
       if ($Status eq "queued" || $Status eq "running")
       {
@@ -403,13 +412,22 @@ sub Check
             $Task->Save();
           }
           $Status = $Task->Status;
+          if ($HasFailedStep && $Status eq "queued")
+          {
+            $Status = "skipped";
+            $Task->Status("skipped");
+          }
           $HasQueuedTask = $HasQueuedTask || $Status eq "queued";
           $HasRunningTask = $HasRunningTask || $Status eq "running";
           $HasCompletedTask = $HasCompletedTask || $Status eq "completed";
           $HasFailedTask = $HasFailedTask || $Status eq "failed";
         }
-        if ($HasRunningTask || ($HasQueuedTask && ($HasCompletedTask ||
-                                                   $HasFailedTask)))
+        if ($HasFailedStep)
+        {
+          $Step->Status("skipped");
+        }
+        elsif ($HasRunningTask || ($HasQueuedTask && ($HasCompletedTask ||
+                                                      $HasFailedTask)))
         {
           $Step->Status("running");
         }

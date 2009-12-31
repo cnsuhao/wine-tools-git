@@ -487,7 +487,7 @@ BEGIN
   $PropertyDescriptors[0] =
     CreateBasicPropertyDescriptor("Name", "VM name", 1, 1, "A", 20);
   $PropertyDescriptors[1] =
-    CreateBasicPropertyDescriptor("BaseOS", "Base VM for this Windows version", !1, 1, "B", 1);
+    CreateBasicPropertyDescriptor("Type", "Type of VM", !1, 1, "A", 5);
   $PropertyDescriptors[2] =
     CreateBasicPropertyDescriptor("SortOrder", "Display order", !1, 1, "N", 3);
   $PropertyDescriptors[3] =

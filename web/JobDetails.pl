@@ -122,7 +122,8 @@ sub GenerateBody
     my $LogName = "$TaskDir/log";
     my $ErrName = "$TaskDir/err";
     print "<div class='TaskMoreInfoLinks'>\n";
-    if ($Item->Status eq "running")
+    if ($Item->Status eq "running" &&
+        ($Item->Type eq "single" || $Item->Type eq "suite"))
     {
       my $URI = "/Screenshot.pl?VMName=" . uri_escape($VM->Name);
       print "<div class='Screenshot'><img src='" .
@@ -255,7 +256,10 @@ sub GenerateBody
       }
       else
       {
-        print $HasLogEntries ? "No test failures found" : "Empty log";
+        print $HasLogEntries ? "No " .
+                               ($Item->Type eq "single" ||
+                                $Item->Type eq "suite" ? "test" : "build") .
+                               " failures found" : "Empty log";
       }
     }
     elsif (open ERRFILE, "<$ErrName")
@@ -282,6 +286,10 @@ sub GenerateBody
       }
       close ERRFILE;
     }
+    elsif ($Item->Status eq "skipped")
+    {
+      print "<p>No log, task skipped</p>\n";
+    }
     else
     {
       print "<p>No log available yet</p>\n";
@@ -294,12 +302,31 @@ sub GenerateDataCell
   my $self = shift;
   my ($CollectionBlock, $Item, $PropertyDescriptor, $DetailsPage) = @_;
 
-  if ($PropertyDescriptor->GetName() eq "VM")
+  my $PropertyName = $PropertyDescriptor->GetName();
+  if ($PropertyName eq "VM")
   {
     print "<td><a href='#k", $self->escapeHTML($Item->GetKey()), "'>";
     print $self->escapeHTML($self->GetDisplayValue($CollectionBlock, $Item,
                                                    $PropertyDescriptor));
     print "</a></td>\n";
+  }
+  elsif ($PropertyName eq "FileName")
+  {
+    my $FileName = "$DataDir/jobs/" . $self->{JobId} . "/" . $Item->StepNo .
+                   "/" . $Item->FileName;
+    if (-r $FileName)
+    {
+      my $URI = "/GetFile.pl?JobKey=" . uri_escape($self->{JobId}) .
+                  "&StepKey=" . uri_escape($Item->StepNo);
+      print "<td><a href='" . $self->escapeHTML($URI) . "'>";
+      print $self->escapeHTML($self->GetDisplayValue($CollectionBlock, $Item,
+                                                     $PropertyDescriptor));
+      print "</a></td>\n";
+    }
+    else
+    {
+      $self->SUPER::GenerateDataCell(@_);
+    }
   }
   else
   {

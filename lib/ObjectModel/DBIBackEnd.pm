@@ -13,11 +13,16 @@ require Exporter;
 @ISA = qw(ObjectModel::BackEnd Exporter);
 @EXPORT = qw(&UseDBIBackend);
 
-sub Connect
+sub GetDb
 {
   my $self = shift;
 
-  $self->{Db} = DBI->connect(@_);
+  if (! defined($self->{Db}))
+  {
+    $self->{Db} = DBI->connect(@{$self->{ConnectArgs}});
+  }
+
+  return $self->{Db};
 }
 
 sub ToDb
@@ -192,7 +197,7 @@ sub LoadCollection
   {
     $Query .= " WHERE $Where";
   }
-  my $Statement = $self->{Db}->prepare($Query);
+  my $Statement = $self->GetDb()->prepare($Query);
   $Statement->execute(@Data);
 
   while (my $Row = $Statement->fetchrow_hashref())
@@ -238,7 +243,7 @@ sub LoadItem
   {
     $Query .= " WHERE $Where";
   }
-  my $Statement = $self->{Db}->prepare($Query);
+  my $Statement = $self->GetDb()->prepare($Query);
   $Statement->execute(@Data);
 
   my $Item = undef;
@@ -401,12 +406,12 @@ sub SaveCollection
   my $UpdateQuery = $self->BuildUpdateStatement($Collection->GetTableName(),
                                                 $Collection->GetPropertyDescriptors(),
                                                 $MasterColNames);
-  my $UpdateStatement = $self->{Db}->prepare($UpdateQuery);
+  my $UpdateStatement = $self->GetDb()->prepare($UpdateQuery);
 
   my $InsertQuery = $self->BuildInsertStatement($Collection->GetTableName(),
                                                 $Collection->GetPropertyDescriptors(),
                                                 $MasterColNames);
-  my $InsertStatement = $self->{Db}->prepare($InsertQuery);
+  my $InsertStatement = $self->GetDb()->prepare($InsertQuery);
 
   foreach my $Key (@{$Collection->GetKeysNoLoad()})
   {
@@ -428,7 +433,7 @@ sub SaveCollection
             die "Sequence property spans multiple columns";
           }
 
-          $Item->PutColValue(@{$ColNames}[0], $self->{Db}->{'mysql_insertid'});
+          $Item->PutColValue(@{$ColNames}[0], $self->GetDb()->{'mysql_insertid'});
           $Collection->KeyChanged($Key, $Item->GetKey());
         }
       }
@@ -468,7 +473,7 @@ sub SaveItem
     return;
   }
 
-  my $Statement = $self->{Db}->prepare($Query);
+  my $Statement = $self->GetDb()->prepare($Query);
   $Statement->execute(@{$self->GetUpdateData($MasterColValues, $Item)});
 
   $Statement->finish();
@@ -491,8 +496,9 @@ sub DeleteItem
                                 $Where);
   push(@Data, $Item->GetKey());
 
-  my $Statement = $self->{Db}->prepare("DELETE FROM " . $Item->GetTableName() .
-                                       " WHERE " . $Where);
+  my $Statement = $self->GetDb()->prepare("DELETE FROM " .
+                                          $Item->GetTableName() .
+                                          " WHERE " . $Where);
   $Statement->execute(@Data);
   $Statement->finish();
 
@@ -518,7 +524,7 @@ sub DeleteAll
   {
     $Query .= " WHERE " . $Where;
   }
-  my $Statement = $self->{Db}->prepare($Query);
+  my $Statement = $self->GetDb()->prepare($Query);
   $Statement->execute(@Data);
   $Statement->finish();
 
@@ -530,6 +536,6 @@ sub UseDBIBackEnd
   my $class = shift;
 
   $ObjectModel::BackEnd::ActiveBackEnd = $class->new();
-  $ObjectModel::BackEnd::ActiveBackEnd->Connect(@_);
+  $ObjectModel::BackEnd::ActiveBackEnd->{ConnectArgs} = \@_;
 }
 1;

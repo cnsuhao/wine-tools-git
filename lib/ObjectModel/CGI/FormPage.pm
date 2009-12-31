@@ -45,12 +45,20 @@ sub _initialize
   $self->{ActionPerformed} = !1;
 }
 
+sub GetPropertyDescriptors
+{
+  my $self = shift;
+
+  return $self->{PropertyDescriptors};
+}
+
 sub GetPropertyDescriptorByName
 {
   my $self = shift;
   my $Name = shift;
 
-  foreach my $PropertyDescriptor (@{$self->{PropertyDescriptors}})
+  my $PropertyDescriptors = $self->GetPropertyDescriptors();
+  foreach my $PropertyDescriptor (@{$PropertyDescriptors})
   {
     if ($PropertyDescriptor->GetName() eq $Name)
     {
@@ -134,7 +142,8 @@ sub GenerateFields
 {
   my $self = shift;
 
-  foreach my $PropertyDescriptor (@{$self->{PropertyDescriptors}})
+  my $PropertyDescriptors = $self->GetPropertyDescriptors();
+  foreach my $PropertyDescriptor (@{$PropertyDescriptors})
   {
     my $Display = $self->DisplayProperty($PropertyDescriptor);
     if ($Display)
@@ -370,7 +379,8 @@ sub Validate
 {
   my $self = shift;
 
-  foreach my $PropertyDescriptor (@{$self->{PropertyDescriptors}})
+  my $PropertyDescriptors = $self->GetPropertyDescriptors();
+  foreach my $PropertyDescriptor (@{$PropertyDescriptors})
   {
     my $Value = $self->GetParam($PropertyDescriptor->GetName());
     my $ErrMessage = $PropertyDescriptor->ValidateValue($Value, 1);

@@ -41,6 +41,7 @@ sub AddJob
   my $Steps = $NewJob->Steps;
   my $NewStep = $Steps->Add();
   my $BitsSuffix = ($Bits == 64 ? "64" : "");
+  $NewStep->Type("suite");
   $NewStep->FileName("${FileNameRandomPart} winetest${BitsSuffix}-latest.exe");
   $NewStep->InStaging(1);
 
@@ -54,7 +55,8 @@ sub AddJob
     my $AddThisVM;
     if ($Bits == 32)
     {
-      $AddThisVM = ($BaseJob && $VM->BaseOS) || (! $BaseJob && ! $VM->BaseOS);
+      $AddThisVM = ($BaseJob && $VM->Type eq "base") ||
+                   (! $BaseJob && $VM->Type ne "base");
     }
     else
     {
@@ -64,7 +66,6 @@ sub AddJob
     {
       my $Task = $Tasks->Add();
       $Task->VM($VM);
-      $Task->Type("suite");
       $Task->Timeout($SuiteTimeout);
       $HasTasks = 1;
     }

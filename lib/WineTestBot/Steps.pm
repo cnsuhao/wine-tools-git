@@ -43,6 +43,7 @@ sub InitializeNew
   $self->Status("queued");
   my $Keys = $Collection->GetKeys();
   $self->No(scalar @$Keys + 1);
+  $self->Type("single");
   $self->InStaging(1);
   $self->DebugLevel(1);
   $self->ReportSuccessfulTests(!1);
@@ -105,14 +106,16 @@ BEGIN
   $PropertyDescriptors[1] =
     CreateBasicPropertyDescriptor("Status", "Status",  !1,  1, "A", 9);
   $PropertyDescriptors[2] =
-    CreateBasicPropertyDescriptor("FileName", "File name",  !1,  1, "A", 64);
+    CreateBasicPropertyDescriptor("Type", "Step type",  !1,  1, "A", 8);
   $PropertyDescriptors[3] =
-    CreateBasicPropertyDescriptor("InStaging", "File is in staging area", !1, 1, "B", 1);
+    CreateBasicPropertyDescriptor("FileName", "File name",  !1,  1, "A", 64);
   $PropertyDescriptors[4] =
-    CreateBasicPropertyDescriptor("DebugLevel", "Debug level (WINETEST_DEBUG)", !1, 1, "N", 2);
+    CreateBasicPropertyDescriptor("InStaging", "File is in staging area", !1, 1, "B", 1);
   $PropertyDescriptors[5] =
-    CreateBasicPropertyDescriptor("ReportSuccessfulTests", "Report successfull tests (WINETEST_REPORT_SUCCESS)", !1, 1, "B", 1);
+    CreateBasicPropertyDescriptor("DebugLevel", "Debug level (WINETEST_DEBUG)", !1, 1, "N", 2);
   $PropertyDescriptors[6] =
+    CreateBasicPropertyDescriptor("ReportSuccessfulTests", "Report successfull tests (WINETEST_REPORT_SUCCESS)", !1, 1, "B", 1);
+  $PropertyDescriptors[7] =
     CreateDetailrefPropertyDescriptor("Tasks", "Tasks", !1, !1, \&CreateTasks);
 }
 

@@ -28,6 +28,8 @@ package WineTestBot::Task;
 
 use ObjectModel::Item;
 use WineTestBot::Config;
+use WineTestBot::Jobs;
+use WineTestBot::Steps;
 
 use vars qw(@ISA @EXPORT);
 
@@ -40,7 +42,6 @@ sub InitializeNew
   my ($Collection) = @_;
 
   $self->Status("queued");
-  $self->Type("single");
   my $Keys = $Collection->GetKeys();
   $self->No(scalar @$Keys + 1);
 
@@ -58,9 +59,24 @@ sub Run
   my $Pid = fork;
   if (defined($Pid) && ! $Pid)
   {
+    my $Jobs = WineTestBot::Jobs::CreateJobs();
+    my $Job = $Jobs->GetItem($JobId);
+    my $Step = $Job->Steps->GetItem($StepNo);
+    my $RunScript;
+    if ($Step->Type eq "build")
+    {
+      $RunScript = "$BinDir/RunBuild.pl";
+    }
+    else
+    {
+      $RunScript = "$BinDir/RunTask.pl";
+    }
+    $Step = undef;
+    $Job = undef;
+    $Jobs = undef;
     $ENV{PATH} = "/usr/bin:/bin";
     delete $ENV{ENV};
-    exec("$BinDir/RunTask.pl", $JobId, $StepNo, $self->No);
+    exec($RunScript, $JobId, $StepNo, $self->No);
     exit;
   }
   if (! defined($Pid))
@@ -98,18 +114,16 @@ BEGIN
   $PropertyDescriptors[2] =
     CreateItemrefPropertyDescriptor("VM", "VM", !1,  1, \&CreateVMs, ["VMName"]);
   $PropertyDescriptors[3] =
-    CreateBasicPropertyDescriptor("Type", "Task type", !1, 1, "A", 6);
-  $PropertyDescriptors[4] =
     CreateBasicPropertyDescriptor("Timeout", "Timeout", !1, 1, "N", 4);
-  $PropertyDescriptors[5] =
+  $PropertyDescriptors[4] =
     CreateBasicPropertyDescriptor("CmdLineArg", "Command line args", !1, !1, "A", 256);
-  $PropertyDescriptors[6] =
+  $PropertyDescriptors[5] =
     CreateBasicPropertyDescriptor("ChildPid", "Process id of child process", !1, !1, "N", 5);
-  $PropertyDescriptors[7] =
+  $PropertyDescriptors[6] =
     CreateBasicPropertyDescriptor("Started", "Execution started", !1, !1, "DT", 19);
-  $PropertyDescriptors[8] =
+  $PropertyDescriptors[7] =
     CreateBasicPropertyDescriptor("Ended", "Execution ended", !1, !1, "DT", 19);
-  $PropertyDescriptors[9] =
+  $PropertyDescriptors[8] =
     CreateBasicPropertyDescriptor("TestFailures", "Number of test failures", !1, !1, "N", 5);
 }
 

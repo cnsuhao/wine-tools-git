@@ -59,11 +59,11 @@ BEGIN
   $PropertyDescriptors[2] =
     CreateBasicPropertyDescriptor("TaskNo", "Task no", ! 1,  1, "N", 2);
   $PropertyDescriptors[3] =
-    CreateBasicPropertyDescriptor("Status", "Status",  !1,  1, "A", 9);
+    CreateBasicPropertyDescriptor("Type", "Step type", !1, 1, "A", 6);
   $PropertyDescriptors[4] =
-    CreateItemrefPropertyDescriptor("VM", "VM", !1,  1, \&CreateVMs, ["VMName"]);
+    CreateBasicPropertyDescriptor("Status", "Status",  !1,  1, "A", 9);
   $PropertyDescriptors[5] =
-    CreateBasicPropertyDescriptor("Type", "Task type", !1, 1, "A", 6);
+    CreateItemrefPropertyDescriptor("VM", "VM", !1,  1, \&CreateVMs, ["VMName"]);
   $PropertyDescriptors[6] =
     CreateBasicPropertyDescriptor("Timeout", "Timeout", !1, 1, "N", 4);
   $PropertyDescriptors[7] =
@@ -100,9 +100,9 @@ sub _initialize
       $StepTask->Id(100 * $Step->No + $Task->No);
       $StepTask->StepNo($Step->No);
       $StepTask->TaskNo($Task->No);
+      $StepTask->Type($Step->Type);
       $StepTask->Status($Task->Status);
       $StepTask->VM($Task->VM);
-      $StepTask->Type($Task->Type);
       $StepTask->Timeout($Task->Timeout);
       if ($Step->InStaging)
       {
