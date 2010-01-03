@@ -26,6 +26,7 @@ WineTestBot::Tasks - Job task collection
 
 package WineTestBot::Task;
 
+use ObjectModel::BackEnd;
 use ObjectModel::Item;
 use WineTestBot::Config;
 use WineTestBot::Jobs;
@@ -56,6 +57,7 @@ sub Run
   $self->Status("running");
   $self->Save();
 
+  $ActiveBackEnd->PrepareForFork();
   my $Pid = fork;
   if (defined($Pid) && ! $Pid)
   {

@@ -531,6 +531,17 @@ sub DeleteAll
   return undef;
 }
 
+sub PrepareForFork
+{
+  my $self = shift;
+
+  if (defined($self->{Db}))
+  {
+    $self->{Db}->disconnect();
+    $self->{Db} = undef;
+  }
+}
+
 sub UseDBIBackEnd
 {
   my $class = shift;

@@ -84,6 +84,7 @@ package WineTestBot::VM;
 
 use VMware::Vix::Simple;
 use VMware::Vix::API::Constants;
+use ObjectModel::BackEnd;
 use ObjectModel::Item;
 use WineTestBot::Config;
 use WineTestBot::Engine::Notify;
@@ -486,6 +487,7 @@ sub RunRevert
   $self->Status("reverting");
   $self->Save();
 
+  $ActiveBackEnd->PrepareForFork();
   my $Pid = fork;
   if (defined($Pid) && ! $Pid)
   {

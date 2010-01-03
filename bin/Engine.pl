@@ -32,6 +32,7 @@ use Errno qw(EAGAIN);
 use Fcntl;
 use POSIX ":sys_wait_h";
 use Socket;
+use ObjectModel::BackEnd;
 use WineTestBot::Config;
 use WineTestBot::Engine::Events;
 use WineTestBot::Jobs;
@@ -107,6 +108,7 @@ sub HandleJobStatusChange
 
   if ($OldStatus eq "running" && $NewStatus ne "running")
   {
+    $ActiveBackEnd->PrepareForFork();
     my $Pid = fork;
     if (defined($Pid) && ! $Pid)
     {
@@ -165,6 +167,7 @@ sub CheckForWinetestUpdate
 {
   my $Bits = $_[0];
 
+  $ActiveBackEnd->PrepareForFork();
   my $Pid = fork;
   if (defined($Pid) && ! $Pid)
   {
