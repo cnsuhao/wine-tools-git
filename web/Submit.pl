@@ -101,6 +101,8 @@ sub GetPropertyDescriptors
   }
   elsif ($self->{Page} == 3)
   {
+    my $IsPatch = ($self->GetParam("FileType") eq "patch");
+    $self->{PropertyDescriptors3}[0]->{IsRequired} = $IsPatch;
     return $self->{PropertyDescriptors3};
   }
 
