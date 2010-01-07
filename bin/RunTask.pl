@@ -219,6 +219,10 @@ elsif ($Step->Type eq "suite")
   $Script .= "-q -o $RptFileName -t $Tag\r\n" .
              "\@$FileName -q -s $RptFileName\r\n";
 }
+
+# Needed to exit the command prompt on Win9x/WinMe
+$Script .= "\@exit";
+
 $ErrMessage = $VM->RunScriptInGuestTimeout("", $Script, $Task->Timeout);
 if (defined($ErrMessage))
 {
