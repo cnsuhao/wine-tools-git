@@ -388,13 +388,6 @@ sub Validate
   {
     my $VMSelected = !1;
     my $VMs = CreateVMs();
-    if ($self->{ShowAll})
-    {
-      $VMs->AddFilter("Type", ["base", "extra"]);
-    }
-    {
-      $VMs->AddFilter("Type", ["base"]);
-    }
     foreach my $VMKey (@{$VMs->GetKeys()})
     {
       my $VM = $VMs->GetItem($VMKey);
