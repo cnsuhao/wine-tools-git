@@ -301,6 +301,8 @@ sub SafetyNet
 {
   my $Jobs = CreateJobs();
   $Jobs->Check();
+  $Jobs = undef;
+  $Jobs = CreateJobs();
   $Jobs->Schedule();
 }
 
