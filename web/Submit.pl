@@ -119,7 +119,7 @@ sub GenerateFields
   {
     print "<div class='ItemProperty'><label>File</label>",
           "<div class='ItemValue'>",
-          "<input type='file' name='File' size='50' />",
+          "<input type='file' name='File' size='64' />",
           "&nbsp;<span class='Required'>*</span></div></div>\n";
     $self->{HasRequired} = 1;
   }
