@@ -264,6 +264,7 @@ sub Schedule
   my $self = shift;
 
   my ($RevertingVMs, $RunningVMs) = CreateVMs()->CountRevertingRunningVMs();
+  my $PoweredOnExtraVMs = CreateVMs()->CountPoweredOnExtraVMs();
   my %DirtyVMsBlockingJobs;
 
   $self->AddFilter("Status", ["queued", "running"]);
@@ -331,10 +332,23 @@ sub Schedule
   my $VMKey;
   foreach $VMKey (@DirtyVMsByIndex)
   {
+    my $VM = $VMs->GetItem($VMKey);
     if (! defined($MaxRevertingVMs) || $RevertingVMs < $MaxRevertingVMs)
     {
-      $VMs->GetItem($VMKey)->RunRevert();
-      $RevertingVMs++;
+      if ($VM->Type eq "extra")
+      {
+        if (! defined($MaxExtraPoweredOnVms) || $PoweredOnExtraVMs < $MaxExtraPoweredOnVms)
+        {
+          $VM->RunRevert();
+          $PoweredOnExtraVMs++;
+          $RevertingVMs++;
+        }
+      }
+      else
+      {
+        $VM->RunRevert();
+        $RevertingVMs++;
+      }
     }
   }
   foreach $VMKey (@{$VMs->GetKeys()})

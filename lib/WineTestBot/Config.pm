@@ -31,7 +31,7 @@ use ObjectModel::DBIBackEnd;
 use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
              $VixHostType $VixHostName $VixHostUsername $VixHostPassword
              $VixGuestUsername $VixGuestPassword $DbDataSource $DbUsername
-             $DbPassword $MaxRevertingVMs $MaxRunningVMs $SleepAfterRevert
+             $DbPassword $MaxRevertingVMs $MaxRunningVMs $MaxExtraPoweredOnVms $SleepAfterRevert
              $AdminEMail $RobotEMail $SuiteTimeout $SingleTimeout
              $BuildTimeout $ReconfigTimeout $OverheadTimeout);
 
@@ -39,7 +39,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw($UseSSL $LogDir $DataDir $BinDir $VixHostType $VixHostName
              $VixHostUsername $VixHostPassword $VixGuestUsername
-             $VixGuestPassword $MaxRevertingVMs $MaxRunningVMs
+             $VixGuestPassword $MaxRevertingVMs $MaxRunningVMs $MaxExtraPoweredOnVms
              $SleepAfterRevert $AdminEMail $RobotEMail $SuiteTimeout
              $SingleTimeout $BuildTimeout $ReconfigTimeout $OverheadTimeout); 
 @EXPORT_OK = qw($DbDataSource $DbUsername $DbPassword);
@@ -50,6 +50,7 @@ $BinDir = "/usr/lib/winetestbot/bin";
 
 $MaxRevertingVMs = 1;
 $MaxRunningVMs = 2;
+$MaxExtraPoweredOnVms = 2;
 $SleepAfterRevert = 30;
 
 $SuiteTimeout = 30 * 60;

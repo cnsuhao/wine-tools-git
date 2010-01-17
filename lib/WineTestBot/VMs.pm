@@ -585,6 +585,27 @@ sub CountRevertingRunningVMs
   return ($RevertingVMs, $RunningVMs);
 }
 
+sub CountPoweredOnExtraVMs
+{
+  my $self = shift;
+
+  my $PowerdOnVMs = 0;
+  foreach my $VMKey (@{$self->GetKeys()})
+  {
+    my $VMStatus = $self->GetItem($VMKey)->Status;
+
+    if ($VMStatus eq "reverting" ||
+        $VMStatus eq "sleeping" ||
+        $VMStatus eq "idle" ||
+        $VMStatus eq "running")
+    {
+      $PowerdOnVMs++;
+    }
+  }
+
+  return $PowerdOnVMs;
+}
+
 sub SortKeysBySortOrder
 {
   my $self = shift;
