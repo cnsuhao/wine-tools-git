@@ -29,7 +29,7 @@ package WineTestBot::Config;
 use ObjectModel::DBIBackEnd;
 
 use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
-             $VixHostType $VixHostName $VixHostUsername $VixHostPassword
+             $VixHostType $VixHostUsername $VixHostPassword
              $VixGuestUsername $VixGuestPassword $DbDataSource $DbUsername
              $DbPassword $MaxRevertingVMs $MaxRunningVMs $MaxExtraPoweredOnVms $SleepAfterRevert
              $AdminEMail $RobotEMail $SuiteTimeout $SingleTimeout
@@ -37,7 +37,7 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw($UseSSL $LogDir $DataDir $BinDir $VixHostType $VixHostName
+@EXPORT = qw($UseSSL $LogDir $DataDir $BinDir $VixHostType
              $VixHostUsername $VixHostPassword $VixGuestUsername
              $VixGuestPassword $MaxRevertingVMs $MaxRunningVMs $MaxExtraPoweredOnVms
              $SleepAfterRevert $AdminEMail $RobotEMail $SuiteTimeout

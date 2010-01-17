@@ -41,7 +41,7 @@ sub new
 {
   my $class = shift;
 
-  my $self = {HostHandle => VIX_INVALID_HANDLE };
+  my $self = {};
   $self = bless $self, $class;
   return $self;
 }
@@ -49,34 +49,33 @@ sub new
 sub GetHostHandle
 {
   my $self = shift;
+  my $VixHost = $_[0];
 
-  if ($self->{HostHandle} != VIX_INVALID_HANDLE)
+  if (defined($self->{$VixHost}))
   {
-    return (undef, $self->{HostHandle});
+    return (undef, $self->{$VixHost});
   }
 
-  my $Err = VIX_OK;
-  ($Err, $self->{HostHandle}) = HostConnect(VIX_API_VERSION,
-                                            $VixHostType, $VixHostName, 0,
-                                            $VixHostUsername, $VixHostPassword,
-                                            0, VIX_INVALID_HANDLE);
+  my ($Err, $HostHandle) = HostConnect(VIX_API_VERSION,
+                                       $VixHostType, $VixHost, 0,
+                                       $VixHostUsername, $VixHostPassword,
+                                       0, VIX_INVALID_HANDLE);
   if ($Err != VIX_OK)
   {
-    $self->{HostHandle} = VIX_INVALID_HANDLE;
     return (GetErrorText($Err), VIX_INVALID_HANDLE);
   }
+  $self->{$VixHost} = $HostHandle;
 
-  return (undef, $self->{HostHandle});
+  return (undef, $self->{$VixHost});
 }
 
 sub DESTROY
 {
   my $self = shift;
 
-  if ($self->{HostHandle} != VIX_INVALID_HANDLE)
+  foreach my $HostHandle (values %{$self})
   {
-    HostDisconnect($self->{HostHandle});
-    $self->{HostHandle} = VIX_INVALID_HANDLE;
+    HostDisconnect($HostHandle);
   }
 }
 
@@ -135,7 +134,8 @@ sub GetVMHandle
     return (undef, $self->{VMHandle});
   }
 
-  my ($ErrMessage, $HostHandle) = $self->{HostConnection}->GetHostHandle();
+  my $VmxHost = $self->VmxHost;
+  my ($ErrMessage, $HostHandle) = $self->{HostConnection}->GetHostHandle($VmxHost);
   if (defined($ErrMessage))
   {
     return ($ErrMessage, VIX_INVALID_HANDLE);
@@ -540,12 +540,14 @@ BEGIN
   $PropertyDescriptors[4] =
     CreateBasicPropertyDescriptor("Status", "Current status", !1, 1, "A", 9);
   $PropertyDescriptors[5] =
-    CreateBasicPropertyDescriptor("VmxFilePath", "Path to .vmx file", !1, 1, "A", 64);
+    CreateBasicPropertyDescriptor("VmxHost", "Host where VM is located", !1, !1, "A", 64);
   $PropertyDescriptors[6] =
-    CreateBasicPropertyDescriptor("IdleSnapshot", "Name of idle snapshot", !1, 1, "A", 32);
+    CreateBasicPropertyDescriptor("VmxFilePath", "Path to .vmx file", !1, 1, "A", 64);
   $PropertyDescriptors[7] =
-    CreateBasicPropertyDescriptor("Interactive", "Needs interactive flag", !1, 1, "B", 1);
+    CreateBasicPropertyDescriptor("IdleSnapshot", "Name of idle snapshot", !1, 1, "A", 32);
   $PropertyDescriptors[8] =
+    CreateBasicPropertyDescriptor("Interactive", "Needs interactive flag", !1, 1, "B", 1);
+  $PropertyDescriptors[9] =
     CreateBasicPropertyDescriptor("Description", "Description", !1, !1, "A", 40);
 }
 

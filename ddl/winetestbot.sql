@@ -48,6 +48,7 @@ CREATE TABLE VMs
   SortOrder    INT(3)           NOT NULL,
   Bits         ENUM('32', '64') NOT NULL,
   Status       ENUM('reverting', 'sleeping', 'idle', 'running', 'dirty', 'offline') NOT NULL,
+  VmxHost      VARCHAR(64)      NULL,
   VmxFilePath  VARCHAR(64)      NOT NULL,
   IdleSnapshot VARCHAR(32)      NOT NULL,
   Interactive  ENUM('Y', 'N')   NOT NULL,

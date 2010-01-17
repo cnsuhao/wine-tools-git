@@ -29,14 +29,6 @@ $WineTestBot::Config::UseSSL = 1;
 # VIX_SERVICEPROVIDER_VMWARE_SERVER. 
 $WineTestBot::Config::VixHostType = undef;
 
-# With vCenter Server, ESX/ESXi hosts, and VMware Server 2.0, use a URL of the
-# form "https://<hostName>:<port>/sdk" where <hostName> is either the DNS name
-# or IP address, and <port> might be optional. With VMware Workstation, use
-# undef to connect to the local host. With VMware Server 1.0.x, use a DNS name
-# or IP address for remote connections, or the same as Workstation for local
-# connections
-$WineTestBot::Config::VixHostName = undef;
-
 # Username for authentication on the host. With VMware Workstation and VMware
 # Server 1.0.x, use undef to authenticate as the current user on local host.
 # With vCenter Server, ESX/ESXi hosts, and VMware Server 2.0, you must use a
