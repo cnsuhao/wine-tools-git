@@ -592,12 +592,14 @@ sub CountPoweredOnExtraVMs
   my $PowerdOnVMs = 0;
   foreach my $VMKey (@{$self->GetKeys()})
   {
-    my $VMStatus = $self->GetItem($VMKey)->Status;
+    my $VM = $self->GetItem($VMKey);
+    my $VMStatus = $VM->Status;
 
-    if ($VMStatus eq "reverting" ||
-        $VMStatus eq "sleeping" ||
-        $VMStatus eq "idle" ||
-        $VMStatus eq "running")
+    if ($VM->Type eq "extra" &&
+        ($VMStatus eq "reverting" ||
+         $VMStatus eq "sleeping" ||
+         $VMStatus eq "idle" ||
+         $VMStatus eq "running"))
     {
       $PowerdOnVMs++;
     }
