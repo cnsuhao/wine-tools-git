@@ -248,6 +248,26 @@ sub GenerateField
       }
       print "/>";
     }
+    elsif ($InputType eq "textarea")
+    {
+      my $MaxLength = $PropertyDescriptor->GetMaxLength();
+      print "<textarea name='", $PropertyDescriptor->GetName(), "' cols='";
+      if ($MaxLength < 64)
+      {
+        print "$MaxLength' rows='1";
+      }
+      else
+      {
+        print "64' rows='", int(($MaxLength + 63) / 64);
+      }
+      print "'>";
+      if ($Value)
+      {
+        print $self->CGI->escapeHTML($Value), "'";
+      }
+      print "</textarea>";
+      $self->GenerateRequired($PropertyDescriptor);
+    }
     else
     {
       print "<input type='$InputType' name='", $PropertyDescriptor->GetName(),
@@ -302,16 +322,11 @@ sub GetFooterText
   return undef;
 }
 
-use CGI::Carp;
 sub DisplayProperty
 {
   my $self = shift;
   my $PropertyDescriptor = $_[0];
 
-if (! defined($PropertyDescriptor))
-{
-confess "propdesc is undef\n";
-}
   if ($PropertyDescriptor->GetClass() eq "Detailref")
   {
     return "";

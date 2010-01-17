@@ -249,6 +249,7 @@ EOF
     print "    <li><p><a href='", MakeSecureURL("/Login.pl"),
           "'>Log in</a></p></li>\n";
   }
+  print "    <li><p><a href='/Feedback.pl'>Feedback</a></p></li>\n";
   print "    <li class='bot'>&nbsp;</li>\n";
   if (defined($Session) && $Session->User->HasRole("admin"))
   {
