@@ -210,7 +210,7 @@ if ($Step->Type eq "single")
 }
 elsif ($Step->Type eq "suite")
 {
-  my $Tag = "wtb-" . lc($VM->Name);
+  my $Tag = lc($TagPrefix) . "-" . lc($VM->Name);
   $Tag =~ s/[^a-zA-Z0-9]/-/g;
   if ($VM->Bits == 64)
   {
