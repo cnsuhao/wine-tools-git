@@ -51,9 +51,10 @@ sub GetHostHandle
   my $self = shift;
   my $VixHost = $_[0];
 
-  if (defined($self->{$VixHost}))
+  my $Key = $VixHost || "";
+  if (defined($self->{$Key}))
   {
-    return (undef, $self->{$VixHost});
+    return (undef, $self->{$Key});
   }
 
   my ($Err, $HostHandle) = HostConnect(VIX_API_VERSION,
@@ -64,9 +65,9 @@ sub GetHostHandle
   {
     return (GetErrorText($Err), VIX_INVALID_HANDLE);
   }
-  $self->{$VixHost} = $HostHandle;
+  $self->{$Key} = $HostHandle;
 
-  return (undef, $self->{$VixHost});
+  return (undef, $self->{$Key});
 }
 
 sub DESTROY
