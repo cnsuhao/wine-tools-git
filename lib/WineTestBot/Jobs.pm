@@ -152,7 +152,10 @@ sub UpdateStatus
     $HasQueuedStep = $HasQueuedStep || $Status eq "queued";
     $HasRunningStep = $HasRunningStep || $Status eq "running";
     $HasCompletedStep = $HasCompletedStep || $Status eq "completed";
-    $HasFailedStep = $HasFailedStep || $Status eq "failed";
+    my $Type = $Step->Type;
+    $HasFailedStep = $HasFailedStep ||
+                     ($Status eq "failed" &&
+                      ($Type eq "build" || $Type eq "reconfig"));
   }
 
   if ($HasRunningStep || ($HasQueuedStep && ($HasCompletedStep ||
@@ -464,7 +467,10 @@ sub Check
       $HasQueuedStep = $HasQueuedStep || $Status eq "queued";
       $HasRunningStep = $HasRunningStep || $Status eq "running";
       $HasCompletedStep = $HasCompletedStep || $Status eq "completed";
-      $HasFailedStep = $HasFailedStep || $Status eq "failed";
+      my $Type = $Step->Type;
+      $HasFailedStep = $HasFailedStep ||
+                       ($Status eq "failed" &&
+                        ($Type eq "build" || $Type eq "reconfig"));
     }
 
     if ($HasRunningStep || ($HasQueuedStep && ($HasCompletedStep ||
