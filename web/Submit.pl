@@ -182,6 +182,8 @@ sub GenerateFields
       }
   
       my $VMs = CreateVMs();
+      # Don't even show the 'offline' ones
+      $VMs->AddFilter("Status", ["reverting", "sleeping", "idle", "running", "dirty"]);
       if ($self->{ShowAll})
       {
         $VMs->AddFilter("Type", ["base", "extra"]);

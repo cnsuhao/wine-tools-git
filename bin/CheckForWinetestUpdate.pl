@@ -49,6 +49,8 @@ sub AddJob
   my $Tasks = $NewStep->Tasks;
   my $HasTasks = !1;
   my $VMs = CreateVMs();
+  # Don't schedule the 'offline' ones
+  $VMs->AddFilter("Status", ["reverting", "sleeping", "idle", "running", "dirty"]);
   foreach my $VMKey (@{$VMs->SortKeysBySortOrder($VMs->GetKeys())})
   {
     my $VM = $VMs->GetItem($VMKey);
