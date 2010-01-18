@@ -78,7 +78,15 @@ sub GetHeaderText
   }
   elsif ($self->{Page} == 2)
   {
-    return "Select the VMs on which you want to run your test";
+    my $HeaderText = "Select the VMs on which you want to run your test.";
+    my $VMs = CreateVMs();
+    $VMs->AddFilter("Status", ["offline"]);
+    if (! $VMs->IsEmpty())
+    {
+      $HeaderText .= "<br>NOTE: Some VMs are currently offline and are not " .
+                     "shown here.";
+    }
+    return $HeaderText;
   }
   elsif ($self->{Page} == 4)
   {
