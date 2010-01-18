@@ -72,9 +72,22 @@ if (defined($ErrMessage))
   FatalError "Can't revert $VMKey to " . $VM->IdleSnapshot . ": $ErrMessage";
 }
 
+$VM->Status("sleeping");
+foreach my $WaitCount (1..3)
+{
+  $ErrMessage = $VM->WaitForToolsInGuest();
+  if (! defined($ErrMessage))
+  {
+    last;
+  }
+}
+if (defined($ErrMessage))
+{
+  FatalError "Tools in $VMKey not available: $ErrMessage";
+}
+
 if ($SleepAfterRevert != 0)
 {
-  $VM->Status("sleeping");
   my ($ErrProperty, $ErrMessage) = $VM->Save();
   if (defined($ErrMessage))
   {
