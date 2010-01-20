@@ -34,16 +34,20 @@ sub ApplyPatch
 {
   my $PatchFile = $_[0];
 
+  my $NeedConfig = 0;
   my $StripLevel = 1;
   if (open (FH, "<$PatchFile"))
   {
     my $Line;
-    while (defined($Line = <FH>))
+    while (defined($Line = <FH>) && ($NeedConfig == 0 || $StripLevel == 1))
     {
       if ($Line =~ m/RCS file|^\+\+\+.*working copy/)
       {
         $StripLevel = 0;
-        last;
+      }
+      if ($Line =~ m/Makefile\.in/)
+      {
+        $NeedConfig = 1;
       }
     }
     close FH;
@@ -54,15 +58,25 @@ sub ApplyPatch
   if ($? != 0)
   {
     LogMsg "Patch failed\n";
-    return !1;
+    return -1;
   }
 
-  return 1;
+  return $NeedConfig;
 }
 
 sub BuildTestExecutable
 {
-  my ($DllBaseName, $Bits) = @_;
+  my ($DllBaseName, $Bits, $NeedConfig) = @_;
+
+  if ($NeedConfig)
+  {
+    system("cd $DataDir/build-mingw${Bits}; ./config.status dlls/$DllBaseName/tests/Makefile >> $LogDir/BuildSingleTest.log 2>&1");
+    if ($? != 0)
+    {
+      LogMsg "Reconfig failed\n";
+      return !1;
+    }
+  }
 
   my $TestsDir = "$DataDir/build-mingw${Bits}/dlls/$DllBaseName/tests";
   unlink("$TestsDir/${DllBaseName}_test.exe");
@@ -147,16 +161,17 @@ else
   FatalError "Invalid number of bits $BitIndicators\n";
 }
 
-if (! ApplyPatch($PatchFile))
+my $NeedConfig = ApplyPatch($PatchFile);
+if ($NeedConfig < 0)
 {
   exit(1);
 }
 
-if ($Run32 && ! BuildTestExecutable($DllBaseName, 32))
+if ($Run32 && ! BuildTestExecutable($DllBaseName, 32, 0 < $NeedConfig))
 {
   exit(1);
 }
-if ($Run64 && ! BuildTestExecutable($DllBaseName, 64))
+if ($Run64 && ! BuildTestExecutable($DllBaseName, 64, 0 < $NeedConfig))
 {
   exit(1);
 }
