@@ -63,16 +63,23 @@ $VM->Status("reverting");
 my ($ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
 {
-  FatalError "Can't change status for VM $VMKey: $ErrMessage";
+  FatalError "Can't change status for VM $VMKey: $ErrMessage", $VM;
 }
 
 $ErrMessage = $VM->RevertToSnapshot($VM->IdleSnapshot);
 if (defined($ErrMessage))
 {
-  FatalError "Can't revert $VMKey to " . $VM->IdleSnapshot . ": $ErrMessage";
+  FatalError "Can't revert $VMKey to " . $VM->IdleSnapshot . ": $ErrMessage",
+             $VM;
 }
 
 $VM->Status("sleeping");
+($ErrProperty, $ErrMessage) = $VM->Save();
+if (defined($ErrMessage))
+{
+  FatalError "Can't change status for VM $VMKey: $ErrMessage", $VM;
+}
+
 foreach my $WaitCount (1..3)
 {
   $ErrMessage = $VM->WaitForToolsInGuest();
@@ -83,17 +90,11 @@ foreach my $WaitCount (1..3)
 }
 if (defined($ErrMessage))
 {
-  FatalError "Tools in $VMKey not available: $ErrMessage";
+  LogMsg "RevertVM: $VMKey Error while waiting for tools: $ErrMessage\n";
 }
 
 if ($SleepAfterRevert != 0)
 {
-  my ($ErrProperty, $ErrMessage) = $VM->Save();
-  if (defined($ErrMessage))
-  {
-    FatalError "Can't change status for VM $VMKey: $ErrMessage";
-  }
-
   sleep($SleepAfterRevert);
 }
 
@@ -101,7 +102,7 @@ $VM->Status("idle");
 ($ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
 {
-  FatalError "Can't change status for VM $VMKey: $ErrMessage";
+  FatalError "Can't change status for VM $VMKey: $ErrMessage", $VM;
 }
 
 LogMsg "RevertVM: revert of $VMKey completed\n";
