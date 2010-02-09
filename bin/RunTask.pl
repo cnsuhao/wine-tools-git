@@ -216,7 +216,7 @@ elsif ($Step->Type eq "suite")
   {
     $Tag .= "-" . ($FileName eq "winetest64-latest.exe" ? "64" : "32");
   }
-  $Script .= "-q -o $RptFileName -t $Tag\r\n" .
+  $Script .= "-q -o $RptFileName -t $Tag -m $AdminEMail\r\n" .
              "\@$FileName -q -s $RptFileName\r\n";
 }
 
