@@ -79,7 +79,7 @@ umask 022
      cd build-native &&
      ../wine/configure --enable-win64 --without-x --without-freetype) || exit
 
-    (cd build-native && make depend && make tools) || exit
+    (cd build-native && make depend && make __tooldeps__) || exit
 
     # then cross-compile the tests
 
@@ -90,8 +90,7 @@ umask 022
 
     (cd build-mingw &&
      make depend &&
-     make include &&
-     make -C dlls testsubdirs &&
+     make programs/winetest &&
      cd programs/winetest &&
      $mingw32-gcc -v 2> build.nfo &&
      make dist) || exit
@@ -116,8 +115,7 @@ umask 022
 
     (cd build-mingw64 &&
      make depend &&
-     make include &&
-     make -C dlls testsubdirs &&
+     make programs/winetest &&
      cd programs/winetest &&
      $mingw64-gcc -v 2> build.nfo &&
      make dist) || exit
