@@ -49,7 +49,8 @@ sub BuildNative
          "../wine-git/configure --enable-win64 --without-x --without-freetype " .
          ">> $LogDir/Reconfig.log 2>&1 &&" .
          "make depend >> $LogDir/Reconfig.log 2>&1 &&" .
-         "make tools >> $LogDir/Reconfig.log 2>&1");
+         "make __tooldeps__ >> $LogDir/Reconfig.log 2>&1");
+
   if ($? != 0)
   {
     LogMsg "Build native failed\n";
@@ -69,8 +70,7 @@ sub BuildCross
          "../wine-git/configure --host=$Host --with-wine-tools=../build-native " .
          "--without-x --without-freetype >> $LogDir/Reconfig.log 2>&1 &&" .
          "make depend >> $LogDir/Reconfig.log 2>&1 &&" .
-         "make include >> $LogDir/Reconfig.log 2>&1 &&" .
-         "make -C dlls testsubdirs >> $LogDir/Reconfig.log 2>&1");
+         "make programs/winetest >> $LogDir/Reconfig.log 2>&1");
   if ($? != 0)
   {
     LogMsg "Build cross ($Bits bits) failed\n";
