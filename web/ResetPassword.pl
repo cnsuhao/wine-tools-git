@@ -46,7 +46,7 @@ sub _initialize
 
 sub GetTitle
 {
-  return "Reset passwor";
+  return "Reset password";
 }
 
 sub GetHeaderText
