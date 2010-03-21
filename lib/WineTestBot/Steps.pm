@@ -108,7 +108,7 @@ BEGIN
   $PropertyDescriptors[2] =
     CreateBasicPropertyDescriptor("Type", "Step type",  !1,  1, "A", 8);
   $PropertyDescriptors[3] =
-    CreateBasicPropertyDescriptor("FileName", "File name",  !1,  1, "A", 64);
+    CreateBasicPropertyDescriptor("FileName", "File name",  !1,  1, "A", 100);
   $PropertyDescriptors[4] =
     CreateBasicPropertyDescriptor("InStaging", "File is in staging area", !1, 1, "B", 1);
   $PropertyDescriptors[5] =

@@ -77,7 +77,7 @@ CREATE TABLE Steps
   No                    INT(2) NOT NULL,
   Type                  ENUM('suite', 'single', 'build', 'reconfig') NOT NULL,
   Status                ENUM('queued', 'running', 'completed', 'failed', 'skipped') NOT NULL,
-  FileName              VARCHAR(64) NOT NULL,
+  FileName              VARCHAR(100) NOT NULL,
   InStaging             ENUM('Y', 'N') NOT NULL,
   DebugLevel            INT(2) NOT NULL,
   ReportSuccessfulTests ENUM('Y', 'N') NOT NULL,

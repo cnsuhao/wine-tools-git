@@ -127,7 +127,7 @@ sub GenerateFields
   {
     print "<div class='ItemProperty'><label>File</label>",
           "<div class='ItemValue'>",
-          "<input type='file' name='File' size='64' />",
+          "<input type='file' name='File' size='64' maxlength='64' />",
           "&nbsp;<span class='Required'>*</span></div></div>\n";
     $self->{HasRequired} = 1;
   }
@@ -534,6 +534,12 @@ sub OnPage1Next
     {
       $FileName =~ m/^.*(\\|\/)(.*)/;
       $FileName = $2;
+    }
+    if (100 - 32 - 1 < length($FileName))
+    {
+      $self->{ErrField} = "File";
+      $self->{ErrMessage} = "File: Name is too long";
+      return !1;
     }
     my $StagingFile = $self->GetStagingFileName($FileName);
     my $OldUMask = umask(002);
