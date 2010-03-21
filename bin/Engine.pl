@@ -128,6 +128,30 @@ sub HandleJobStatusChange
   return "1OK";
 }
 
+sub HandleJobCancel
+{
+  my $JobKey = $_[0];
+
+  my $Job = CreateJobs()->GetItem($JobKey);
+  if (! $Job)
+  {
+    LogMsg "Engine: JobCancel for non-existing job $JobKey\n";
+    return "0Job $JobKey not found";
+  }
+  # We've already determined that JobKey is valid, untaint it
+  $JobKey =~ m/^(.*)$/;
+  $JobKey = $1;
+
+  my $ErrMessage = $Job->Cancel();
+  if (defined($ErrMessage))
+  {
+    LogMsg "Engine: cancel problem: $ErrMessage\n";
+    return "0$ErrMessage";
+  }
+
+  return "1OK";
+}
+
 sub HandleTaskComplete
 {
   my $ErrMessage = CreateJobs()->Schedule();
@@ -261,6 +285,10 @@ sub HandleClientCmd
   if ($Cmd eq "jobstatuschange")
   {
     return HandleJobStatusChange(@_);
+  }
+  if ($Cmd eq "jobcancel")
+  {
+    return HandleJobCancel(@_);
   }
   if ($Cmd eq "taskcomplete")
   {

@@ -177,7 +177,17 @@ my $FullLogFileName = "$TaskDir/log";
 my $FullErrFileName = "$TaskDir/err";
 my $FullScreenshotFileName = "$TaskDir/screenshot.png";
 
+sub TermHandler
+{
+  $VM->CopyFileFromGuestToHost("C:\\winetest\\$RptFileName",
+                               $FullLogFileName);
+  TakeScreenshot $VM, $FullScreenshotFileName;
+  chmod 0664, $FullLogFileName;
+  FatalError "Cancelled\n", $FullErrFileName, $Job, $Step, $Task;
+}
+
 $VM->Status('running');
+$SIG{TERM} = \&TermHandler;
 my ($ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
 {

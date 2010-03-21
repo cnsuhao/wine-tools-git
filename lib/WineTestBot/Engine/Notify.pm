@@ -33,7 +33,7 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $RunningInEngine);
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(&PingEngine &JobSubmit &JobStatusChange &TaskComplete
+@EXPORT = qw(&PingEngine &JobSubmit &JobStatusChange &JobCancel &TaskComplete
              &VMStatusChange &ExpectWinetestUpdate &FoundWinetestUpdate);
 @EXPORT_OK = qw($RunningInEngine);
 
@@ -100,6 +100,23 @@ sub JobStatusChange
   my ($JobKey, $OldStatus, $NewStatus) = @_;
 
   my $Reply = SendCmdReceiveReply("jobstatuschange $JobKey $OldStatus $NewStatus\n");
+  if (length($Reply) < 1)
+  {
+    return "Unrecognized reply received from engine";
+  }
+  if (substr($Reply, 0, 1) eq "1")
+  {
+    return undef;
+  }
+ 
+  return substr($Reply, 1);
+}
+
+sub JobCancel
+{
+  my $JobKey = $_[0];
+
+  my $Reply = SendCmdReceiveReply("jobcancel $JobKey\n");
   if (length($Reply) < 1)
   {
     return "Unrecognized reply received from engine";

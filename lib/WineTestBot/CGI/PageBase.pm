@@ -69,7 +69,6 @@ sub _initialize
 {
 }
 
-use CGI::Carp;
 sub CheckSecurePage
 {
   my $self = shift;

@@ -26,6 +26,7 @@ use ObjectModel::CGI::CollectionPage;
 use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::StepsTasks;
+use WineTestBot::Engine::Notify;
 
 @JobDetailsPage::ISA = qw(ObjectModel::CGI::CollectionPage);
 
@@ -33,7 +34,12 @@ sub _initialize
 {
   my $self = shift;
 
-  my $Job = CreateJobs()->GetItem($self->GetParam("Key"));
+  my $JobId = $self->GetParam("Key");
+  if (! defined($JobId))
+  {
+    $JobId = $self->GetParam("JobId");
+  }
+  my $Job = CreateJobs()->GetItem($JobId);
   if (! defined($Job))
   {
     $self->Redirect("/index.pl");
@@ -70,9 +76,73 @@ sub GetItemActions
   return [];
 }
 
+sub CanCancel
+{
+  my $self = shift;
+
+  my $Job = CreateJobs()->GetItem($self->{JobId});
+  my $Status = $Job->Status;
+  if ($Status ne "queued" && $Status ne "running")
+  {
+    return "Job already $Status"; 
+  }
+
+  my $Session = $self->GetCurrentSession();
+  if (! defined($Session))
+  {
+    return "You are not authorized to cancel this job";
+  }
+  my $CurrentUser = $Session->User;
+  if (! $CurrentUser->HasRole("admin") &&
+      $Job->User->GetKey() ne $CurrentUser->GetKey())
+  {
+    return "You are not authorized to cancel this job";
+  }
+
+  return undef;
+}
+
 sub GetActions
 {
-  return [];
+  my $self = shift;
+
+  my $ErrMessage = $self->CanCancel();
+
+  return defined($ErrMessage) ? [] : ["Cancel job"];
+}
+
+sub OnCancel
+{
+  my $self = shift;
+
+  my $ErrMessage = $self->CanCancel();
+  if (defined($ErrMessage))
+  {
+    $self->{ErrMessage} = $ErrMessage;
+    return !1;
+  }
+
+  $ErrMessage = JobCancel($self->{JobId});
+  if (defined($ErrMessage))
+  {
+    $self->{ErrMessage} = $ErrMessage;
+    return !1;
+  }
+
+  return 1;
+}
+
+sub OnAction
+{
+  my $self = shift;
+  my $Action = $_[1];
+
+  if ($Action eq "Cancel job")
+  {
+    return $self->OnCancel();
+  }
+
+  return $self->SUPER::OnAction(@_);
 }
 
 sub SortKeys
@@ -105,6 +175,13 @@ sub GeneratePage
 sub GenerateBody
 {
   my $self = shift;
+
+  if ($self->{ActionPerformed})
+  {
+    print "<h1>" . $self->GetTitle() . "</h1>\n";
+    print "<p>Job will be cancelled.</p>\n";
+    return;
+  }
 
   $self->SUPER::GenerateBody(@_);
 
