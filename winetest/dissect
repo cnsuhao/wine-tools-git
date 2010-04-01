@@ -272,7 +272,6 @@ while (<IN>) {
         } else {
             $result = "$total $todo $failed $skipped";
         }
-      FINISH:
         print SUM "- $dll $unit $result $source $rev\n";
         $dll = undef;
         $total = $todo = $failed = $skipped = 0;
@@ -299,14 +298,11 @@ while (<IN>) {
 }
 if (defined $dll) {
     # Either winetest crashed or the report file was cut off
-    $_="";
     if ($filesize == $maxfilesize) {
-        $result = "failed filelimit - -";
-        $testbox->{data} .= "<div class=\"test end\">test failed: file limit exceeded</div>\n";
+        mydie "report reached file limit (runaway test?)\n"; 
     } else {
         mydie "report truncated (winetest crash?)\n"; 
     }
-    goto FINISH;
 }
 close SUM or mydie "error writing to '$tmpdir/summary.txt': $!\n";
 close IN;
