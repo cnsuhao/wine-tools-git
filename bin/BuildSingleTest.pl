@@ -45,7 +45,7 @@ sub ApplyPatch
       {
         $StripLevel = 0;
       }
-      if ($Line =~ m/Makefile\.in/)
+      if ($Line =~ m=tests/Makefile\.in=)
       {
         $NeedConfig = 1;
       }
