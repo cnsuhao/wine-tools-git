@@ -70,7 +70,7 @@ sub BuildTestExecutable
 
   if ($NeedConfig)
   {
-    system("cd $DataDir/build-mingw${Bits}; ./config.status dlls/$DllBaseName/tests/Makefile >> $LogDir/BuildSingleTest.log 2>&1");
+    system("cd $DataDir/build-mingw${Bits}; ./config.status --file dlls/$DllBaseName/tests/Makefile >> $LogDir/BuildSingleTest.log 2>&1");
     if ($? != 0)
     {
       LogMsg "Reconfig failed\n";
