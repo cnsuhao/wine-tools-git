@@ -37,6 +37,7 @@ my %status_descr =
  "split"      => "Needs splitting",
  "depend"     => "Dependency",
  "superseded" => "Superseded",
+ "testcase"   => "Needs tests",
  "testfail"   => "Test failure",
 );
 
@@ -50,6 +51,7 @@ my @legend =
  [ "depend",     "<ul><li>The patch is part of a series in which a previous patch hasn't been applied. Resend when the dependent patch is fixed.</li></ul>" ],
  [ "superseded", "<ul><li>An updated version of the patch has been submitted.</li>" .
                  "<li>Someone else fixed the problem already.</li></ul>" ],
+ [ "testcase",   "<ul><li>You need to write some test cases demonstrating that the patch is correct.</li></ul>" ],
  [ "other",      "<ul><li>The patch belongs to another WineHQ project (website, appdb, etc.) and will be applied by the respective maintainer.</li></ul>" ],
  [ "applyfail",  "<ul><li>The patch got mangled in transit.</li>" .
                  "<li>It's not relative to the latest git.</li>" .
