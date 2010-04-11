@@ -30,6 +30,7 @@ use lib "$Dir/../lib";
 
 use Errno qw(EAGAIN);
 use Fcntl;
+use MIME::Parser;
 use POSIX ":sys_wait_h";
 use Socket;
 use ObjectModel::BackEnd;
@@ -37,6 +38,9 @@ use WineTestBot::Config;
 use WineTestBot::Engine::Events;
 use WineTestBot::Jobs;
 use WineTestBot::Log;
+use WineTestBot::Patches;
+use WineTestBot::PendingPatchSeries;
+use WineTestBot::Utils;
 
 sub FatalError
 {
@@ -271,6 +275,36 @@ sub HandleFoundWinetestUpdate
   return "1OK";
 }
 
+sub HandleNewWinePatchesSubmission
+{
+  # Validate file name
+  if ($_[0] !~ m/([0-9a-fA-F]{32}_wine-patches)/)
+  {
+    return "0Invalid file name";
+  }
+  my $FullMessageFileName = "$DataDir/staging/$1";
+
+  # Create a working dir
+  my $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
+  while (-e $WorkDir)
+  {
+    $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
+  }
+  mkdir $WorkDir;
+
+  # Process the patch
+  my $Parser = new MIME::Parser;
+  $Parser->output_dir($WorkDir);
+  my $Entity = $Parser->parse_open($FullMessageFileName);
+  CreatePatches()->NewSubmission($Entity);
+
+  # Clean up
+  system("rm -rf $WorkDir");
+  unlink($FullMessageFileName);
+
+  return "1OK";
+}
+
 sub HandleClientCmd
 {
   my $Cmd = shift;
@@ -306,6 +340,10 @@ sub HandleClientCmd
   {
     return HandleFoundWinetestUpdate(@_);
   }
+  if ($Cmd eq "newwinepatchessubmission")
+  {
+    return HandleNewWinePatchesSubmission(@_);
+  }
 
   return "0Unknown command $Cmd\n";
 }
@@ -332,6 +370,27 @@ sub SafetyNet
   $Jobs = undef;
   $Jobs = CreateJobs();
   $Jobs->Schedule();
+
+  if (opendir STAGING, "$DataDir/staging")
+  {
+    my @DirEntries = readdir STAGING;
+    closedir STAGING;
+    foreach my $DirEntry (@DirEntries)
+    {
+      if ($DirEntry =~ m/[0-9a-fA-F]{32}_wine-patches/)
+      {
+        HandleNewWinePatchesSubmission($DirEntry);
+      }
+    }
+  }
+
+  my $Series = WineTestBot::PendingPatchSeriesCollection::CreatePendingPatchSeriesCollection();
+#  my $Series = CreatePendingPatchSeriesCollection();
+  my $ErrMessage = $Series->CheckForCompleteSeries();
+  if (defined($ErrMessage))
+  {
+    LogMsg "Engine: while checking completeness of patch series: $ErrMessage\n";
+  }
 }
 
 sub PrepareSocket

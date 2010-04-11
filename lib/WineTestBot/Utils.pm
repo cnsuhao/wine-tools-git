@@ -32,7 +32,8 @@ use vars qw (@ISA @EXPORT);
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(&MakeSecureURL &SecureConnection &GenerateRandomString);
+@EXPORT = qw(&MakeSecureURL &SecureConnection &GenerateRandomString
+             &BuildEMailRecipient);
 
 sub MakeSecureURL
 {
@@ -73,5 +74,23 @@ sub DateTimeToString
 #  my ($Sec, $Min, $Hour, $MDay, $Mon, $Year, $WDay, $YDay, $IsDst) = localtime($Time);
   return strftime("%Y/%m/%d %H:%M:%S", localtime($Time));
 }
+
+sub BuildEMailRecipient
+{
+  my ($EMailAddress, $Name) = @_;
+
+  if (! defined($EMailAddress))
+  {
+    return undef;
+  }
+  my $Recipient = "<" . $EMailAddress . ">";
+  if ($Name)
+  {
+    $Recipient .= " ($Name)";
+  }
+
+  return $Recipient;
+}
+
 
 1;

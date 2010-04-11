@@ -51,6 +51,17 @@ sub FatalError
       close RPTFILE;
     }
     umask($OldUMask);
+
+    if ($Task && $Step->Type eq "suite")
+    {
+      my $LatestName = "$DataDir/latest/" . $Task->VM->Name . "_" .
+                       ($Task->VM->Bits == 64 &&
+                        $Step->FileName eq "winetest64-latest.exe" ? "64" :
+                                                                     "32") .
+                       ".err";
+      unlink($LatestName);
+      link($RptFileName, $LatestName);
+    }
   }
 
   TaskComplete($JobKey, $StepKey, $TaskKey);
@@ -106,6 +117,31 @@ sub CountFailures
   close REPORTFILE;
 
   return $Failures;
+}
+
+sub RetrieveLogFile
+{
+  my ($Job, $Step, $Task, $GuestLogFileName, $HostLogFileName) = @_;
+
+  my $VM = $Task->VM;
+  my $ErrMessage = $VM->CopyFileFromGuestToHost($GuestLogFileName,
+                                                $HostLogFileName);
+  chmod 0664, $HostLogFileName;
+  if (defined($ErrMessage) || $Step->Type ne "suite")
+  {
+    return $ErrMessage;
+  }
+
+  my $LatestNameBase = "$DataDir/latest/" . $VM->Name . "_" .
+                       ($VM->Bits == 64 &&
+                        $Step->FileName eq "winetest64-latest.exe" ?
+                        "64" : "32");
+  unlink("${LatestNameBase}.log");
+  unlink("${LatestNameBase}.err");
+  link("$DataDir/jobs/" . $Job->Id . "/" . $Step->No . "/" . $Task->No . "/log",
+       "${LatestNameBase}.log");
+
+  return undef;
 }
 
 $ENV{PATH} = "/usr/bin:/bin";
@@ -179,10 +215,9 @@ my $FullScreenshotFileName = "$TaskDir/screenshot.png";
 
 sub TermHandler
 {
-  $VM->CopyFileFromGuestToHost("C:\\winetest\\$RptFileName",
-                               $FullLogFileName);
+  RetrieveLogFile $Job, $Step, $Task, "C:\\winetest\\$RptFileName",
+                  $FullLogFileName;
   TakeScreenshot $VM, $FullScreenshotFileName;
-  chmod 0664, $FullLogFileName;
   FatalError "Cancelled\n", $FullErrFileName, $Job, $Step, $Task;
 }
 
@@ -236,18 +271,16 @@ $Script .= "\@exit";
 $ErrMessage = $VM->RunScriptInGuestTimeout("", $Script, $Task->Timeout);
 if (defined($ErrMessage))
 {
-  $VM->CopyFileFromGuestToHost("C:\\winetest\\$RptFileName",
-                               $FullLogFileName);
+  RetrieveLogFile $Job, $Step, $Task, "C:\\winetest\\$RptFileName",
+                  $FullLogFileName;
   TakeScreenshot $VM, $FullScreenshotFileName;
-  chmod 0664, $FullLogFileName;
   FatalError "Failure running script in VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
 TakeScreenshot $VM, $FullScreenshotFileName;
 
-$ErrMessage = $VM->CopyFileFromGuestToHost("C:\\winetest\\$RptFileName",
-                                           $FullLogFileName);
-chmod 0664, $FullLogFileName;
+$ErrMessage = RetrieveLogFile $Job, $Step, $Task, "C:\\winetest\\$RptFileName",
+                              $FullLogFileName;
 if (defined($ErrMessage))
 {
   FatalError "Can't copy log from VM: $ErrMessage\n", $FullErrFileName,

@@ -45,6 +45,35 @@ sub GetActions
   return [];
 }
 
+sub DisplayProperty
+{
+  my $self = shift;
+
+  my $PropertyDescriptor = $_[0];
+  if ($PropertyDescriptor->GetName() eq "Patch")
+  {
+    return !1;
+  }
+
+  return $self->SUPER::DisplayProperty(@_);
+}
+
+sub GetDisplayValue
+{
+  my $self = shift;
+  my ($Item, $PropertyDescriptor) = @_;
+
+  if ($PropertyDescriptor->GetName() eq "User" &&
+      defined($Item->Patch) &&
+      $Item->User->GetKey() eq WineTestBot::Users->GetBatchUser()->GetKey() &&
+      defined($Item->Patch->FromName))
+  {
+    return $Item->Patch->FromName;
+  }
+
+  return $self->SUPER::GetDisplayValue(@_);
+}
+
 package VMStatusBlock;
 
 use ObjectModel::CGI::CollectionBlock;

@@ -86,6 +86,22 @@ sub GetPropertyDescriptors
   return $self->{PropertyDescriptors};
 }
 
+sub GetPropertyDescriptorByName
+{
+  my $self = shift;
+
+  my $Name = $_[0];
+  foreach my $PropertyDescriptor (@{$self->{PropertyDescriptors}})
+  {
+    if ($PropertyDescriptor->GetName() eq $Name)
+    {
+      return $PropertyDescriptor;
+    }
+  }
+
+  return undef;
+}
+
 sub GetTableName
 {
   my $self = shift;

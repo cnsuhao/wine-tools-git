@@ -33,6 +33,8 @@ use lib "$Dir/../lib";
 use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::Log;
+use WineTestBot::Patches;
+use WineTestBot::PendingPatchSeries;
 
 $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
@@ -53,3 +55,53 @@ foreach my $JobKey (@{$Jobs->GetKeys()})
     }
   }
 }
+$Jobs = undef;
+
+$DeleteBefore = time() - 1 * 86400;
+my $SeriesCollection = WineTestBot::PendingPatchSeriesCollection::CreatePendingPatchSeriesCollection();
+foreach my $SeriesKey (@{$SeriesCollection->GetKeys()})
+{
+  my $Series = $SeriesCollection->GetItem($SeriesKey);
+  my $Parts = $Series->Parts;
+  my $MostRecentPatch;
+  foreach my $PartKey (@{$Parts->GetKeys()})
+  {
+    my $Patch = $Parts->GetItem($PartKey)->Patch;
+    if (! defined($MostRecentPatch) ||
+        $MostRecentPatch->Received < $Patch->Received)
+    {
+      $MostRecentPatch = $Patch;
+    }
+  }
+  if (! defined($MostRecentPatch) ||
+      $MostRecentPatch->Received < $DeleteBefore)
+  {
+    LogMsg "Janitor: deleting pending series for ", $Series->EMail, "\n";
+    $SeriesCollection->DeleteItem($Series);
+    $MostRecentPatch->Disposition("Incomplete series, discarded");
+    $MostRecentPatch->Save();
+  }
+}
+
+$DeleteBefore = time() - 7 * 86400;
+my $Patches = CreatePatches();
+foreach my $PatchKey (@{$Patches->GetKeys()})
+{
+  my $Patch = $Patches->GetItem($PatchKey);
+  if ($Patch->Received < $DeleteBefore)
+  {
+    $Jobs = CreateJobs();
+    $Jobs->AddFilter("Patch", [$Patch]);
+    if ($Jobs->IsEmpty())
+    {
+      LogMsg "Janitor: deleting patch ", $Patch->Id, "\n";
+      unlink("$DataDir/patches/" . $Patch->Id);
+      my $ErrMessage = $Patches->DeleteItem($Patch);
+      if (defined($ErrMessage))
+      {
+        LogMsg "Janitor: ", $ErrMessage, "\n";
+      }
+    }
+  }
+}
+$Patches = undef;

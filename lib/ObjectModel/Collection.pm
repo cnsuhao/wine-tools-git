@@ -130,6 +130,8 @@ sub Add
   $NewItem->InitializeNew($self);
   $self->{Items}{$NewItem->GetKey()} = $NewItem;
 
+  $self->{Loaded} = 1;
+
   return $NewItem;
 }
 
@@ -158,6 +160,11 @@ sub GetItem
   my $self = shift;
 
   my $Key = shift;
+  if (! defined($Key))
+  {
+    return undef;
+  }
+
   if (! exists($self->{Items}{$Key}))
   {
     my $NewItem = $ActiveBackEnd->LoadItem($self, $Key);

@@ -75,14 +75,7 @@ sub GetEMailRecipient
 {
   my $self = shift;
 
-  my $Recipient = "<" . $self->EMail . ">";
-  my $RealName = $self->RealName;
-  if ($RealName)
-  {
-    $Recipient .= " ($RealName)";
-  }
-
-  return $Recipient;
+  return BuildEMailRecipient($self->EMail, $self->RealName);
 }
 
 sub Activated

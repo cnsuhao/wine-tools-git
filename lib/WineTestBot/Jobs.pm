@@ -221,6 +221,23 @@ sub Cancel
   return undef;
 }
 
+sub GetEMailRecipient
+{
+  my $self = shift;
+
+  if (defined($self->Patch) && defined($self->Patch->FromEMail))
+  {
+    return $self->Patch->FromEMail;
+  }
+
+  if ($self->User->EMail eq "/dev/null")
+  {
+    return undef;
+  }
+
+  return $self->User->GetEMailRecipient();
+}
+
 package WineTestBot::Jobs;
 
 use POSIX qw(:errno_h);
@@ -231,6 +248,7 @@ use ObjectModel::ItemrefPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
 use WineTestBot::Config;
 use WineTestBot::Log;
+use WineTestBot::Patches;
 use WineTestBot::Steps;
 use WineTestBot::Users;
 use WineTestBot::VMs;
@@ -248,7 +266,7 @@ BEGIN
   $PropertyDescriptors[0] =
     CreateBasicPropertyDescriptor("Id", "Job id", 1, 1, "S",  5);
   $PropertyDescriptors[1] =
-    CreateItemrefPropertyDescriptor("User", "User", !1, 1, \&WineTestBot::Users::CreateUsers, ["UserName"]);
+    CreateItemrefPropertyDescriptor("User", "Author", !1, 1, \&WineTestBot::Users::CreateUsers, ["UserName"]);
   $PropertyDescriptors[2] =
     CreateBasicPropertyDescriptor("Priority", "Priority", !1, 1, "N", 1);
   $PropertyDescriptors[3] =
@@ -260,6 +278,8 @@ BEGIN
   $PropertyDescriptors[6] =
     CreateBasicPropertyDescriptor("Ended", "Ended", !1, !1, "DT", 50);
   $PropertyDescriptors[7] =
+    CreateItemrefPropertyDescriptor("Patch", "Submitted from patch", !1, !1, \&WineTestBot::Patches::CreatePatches, ["PatchId"]);
+  $PropertyDescriptors[8] =
     CreateDetailrefPropertyDescriptor("Steps", "Steps", !1, !1, \&CreateSteps);
 }
 

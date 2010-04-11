@@ -44,10 +44,122 @@ sub FatalError
   exit 1;
 }
 
+sub IsBotFailure
+{
+  my $ErrLine = $_[0];
+
+  return ($ErrLine =~ m/Cancelled/ ||
+          $ErrLine =~ m/Can't set VM status to running/ ||
+          $ErrLine =~ m/Can't copy exe to VM/ ||
+          $ErrLine =~ m/Can't copy log from VM/ ||
+          $ErrLine =~ m/Can't copy generated executable from VM/);
+}
+
+sub CheckErrLog
+{
+  my $ErrLogFileName = $_[0];
+
+  my $BotFailure = !1;
+  my $Messages = "";
+  if (open ERRFILE, "$ErrLogFileName")
+  {
+    my $Line;
+    while (defined($Line = <ERRFILE>))
+    {
+      if (IsBotFailure($Line))
+      {
+        if (! $Messages)
+        {
+          $BotFailure = 1;
+        }
+      }
+      else
+      {
+        $Messages .= $Line;
+      }
+    }
+    close ERRFILE;
+  }
+
+  return ($BotFailure, $Messages);
+}
+
+sub CompareLogs
+{
+  my ($SuiteLog, $TaskLog, $BaseDllName, $TestSet) = @_;
+
+  my $Messages = "";
+  my $SuitePartialLogName = "/tmp/$$.suite";
+  if (open SUITEPARTIAL, ">$SuitePartialLogName")
+  {
+    if (open SUITE, "<$SuiteLog")
+    {
+      my $Line;
+      my $Found = !1;
+      while (! $Found && defined($Line = <SUITE>))
+      {
+        $Found = ($Line =~ m/${BaseDllName}:${TestSet} start/);
+      }
+      if ($Found)
+      {
+        $Found = !1;
+        while (! $Found && defined($Line = <SUITE>))
+        {
+          if ($Line =~ m/${BaseDllName}:${TestSet} done/)
+          {
+            if ($Line =~ m/${BaseDllName}:${TestSet} done \((\d+)\)/ &&
+                $1 eq "258")
+            {
+              print SUITEPARTIAL "Timeout\r\n";
+            }
+            $Found = 1;
+          }
+          else
+          {
+            print SUITEPARTIAL $Line;
+          }
+        }
+      }
+
+      close SUITE;
+    }
+    else
+    {
+      LogMsg "SendLog: Unable to open suite log $SuiteLog\n";
+    }
+
+    close SUITEPARTIAL;
+    if (open DIFF, "diff -u $SuitePartialLogName $TaskLog|")
+    {
+      my $Line;
+      while (defined($Line = <DIFF>))
+      {
+        if ($Line =~ m/^\+.*: Test failed: / || $Line =~ m/^\+.*Timeout/i)
+        {
+          $Messages .= substr($Line, 1);
+        }
+      }
+      close DIFF;
+    }
+    else
+    {
+      LogMsg "SendLog: Unable to diff suite and task logs\n";
+    }
+#    unlink($SuitePartialLogName);
+  }
+  else
+  {
+    LogMsg "SendLog: Unable to create temp file $SuitePartialLogName\n";
+  }
+
+  return $Messages;
+}
+
 sub SendLog
 {
   my $Job = shift;
-  if ($Job->User->EMail eq "/dev/null")
+  my $To = $Job->GetEMailRecipient();
+  if (! defined($To))
   {
     return;
   }
@@ -55,10 +167,9 @@ sub SendLog
   my $StepsTasks = CreateStepsTasks($Job);
   my @SortedKeys = sort @{$StepsTasks->GetKeys()};
 
-#  open (SENDMAIL, "|/bin/cat");
   open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
   print SENDMAIL "From: <$RobotEMail> (Marvin)\n";
-  print SENDMAIL "To: ", $Job->User->GetEMailRecipient(), "\n";
+  print SENDMAIL "To: $To\n";
   print SENDMAIL "Subject: WineTestBot job ", $Job->Id, " finished\n";
   print SENDMAIL <<"EOF";
 MIME-Version: 1.0
@@ -84,6 +195,7 @@ EOF
                     $TestFailures;
   }
 
+  my @FailureKeys;
   foreach my $Key (@SortedKeys)
   {
     my $StepTask = $StepsTasks->GetItem($Key);
@@ -153,7 +265,22 @@ EOF
 
       if (! $PrintedSomething)
       {
-        print SENDMAIL $HasLogEntries ? "No test failures found\n" : "Empty log\n";
+        if (! $HasLogEntries)
+        {
+          print SENDMAIL "Empty log\n";
+        }
+        elsif ($StepTask->Type eq "build")
+        {
+          print SENDMAIL "No build failures found\n";
+        }
+        else
+        {
+          print SENDMAIL "No test failures found\n";
+        }
+      }
+      else
+      {
+        $FailureKeys[scalar @FailureKeys] = $Key;
       }
     }
     elsif (open ERRFILE, "<$TaskDir/err")
@@ -170,6 +297,10 @@ EOF
       if (! $HasErrEntries)
       {
         print "Empty log";
+      }
+      else
+      {
+        $FailureKeys[scalar @FailureKeys] = $Key;
       }
     }
   }
@@ -208,11 +339,11 @@ EOF
       my $Line;
       while (defined($Line = <ERRFILE>))
       {
-          if ($PrintSeparator)
-          {
-            print SENDMAIL "\n";
-            $PrintSeparator = !1;
-          }
+        if ($PrintSeparator)
+        {
+          print SENDMAIL "\n";
+          $PrintSeparator = !1;
+        }
         $Line =~ s/\s*$//;
         print SENDMAIL "$Line\n";
       }
@@ -222,6 +353,73 @@ EOF
   
   print SENDMAIL "--==13F70BD1-BA1B-449A-9CCB-B6A8E90CED47==--\n";
   close(SENDMAIL);
+
+  if (! defined($Job->Patch) || scalar @FailureKeys == 0)
+  {
+    return;
+  }
+
+  my $Messages = "";
+  foreach my $Key (@FailureKeys)
+  {
+    my $StepTask = $StepsTasks->GetItem($Key);
+
+    my $TaskDir = "$DataDir/jobs/" . $Job->Id . "/" . $StepTask->StepNo .
+                  "/" . $StepTask->TaskNo;
+
+    my ($BotFailure, $MessagesFromErr) = CheckErrLog("$TaskDir/err");
+    if (! $BotFailure)
+    {
+      my $Bits = ($StepTask->FileName =~ /_test64\.exe$/ ? 64 : 32);
+      my $LatestName = "$DataDir/latest/" . $StepTask->VM->Name . "_$Bits";
+      my ($LatestBotFailure, $Dummy) = CheckErrLog("$LatestName.err");
+      my $MessagesFromLog = "";
+      if (! $LatestBotFailure)
+      {
+        $StepTask->FileName =~ m/^(.*)_test(64)?\.exe/;
+        $MessagesFromLog = CompareLogs("$LatestName.log", "$TaskDir/log",
+                                       $1, $StepTask->CmdLineArg);
+      }
+      else
+      {
+        LogMsg "SendLog: BotFailure found in ${LatestName}.err\n";
+      }
+      if ($MessagesFromErr || $MessagesFromLog)
+      {
+        $Messages .= "\n=== " . $StepTask->VM->Name . " (" .
+                     $StepTask->VM->Description . ") ===\n" .
+                     $MessagesFromLog . $MessagesFromErr;
+      }
+    }
+    elsif ($BotFailure)
+    {
+      LogMsg "SendLog: BotFailure found in $TaskDir/err\n";
+    }
+  }
+
+  if ($Messages)
+  {
+    open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
+    print SENDMAIL "From: <$RobotEMail> (Marvin)\n";
+    print SENDMAIL "To: $To\n";
+    print SENDMAIL "Cc: wine-devel\@winehq.org\n";
+    print SENDMAIL "Subject: Re: ", $Job->Patch->Subject, "\n";
+    print SENDMAIL <<"EOF";
+
+Hi,
+
+While running your changed tests on Windows, I think I found new failures.
+Being a bot and all I'm not very good at pattern recognition, so I might be
+wrong, but could you please double-check?
+Full results can be found at
+EOF
+    print SENDMAIL "http://winetestbot.geldorp.nl/JobDetails.pl?Key=",
+                   $Job->GetKey(), "\n\n";
+    print SENDMAIL "Your paranoid android.\n\n";
+
+    print SENDMAIL $Messages;
+    close SENDMAIL;
+  }
 }
 
 $ENV{PATH} = "/usr/bin:/bin";

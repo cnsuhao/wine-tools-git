@@ -228,6 +228,7 @@ Wine Test Bot
   <ul>
     <li class='top'><p>Test Bot</p></li>
     <li><p><a href='/index.pl'>Home</a></p></li>
+    <li><p><a href='/PatchesList.pl'>Wine-patches</a></p></li>
 EOF
 
   my $Session = $self->GetCurrentSession();

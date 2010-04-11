@@ -420,13 +420,16 @@ sub GetDisplayValue
 
   if ($PropertyDescriptor->GetClass() eq "Itemref")
   {
-    foreach $PropertyDescriptor (@{$Value->GetPropertyDescriptors()})
+    if (defined($Value))
     {
-      if ($PropertyDescriptor->GetIsKey())
+      foreach $PropertyDescriptor (@{$Value->GetPropertyDescriptors()})
       {
-        $PropertyName = $PropertyDescriptor->GetName();
-        $Value = $Value->$PropertyName;
-        last;
+        if ($PropertyDescriptor->GetIsKey())
+        {
+          $PropertyName = $PropertyDescriptor->GetName();
+          $Value = $Value->$PropertyName;
+          last;
+        }
       }
     }
   }
