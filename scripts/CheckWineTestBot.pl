@@ -22,7 +22,7 @@ use strict;
 use lib "/usr/lib/winetestbot/lib";
 
 use WineTestBot::Config;
-use WineTestBot::NotifyEngine;
+use WineTestBot::Engine::Notify;
 
 $ENV{PATH} = "/sbin:/usr/sbin:/usr/bin:/bin";
 delete $ENV{ENV};
