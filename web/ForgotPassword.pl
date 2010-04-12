@@ -120,7 +120,9 @@ sub GenerateBody
   if ($self->{ActionPerformed})
   {
     print "<h1>Reset password</h1>\n";
+    print "<div class='Content'>\n";
     print "<p>A password activation code has been mailed to you.</p>\n";
+    print "</div>\n";
     return;
   }
 

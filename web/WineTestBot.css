@@ -1,50 +1,92 @@
+@import "/winehq/styles.css";
+
+#Logo
+{
+  position: absolute;
+  z-index: 2;
+  top: 20px;
+  left: 50px;
+  width: 100px;
+  height: 157px;
+}
+
 /* sidebar styles copied from forum.winehq.org */
 /* sidebar navigation */
-#sidebar            {
-                     position: absolute;
-                     z-index: 6;
-                     top: 200px;
-                     left: 0px;
-                     margin: 0px;
-                     padding: 0px;
-                     width: 156px;
-                    }
-#sidebar UL         {
-                     list-style: none;
-                     width: 156px;
-                     padding: 0;
-                     margin: 0 0 10px 0;
-                    }
-#sidebar LI         {
-                     width: 156px;
-                     margin: 0;
-                     padding: 5px 0 0 0;
-                     background-image: url('winehq/images/side_menu_bg.png');
-                     background-repeat: repeat-y;
-                     font-size: 10px;
-                     color: white;
-                    }
-#sidebar LI P       { margin: 0; padding: 0 15px 5px 15px; }
-#sidebar LI.top     {
-                     height: 33px;
-                     margin: 0;
-                     padding: 0;
-                     background-image: url('winehq/images/side_menu_top.png');
-                     background-repeat: no-repeat;
-                     font-weight: bold;
-                     font-size: 10px;
-                    }
-#sidebar LI.top P   { margin: 0; padding: 10px 0 0 5px; }
-#sidebar LI.bot     {
-                     height: 16px;
-                     margin: 0;
-                     padding: 0;
-                     background-image: url('winehq/images/side_menu_bot.png');
-                     background-repeat: no-repeat;
-                    }
-#sidebar A          { font-size: 10px; color: white; text-decoration: none; }
-#sidebar A:hover    { font-size: 10px; text-decoration: underline; }
+#menu
+{
+  display: inline;
+  position: absolute;
+  z-index: 6;
+  top: 200px;
+  left: 0px;
+  margin: 0px;
+  padding: 0px;
+  width: 156px;
+}
+#menu UL
+{
+  list-style: none;
+  width: 156px;
+  padding: 0;
+  margin: 0 0 10px 0;
+}
+#menu LI
+{
+  width: 156px;
+  margin: 0;
+  padding: 5px 0 0 0;
+  background-image: url('winehq/images/side_menu_bg.png');
+  background-repeat: repeat-y;
+  font-size: 10px;
+  color: white;
+}
+#menu LI P
+{
+  margin: 0; padding: 0 15px 5px 15px;
+}
+#menu LI.top
+{
+  height: 33px;
+  margin: 0;
+  padding: 0;
+  background-image: url('winehq/images/side_menu_top.png');
+  background-repeat: no-repeat;
+  font-weight: bold;
+  font-size: 10px;
+}
+#menu LI.top P
+{
+  margin: 0;
+  padding: 10px 0 0 5px;
+}
+#menu LI.divider
+{
+  display: none;
+}
+#menu LI.bot
+{
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  background-image: url('winehq/images/side_menu_bot.png');
+  background-repeat: no-repeat;
+}
+#menu A
+{
+  font-size: 10px;
+  color: white;
+  text-decoration: none;
+}
+#menu A:hover
+{
+  font-size: 10px; text-decoration: underline;
+}
 
+#ContentContainer
+{
+  padding: 20px 20px 10px 80px;
+  background: #FFFFFF;
+}
 
 /* General text */
 A:visited

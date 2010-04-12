@@ -75,8 +75,10 @@ sub GenerateBody
 
   print "<div class='CollectionPageBody'>\n";
   $self->GenerateTitle();
+  print "<div class='Content'>\n";
   my $CollectionBlock = $self->CreateCollectionBlock($self->{Collection});
   $CollectionBlock->GenerateList();
+  print "</div>\n";
   print "</div>\n";
 }
 

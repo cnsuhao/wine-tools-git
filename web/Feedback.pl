@@ -143,7 +143,9 @@ sub GenerateBody
   if ($self->{ActionPerformed})
   {
     print "<h1>Feedback sent</h1>\n";
+    print "<div class='Content'>\n";
     print "<p>Thanks for taking the time to provide feedback.</p>\n";
+    print "</div>";
     return;
   }
 

@@ -119,6 +119,7 @@ sub GetDetailsPage
 package StatusPage;
 
 use ObjectModel::CGI::Page;
+use WineTestBot::Config;
 use WineTestBot::Engine::Notify;
 use WineTestBot::Jobs;
 use WineTestBot::VMs;
@@ -154,7 +155,8 @@ sub GenerateBody
 {
   my $self = shift;
 
-  print "<h1>WineTestBot status</h1>\n";
+  print "<h1>${ProjectName} Test Bot status</h1>\n";
+  print "<div class='Content'>\n";
 
   print "<h2>General</h2>\n";
   print "<div class='GeneralStatus'>\n";
@@ -194,6 +196,7 @@ sub GenerateBody
   print "<h2><a name='vms'></a>VMs</h2>\n";
   my $VMsCollectionBlock = new VMStatusBlock(CreateVMs(), $self);
   $VMsCollectionBlock->GenerateList();
+  print "</div>\n";
 }
 
 package main;

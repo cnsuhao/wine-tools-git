@@ -179,12 +179,15 @@ sub GenerateBody
   if ($self->{ActionPerformed})
   {
     print "<h1>" . $self->GetTitle() . "</h1>\n";
+    print "<div class='Content'>\n";
     print "<p>Job will be cancelled.</p>\n";
+    print "</div>\n";
     return;
   }
 
   $self->SUPER::GenerateBody(@_);
 
+  print "<div class='Content'>\n";
   my $Keys = $self->SortKeys(undef, $self->{Collection}->GetKeys());
   foreach my $Key (@$Keys)
   {
@@ -372,6 +375,7 @@ sub GenerateBody
       print "<p>No log available yet</p>\n";
     }
   }
+  print "</div>\n";
 }
 
 sub GenerateDataCell

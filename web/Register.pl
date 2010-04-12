@@ -148,9 +148,11 @@ sub GenerateBody
   {
     print <<EOF;
 <h1>Request new account</h1>
+<div class='Content'>
 <p>Your request is now waiting to be approved. Expect to receive a link via
 email to activate your account and choose a password. Usually, you should
 receive that email within a couple of hours.</p>
+</div>
 EOF
     return;
   }

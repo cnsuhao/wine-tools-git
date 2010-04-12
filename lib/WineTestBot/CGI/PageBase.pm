@@ -1,6 +1,7 @@
 # Base class for web pages
 #
 # Copyright 2009 Ge van Geldorp
+# Copyright 2010 VMware, Inc.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -203,9 +204,8 @@ sub GenerateHeader
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-  <title>Wine Test Bot</title>
-  <link rel="stylesheet" href="/winehq/styles.css" type="text/css" media="screen">
-  <link rel="stylesheet" href="/winetestbot.css" type="text/css" media="screen">
+  <title>${ProjectName} Test Bot</title>
+  <link rel="stylesheet" href="/${ProjectName}TestBot.css" type="text/css" media="screen">
 </head>
 EOF
   
@@ -218,25 +218,29 @@ EOF
   print ">\n";
 
   print <<EOF;
-<div id="logo_glass"><a href="/index.pl"><img src="/winehq/images/winehq_logo_glass_sm.png" alt=""></a></div>
 
 <div id="logo_blurb">
-Wine Test Bot
+${ProjectName} Test Bot
 </div>
 
-<div id="sidebar">
-  <ul>
-    <li class='top'><p>Test Bot</p></li>
-    <li><p><a href='/index.pl'>Home</a></p></li>
-    <li><p><a href='/PatchesList.pl'>Wine-patches</a></p></li>
+<div id="main_content">
+  <div id="header">
+    <div id="menu">
+      <ul>
+        <li class='top'><p>Test Bot</p></li>
+        <li><p><a href='/index.pl'>Home</a></p></li>
+        <li class='divider'>&nbsp;</li>
+        <li><p><a href='/PatchesList.pl'>Wine-patches</a></p></li>
 EOF
 
   my $Session = $self->GetCurrentSession();
   if ($self->SessionActive())
   {
-    print "    <li><p><a href='", MakeSecureURL("/Submit.pl"),
+    print "        <li class='divider'>&nbsp;</li>\n";
+    print "        <li><p><a href='", MakeSecureURL("/Submit.pl"),
           "'>Submit job</a></p></li>\n";
-    print "    <li><p><a href='", MakeSecureURL("/Logout.pl"), "'>Log out";
+    print "        <li class='divider'>&nbsp;</li>\n";
+    print "        <li><p><a href='", MakeSecureURL("/Logout.pl"), "'>Log out";
     if (defined($Session))
     {
       print " ", $Page->CGI->escapeHTML($Session->User->Name);
@@ -245,31 +249,39 @@ EOF
   }
   else
   {
-    print "    <li><p><a href='/Register.pl'>Register</a></p></li>\n";
-    print "    <li><p><a href='", MakeSecureURL("/Login.pl"),
+    print "        <li class='divider'>&nbsp;</li>\n";
+    print "        <li><p><a href='/Register.pl'>Register</a></p></li>\n";
+    print "        <li class='divider'>&nbsp;</li>\n";
+    print "        <li><p><a href='", MakeSecureURL("/Login.pl"),
           "'>Log in</a></p></li>\n";
   }
-  print "    <li><p><a href='/Feedback.pl'>Feedback</a></p></li>\n";
-  print "    <li class='bot'>&nbsp;</li>\n";
+  print "        <li class='divider'>&nbsp;</li>\n";
+  print "        <li><p><a href='/Feedback.pl'>Feedback</a></p></li>\n";
+  print "        <li class='bot'>&nbsp;</li>\n";
   if (defined($Session) && $Session->User->HasRole("admin"))
   {
-    print "    <li class='top'><p>Admin</p></li>\n";
-    print "    <li><p><a href='", MakeSecureURL("/admin/UsersList.pl"),
+    print "        <li class='top'><p>Admin</p></li>\n";
+    print "        <li><p><a href='", MakeSecureURL("/admin/UsersList.pl"),
           "'>Users</a></p></li>\n";
-    print "    <li><p><a href='", MakeSecureURL("/admin/VMsList.pl"),
+    print "        <li class='divider'>&nbsp;</li>\n";
+    print "        <li><p><a href='", MakeSecureURL("/admin/VMsList.pl"),
           "'>VMs</a></p></li>\n";
-    print "    <li class='bot'>&nbsp;</li>\n";
+    print "        <li class='bot'>&nbsp;</li>\n";
   }
 
   print <<EOF;
-  </ul>
-</div>
-
-<div id="main_content">
+      </ul>
+    </div>
+    <div id="banner">
+      <div id="Logo">
+        <a href="/index.pl"><img src="/${ProjectName}Logo.png" alt=""></a>
+      </div>
+    </div>
+  </div>
 
   <div class="rbox">
     <b class="rtop"><b class="r1">&nbsp;</b><b class="r2">&nbsp;</b><b class="r3">&nbsp;</b><b class="r4">&nbsp;</b></b>
-    <div class="content" style="padding: 20px 20px 10px 80px">
+    <div id="ContentContainer">
 EOF
 }
 

@@ -98,6 +98,7 @@ sub GenerateBody
 
   print "<div class='ItemBody'>\n";
   $self->GenerateTitle();
+  print "<div class='Content'>\n";
   my $Text = $self->GetHeaderText();
   if ($Text)
   {
@@ -129,6 +130,7 @@ sub GenerateBody
   {
     print "<p>$Text</p>\n";
   }
+  print "</div>\n";
   print "</div>\n";
 }
 
@@ -252,13 +254,13 @@ sub GenerateField
     {
       my $MaxLength = $PropertyDescriptor->GetMaxLength();
       print "<textarea name='", $PropertyDescriptor->GetName(), "' cols='";
-      if ($MaxLength < 64)
+      if ($MaxLength < 50)
       {
         print "$MaxLength' rows='1";
       }
       else
       {
-        print "64' rows='", int(($MaxLength + 63) / 64);
+        print "50' rows='", int(($MaxLength + 49) / 50);
       }
       print "'>";
       if ($Value)

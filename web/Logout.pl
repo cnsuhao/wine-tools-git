@@ -41,6 +41,7 @@ sub GenerateBody
   my $self = shift;
 
   print "<h1>Log out</h1>";
+  print "<div class='Content'>\n";
   if ($self->{WasLoggedIn})
   {
     print "<p>You have been logged out</p>";
@@ -50,6 +51,7 @@ sub GenerateBody
     print "<p>It seems you're not logged in, so there is no need to log " .
           "out</p>";
   }
+  print "</div>\n";
 }
 
 sub GeneratePage
