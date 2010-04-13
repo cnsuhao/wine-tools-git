@@ -205,7 +205,9 @@ sub GenerateHeader
 <html>
 <head>
   <title>${ProjectName} Test Bot</title>
-  <link rel="stylesheet" href="/${ProjectName}TestBot.css" type="text/css" media="screen">
+  <link rel='icon' href='/${ProjectName}FavIcon.png' type='image/png'>
+  <link rel='shortcut icon' href='/${ProjectName}FavIcon.png' type='image/png'>
+  <link rel='stylesheet' href='/${ProjectName}TestBot.css' type='text/css' media='screen'>
 </head>
 EOF
   
@@ -223,15 +225,30 @@ EOF
 ${ProjectName} Test Bot
 </div>
 
+<div id='tabs'>
+  <ul>
+    <li><a href='http://www.winehq.org/'>WineHQ</a></li>
+    <li><a href='http://wiki.winehq.org'>Wiki</a></li>
+    <li><a href='http://appdb.winehq.org/'>AppDB</a></li>
+    <li><a href='http://bugs.winehq.org/'>Bugzilla</a></li>
+    <li class='s'><a href='http://testbot.winehq.org/'>TestBot</a></li>
+    <li><a href='http://forums.winehq.org/'>Forums</a></li>
+  </ul>
+</div>
+
 <div id="main_content">
   <div id="header">
     <div id="menu">
       <ul>
         <li class='top'><p>Test Bot</p></li>
         <li><p><a href='/index.pl'>Home</a></p></li>
-        <li class='divider'>&nbsp;</li>
-        <li><p><a href='/PatchesList.pl'>Wine-patches</a></p></li>
 EOF
+  if (defined($PatchesMailingList))
+  {
+    print "        <li class='divider'>&nbsp;</li>\n";
+    print "        <li><p><a href='/PatchesList.pl'>",
+          ucfirst($PatchesMailingList), "</a></p></li>\n";
+  }
 
   my $Session = $self->GetCurrentSession();
   if ($self->SessionActive())
@@ -272,9 +289,12 @@ EOF
   print <<EOF;
       </ul>
     </div>
-    <div id="banner">
-      <div id="Logo">
-        <a href="/index.pl"><img src="/${ProjectName}Logo.png" alt=""></a>
+    <div id='banner'>
+      <div id='Logo'>
+        <a href='/index.pl'><img src='/${ProjectName}Logo.png' alt=''></a>
+      </div>
+      <div id='Project'>
+        <img src='/${ProjectName}Project.png' alt=''>
       </div>
     </div>
   </div>

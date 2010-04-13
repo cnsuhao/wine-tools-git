@@ -34,7 +34,7 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
              $DbPassword $MaxRevertingVMs $MaxRunningVMs $MaxExtraPoweredOnVms $SleepAfterRevert
              $AdminEMail $RobotEMail $SuiteTimeout $SingleTimeout
              $BuildTimeout $ReconfigTimeout $OverheadTimeout $TagPrefix
-             $ProjectName);
+             $ProjectName $PatchesMailingList);
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -43,7 +43,7 @@ require Exporter;
              $VixGuestPassword $MaxRevertingVMs $MaxRunningVMs $MaxExtraPoweredOnVms
              $SleepAfterRevert $AdminEMail $RobotEMail $SuiteTimeout
              $SingleTimeout $BuildTimeout $ReconfigTimeout $OverheadTimeout
-             $TagPrefix $ProjectName);
+             $TagPrefix $ProjectName $PatchesMailingList);
 @EXPORT_OK = qw($DbDataSource $DbUsername $DbPassword);
 
 $LogDir = "/var/log/winetestbot";
@@ -62,6 +62,7 @@ $ReconfigTimeout = 45 * 60;
 $OverheadTimeout = 3 * 60;
 
 $ProjectName = "Wine";
+$PatchesMailingList = "wine-patches";
 
 eval 'require "WineTestBot/ConfigLocal.pl";';
 if ($@)

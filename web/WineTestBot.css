@@ -10,6 +10,16 @@
   height: 157px;
 }
 
+#Project
+{
+  position: absolute;
+  z-index: 3;
+  top: 40px;
+  left: 110px;
+  width: 186px;
+  height: 58px;
+}
+
 /* sidebar styles copied from forum.winehq.org */
 /* sidebar navigation */
 #menu
