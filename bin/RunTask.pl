@@ -10,6 +10,7 @@ sub BEGIN
 }
 use lib "$Dir/../lib";
 
+use POSIX qw(:fcntl_h);
 use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::Log;
@@ -144,6 +145,44 @@ sub RetrieveLogFile
   return undef;
 }
 
+sub Is64BitExecutable
+{
+  my $FileName = $_[0];
+
+  if (! sysopen(FH, $FileName, O_RDONLY))
+  {
+    return !1;
+  }
+
+  my $Buffer;
+  if (sysread(FH, $Buffer, 0x40))
+  {
+    # Unpack IMAGE_DOS_HEADER
+    my @Fields = unpack "S30I", $Buffer;
+    if ($Fields[0] == 0x5a4d)
+    {
+      seek FH, $Fields[30], SEEK_SET;
+      if (sysread(FH, $Buffer, 0x06))
+      {
+        @Fields = unpack "IS", $Buffer;
+        if ($Fields[0] == 0x00004550 && $Fields[1] == 0x014c)
+        {
+          close FH;
+          return !1;
+        }
+        elsif ($Fields[0] == 0x00004550 && $Fields[1] == 0x8664)
+        {
+          close FH;
+          return 1;
+        }
+      }
+    }
+  }
+
+  close FH;
+  return !1;
+}
+
 $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
 
@@ -237,15 +276,25 @@ if (defined($ErrMessage))
   FatalError "Can't copy exe to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
+my $TestLauncher = "TestLauncher" . 
+                   (Is64BitExecutable("$StepDir/$FileName") ? "64" : "32") .
+                   ".exe";
+$ErrMessage = $VM->CopyFileFromHostToGuest("$BinDir/$TestLauncher",
+                                           "C:\\winetest\\$TestLauncher");
+if (defined($ErrMessage))
+{
+  FatalError "Can't copy TestLauncher to VM: $ErrMessage\n",
+             $FullErrFileName, $Job, $Step, $Task;
+}
 my $Script = "\@cd \\winetest\r\n\@set WINETEST_DEBUG=" . $Step->DebugLevel .
              "\r\n";
 if ($Step->ReportSuccessfulTests)
 {
   $Script .= "\@set WINETEST_REPORT_SUCCESS=1\r\n";
 }
-$Script .= "\@$FileName ";
 if ($Step->Type eq "single")
 {
+  $Script .= "\@$TestLauncher -t " . $Task->Timeout . " $FileName ";
   my $CmdLineArg = $Task->CmdLineArg;
   if ($CmdLineArg)
   {
@@ -255,6 +304,7 @@ if ($Step->Type eq "single")
 }
 elsif ($Step->Type eq "suite")
 {
+  $Script .= "\@$FileName ";
   my $Tag = lc($TagPrefix) . "-" . lc($VM->Name);
   $Tag =~ s/[^a-zA-Z0-9]/-/g;
   if ($VM->Bits == 64)
@@ -266,9 +316,9 @@ elsif ($Step->Type eq "suite")
 }
 
 # Needed to exit the command prompt on Win9x/WinMe
-$Script .= "\@exit";
+$Script .= "\@exit\r\n";
 
-$ErrMessage = $VM->RunScriptInGuestTimeout("", $Script, $Task->Timeout);
+$ErrMessage = $VM->RunScriptInGuestTimeout("", $Script, $Task->Timeout + 15);
 if (defined($ErrMessage))
 {
   RetrieveLogFile $Job, $Step, $Task, "C:\\winetest\\$RptFileName",
