@@ -83,11 +83,7 @@ static BOOL AllImportedDllsPresent(char *TestExeName)
    BOOL Found;
    BOOL AllPresent;
 
-#ifdef TODO
-   TestExe = CreateFileA(TestExeName, FILE_READ_DATA, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-#else
    TestExe = CreateFileA(TestExeName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-#endif
    if (TestExe == INVALID_HANDLE_VALUE)
    {
       ReportError("Can't open test executable %s, error %u\n", TestExeName, GetLastError());
