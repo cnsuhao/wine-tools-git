@@ -169,7 +169,7 @@ my $FullRawlogFileName = "$TaskDir/rawlog";
 my $FullLogFileName = "$TaskDir/log";
 my $FullErrFileName = "$TaskDir/err";
 
-my $DllBaseName;
+my $BaseName;
 my $Run64 = !1;
 foreach my $StepKey (@{$Job->Steps->GetKeys()})
 {
@@ -177,24 +177,24 @@ foreach my $StepKey (@{$Job->Steps->GetKeys()})
   if ($OtherStep->No != $StepNo)
   {
     my $OtherFileName = $OtherStep->FileName;
-    if ($OtherFileName =~ m/^([\w_\-]+)_test(|64)\.exe$/)
+    if ($OtherFileName =~ m/^([\w_\-]+)(|\.exe)_test(|64)\.exe$/)
     {
-      if (defined($DllBaseName) && $DllBaseName ne $1)
+      if (defined($BaseName) && $BaseName ne $1)
       {
-        FatalError "$1 doesn't match previously found $DllBaseName\n",
+        FatalError "$1 doesn't match previously found $BaseName\n",
                    $FullErrFileName, $Job, $Step, $Task;
       }
-      $DllBaseName = $1;
-      if ($2 eq "64")
+      $BaseName = $1;
+      if ($OtherStep->FileType eq "exe64")
       {
         $Run64 = 1;
       }
     }
   }
 }
-if (! defined($DllBaseName))
+if (! defined($BaseName))
 {
-  FatalError "Can't determine DLL base name\n",
+  FatalError "Can't determine base name\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
 
@@ -222,7 +222,8 @@ if (defined($ErrMessage))
              $FullErrFileName, $Job, $Step, $Task;
 }
 my $Script = "#!/bin/sh\n";
-$Script .= "$BinDir/BuildSingleTest.pl $FileName $DllBaseName 32";
+$Script .= "$BinDir/BuildSingleTest.pl $FileName " . $Step->FileType .
+           " $BaseName 32";
 if ($Run64)
 {
   $Script .= ",64";
@@ -254,17 +255,22 @@ foreach my $StepKey (@{$Job->Steps->GetKeys()})
   if ($OtherStep->No != $StepNo)
   {
     my $OtherFileName = $OtherStep->FileName;
-    if ($OtherFileName =~ m/^[\w_\-]+_test(|64)\.exe$/)
+    if ($OtherFileName =~ m/^[\w_\-]+(|\.exe)_test(|64)\.exe$/)
     {
       my $OtherStepDir = "$DataDir/jobs/$JobId/" . $OtherStep->No;
       mkdir $OtherStepDir;
 
-      my $Bits = $1;
-      if ($Bits eq "")
+      my $Bits = $OtherStep->FileType eq "exe64" ? "64" : "32";
+      my $TestExecutable;
+      if ($Step->FileType ne "patchprograms")
       {
-        $Bits = "32";
+        $TestExecutable = "$DataDir/build-mingw$Bits/dlls/$BaseName/tests/${BaseName}_test.exe";
       }
-      $ErrMessage = $VM->CopyFileFromGuestToHost("$DataDir/build-mingw$Bits/dlls/$DllBaseName/tests/${DllBaseName}_test.exe",
+      else
+      {
+        $TestExecutable = "$DataDir/build-mingw$Bits/programs/$BaseName/tests/${BaseName}.exe_test.exe";
+      }
+      $ErrMessage = $VM->CopyFileFromGuestToHost($TestExecutable,
                                                  "$OtherStepDir/$OtherFileName");
       if (defined($ErrMessage))
       {

@@ -109,7 +109,8 @@ sub GetPropertyDescriptors
   }
   elsif ($self->{Page} == 3)
   {
-    my $IsPatch = ($self->GetParam("FileType") eq "patch");
+    my $IsPatch = ($self->GetParam("FileType") eq "patchdlls" ||
+                   $self->GetParam("FileType") eq "patchprograms");
     $self->{PropertyDescriptors3}[0]->{IsRequired} = $IsPatch;
     return $self->{PropertyDescriptors3};
   }
@@ -204,8 +205,9 @@ sub GenerateFields
       foreach my $VMKey (@$SortedKeys)
       {
         my $VM = $VMs->GetItem($VMKey);
-        if ($VM->Bits == 64 || $self->{FileType} eq "pe32" ||
-            $self->{FileType} eq "patch")
+        if ($VM->Bits == 64 || $self->{FileType} eq "exe32" ||
+            $self->{FileType} eq "patchdlls" ||
+            $self->{FileType} eq "patchprograms")
         {
           my $FieldName = "vm_" . $self->CGI->escapeHTML($VM->GetKey());
           print "<div class='ItemProperty'><label>",
@@ -322,7 +324,8 @@ sub DisplayProperty
   if ($self->{Page} == 3)
   {
     my $PropertyName = $PropertyDescriptor->GetName();
-    if ($self->GetParam("FileType") eq "patch")
+    if ($self->GetParam("FileType") eq "patchdlls" ||
+        $self->GetParam("FileType") eq "patchprograms")
     {
       if ($PropertyName eq "Run64")
       {
@@ -417,8 +420,10 @@ sub Validate
   }
   elsif ($self->{Page} == 3 && $self->GetParam("Page") == 3)
   {
-    if ($self->GetParam("FileType") eq "patch" &&
-        ! ($self->GetParam("TestExecutable") =~ m/^[a-zA-Z0-9_]+_test\.exe/))
+    if (($self->GetParam("FileType") eq "patchdlls" &&
+         ! ($self->GetParam("TestExecutable") =~ m/^[a-zA-Z0-9_]+_test\.exe/)) ||
+        ($self->GetParam("FileType") eq "patchprograms") &&
+         ! ($self->GetParam("TestExecutable") =~ m/^[a-zA-Z0-9_]+\.exe_test\.exe/))
     {
       $self->{ErrMessage} = "Invalid name for Test executable";
       $self->{ErrField} = "TestExecutable";
@@ -472,11 +477,11 @@ sub DetermineFileType
         @Fields = unpack "IS", $Buffer;
         if ($Fields[0] == 0x00004550 && $Fields[1] == 0x014c)
         {
-          $FileType = "pe32";
+          $FileType = "exe32";
         }
         elsif ($Fields[0] == 0x00004550 && $Fields[1] == 0x8664)
         {
-          $FileType = "pe64";
+          $FileType = "exe64";
         }
       }
     }
@@ -491,21 +496,36 @@ sub DetermineFileType
       my $Line;
       while (defined($Line = <FH>))
       {
-        if ($Line =~ m/^diff/)
+        if ($Line =~ m/^\+\+\+ .*\/(dlls|programs)\/([^\/]+)\/tests\/([^\/\s]+)/)
         {
-          $FileType = "patch";
-        }
-        elsif ($Line =~ m/^\+\+\+ .*\/([^\/]+)\/tests\/([^\/]+)\.c/)
-        {
-          $FileType = "patch";
-          if (defined($DllBaseName) || defined($TestSet))
+          $FileType = "patch$1";
+          my $ThisDllBaseName = $2;
+          my $ThisTestSet = $3;
+          if ($ThisTestSet =~ m/^(.*)\.c$/)
+          {
+            $ThisTestSet = $1;
+          }
+          else
+          {
+            $ThisTestSet = undef;
+          }
+
+          if ((defined($DllBaseName) && $DllBaseName ne $ThisDllBaseName) ||
+              (defined($TestSet) && defined($ThisTestSet) &&
+               $TestSet ne $ThisTestSet))
           {
             $ErrMessage = "Patch contains changes to multiple tests";
           }
           else
           {
-            $DllBaseName = $1;
-            $TestSet = $2;
+            if (defined($ThisDllBaseName))
+            {
+              $DllBaseName = $ThisDllBaseName;
+            }
+            if (defined($ThisTestSet))
+            {
+              $TestSet = $ThisTestSet;
+            }
           }
         }
       }
@@ -565,7 +585,8 @@ sub OnPage1Next
       $self->{ErrMessage} = $ErrMessage;
       return !1;
     }
-    if ($FileType ne "patch" && $FileType ne "pe32" && $FileType ne "pe64")
+    if ($FileType ne "patchdlls" && $FileType ne "patchprograms" &&
+        $FileType ne "exe32" && $FileType ne "exe64")
     {
       $self->{ErrField} = "File";
       $self->{ErrMessage} = "Unrecognized file type, it's not a patch or PE file";
@@ -576,7 +597,12 @@ sub OnPage1Next
     $self->{FileType} = $FileType;
     if (defined($DllBaseName))
     {
-      $self->{TestExecutable} = $DllBaseName . "_test.exe";
+      $self->{TestExecutable} = $DllBaseName;
+      if ($FileType eq "patchprograms")
+      {
+        $self->{TestExecutable} .= ".exe";
+      }
+      $self->{TestExecutable} .= "_test.exe";
     }
     if (defined($TestSet))
     {
@@ -690,8 +716,10 @@ sub OnSubmit
   my $Steps = $NewJob->Steps;
   my $NewStep = $Steps->Add();
   $NewStep->FileName($FileNameRandomPart . " " . $self->GetParam("FileName"));
+  my $FileType = $self->GetParam("FileType");
+  $NewStep->FileType($FileType);
   $NewStep->InStaging(1);
-  if ($self->GetParam("FileType") eq "patch")
+  if ($FileType eq "patchdlls" || $FileType eq "patchprograms")
   {
     $NewStep->Type("build");
     $NewStep->DebugLevel(0);
@@ -709,6 +737,7 @@ sub OnSubmit
     # Add test run step
     $NewStep = $Steps->Add();
     $NewStep->FileName($self->GetParam("TestExecutable"));
+    $NewStep->FileType("exe32");
     $NewStep->InStaging(!1);
   }
 
@@ -733,14 +762,15 @@ sub OnSubmit
     }
   }
 
-  if ($self->GetParam("FileType") eq "patch" &&
+  if (($FileType eq "patchdlls" || $FileType eq "patchprograms") &&
       defined($self->GetParam("Run64")))
   {
     # Add step and tasks for 64-bit exe
     $NewStep = $Steps->Add();
     my $FileName64 = $self->GetParam("TestExecutable");
-    $FileName64 =~ s/^([a-zA-Z0-9_]+)_test\.exe/\1_test64.exe/;
+    $FileName64 =~ s/^([a-zA-Z0-9_.]+)_test\.exe/\1_test64.exe/;
     $NewStep->FileName($FileName64);
+    $NewStep->FileType("exe64");
     $NewStep->InStaging(!1);
     $NewStep->Type("single");
     $NewStep->DebugLevel($self->GetParam("DebugLevel"));

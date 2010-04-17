@@ -66,11 +66,11 @@ sub ApplyPatch
 
 sub BuildTestExecutable
 {
-  my ($DllBaseName, $Bits, $NeedConfig) = @_;
+  my ($BaseName, $PatchType, $Bits, $NeedConfig) = @_;
 
   if ($NeedConfig)
   {
-    system("cd $DataDir/build-mingw${Bits}; ./config.status --file dlls/$DllBaseName/tests/Makefile >> $LogDir/BuildSingleTest.log 2>&1");
+    system("cd $DataDir/build-mingw${Bits}; ./config.status --file $PatchType/$BaseName/tests/Makefile >> $LogDir/BuildSingleTest.log 2>&1");
     if ($? != 0)
     {
       LogMsg "Reconfig failed\n";
@@ -78,8 +78,14 @@ sub BuildTestExecutable
     }
   }
 
-  my $TestsDir = "$DataDir/build-mingw${Bits}/dlls/$DllBaseName/tests";
-  unlink("$TestsDir/${DllBaseName}_test.exe");
+  my $TestsDir = "$DataDir/build-mingw${Bits}/$PatchType/$BaseName/tests";
+  my $TestExecutable = "$TestsDir/$BaseName";
+  if ($PatchType eq "programs")
+  {
+    $TestExecutable .= ".exe";
+  }
+  $TestExecutable .= "_test.exe";
+  unlink($TestExecutable);
  
   system("make -C $TestsDir >> $LogDir/BuildSingleTest.log 2>&1");
   if ($? != 0)
@@ -87,9 +93,9 @@ sub BuildTestExecutable
     LogMsg "Make failed\n";
     return !1;
   }
-  if (! -f "$TestsDir/${DllBaseName}_test.exe")
+  if (! -f $TestExecutable)
   {
-    LogMsg "Make didn't produce a ${DllBaseName}_test.exe file\n";
+    LogMsg "Make didn't produce a $TestExecutable file\n";
     return !1;
   }
 
@@ -102,10 +108,10 @@ delete $ENV{ENV};
 # Start with clean logfile
 unlink("$LogDir/BuildSingleTest.log");
 
-my ($PatchFile, $DllBaseName, $BitIndicators) = @ARGV;
-if (! $PatchFile || ! $DllBaseName)
+my ($PatchFile, $PatchType, $BaseName, $BitIndicators) = @ARGV;
+if (! $PatchFile || ! $PatchType || ! $BaseName || !$BitIndicators)
 {
-  FatalError "Usage: BuildSingleTest.pl <patchfile> <dllbasename> <bits>\n";
+  FatalError "Usage: BuildSingleTest.pl <patchfile> <patchtype> <basename> <bits>\n";
 }
 
 # Untaint parameters
@@ -122,13 +128,22 @@ else
   FatalError "Invalid patch file $PatchFile\n";
 }
 
-if ($DllBaseName =~ m/^([\w_.\-]+)$/)
+if ($PatchType =~ m/^patch(dlls|programs)$/)
 {
-  $DllBaseName = $1;
+  $PatchType = $1;
 }
 else
 {
-  FatalError "Invalid DLL base name $DllBaseName\n";
+  FatalError "Invalid patch type $PatchType\n";
+}
+
+if ($BaseName =~ m/^([\w_.\-]+)$/)
+{
+  $BaseName = $1;
+}
+else
+{
+  FatalError "Invalid DLL base name $BaseName\n";
 }
 
 my $Run32 = !1;
@@ -167,11 +182,11 @@ if ($NeedConfig < 0)
   exit(1);
 }
 
-if ($Run32 && ! BuildTestExecutable($DllBaseName, 32, 0 < $NeedConfig))
+if ($Run32 && ! BuildTestExecutable($BaseName, $PatchType, 32, 0 < $NeedConfig))
 {
   exit(1);
 }
-if ($Run64 && ! BuildTestExecutable($DllBaseName, 64, 0 < $NeedConfig))
+if ($Run64 && ! BuildTestExecutable($BaseName, $PatchType, 64, 0 < $NeedConfig))
 {
   exit(1);
 }

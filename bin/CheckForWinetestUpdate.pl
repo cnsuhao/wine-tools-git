@@ -43,6 +43,7 @@ sub AddJob
   my $BitsSuffix = ($Bits == 64 ? "64" : "");
   $NewStep->Type("suite");
   $NewStep->FileName("${FileNameRandomPart} winetest${BitsSuffix}-latest.exe");
+  $NewStep->FileType($Bits == 64 ? "exe64" : "exe32");
   $NewStep->InStaging(1);
 
   # Add a task for each VM
@@ -101,6 +102,7 @@ sub AddReconfigJob
   my $NewStep = $Steps->Add();
   $NewStep->Type("reconfig");
   $NewStep->FileName("-");
+  $NewStep->FileType("patchdlls");
   $NewStep->InStaging(!1);
 
   # Add a task for the build VM

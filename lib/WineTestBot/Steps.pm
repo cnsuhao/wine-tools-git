@@ -110,12 +110,14 @@ BEGIN
   $PropertyDescriptors[3] =
     CreateBasicPropertyDescriptor("FileName", "File name",  !1,  1, "A", 100);
   $PropertyDescriptors[4] =
-    CreateBasicPropertyDescriptor("InStaging", "File is in staging area", !1, 1, "B", 1);
+    CreateBasicPropertyDescriptor("FileType", "File type",  !1,  1, "A", 13);
   $PropertyDescriptors[5] =
-    CreateBasicPropertyDescriptor("DebugLevel", "Debug level (WINETEST_DEBUG)", !1, 1, "N", 2);
+    CreateBasicPropertyDescriptor("InStaging", "File is in staging area", !1, 1, "B", 1);
   $PropertyDescriptors[6] =
-    CreateBasicPropertyDescriptor("ReportSuccessfulTests", "Report successfull tests (WINETEST_REPORT_SUCCESS)", !1, 1, "B", 1);
+    CreateBasicPropertyDescriptor("DebugLevel", "Debug level (WINETEST_DEBUG)", !1, 1, "N", 2);
   $PropertyDescriptors[7] =
+    CreateBasicPropertyDescriptor("ReportSuccessfulTests", "Report successfull tests (WINETEST_REPORT_SUCCESS)", !1, 1, "B", 1);
+  $PropertyDescriptors[8] =
     CreateDetailrefPropertyDescriptor("Tasks", "Tasks", !1, !1, \&CreateTasks);
 }
 

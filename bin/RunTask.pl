@@ -57,9 +57,7 @@ sub FatalError
     {
       my $LatestName = "$DataDir/latest/" . $Task->VM->Name . "_" .
                        ($Task->VM->Bits == 64 &&
-                        $Step->FileName eq "winetest64-latest.exe" ? "64" :
-                                                                     "32") .
-                       ".err";
+                        $Step->FileType eq "exe64" ? "64" : "32") . ".err";
       unlink($LatestName);
       link($RptFileName, $LatestName);
     }
@@ -135,52 +133,13 @@ sub RetrieveLogFile
 
   my $LatestNameBase = "$DataDir/latest/" . $VM->Name . "_" .
                        ($VM->Bits == 64 &&
-                        $Step->FileName eq "winetest64-latest.exe" ?
-                        "64" : "32");
+                        $Step->FileType eq "exe64" ? "64" : "32");
   unlink("${LatestNameBase}.log");
   unlink("${LatestNameBase}.err");
   link("$DataDir/jobs/" . $Job->Id . "/" . $Step->No . "/" . $Task->No . "/log",
        "${LatestNameBase}.log");
 
   return undef;
-}
-
-sub Is64BitExecutable
-{
-  my $FileName = $_[0];
-
-  if (! sysopen(FH, $FileName, O_RDONLY))
-  {
-    return !1;
-  }
-
-  my $Buffer;
-  if (sysread(FH, $Buffer, 0x40))
-  {
-    # Unpack IMAGE_DOS_HEADER
-    my @Fields = unpack "S30I", $Buffer;
-    if ($Fields[0] == 0x5a4d)
-    {
-      seek FH, $Fields[30], SEEK_SET;
-      if (sysread(FH, $Buffer, 0x06))
-      {
-        @Fields = unpack "IS", $Buffer;
-        if ($Fields[0] == 0x00004550 && $Fields[1] == 0x014c)
-        {
-          close FH;
-          return !1;
-        }
-        elsif ($Fields[0] == 0x00004550 && $Fields[1] == 0x8664)
-        {
-          close FH;
-          return 1;
-        }
-      }
-    }
-  }
-
-  close FH;
-  return !1;
 }
 
 $ENV{PATH} = "/usr/bin:/bin";
@@ -268,6 +227,13 @@ if (defined($ErrMessage))
   FatalError "Can't set VM status to running: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
+
+my $FileType = $Step->FileType;
+if ($FileType ne "exe32" && $FileType ne "exe64")
+{
+  FatalError "Unexpectd file type $FileType found\n",
+             $FullErrFileName, $Job, $Step, $Task;
+}
 my $FileName = $Step->FileName;
 $ErrMessage = $VM->CopyFileFromHostToGuest("$StepDir/$FileName",
                                            "C:\\winetest\\$FileName");
@@ -277,7 +243,7 @@ if (defined($ErrMessage))
              $FullErrFileName, $Job, $Step, $Task;
 }
 my $TestLauncher = "TestLauncher" . 
-                   (Is64BitExecutable("$StepDir/$FileName") ? "64" : "32") .
+                   ($FileType eq "exe64" ? "64" : "32") .
                    ".exe";
 $ErrMessage = $VM->CopyFileFromHostToGuest("$BinDir/$TestLauncher",
                                            "C:\\winetest\\$TestLauncher");
@@ -309,7 +275,7 @@ elsif ($Step->Type eq "suite")
   $Tag =~ s/[^a-zA-Z0-9]/-/g;
   if ($VM->Bits == 64)
   {
-    $Tag .= "-" . ($FileName eq "winetest64-latest.exe" ? "64" : "32");
+    $Tag .= "-" . ($FileType eq "exe64" ? "64" : "32");
   }
   $Script .= "-q -o $RptFileName -t $Tag -m $AdminEMail\r\n" .
              "\@$FileName -q -s $RptFileName\r\n";

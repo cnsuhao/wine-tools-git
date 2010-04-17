@@ -111,6 +111,7 @@ CREATE TABLE Steps
   Type                  ENUM('suite', 'single', 'build', 'reconfig') NOT NULL,
   Status                ENUM('queued', 'running', 'completed', 'failed', 'skipped') NOT NULL,
   FileName              VARCHAR(100) NOT NULL,
+  FileType              ENUM('exe32', 'exe64', 'patchdlls', 'patchprograms') NOT NULL,
   InStaging             ENUM('Y', 'N') NOT NULL,
   DebugLevel            INT(2) NOT NULL,
   ReportSuccessfulTests ENUM('Y', 'N') NOT NULL,

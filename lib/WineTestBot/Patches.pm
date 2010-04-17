@@ -97,9 +97,20 @@ sub Submit
     my $Line;
     while (defined($Line = <BODY>))
     {
-      if ($Line =~ m/^\+\+\+ .*\/([^\/]+)\/tests\/([^\/]+)\.c/)
+      if ($Line =~ m/^\+\+\+ .*\/(dlls|programs)\/([^\/]+)\/tests\/([^\/\s]+)/)
       {
-        $Targets{"$1/$2"} = 1;
+        my $FileType = "patch$1";
+        my $BaseName = $2;
+        my $TestSet = $3;
+        if ($TestSet =~ m/^(.*)\.c$/)
+        {
+          $TestSet = $1;
+        }
+        else
+        {
+          $TestSet = "";
+        }
+        $Targets{"$BaseName/$TestSet"} = $FileType;
       }
     }
     close BODY;
@@ -139,7 +150,7 @@ sub Submit
 
   foreach my $Target (keys %Targets)
   {
-    $Target =~ m/^([^\/]+)\/([^\/]+)$/;
+    $Target =~ m/^([^\/]+)\/([^\/]*)$/;
     my $DllBaseName = $1;
     my $TestSet = $2;
 
@@ -160,6 +171,7 @@ sub Submit
     my $Steps = $NewJob->Steps;
     my $NewStep = $Steps->Add();
     $NewStep->FileName($FileNameRandomPart . " patch");
+    $NewStep->FileType($Targets{$Target});
     $NewStep->InStaging(1);
     $NewStep->Type("build");
     $NewStep->DebugLevel(0);
@@ -176,7 +188,13 @@ sub Submit
   
     # Add 32-bit test run
     $NewStep = $Steps->Add();
-    $NewStep->FileName("${DllBaseName}_test.exe");
+    my $TestExecutablePart = $DllBaseName;
+    if ($Targets{$Target} eq "patchprograms")
+    {
+      $TestExecutablePart .= ".exe";
+    }
+    $NewStep->FileName("${TestExecutablePart}_test.exe");
+    $NewStep->FileType("exe32");
     $NewStep->InStaging(!1);
   
     # Add 32-bit tasks
@@ -202,7 +220,8 @@ sub Submit
     {
       # Add 64-bit test run
       $NewStep = $Steps->Add();
-      $NewStep->FileName("${DllBaseName}_test64.exe");
+      $NewStep->FileName("${TestExecutablePart}_test64.exe");
+      $NewStep->FileType("exe64");
       $NewStep->InStaging(!1);
     
       # Add 64-bit tasks
