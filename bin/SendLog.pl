@@ -28,6 +28,7 @@ sub BEGIN
 }
 use lib "$Dir/../lib";
 
+use Algorithm::Diff;
 use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::Log;
@@ -84,72 +85,83 @@ sub CheckErrLog
   return ($BotFailure, $Messages);
 }
 
-sub CompareLogs
+sub ReadLog
 {
-  my ($SuiteLog, $TaskLog, $BaseDllName, $TestSet) = @_;
+  my ($LogName, $BaseName, $TestSet) = @_;
 
-  my $Messages = "";
-  my $SuitePartialLogName = "/tmp/$$.suite";
-  if (open SUITEPARTIAL, ">$SuitePartialLogName")
+  my @Messages;
+  if (open LOG, "<$LogName")
   {
-    if (open SUITE, "<$SuiteLog")
+    my $Line;
+    my $Found = !1;
+    while (! $Found && defined($Line = <LOG>))
     {
-      my $Line;
-      my $Found = !1;
-      while (! $Found && defined($Line = <SUITE>))
+      $Found = ($Line =~ m/${BaseName}:${TestSet} start/);
+    }
+    if ($Found)
+    {
+      $Found = !1;
+      while (! $Found && defined($Line = <LOG>))
       {
-        $Found = ($Line =~ m/${BaseDllName}:${TestSet} start/);
-      }
-      if ($Found)
-      {
-        $Found = !1;
-        while (! $Found && defined($Line = <SUITE>))
+        $Line =~ s/[\r\n]*$//;
+        if ($Line =~ m/${BaseName}:${TestSet} done/)
         {
-          if ($Line =~ m/${BaseDllName}:${TestSet} done/)
+          if ($Line =~ m/${BaseName}:${TestSet} done \((\d+)\)/ &&
+              $1 eq "258")
           {
-            if ($Line =~ m/${BaseDllName}:${TestSet} done \((\d+)\)/ &&
-                $1 eq "258")
-            {
-              print SUITEPARTIAL "Timeout\r\n";
-            }
-            $Found = 1;
+            $Messages[@Messages] = "Timeout";
           }
-          else
-          {
-            print SUITEPARTIAL $Line;
-          }
+          $Found = 1;
+        }
+        else
+        {
+          $Messages[@Messages] = $Line;
         }
       }
-
-      close SUITE;
-    }
-    else
-    {
-      LogMsg "SendLog: Unable to open suite log $SuiteLog\n";
     }
 
-    close SUITEPARTIAL;
-    if (open DIFF, "diff -u $SuitePartialLogName $TaskLog|")
-    {
-      my $Line;
-      while (defined($Line = <DIFF>))
-      {
-        if ($Line =~ m/^\+.*: Test failed: / || $Line =~ m/^\+.*Timeout/i)
-        {
-          $Messages .= substr($Line, 1);
-        }
-      }
-      close DIFF;
-    }
-    else
-    {
-      LogMsg "SendLog: Unable to diff suite and task logs\n";
-    }
-#    unlink($SuitePartialLogName);
+    close LOG;
   }
   else
   {
-    LogMsg "SendLog: Unable to create temp file $SuitePartialLogName\n";
+    LogMsg "SendLog: Unable to open log $LogName\n";
+  }
+
+  return \@Messages;
+}
+
+sub GetLineKey
+{
+  my $Line = $_[0];
+
+  $Line =~ s/^([\w_.]+:)\d+(:.*)$/$1$2/;
+
+  return $Line;
+}
+
+sub CompareLogs
+{
+  my ($SuiteLog, $TaskLog, $BaseName, $TestSet) = @_;
+
+  my $Messages = "";
+
+  my $SuiteMessages = ReadLog($SuiteLog, $BaseName, $TestSet);
+  my $TaskMessages = ReadLog($TaskLog, $BaseName, $TestSet);
+
+  my $Diff = Algorithm::Diff->new($SuiteMessages, $TaskMessages,
+                                  { keyGen => \&GetLineKey });
+  while ($Diff->Next())
+  {
+    if (! $Diff->Same())
+    {
+      foreach my $Line ($Diff->Items(2))
+      {
+        if ($Line =~ m/: Test failed: / || $Line =~ m/Timeout/i)
+        {
+          $Messages .= "$Line\n";
+        }
+      }
+    }
   }
 
   return $Messages;
