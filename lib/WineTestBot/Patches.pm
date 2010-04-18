@@ -110,7 +110,30 @@ sub Submit
         {
           $TestSet = "";
         }
-        $Targets{"$BaseName/$TestSet"} = $FileType;
+        if ($TestSet)
+        {
+          if (defined($Targets{"$BaseName/"}))
+          {
+            delete($Targets{"$BaseName/"});
+          }
+          $Targets{"$BaseName/$TestSet"} = $FileType;
+        }
+        else
+        {
+          my $HasSpecificSet = !1;
+          foreach my $Target (keys %Targets)
+          {
+            $Target =~ m/^([^\/]+)\/([^\/]*)$/;
+            if ($1 eq $BaseName && $2)
+            {
+              $HasSpecificSet = 1;
+            }
+          }
+          if (! $HasSpecificSet)
+          {
+            $Targets{"$BaseName/$TestSet"} = $FileType;
+          }
+        }
       }
     }
     close BODY;
@@ -122,14 +145,6 @@ sub Submit
                        " doesn't affect tests");
     return undef;
   }
-
-  # Create a link to the patch file in the staging dir
-  my $FileNameRandomPart = GenerateRandomString(32);
-  while (-e ("$DataDir/staging/${FileNameRandomPart}_patch"))
-  {
-    $FileNameRandomPart = GenerateRandomString(32);
-  }
-  link $PatchFileName, "$DataDir/staging/${FileNameRandomPart}_patch";
 
   my $User;
   my $Users = CreateUsers();
@@ -146,12 +161,14 @@ sub Submit
     $User = $Users->GetBatchUser();
   }
 
-  my $Jobs = WineTestBot::Jobs::CreateJobs();
-
+  my $Disposition = "Submitted job ";
+  my $First = 1;
   foreach my $Target (keys %Targets)
   {
+    my $Jobs = WineTestBot::Jobs::CreateJobs();
+
     $Target =~ m/^([^\/]+)\/([^\/]*)$/;
-    my $DllBaseName = $1;
+    my $BaseName = $1;
     my $TestSet = $2;
 
     # Create a new job for this patch
@@ -170,6 +187,13 @@ sub Submit
     # Add build step to the job
     my $Steps = $NewJob->Steps;
     my $NewStep = $Steps->Add();
+    # Create a link to the patch file in the staging dir
+    my $FileNameRandomPart = GenerateRandomString(32);
+    while (-e ("$DataDir/staging/${FileNameRandomPart}_patch"))
+    {
+      $FileNameRandomPart = GenerateRandomString(32);
+    }
+    link $PatchFileName, "$DataDir/staging/${FileNameRandomPart}_patch";
     $NewStep->FileName($FileNameRandomPart . " patch");
     $NewStep->FileType($Targets{$Target});
     $NewStep->InStaging(1);
@@ -188,7 +212,7 @@ sub Submit
   
     # Add 32-bit test run
     $NewStep = $Steps->Add();
-    my $TestExecutablePart = $DllBaseName;
+    my $TestExecutablePart = $BaseName;
     if ($Targets{$Target} eq "patchprograms")
     {
       $TestExecutablePart .= ".exe";
@@ -238,21 +262,14 @@ sub Submit
         }
       }
     }
-  }
 
-  my ($ErrKey, $ErrProperty, $ErrMessage) = $Jobs->Save();
-  if (defined($ErrMessage))
-  {
-    $self->Disposition("Failed to submit job");
-    return $ErrMessage;
-  }
-  $Jobs->Schedule();
+    my ($ErrKey, $ErrProperty, $ErrMessage) = $Jobs->Save();
+    if (defined($ErrMessage))
+    {
+      $self->Disposition("Failed to submit job");
+      return $ErrMessage;
+    }
 
-  my $Disposition = "Submitted job ";
-  my $First = 1;
-  my @SortedKeys = sort @{$Jobs->GetKeys()};
-  foreach my $JobKey (@SortedKeys)
-  {
     if ($First)
     {
       $First = !1;
@@ -261,9 +278,11 @@ sub Submit
     {
       $Disposition .= ", ";
     }
-    $Disposition .= $JobKey;
+    $Disposition .= $NewJob->Id;
   }
   $self->Disposition($Disposition);
+
+  WineTestBot::Jobs::CreateJobs()->Schedule();
 
   return undef;
 }
@@ -297,12 +316,14 @@ BEGIN
   $PropertyDescriptors[1] =
     CreateBasicPropertyDescriptor("Received", "Received", !1, 1, "DT", 19);
   $PropertyDescriptors[2] =
-    CreateBasicPropertyDescriptor("FromName", "Author", !1, !1, "A", 40);
+    CreateBasicPropertyDescriptor("AffectsTests", "Affects tests", !1, 1, "B", 1);
   $PropertyDescriptors[3] =
-    CreateBasicPropertyDescriptor("FromEMail", "Email address author", !1, !1, "A", 40);
+    CreateBasicPropertyDescriptor("FromName", "Author", !1, !1, "A", 40);
   $PropertyDescriptors[4] =
-    CreateBasicPropertyDescriptor("Subject", "Subject", !1, !1, "A", 120);
+    CreateBasicPropertyDescriptor("FromEMail", "Email address author", !1, !1, "A", 40);
   $PropertyDescriptors[5] =
+    CreateBasicPropertyDescriptor("Subject", "Subject", !1, !1, "A", 120);
+  $PropertyDescriptors[6] =
     CreateBasicPropertyDescriptor("Disposition", "Disposition", !1, 1, "A", 40);
 }
 
@@ -323,7 +344,29 @@ sub IsPatch
     my $Line;
     while (defined($Line = <BODY>))
     {
-      if ($Line =~ m/^\+\+\+ / || $Line =~ m/^diff/)
+      if ($Line =~ m/^\+\+\+ /)
+      {
+        close BODY;
+        return 1;
+      }
+    }
+    close BODY;
+  }
+
+  return !1;
+}
+
+sub IsTestPatch
+{
+  my $self = shift;
+  my $Body = $_[0];
+
+  if (open(BODY, "<" . $Body->path))
+  {
+    my $Line;
+    while (defined($Line = <BODY>))
+    {
+      if ($Line =~ m/^\+\+\+ .*\/(dlls|programs)\/[^\/]+\/tests\/[^\/\s]+/)
       {
         close BODY;
         return 1;
@@ -363,6 +406,7 @@ sub NewSubmission
   my $ErrMessage;
   if (scalar(@PatchBodies) == 1)
   {
+    $Patch->AffectsTests($self->IsTestPatch($PatchBodies[0]));
     my $Subject = $Patch->Subject;
     $Subject =~ s/32\/64//;
     $Subject =~ s/64\/32//;

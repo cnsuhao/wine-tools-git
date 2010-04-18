@@ -388,9 +388,12 @@ EOF
       my $MessagesFromLog = "";
       if (! $LatestBotFailure)
       {
-        $StepTask->FileName =~ m/^(.*)_test(64)?\.exe/;
-        $MessagesFromLog = CompareLogs("$LatestName.log", "$TaskDir/log",
-                                       $1, $StepTask->CmdLineArg);
+        if (defined($StepTask->CmdLineArg))
+        {
+          $StepTask->FileName =~ m/^(.*)_test(64)?\.exe/;
+          $MessagesFromLog = CompareLogs("$LatestName.log", "$TaskDir/log",
+                                         $1, $StepTask->CmdLineArg);
+        }
       }
       else
       {

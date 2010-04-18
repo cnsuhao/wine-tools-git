@@ -37,13 +37,14 @@ use vars qw(@ISA @EXPORT);
 require Exporter;
 @ISA = qw(ObjectModel::Item Exporter);
 
-sub CheckComplete
+sub CheckSubsetComplete
 {
   my $self = shift;
+  my $MaxPart = $_[0];
 
   my $Parts = $self->Parts;
   my $MissingPart = !1;
-  for (my $PartNo = 1; $PartNo <= $self->TotalParts && ! $MissingPart;
+  for (my $PartNo = 1; $PartNo <= $MaxPart && ! $MissingPart;
        $PartNo++)
   {
     $MissingPart = ! defined($Parts->GetItem($PartNo));
@@ -52,10 +53,17 @@ sub CheckComplete
   return ! $MissingPart;
 }
 
-sub Submit
+sub CheckComplete
 {
   my $self = shift;
-  my $FinalPatch = $_[0];
+
+  return $self->CheckSubsetComplete($self->TotalParts)
+}
+
+sub SubmitSubset
+{
+  my $self = shift;
+  my ($MaxPart, $FinalPatch) = @_;
 
   my $CombinedFileName = "$DataDir/staging/" . GenerateRandomString(32) .
                          "_patch";
@@ -71,7 +79,7 @@ sub Submit
   }
 
   my $Parts = $self->Parts;
-  for (my $PartNo = 1; $PartNo <= $self->TotalParts; $PartNo++)
+  for (my $PartNo = 1; $PartNo <= $MaxPart; $PartNo++)
   {
     my $Part = $Parts->GetItem($PartNo);
     if (defined($Part))
@@ -90,6 +98,14 @@ sub Submit
   unlink($CombinedFileName);
 
   return $ErrMessage;
+}
+
+sub Submit
+{
+  my $self = shift;
+  my $FinalPatch = $_[0];
+
+  return $self->SubmitSubset($self->TotalParts, $FinalPatch);
 }
 
 package WineTestBot::PendingPatchSets;
@@ -175,15 +191,41 @@ sub NewSubmission
     $Patch->Disposition("Error occurred during series processing");
   }
 
-  if (! $Set->CheckComplete())
-#if (1)
+  if (! $Set->CheckSubsetComplete($PartNo))
   {
-    $Patch->Disposition("Set not complete yet");
+    $Patch->Disposition($Patch->AffectsTests ? "Set not complete yet" :
+                        "Patch doesn't affect tests");
   }
   else
   {
-    $ErrMessage = $Set->Submit($Patch);
-    $self->DeleteItem($Set);
+    my $AllPartsAvailable = 1;
+    while ($PartNo <= $Set->TotalParts && $AllPartsAvailable &&
+           ! defined($ErrMessage))
+    {
+      my $Part = $Parts->GetItem($PartNo);
+      if (defined($Part))
+      {
+        if ($Part->Patch->AffectsTests)
+        {
+          $ErrMessage = $Set->SubmitSubset($PartNo, $Part->Patch);
+        }
+        else
+        {
+          $Part->Patch->Disposition("Patch doesn't affect tests");
+        }
+        my $ErrProperty;
+        ($ErrProperty, $ErrMessage) = $Part->Patch->Save();
+      }
+      else
+      {
+        $AllPartsAvailable = !1;
+      }
+      $PartNo++;
+    }
+    if ($AllPartsAvailable && ! defined($ErrMessage))
+    {
+      $self->DeleteItem($Set);
+    }
   }
 
   return $ErrMessage;

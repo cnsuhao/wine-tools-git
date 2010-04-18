@@ -60,3 +60,13 @@ ALTER TABLE PendingPatches
       REFERENCES PendingPatchSets(EMail, TotalParts);
 
 DROP TABLE PendingPatchSeries;
+
+ALTER TABLE Patches
+  ADD AffectsTests ENUM('Y', 'N') NULL
+      AFTER Disposition;
+
+UPDATE Patches
+   SET AffectsTests = 'N';
+
+ALTER TABLE Patches
+  MODIFY AffectsTests ENUM('Y', 'N') NOT NULL;
