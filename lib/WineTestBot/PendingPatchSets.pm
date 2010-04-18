@@ -20,12 +20,12 @@ use strict;
 
 =head1 NAME
 
-WineTestBot::PendingPatchSeriesCollection - PendingPatchSeries collection
+WineTestBot::PendingPatchSets - PendingPatchSet collection
 
 =cut
 
 
-package WineTestBot::PendingPatchSeries;
+package WineTestBot::PendingPatchSet;
 
 use ObjectModel::Item;
 use WineTestBot::Config;
@@ -92,7 +92,7 @@ sub Submit
   return $ErrMessage;
 }
 
-package WineTestBot::PendingPatchSeriesCollection;
+package WineTestBot::PendingPatchSets;
 
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::Collection;
@@ -106,7 +106,7 @@ use vars qw(@ISA @EXPORT @PropertyDescriptors);
 
 require Exporter;
 @ISA = qw(ObjectModel::Collection Exporter);
-@EXPORT = qw(&CreatePendingPatchSeriesCollection);
+@EXPORT = qw(&CreatePendingPatchSets);
 
 my @PropertyDescriptors;
 
@@ -115,7 +115,7 @@ BEGIN
   $PropertyDescriptors[0] =
     CreateBasicPropertyDescriptor("EMail", "EMail of series author", 1, 1, "A", 40);
   $PropertyDescriptors[1] =
-    CreateBasicPropertyDescriptor("TotalParts", "Expected number of parts in series", !1, 1, "N", 2);
+    CreateBasicPropertyDescriptor("TotalParts", "Expected number of parts in series", 1, 1, "N", 2);
   $PropertyDescriptors[2] =
     CreateDetailrefPropertyDescriptor("Parts", "Parts received so far", !1, !1, \&CreatePendingPatches);
 }
@@ -124,7 +124,7 @@ sub CreateItem
 {
   my $self = shift;
 
-  return WineTestBot::PendingPatchSeries->new($self);
+  return WineTestBot::PendingPatchSet->new($self);
 }
 
 sub NewSubmission
@@ -138,28 +138,28 @@ sub NewSubmission
     return undef;
   }
 
-  my $Series = $self->GetItem($Patch->FromEMail);
-  if (! defined($Series))
-  {
-    $Series = $self->Add();
-    $Series->EMail($Patch->FromEMail);
-    $Series->TotalParts(0);
-  }
-
   my $Subject = $Patch->Subject;
+  $Subject =~ s/32\/64//;
+  $Subject =~ s/64\/32//;
   $Subject =~ m/(\d+)\/(\d+)/;
   my $PartNo = int($1);
   my $MaxPartNo = int($2);
-  if ($MaxPartNo < $PartNo)
+
+  my $DummySet = CreatePendingPatchSets()->Add();
+  $DummySet->EMail($Patch->FromEMail);
+  $DummySet->TotalParts($MaxPartNo);
+  my $SetKey = $DummySet->GetKey();
+  $DummySet = undef;
+
+  my $Set = $self->GetItem($SetKey);
+  if (! defined($Set))
   {
-    $MaxPartNo = $PartNo;
-  }
-  if ($Series->TotalParts < $MaxPartNo)
-  {
-    $Series->TotalParts($MaxPartNo);
+    $Set = $self->Add();
+    $Set->EMail($Patch->FromEMail);
+    $Set->TotalParts($MaxPartNo);
   }
 
-  my $Parts = $Series->Parts;
+  my $Parts = $Set->Parts;
   my $Part = $Parts->GetItem($PartNo);
   if (! defined($Part))
   {
@@ -175,53 +175,53 @@ sub NewSubmission
     $Patch->Disposition("Error occurred during series processing");
   }
 
-  if (! $Series->CheckComplete())
+  if (! $Set->CheckComplete())
 #if (1)
   {
-    $Patch->Disposition("Series not complete yet");
+    $Patch->Disposition("Set not complete yet");
   }
   else
   {
-    $ErrMessage = $Series->Submit($Patch);
-    $self->DeleteItem($Series);
+    $ErrMessage = $Set->Submit($Patch);
+    $self->DeleteItem($Set);
   }
 
   return $ErrMessage;
 }
 
-sub CheckForCompleteSeries
+sub CheckForCompleteSet
 {
   my $self = shift;
 
   my $ErrMessage;
-  foreach my $SeriesKey (@{$self->GetKeys()})
+  foreach my $SetKey (@{$self->GetKeys()})
   {
-    my $Series = $self->GetItem($SeriesKey);
-    if ($Series->CheckComplete())
+    my $Set = $self->GetItem($SetKey);
+    if ($Set->CheckComplete())
     {
-      my $Patch = $Series->Parts->GetItem($Series->TotalParts)->Patch;
-      my $SeriesErrMessage = $Series->Submit($Patch);
-      if (defined($SeriesErrMessage))
+      my $Patch = $Set->Parts->GetItem($Set->TotalParts)->Patch;
+      my $SetErrMessage = $Set->Submit($Patch);
+      if (defined($SetErrMessage))
       {
         if (! defined($ErrMessage))
         {
-          $ErrMessage = $SeriesErrMessage;
+          $ErrMessage = $SetErrMessage;
         }
       }
       else
       {
         $Patch->Save();
       }
-      $self->DeleteItem($Series);
+      $self->DeleteItem($Set);
     }
   }
 
   return $ErrMessage;
 }
 
-sub CreatePendingPatchSeriesCollection
+sub CreatePendingPatchSets
 {
-  return WineTestBot::PendingPatchSeriesCollection->new("PendingPatchSeries", "PendingPatchSeriesCollection", "PendingPatchSeries", \@PropertyDescriptors);
+  return WineTestBot::PendingPatchSets->new("PendingPatchSets", "PendingPatchSets", "PendingPatchSet", \@PropertyDescriptors);
 }
 
 1;

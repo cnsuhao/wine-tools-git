@@ -39,7 +39,7 @@ use WineTestBot::Engine::Events;
 use WineTestBot::Jobs;
 use WineTestBot::Log;
 use WineTestBot::Patches;
-use WineTestBot::PendingPatchSeries;
+use WineTestBot::PendingPatchSets;
 use WineTestBot::Utils;
 
 sub FatalError
@@ -384,9 +384,8 @@ sub SafetyNet
     }
   }
 
-  my $Series = WineTestBot::PendingPatchSeriesCollection::CreatePendingPatchSeriesCollection();
-#  my $Series = CreatePendingPatchSeriesCollection();
-  my $ErrMessage = $Series->CheckForCompleteSeries();
+  my $Set = WineTestBot::PendingPatchSets::CreatePendingPatchSets();
+  my $ErrMessage = $Set->CheckForCompleteSet();
   if (defined($ErrMessage))
   {
     LogMsg "Engine: while checking completeness of patch series: $ErrMessage\n";

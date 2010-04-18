@@ -209,6 +209,16 @@ sub IsEmpty
   return scalar(keys %{$self->{Items}}) == 0;
 }
 
+sub SplitKey
+{
+  my $self = shift;
+
+  my $CombinedKey = $_[0];
+  my @KeyComponents = split /#@#/, $CombinedKey;
+
+  return @KeyComponents;
+}
+
 sub Validate
 {
   my $self = shift;

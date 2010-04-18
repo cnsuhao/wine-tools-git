@@ -34,7 +34,7 @@ use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::Log;
 use WineTestBot::Patches;
-use WineTestBot::PendingPatchSeries;
+use WineTestBot::PendingPatchSets;
 
 $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
@@ -58,11 +58,11 @@ foreach my $JobKey (@{$Jobs->GetKeys()})
 $Jobs = undef;
 
 $DeleteBefore = time() - 1 * 86400;
-my $SeriesCollection = WineTestBot::PendingPatchSeriesCollection::CreatePendingPatchSeriesCollection();
-foreach my $SeriesKey (@{$SeriesCollection->GetKeys()})
+my $Sets = WineTestBot::PendingPatchSets::CreatePendingPatchSets();
+foreach my $SetKey (@{$Sets->GetKeys()})
 {
-  my $Series = $SeriesCollection->GetItem($SeriesKey);
-  my $Parts = $Series->Parts;
+  my $Set = $Sets->GetItem($SetKey);
+  my $Parts = $Set->Parts;
   my $MostRecentPatch;
   foreach my $PartKey (@{$Parts->GetKeys()})
   {
@@ -76,8 +76,8 @@ foreach my $SeriesKey (@{$SeriesCollection->GetKeys()})
   if (! defined($MostRecentPatch) ||
       $MostRecentPatch->Received < $DeleteBefore)
   {
-    LogMsg "Janitor: deleting pending series for ", $Series->EMail, "\n";
-    $SeriesCollection->DeleteItem($Series);
+    LogMsg "Janitor: deleting pending series for ", $Set->EMail, "\n";
+    $Sets->DeleteItem($Set);
     $MostRecentPatch->Disposition("Incomplete series, discarded");
     $MostRecentPatch->Save();
   }

@@ -236,7 +236,7 @@ sub LoadItem
   }
   $Where = $self->BuildKeyWhere($Collection->GetPropertyDescriptors(), "",
                                 $Where);
-  push(@Data, $RequestedKey);
+  push(@Data, $Collection->SplitKey($RequestedKey));
 
   my $Query = "SELECT $Fields FROM " . $Collection->GetTableName();
   if ($Where ne "")
@@ -494,7 +494,7 @@ sub DeleteItem
   }
   $Where = $self->BuildKeyWhere($Item->GetPropertyDescriptors(), "",
                                 $Where);
-  push(@Data, $Item->GetKey());
+  push(@Data, $Item->GetKeyComponents());
 
   my $Statement = $self->GetDb()->prepare("DELETE FROM " .
                                           $Item->GetTableName() .

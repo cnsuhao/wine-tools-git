@@ -69,22 +69,24 @@ CREATE TABLE Patches
 )
 ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE PendingPatchSeries
+CREATE TABLE PendingPatchSets
 (
   EMail      VARCHAR(40) NOT NULL,
   TotalParts INT(2)      NOT NULL,
-  PRIMARY KEY (EMail)
+  PRIMARY KEY (EMail, TotalParts)
 )
 ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE PendingPatches
 (
-  PendingPatchSeriesEMail VARCHAR(40) NOT NULL,
-  No                      INT(2)      NOT NULL,
-  PatchId                 INT(7)      NOT NULL,
-  FOREIGN KEY (PendingPatchSeriesEMail) REFERENCES PendingPatchSeries(EMail),
+  PendingPatchSetEMail      VARCHAR(40) NOT NULL,
+  PendingPatchSetTotalParts INT(2)      NOT NULL,
+  No                        INT(2)      NOT NULL,
+  PatchId                   INT(7)      NOT NULL,
+  FOREIGN KEY (PendingPatchSetEMail, PendingPatchSetTotalParts)
+          REFERENCES PendingPatchSets(EMail, TotalParts),
   FOREIGN KEY (PatchId) REFERENCES Patches(Id),
-  PRIMARY KEY (PendingPatchSeriesEMail, No)
+  PRIMARY KEY (PendingPatchSetEMail, PendingPatchSetTotalParts, No)
 )
 ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

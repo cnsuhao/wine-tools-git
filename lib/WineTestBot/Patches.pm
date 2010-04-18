@@ -30,7 +30,7 @@ package WineTestBot::Patch;
 use Encode qw/decode/;
 use ObjectModel::Item;
 use WineTestBot::Config;
-use WineTestBot::PendingPatchSeries;
+use WineTestBot::PendingPatchSets;
 use WineTestBot::Jobs;
 use WineTestBot::Users;
 use WineTestBot::Utils;
@@ -89,7 +89,7 @@ sub FromSubmission
 sub Submit
 {
   my $self = shift;
-  my ($PatchFileName, $IsSeries) = @_;
+  my ($PatchFileName, $IsSet) = @_;
 
   my %Targets;
   if (open(BODY, "<$PatchFileName"))
@@ -118,7 +118,7 @@ sub Submit
 
   if (! scalar(%Targets))
   {
-    $self->Disposition(($IsSeries ? "Series" : "Patch") .
+    $self->Disposition(($IsSet ? "Set" : "Patch") .
                        " doesn't affect tests");
     return undef;
   }
@@ -363,7 +363,10 @@ sub NewSubmission
   my $ErrMessage;
   if (scalar(@PatchBodies) == 1)
   {
-    if ($Patch->Subject =~ m/\d+\/\d+/)
+    my $Subject = $Patch->Subject;
+    $Subject =~ s/32\/64//;
+    $Subject =~ s/64\/32//;
+    if ($Subject =~ m/\d+\/\d+/)
     {
       $Patch->Disposition("Checking series");
       my $ErrKey;
@@ -372,7 +375,7 @@ sub NewSubmission
       link($PatchBodies[0]->path, "$DataDir/patches/" . $Patch->Id);
       if (! defined($ErrMessage))
       {
-        $ErrMessage = WineTestBot::PendingPatchSeriesCollection::CreatePendingPatchSeriesCollection()->NewSubmission($Patch);
+        $ErrMessage = WineTestBot::PendingPatchSets::CreatePendingPatchSets()->NewSubmission($Patch);
       }
     }
     else

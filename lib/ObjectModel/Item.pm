@@ -302,18 +302,41 @@ sub GetKey
       {
         if (defined($Key))
         {
-          die("GetKey: Multiple key components not supported");
+          $Key .= "#@#";
         }
-        $Key = $self->{ColValues}{$ColName};
-        if (! defined($Key))
+        else
         {
           $Key = "";
+        }
+        my $KeyPart = $self->{ColValues}{$ColName};
+        if (defined($KeyPart))
+        {
+          $Key .= $KeyPart;
         }
       }
     }
   }
 
   return $Key;
+}
+
+sub GetKeyComponents
+{
+  my $self = shift;
+
+  my @KeyComponents;
+  foreach my $PropertyDescriptor (@{$self->{PropertyDescriptors}})
+  {
+    if ($PropertyDescriptor->GetIsKey())
+    {
+      foreach my $ColName (@{$PropertyDescriptor->GetColNames()})
+      {
+        $KeyComponents[@KeyComponents] = $self->{ColValues}{$ColName};
+      }
+    }
+  }
+
+  return @KeyComponents;
 }
 
 sub ValidateProperty
