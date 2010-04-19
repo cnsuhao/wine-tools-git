@@ -31,10 +31,10 @@ SELECT EMail, TotalParts
   FROM PendingPatchSeries;
 
 ALTER TABLE PendingPatches
-  DROP PRIMARY KEY;
+  DROP FOREIGN KEY PendingPatches_ibfk_1;
 
 ALTER TABLE PendingPatches
-  DROP FOREIGN KEY PendingPatches_ibfk_1;
+  DROP PRIMARY KEY;
 
 ALTER TABLE PendingPatches
   CHANGE PendingPatchSeriesEMail PendingPatchSetEMail VARCHAR(40) NOT NULL;
