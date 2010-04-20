@@ -157,18 +157,32 @@ function res_callback($header, $file)
         $errwarncount[$langid][$resource] = $basic_res->getcounts($master_res);
 
         // A .rc file can contain empty strings (""). There is however no distinction in a
-        // resource file between empty strings and missing ones. The following is the only
+        // resource file between empty strings and missing ones. The following are the only
         // exception to the rule that a translation should exist for strings that are
-        // available in English (United States).
-        if (($resdir == "dlls/kernel32") && ($header["type"] == 6) && ($header["name"] == 3))
+        // available in English (United States) and vice versa.
+        if (($resdir == "dlls/kernel32") && ($header["type"] == 6))
         {
-            // LOCALE_S1159 and LOCALE_S2359 can be empty and are to be ignored as errors
-            $LOCALE_S1159 = $basic_res->GetString(8);
-            $LOCALE_S2359 = $basic_res->GetString(9);
-            if (!$LOCALE_S1159)
-                $errwarncount[$langid][$resource]['errors']--;
-            if (!$LOCALE_S2359)
-                $errwarncount[$langid][$resource]['errors']--;
+            // STRINGTABLE => (string_pos => (empty=0 or non-empty=1), ...)
+            $exceptions = array(
+                                3 => array( 8 => 0,     // LOCALE_S1159
+                                            9 => 0),    // LOCALE_S2359
+                                6 => array( 0 => 1),    // LOCALE_SPOSITIVESIGN
+                              257 => array(14 => 1,     // LOCALE_SMONTHNAME13
+                                           15 => 1)     // LOCALE_SABBREVMONTHNAME13
+                               );
+
+            if (array_key_exists($header["name"], $exceptions))
+            {
+                foreach ($exceptions[$header["name"]] as $string_pos => $expect)
+                {
+                    $string = $basic_res->GetString($string_pos);
+                    if (!!$string == $expect)
+                    {
+                        $errwarncount[$langid][$resource]['errors']--;
+                        $errwarncount[$langid][$resource]['warnings']--;
+                    }
+                }
+            }
         }
     }
 
