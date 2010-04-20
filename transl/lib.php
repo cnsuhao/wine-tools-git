@@ -149,7 +149,7 @@ function show_sublangs($id)
     $sublangs = get_sublangs($id);
     foreach ($sublangs as $key => $value)
     {
-        echo "<tr><td>".gen_lang_a($key).get_lang_name($key)."</a></td></tr>";
+        echo "<tr><td>".gen_lang_a($key).get_lang_name($key)."</a></td></tr>\n";
     }
     echo "</table>\n";
     echo "</div>";

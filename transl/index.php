@@ -76,7 +76,7 @@ function draw_bar($tr, $err, $warn, $sum)
         echo "<img src=\"img/bar5.gif\" height=\"15\" width=\"$warn_len\" alt=\"warnings\">";
     if ($err_len > 0)
 	echo "<img src=\"img/bar1.gif\" height=\"15\" width=\"$err_len\" alt=\"errors\">";
-    echo "</td></tr>";
+    echo "</td></tr>\n";
 }
 
 function nicesort($a, $b)

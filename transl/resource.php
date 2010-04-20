@@ -53,11 +53,11 @@ if ($compare || ($pedantic && $warnings != 0))
         echo "<tr class=\"subheader\"><td colspan=\"5\" style=\"text-align: right\">";
         echo "<small>".gen_resource_a($lang, $resfile, $type, $id, FALSE);
         echo "&lt;&lt; Hide compare with ".get_locale_name($MASTER_LANGUAGE)."</a></small>";
-        echo "</td></tr>";
+        echo "</td></tr>\n";
     }
 
     echo "<tr class=\"subheader\"><td>id</td><td>&nbsp;</td><td>".get_lang_name($lang).
-         "</td><td>&nbsp;</td><td>".get_lang_name($MASTER_LANGUAGE)."</td></tr>";
+         "</td><td>&nbsp;</td><td>".get_lang_name($MASTER_LANGUAGE)."</td></tr>\n";
 
     $res->dump($master_res);
 }
@@ -68,7 +68,7 @@ else
         echo "<tr class=\"subheader\"><td colspan=\"3\" style=\"text-align: right\">";
         echo "<small>".gen_resource_a($lang, $resfile, $type, $id, TRUE);
         echo "Compare with ".get_locale_name($MASTER_LANGUAGE)." &gt;&gt;</a></small>";
-        echo "</td></tr>";
+        echo "</td></tr>\n";
     }
 
     $res->dump(NULL);
