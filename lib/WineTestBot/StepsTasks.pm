@@ -34,6 +34,41 @@ use vars qw(@ISA @EXPORT);
 require Exporter;
 @ISA = qw(ObjectModel::Item Exporter);
 
+sub GetTitle
+{
+  my $self = shift;
+
+  my $Title = "";
+  if ($self->Type eq "single")
+  {
+    if ($self->FileType eq "exe32")
+    {
+      $Title .= "32 bit ";
+    }
+    elsif ($self->FileType eq "exe64")
+    {
+      $Title .= "64 bit ";
+    }
+    $Title .= $self->CmdLineArg;
+  }
+  elsif ($self->Type eq "build")
+  {
+    $Title = "build";
+  }
+  $Title =~ s/\s*$//;
+
+  if ($Title)
+  {
+    $Title = $self->VM->Name . " (" . $Title . ")";
+  }
+  else
+  {
+    $Title = $self->VM->Name;
+  }
+
+  return $Title;
+}
+
 package WineTestBot::StepsTasks;
 
 use ObjectModel::BasicPropertyDescriptor;
@@ -69,14 +104,16 @@ BEGIN
   $PropertyDescriptors[7] =
     CreateBasicPropertyDescriptor("FileName", "File name",  !1,  1, "A", 64);
   $PropertyDescriptors[8] =
-    CreateBasicPropertyDescriptor("CmdLineArg", "Command line args", !1, !1, "A", 256);
+    CreateBasicPropertyDescriptor("FileType", "File Type",  !1,  1, "A", 64);
   $PropertyDescriptors[9] =
-    CreateBasicPropertyDescriptor("ChildPid", "Process id of child process", !1, !1, "N", 5);
+    CreateBasicPropertyDescriptor("CmdLineArg", "Command line args", !1, !1, "A", 256);
   $PropertyDescriptors[10] =
-    CreateBasicPropertyDescriptor("Started", "Execution started", !1, !1, "DT", 19);
+    CreateBasicPropertyDescriptor("ChildPid", "Process id of child process", !1, !1, "N", 5);
   $PropertyDescriptors[11] =
-    CreateBasicPropertyDescriptor("Ended", "Execution ended", !1, !1, "DT", 19);
+    CreateBasicPropertyDescriptor("Started", "Execution started", !1, !1, "DT", 19);
   $PropertyDescriptors[12] =
+    CreateBasicPropertyDescriptor("Ended", "Execution ended", !1, !1, "DT", 19);
+  $PropertyDescriptors[13] =
     CreateBasicPropertyDescriptor("TestFailures", "Number of test failures", !1, !1, "N", 5);
 
 }
@@ -120,6 +157,7 @@ sub _initialize
       {
         $StepTask->FileName($Step->FileName);
       }
+      $StepTask->FileType($Step->FileType);
       $StepTask->CmdLineArg($Task->CmdLineArg);
       $StepTask->ChildPid($Task->ChildPid);
       $StepTask->Started($Task->Started);

@@ -92,7 +92,7 @@ sub Submit
   my ($PatchFileName, $IsSet) = @_;
 
   my %Targets;
-  if (open(BODY, "<$PatchFileName"))
+  if (open(BODY, "<$DataDir/patches/" . $self->Id))
   {
     my $Line;
     while (defined($Line = <BODY>))
@@ -112,27 +112,15 @@ sub Submit
         }
         if ($TestSet)
         {
-          if (defined($Targets{"$BaseName/"}))
+          if (defined($Targets{$BaseName}{""}))
           {
-            delete($Targets{"$BaseName/"});
+            delete($Targets{$BaseName}{""});
           }
-          $Targets{"$BaseName/$TestSet"} = $FileType;
+          $Targets{$BaseName}{$TestSet} = $FileType;
         }
-        else
+        elsif (! defined($Targets{$BaseName}))
         {
-          my $HasSpecificSet = !1;
-          foreach my $Target (keys %Targets)
-          {
-            $Target =~ m/^([^\/]+)\/([^\/]*)$/;
-            if ($1 eq $BaseName && $2)
-            {
-              $HasSpecificSet = 1;
-            }
-          }
-          if (! $HasSpecificSet)
-          {
-            $Targets{"$BaseName/$TestSet"} = $FileType;
-          }
+          $Targets{$BaseName}{""} = $FileType;
         }
       }
     }
@@ -163,13 +151,9 @@ sub Submit
 
   my $Disposition = "Submitted job ";
   my $First = 1;
-  foreach my $Target (keys %Targets)
+  foreach my $BaseName (keys %Targets)
   {
     my $Jobs = WineTestBot::Jobs::CreateJobs();
-
-    $Target =~ m/^([^\/]+)\/([^\/]*)$/;
-    my $BaseName = $1;
-    my $TestSet = $2;
 
     # Create a new job for this patch
     my $NewJob = $Jobs->Add();
@@ -195,7 +179,8 @@ sub Submit
     }
     link $PatchFileName, "$DataDir/staging/${FileNameRandomPart}_patch";
     $NewStep->FileName($FileNameRandomPart . " patch");
-    $NewStep->FileType($Targets{$Target});
+    my @Keys = keys %{$Targets{$BaseName}};
+    $NewStep->FileType($Targets{$BaseName}{$Keys[0]});
     $NewStep->InStaging(1);
     $NewStep->Type("build");
     $NewStep->DebugLevel(0);
@@ -210,55 +195,58 @@ sub Submit
     $Task->VM($VM);
     $Task->Timeout($BuildTimeout);
   
-    # Add 32-bit test run
-    $NewStep = $Steps->Add();
-    my $TestExecutablePart = $BaseName;
-    if ($Targets{$Target} eq "patchprograms")
+    foreach my $TestSet (keys %{$Targets{$BaseName}})
     {
-      $TestExecutablePart .= ".exe";
-    }
-    $NewStep->FileName("${TestExecutablePart}_test.exe");
-    $NewStep->FileType("exe32");
-    $NewStep->InStaging(!1);
-  
-    # Add 32-bit tasks
-    $Tasks = $NewStep->Tasks;
-    $VMs = CreateVMs();
-    $VMs->AddFilter("Type", ["base"]);
-    my $Have64VMs = !1;
-    my $SortedKeys = $VMs->SortKeysBySortOrder($VMs->GetKeys());
-    foreach my $VMKey (@$SortedKeys)
-    {
-      my $VM = $VMs->GetItem($VMKey);
-      my $Task = $Tasks->Add();
-      $Task->VM($VM);
-      $Task->Timeout($SingleTimeout);
-      $Task->CmdLineArg($TestSet);
-      if ($VM->Bits == 64)
-      {
-        $Have64VMs = 1;
-      }
-    }
-  
-    if ($Have64VMs)
-    {
-      # Add 64-bit test run
+      # Add 32-bit test run
       $NewStep = $Steps->Add();
-      $NewStep->FileName("${TestExecutablePart}_test64.exe");
-      $NewStep->FileType("exe64");
+      my $TestExecutablePart = $BaseName;
+      if ($Targets{$BaseName}{$TestSet} eq "patchprograms")
+      {
+        $TestExecutablePart .= ".exe";
+      }
+      $NewStep->FileName("${TestExecutablePart}_test.exe");
+      $NewStep->FileType("exe32");
       $NewStep->InStaging(!1);
     
-      # Add 64-bit tasks
+      # Add 32-bit tasks
       $Tasks = $NewStep->Tasks;
+      $VMs = CreateVMs();
+      $VMs->AddFilter("Type", ["base"]);
+      my $Have64VMs = !1;
+      my $SortedKeys = $VMs->SortKeysBySortOrder($VMs->GetKeys());
       foreach my $VMKey (@$SortedKeys)
       {
         my $VM = $VMs->GetItem($VMKey);
+        my $Task = $Tasks->Add();
+        $Task->VM($VM);
+        $Task->Timeout($SingleTimeout);
+        $Task->CmdLineArg($TestSet);
         if ($VM->Bits == 64)
         {
-          my $Task = $Tasks->Add();
-          $Task->VM($VM);
-          $Task->Timeout($SingleTimeout);
-          $Task->CmdLineArg($TestSet);
+          $Have64VMs = 1;
+        }
+      }
+    
+      if ($Have64VMs)
+      {
+        # Add 64-bit test run
+        $NewStep = $Steps->Add();
+        $NewStep->FileName("${TestExecutablePart}_test64.exe");
+        $NewStep->FileType("exe64");
+        $NewStep->InStaging(!1);
+      
+        # Add 64-bit tasks
+        $Tasks = $NewStep->Tasks;
+        foreach my $VMKey (@$SortedKeys)
+        {
+          my $VM = $VMs->GetItem($VMKey);
+          if ($VM->Bits == 64)
+          {
+            my $Task = $Tasks->Add();
+            $Task->VM($VM);
+            $Task->Timeout($SingleTimeout);
+            $Task->CmdLineArg($TestSet);
+          }
         }
       }
     }

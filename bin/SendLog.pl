@@ -182,7 +182,13 @@ sub SendLog
   open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
   print SENDMAIL "From: <$RobotEMail> (Marvin)\n";
   print SENDMAIL "To: $To\n";
-  print SENDMAIL "Subject: WineTestBot job ", $Job->Id, " finished\n";
+  my $Subject = "TestBot job " . $Job->Id . " results";
+  my $Description = $Job->GetDescription();
+  if ($Description)
+  {
+    $Subject .= ": " . $Description;
+  }
+  print SENDMAIL "Subject: $Subject\n";
   print SENDMAIL <<"EOF";
 MIME-Version: 1.0
 Content-Type: multipart/mixed; boundary="==13F70BD1-BA1B-449A-9CCB-B6A8E90CED47=="
@@ -212,8 +218,7 @@ EOF
   {
     my $StepTask = $StepsTasks->GetItem($Key);
 
-    print SENDMAIL "\n=== ", $StepTask->VM->Name, " (",
-                   $StepTask->VM->Description, ") ===\n";
+    print SENDMAIL "\n=== ", $StepTask->GetTitle(), " ===\n";
 
     my $TaskDir = "$DataDir/jobs/" . $Job->Id . "/" . $StepTask->StepNo .
                   "/" . $StepTask->TaskNo;
@@ -401,8 +406,7 @@ EOF
       }
       if ($MessagesFromErr || $MessagesFromLog)
       {
-        $Messages .= "\n=== " . $StepTask->VM->Name . " (" .
-                     $StepTask->VM->Description . ") ===\n" .
+        $Messages .= "\n=== " . $StepTask->GetTitle() . " ===\n" .
                      $MessagesFromLog . $MessagesFromErr;
       }
     }

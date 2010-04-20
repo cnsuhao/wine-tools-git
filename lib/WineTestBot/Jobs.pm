@@ -238,6 +238,19 @@ sub GetEMailRecipient
   return $self->User->GetEMailRecipient();
 }
 
+sub GetDescription
+{
+  my $self = shift;
+
+  if (defined($self->Patch) && defined($self->Patch->FromEMail))
+  {
+    return $self->Patch->Subject;
+  }
+
+  return $self->Remarks;
+}
+
+
 package WineTestBot::Jobs;
 
 use POSIX qw(:errno_h);

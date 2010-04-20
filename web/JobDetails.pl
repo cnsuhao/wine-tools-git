@@ -196,7 +196,7 @@ sub GenerateBody
                   "/" . $Item->TaskNo;
     my $VM = $Item->VM;
     print "<h2><a name='k", $self->escapeHTML($Key), "'></a>" ,
-          $self->escapeHTML($VM->Name), "</h2>\n";
+          $self->escapeHTML($Item->GetTitle()), "</h2>\n";
     my $ScreenshotParamName = "scrshot_$Key";
     my $FullLogParamName = "log_$Key";
     my $LogName = "$TaskDir/log";
