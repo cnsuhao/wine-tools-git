@@ -35,11 +35,13 @@ sub ApplyPatch
   my $PatchFile = $_[0];
 
   my $NeedConfig = 0;
+  my $NeedMakeInclude = !1;
   my $StripLevel = 1;
   if (open (FH, "<$PatchFile"))
   {
     my $Line;
-    while (defined($Line = <FH>) && ($NeedConfig == 0 || $StripLevel == 1))
+    while (defined($Line = <FH>) &&
+           ($NeedConfig == 0 || ! $NeedMakeInclude || $StripLevel == 1))
     {
       if ($Line =~ m/RCS file|^\+\+\+.*working copy/)
       {
@@ -48,6 +50,10 @@ sub ApplyPatch
       if ($Line =~ m=tests/Makefile\.in=)
       {
         $NeedConfig = 1;
+      }
+      elsif ($Line =~ m=include/.*\.idl=)
+      {
+        $NeedMakeInclude = 1;
       }
     }
     close FH;
@@ -58,15 +64,33 @@ sub ApplyPatch
   if ($? != 0)
   {
     LogMsg "Patch failed\n";
-    return -1;
+    return (-1, $NeedMakeInclude);
   }
 
-  return $NeedConfig;
+  return ($NeedConfig, $NeedMakeInclude);
 }
 
 sub BuildTestExecutable
 {
-  my ($BaseName, $PatchType, $Bits, $NeedConfig) = @_;
+  my ($BaseName, $PatchType, $Bits, $NeedConfig, $NeedMakeInclude) = @_;
+
+  if ($NeedMakeInclude)
+  {
+    system("cd $DataDir/build-mingw${Bits}; ./config.status --file include/Makefile >> $LogDir/BuildSingleTest.log 2>&1");
+    if ($? != 0)
+    {
+      LogMsg "Reconfig in include dir failed\n";
+      return !1;
+    }
+
+    system("make -C $DataDir/build-mingw${Bits}/include " .
+           ">> $LogDir/BuildSingleTest.log 2>&1");
+    if ($? != 0)
+    {
+      LogMsg "Make in include dir failed\n";
+      return !1;
+    }
+  }
 
   if ($NeedConfig)
   {
@@ -176,17 +200,19 @@ else
   FatalError "Invalid number of bits $BitIndicators\n";
 }
 
-my $NeedConfig = ApplyPatch($PatchFile);
+my ($NeedConfig, $NeedMakeInclude) = ApplyPatch($PatchFile);
 if ($NeedConfig < 0)
 {
   exit(1);
 }
 
-if ($Run32 && ! BuildTestExecutable($BaseName, $PatchType, 32, 0 < $NeedConfig))
+if ($Run32 && ! BuildTestExecutable($BaseName, $PatchType, 32, 0 < $NeedConfig,
+                                    $NeedMakeInclude))
 {
   exit(1);
 }
-if ($Run64 && ! BuildTestExecutable($BaseName, $PatchType, 64, 0 < $NeedConfig))
+if ($Run64 && ! BuildTestExecutable($BaseName, $PatchType, 64, 0 < $NeedConfig,
+                                    $NeedMakeInclude))
 {
   exit(1);
 }
