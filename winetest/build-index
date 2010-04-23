@@ -269,7 +269,7 @@ print OUT <<"EOF";
 </table></div>
 <div class="navbar">
 To run the tests on your Windows machine, download the <a href="/builds/winetest-latest.exe">latest winetest.exe</a> build.
-If you have a 64-bit Windows OS, you can also try the <a href="/builds/winetest64-latest.exe">64-bit winetest</a>.
+If you have a 64-bit Windows OS, you can also run the <a href="/builds/winetest64-latest.exe">64-bit winetest</a>.
 </div>
 </body></html>
 EOF
