@@ -371,7 +371,7 @@ EOF
   print SENDMAIL "--==13F70BD1-BA1B-449A-9CCB-B6A8E90CED47==--\n";
   close(SENDMAIL);
 
-  if (! defined($Job->Patch) || scalar @FailureKeys == 0)
+  if (! defined($Job->Patch))
   {
     return;
   }
@@ -420,9 +420,8 @@ EOF
   {
     open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
     print SENDMAIL "From: <$RobotEMail> (Marvin)\n";
-print SENDMAIL "To: ge\@van.geldorp.nl\n";
-#    print SENDMAIL "To: $To\n";
-#    print SENDMAIL "Cc: wine-devel\@winehq.org\n";
+    print SENDMAIL "To: $To\n";
+    print SENDMAIL "Cc: wine-devel\@winehq.org\n";
     print SENDMAIL "Subject: Re: ", $Job->Patch->Subject, "\n";
     print SENDMAIL <<"EOF";
 
@@ -439,6 +438,70 @@ EOF
 
     print SENDMAIL $Messages;
     close SENDMAIL;
+  }
+
+  if (defined($PatchResultsEMail))
+  {
+    my $Patch = $Job->Patch;
+    open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
+    print SENDMAIL "From: <$RobotEMail> (Marvin)\n";
+    print SENDMAIL "To: $PatchResultsEMail\n";
+    print SENDMAIL "X-TestBot-Results: ", $Patch->Id,
+          ($Messages ? " failed\n" : " passed\n");
+    print SENDMAIL "Subject: TestBot results for patch ", $Patch->Id,
+          ($Messages ? ": Failed\n" : ": Passed\n");
+    print SENDMAIL "\n";
+    print SENDMAIL "--- BEGIN GENERAL ---\n";
+    print SENDMAIL "Patch: ", $Patch->Id, "\n";
+    print SENDMAIL "Patch-Subject: ", $Patch->Subject, "\n";
+    print SENDMAIL "Test-Result: ", $Messages ? "Failed" : "Passed", "\n";
+    print SENDMAIL "--- END GENERAL ---\n";
+    print SENDMAIL "--- BEGIN NEW_ERRORS ---\n";
+    if ($Messages)
+    {
+      print SENDMAIL $Messages;
+    }
+    print SENDMAIL "--- END NEW_ERRORS ---\n";
+    print SENDMAIL "--- BEGIN FULL_LOGS ---\n";
+    foreach my $Key (@SortedKeys)
+    {
+      my $StepTask = $StepsTasks->GetItem($Key);
+
+      print SENDMAIL "\n=== ", $StepTask->GetTitle(), " ===\n";
+
+      my $TaskDir = "$DataDir/jobs/" . $Job->Id . "/" . $StepTask->StepNo .
+                    "/" . $StepTask->TaskNo;
+
+      my $PrintSeparator = !1;
+      if (open LOGFILE, "<$TaskDir/log")
+      {
+        my $Line;
+        while (defined($Line = <LOGFILE>))
+        {
+          $Line =~ s/\s*$//;
+          print SENDMAIL "$Line\n";
+          $PrintSeparator = 1;
+        }
+        close LOGFILE;
+      }
+  
+      if (open ERRFILE, "<$TaskDir/err")
+      {
+        my $Line;
+        while (defined($Line = <ERRFILE>))
+        {
+          if ($PrintSeparator)
+          {
+            print SENDMAIL "\n";
+            $PrintSeparator = !1;
+          }
+          $Line =~ s/\s*$//;
+          print SENDMAIL "$Line\n";
+        }
+        close ERRFILE;
+      }
+    }
+    print SENDMAIL "--- END FULL_LOGS ---\n";
   }
 }
 
