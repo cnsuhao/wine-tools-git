@@ -420,8 +420,9 @@ EOF
   {
     open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
     print SENDMAIL "From: <$RobotEMail> (Marvin)\n";
-    print SENDMAIL "To: $To\n";
-    print SENDMAIL "Cc: wine-devel\@winehq.org\n";
+print SENDMAIL "To: ge\@van.geldorp.nl\n";
+#    print SENDMAIL "To: $To\n";
+#    print SENDMAIL "Cc: wine-devel\@winehq.org\n";
     print SENDMAIL "Subject: Re: ", $Job->Patch->Subject, "\n";
     print SENDMAIL <<"EOF";
 

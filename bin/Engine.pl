@@ -305,6 +305,110 @@ sub HandleNewWinePatchesSubmission
   return "1OK";
 }
 
+sub HandlePatchNotification
+{
+  # Validate file name
+  if ($_[0] !~ m/([0-9a-fA-F]{32}_patchnotification)/)
+  {
+    return "0Invalid file name";
+  }
+  my $FullMessageFileName = "$DataDir/staging/$1";
+
+  my $LatestPatchId;
+  if (open(NOTIFICATION, "<$FullMessageFileName"))
+  {
+    my $Line;
+    while (defined($Line = <NOTIFICATION>) && ! defined($LatestPatchId))
+    {
+      if ($Line =~ m/^The latest patch is (\d+)$/)
+      {
+        $LatestPatchId = $1;
+      }
+    }
+    close(NOTIFICATION);
+  }
+
+  unlink($FullMessageFileName);
+
+  if (! defined($LatestPatchId))
+  {
+    return "0No patch id found in message";
+  }
+
+  my $MaxExistingPatchId = 0;
+  my $Patches = CreatePatches();
+  foreach my $PatchKey (@{$Patches->GetKeys()})
+  {
+    if ($MaxExistingPatchId < $Patches->GetItem($PatchKey)->Id)
+    {
+      $MaxExistingPatchId = $Patches->GetItem($PatchKey)->Id;
+    }
+  }
+
+  if ($MaxExistingPatchId < $LatestPatchId)
+  {
+    $ActiveBackEnd->PrepareForFork();
+    my $Pid = fork;
+    if (defined($Pid) && ! $Pid)
+    {
+      exec("$BinDir/RetrievePatches.pl " . ($MaxExistingPatchId + 1) . " " .
+           $LatestPatchId);
+    }
+    if (defined($Pid) && ! $Pid)
+    {
+      LogMsg "Engine: Unable to exec RetrievePatches.pl : $!\n";
+      exit;
+    }
+    if (! defined($Pid))
+    {
+      LogMsg "Engine: Unable to fork for RetrievePatches.pl : $!\n";
+    }
+  }
+
+  return "1OK";
+}
+
+sub HandlePatchRetrieved
+{
+  # Validate file name
+  if ($_[0] !~ m/([0-9a-fA-F]{32}_patch_\d+)/)
+  {
+    return "0Invalid file name";
+  }
+  my $FullFileName = "$DataDir/staging/$1";
+  if ($_[1] !~ m/^(\d+)$/)
+  {
+    return "0Invalid patch id";
+  }
+  my $PatchId = $1;
+  my $Patches = CreatePatches();
+  if (defined($Patches->GetItem($PatchId)))
+  {
+    LogMsg "Engine: patch $PatchId already exists\n";
+    return "1OK";
+  }
+
+  # Create a working dir
+  my $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
+  while (-e $WorkDir)
+  {
+    $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
+  }
+  mkdir $WorkDir;
+
+  # Process the patch
+  my $Parser = new MIME::Parser;
+  $Parser->output_dir($WorkDir);
+  my $Entity = $Parser->parse_open($FullFileName);
+  my $ErrMessage = CreatePatches()->NewPatch($PatchId, $Entity);
+
+  # Clean up
+  system("rm -rf $WorkDir");
+  unlink($FullFileName);
+
+  return defined($ErrMessage) ? "0" . $ErrMessage : "1OK";
+}
+
 sub HandleClientCmd
 {
   my $Cmd = shift;
@@ -344,6 +448,14 @@ sub HandleClientCmd
   {
     return HandleNewWinePatchesSubmission(@_);
   }
+  if ($Cmd eq "patchnotification")
+  {
+    return HandlePatchNotification(@_);
+  }
+  if ($Cmd eq "patchretrieved")
+  {
+    return HandlePatchRetrieved(@_);
+  }
 
   return "0Unknown command $Cmd\n";
 }
@@ -380,6 +492,10 @@ sub SafetyNet
       if ($DirEntry =~ m/[0-9a-fA-F]{32}_wine-patches/)
       {
         HandleNewWinePatchesSubmission($DirEntry);
+      }
+      elsif ($DirEntry =~ m/[0-9a-fA-F]{32}_patchnotification/)
+      {
+        HandlePatchNotification($DirEntry);
       }
     }
   }

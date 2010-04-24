@@ -35,7 +35,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(&PingEngine &JobSubmit &JobStatusChange &JobCancel &TaskComplete
              &VMStatusChange &ExpectWinetestUpdate &FoundWinetestUpdate
-             &NewWinePatchesSubmission);
+             &NewWinePatchesSubmission &PatchNotification &PatchRetrieved);
 @EXPORT_OK = qw($RunningInEngine);
 
 sub SendCmdReceiveReply
@@ -201,6 +201,40 @@ sub NewWinePatchesSubmission
   my $FileName = $_[0];
 
   my $Reply = SendCmdReceiveReply("newwinepatchessubmission $FileName\n");
+  if (length($Reply) < 1)
+  {
+    return "Unrecognized reply received from engine";
+  }
+  if (substr($Reply, 0, 1) eq "1")
+  {
+    return undef;
+  }
+ 
+  return substr($Reply, 1);
+}
+
+sub PatchNotification
+{
+  my $FileName = $_[0];
+
+  my $Reply = SendCmdReceiveReply("patchnotification $FileName\n");
+  if (length($Reply) < 1)
+  {
+    return "Unrecognized reply received from engine";
+  }
+  if (substr($Reply, 0, 1) eq "1")
+  {
+    return undef;
+  }
+ 
+  return substr($Reply, 1);
+}
+
+sub PatchRetrieved
+{
+  my ($FileName, $PatchId) = @_;
+
+  my $Reply = SendCmdReceiveReply("patchretrieved $FileName $PatchId\n");
   if (length($Reply) < 1)
   {
     return "Unrecognized reply received from engine";

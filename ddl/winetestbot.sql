@@ -59,7 +59,7 @@ ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE Patches
 (
-  Id          INT(7)          NOT NULL AUTO_INCREMENT,
+  Id          INT(7)          NOT NULL,
   Received    DATETIME        NOT NULL,
   Disposition VARCHAR(40)     NOT NULL,
   AffectsTests ENUM('Y', 'N') NOT NULL
