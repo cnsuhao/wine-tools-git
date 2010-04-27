@@ -22,6 +22,7 @@ package UsersListPage;
 
 use ObjectModel::PropertyDescriptor;
 use ObjectModel::CGI::CollectionPage;
+use WineTestBot::Config;
 use WineTestBot::Users;
 
 @UsersListPage::ISA = qw(ObjectModel::CGI::CollectionPage);
@@ -51,6 +52,19 @@ sub DisplayProperty
 
   return $PropertyName eq "Name" || $PropertyName eq "EMail" ||
          $PropertyName eq "Active" || $PropertyName eq "RealName";
+}
+
+sub GetActions
+{
+  my $self = shift;
+  my $CollectionBlock = $_[0];
+
+  if (defined($LDAPServer))
+  {
+    return [];
+  }
+
+  return $self->SUPER::GetActions(@_);
 }
 
 package main;

@@ -266,8 +266,11 @@ EOF
   }
   else
   {
-    print "        <li class='divider'>&nbsp;</li>\n";
-    print "        <li><p><a href='/Register.pl'>Register</a></p></li>\n";
+    if (! defined($LDAPServer))
+    {
+      print "        <li class='divider'>&nbsp;</li>\n";
+      print "        <li><p><a href='/Register.pl'>Register</a></p></li>\n";
+    }
     print "        <li class='divider'>&nbsp;</li>\n";
     print "        <li><p><a href='", MakeSecureURL("/Login.pl"),
           "'>Log in</a></p></li>\n";

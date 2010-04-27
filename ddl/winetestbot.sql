@@ -16,7 +16,8 @@ ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE Roles
 (
-  Name VARCHAR(20) NOT NULL,
+  Name          VARCHAR(20)    NOT NULL,
+  IsDefaultRole ENUM('Y', 'N') NOT NULL,
   PRIMARY KEY(Name)
 )
 ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -141,5 +142,5 @@ CREATE TABLE Tasks
 )
 ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO Roles (Name) Values('admin');
-INSERT INTO Roles (Name) Values('wine-devel');
+INSERT INTO Roles (Name, IsDefaultRole) Values('admin', 'N');
+INSERT INTO Roles (Name, IsDefaultRole) Values('wine-devel', 'Y');

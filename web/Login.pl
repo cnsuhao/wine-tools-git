@@ -23,6 +23,7 @@ package LoginPage;
 use CGI qw(:standard escapeHTML);
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::CGI::FreeFormPage;
+use WineTestBot::Config;
 use WineTestBot::Users;
 use WineTestBot::Utils;
 use WineTestBot::CGI::Sessions;
@@ -50,7 +51,8 @@ sub GetTitle
 
 sub GetFooterText
 {
-  return "<a href='ForgotPassword.pl'>I forgot my password</a><br>\n" .
+  return defined($LDAPServer) ? "" :
+         "<a href='ForgotPassword.pl'>I forgot my password</a><br>\n" .
          "<a href='Register.pl'>I want to register an account</a>";
 }
 

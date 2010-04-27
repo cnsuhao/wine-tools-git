@@ -55,6 +55,8 @@ BEGIN
 {
   $PropertyDescriptors[0] =
     CreateBasicPropertyDescriptor("Name", "Role name", 1,  1, "A", 40);
+  $PropertyDescriptors[1] =
+    CreateBasicPropertyDescriptor("IsDefaultRole", "Should new users get this role by default", !1, 1, "B", 1);
 }
 
 sub CreateItem

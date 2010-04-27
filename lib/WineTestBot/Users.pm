@@ -114,19 +114,31 @@ sub GenerateResetCode
   }
 }
 
+sub AddDefaultRoles
+{
+  my $self = shift;
+
+  my $UserRoles = $self->Roles;
+  my $DefaultRoles = CreateRoles();
+  $DefaultRoles->AddFilter("IsDefaultRole", [1]);
+  foreach my $RoleKey (@{$DefaultRoles->GetKeys()})
+  {
+    if (! defined($UserRoles->GetItem($RoleKey)))
+    {
+      my $NewRole = $UserRoles->Add();
+      my $OldKey = $NewRole->GetKey();
+      $NewRole->Role($DefaultRoles->GetItem($RoleKey));
+      $UserRoles->KeyChanged($OldKey, $RoleKey);
+    }
+  }
+}
+
 sub Approve
 {
   my $self = shift;
 
   $self->GenerateResetCode();
-
-  my $Roles = $self->Roles;
-  my $Role = $Roles->GetItem("wine-devel");
-  if (! defined($Role))
-  {
-    $Role = $Roles->Add();
-    $Role->Role(CreateRoles()->GetItem("wine-devel"));
-  }
+  $self->AddDefaultRoles();
 
   my ($ErrProperty, $ErrMessage) = $self->Save();
   if (defined($ErrMessage))
@@ -245,6 +257,37 @@ sub Authenticate
   return (undef, $self);
 }
 
+sub FromLDAP
+{
+  my $self = shift;
+  my ($LDAP, $UserName) = @_;
+
+  $self->Name($UserName);
+  $self->Password("*");
+  $self->Active("Y");
+
+  my $SearchFilter = $LDAPSearchFilter;
+  $SearchFilter =~ s/%USERNAME%/$UserName/;
+  my $Result = $LDAP->search(base => $LDAPSearchBase, filter => $SearchFilter,
+                             attrs => [$LDAPRealNameAttribute, $LDAPEMailAttribute]);
+  if ($Result->code != 0)
+  {
+    return "LDAP failure: " . $Result->error;
+  }
+
+  my $Entry = $Result->entry(0);
+  if (! $Entry)
+  {
+    return "Unable to retrieve LDAP attributes";
+  }
+  $self->RealName($Entry->get_value($LDAPRealNameAttribute));
+  $self->EMail($Entry->get_value($LDAPEMailAttribute));
+
+  $self->AddDefaultRoles();
+
+  return undef;
+}
+
 sub HasRole
 {
   my $self = shift;
@@ -256,10 +299,12 @@ sub HasRole
 
 package WineTestBot::Users;
 
+use Net::LDAP;
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::Collection;
 use ObjectModel::DetailrefPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
+use WineTestBot::Config;
 use WineTestBot::UserRoles;
 
 use vars qw (@ISA @EXPORT @PropertyDescriptors $CurrentUser);
@@ -300,7 +345,50 @@ sub CreateUsers
   return WineTestBot::Users::->new("Users", "Users", "User", \@PropertyDescriptors);
 }
 
-sub Authenticate
+sub AuthenticateLDAP
+{
+  my $self = shift;
+  my ($Name, $Password) = @_;
+
+  my $LDAP = Net::LDAP->new($LDAPServer);
+  if (! defined($LDAP))
+  {
+    return ("Can't connect to LDAP server: $@", undef);
+  }
+
+  my $BindDN = $LDAPBindDN;
+  $BindDN =~ s/%USERNAME%/$Name/;
+  my $Msg = $LDAP->bind($BindDN, password => $Password);
+  if ($Msg->code)
+  {
+    return "Unknown username or incorrect password";
+  }
+
+  my $User = $self->GetItem($Name);
+  if (defined($User))
+  {
+    return (undef, $User);
+  }
+
+  $User = $self->Add();
+  my $ErrMessage = $User->FromLDAP($LDAP, $Name);
+  if ($ErrMessage)
+  {
+    return $ErrMessage;
+  }
+
+  my $ErrKey;
+  my $ErrProperty;
+  ($ErrKey, $ErrProperty, $ErrMessage) = $self->Save();
+  if ($ErrMessage)
+  {
+    return $ErrMessage;
+  }
+
+  return (undef, $User);
+}
+
+sub AuthenticateBuiltin
 {
   my $self = shift;
   my ($Name, $Password) = @_;
@@ -312,6 +400,14 @@ sub Authenticate
   }
 
   return $User->Authenticate($Password);
+}
+
+sub Authenticate
+{
+  my $self = shift;
+
+  return defined($LDAPServer) ? $self->AuthenticateLDAP(@_) :
+                                $self->AuthenticateBuiltin(@_);
 }
 
 sub GetBatchUser

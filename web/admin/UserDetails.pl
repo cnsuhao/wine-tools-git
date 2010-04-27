@@ -21,6 +21,7 @@ use strict;
 package UserDetailsPage;
 
 use ObjectModel::CGI::ItemPage;
+use WineTestBot::Config;
 use WineTestBot::Users;
 
 @UserDetailsPage::ISA = qw(ObjectModel::CGI::ItemPage);
@@ -32,12 +33,28 @@ sub _initialize
   $self->SUPER::_initialize(@_, CreateUsers());
 }
 
+sub DisplayProperty
+{
+  my $self = shift;
+  my $PropertyDescriptor = $_[0];
+
+  my $PropertyName = $PropertyDescriptor->GetName();
+  if (defined($LDAPServer) &&
+      ($PropertyName eq "Password" || $PropertyName eq "ResetCode"))
+  {
+    return "";
+  }
+
+  return $self->SUPER::DisplayProperty(@_);
+}
+
 sub GetActions
 {
   my $self = shift;
 
   my @Actions;
-  if ($self->{Item}->Active && length($self->{Item}->Password) == 1)
+  if ($self->{Item}->Active && length($self->{Item}->Password) == 1 &&
+      ! defined($LDAPServer))
   {
     $Actions[0] = "Approve";
   }

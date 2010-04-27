@@ -65,4 +65,28 @@ $WineTestBot::Config::RobotEMail = undef;
 # Prefix of the tag used for sending winetest reports
 $WineTestBot::Config::TagPrefix = undef;
 
+# If you want to use LDAP authentication instead of built-in, you'll have
+# to define all 6 LDAP settings: $LDAPServer, $LDAPBindDN, $LDAPSearchBase,
+# $LDAPSearchFilter, $LDAPRealNameAttribute and $LDAPEMail
+# LDAP server, can be in URL format like "ldaps://ldap.example.com"
+$WineTestBot::Config::LDAPServer = undef;
+
+# DN used to bind to LDAP, %USERNAME% is replaced by the login name provided
+# by the user. E.g. "%USERNAME%\@example.com" (remember to escape the @)
+$WineTestBot::Config::LDAPBindDN = undef;
+
+# DN used as search base to obtain user information, e.g.
+# "CN=Users,DC=example,DC=com"
+$WineTestBot::Config::LDAPSearchBase = undef;
+
+# Filter expression, %USERNAME% is replaced by login name, e.g.
+# "(sAMAccountName=%USERNAME%)"
+$WineTestBot::Config::LDAPSearchFilter = undef;
+
+# LDAP attribute for a users real name
+$WineTestBot::Config::LDAPRealNameAttribute = undef;
+
+# LDAP attribute for a users email address
+$WineTestBot::Config::LDAPEMailAttribute = undef;
+
 1;
