@@ -97,7 +97,8 @@ print "<div class=\"main\">\n";
 print "<table class=\"main\"><tr><th class=\"id\">ID</th>",
     "<th class=\"status\">Status</th>",
     "<th class=\"author\">Author</th>",
-    "<th class=\"subject\">Subject</th></tr>\n";
+    "<th class=\"subject\">Subject</th>",
+    "<th class=\"status\">Testbot</th></tr>\n";
 
 opendir DIR, $dir;
 foreach my $file (readdir DIR)
@@ -127,6 +128,15 @@ foreach my $file (readdir DIR)
         $patch{"order"} = <ORDER>;
         close ORDER;
     }
+    $patch{"testbot"} = "";
+    if (-f "$dir/$file.testbot")
+    {
+        $patch{"testbot"} = "OK";
+    }
+    if (-f "$dir/$file.testfail")
+    {
+        $patch{"testbot"} = "Failed";
+    }
     $patches{$file} = \%patch;
 }
 closedir DIR;
@@ -138,8 +148,17 @@ foreach my $file (sort { $patches{$b}->{"order"} <=> $patches{$a}->{"order"} } k
     printf "<tr class=\"%s %s\"><td class=\"id\">%s</td><td class=\"status\"><a href=\"#legend\">%s</a></td><td class=\"author\">%s</td>",
            $row & 1 ? "odd" : "even", $patch->{"status"}, $file, $status_descr{$patch->{"status"}} || $patch->{"status"},
            escapeHTML($patch->{"author"});
-    printf "<td class=\"subject\"><a href=\"data/$file\">%s</a></td></tr>\n",
+    printf "<td class=\"subject\"><a href=\"data/$file\">%s</a></td>",
            escapeHTML($patch->{"subject"});
+    if ($patch->{"testbot"} eq "Failed")
+    {
+        print "<td class=\"testbot botfail\"><a href=\"data/$file.testfail\">Failed</a></td>";
+    }
+    else
+    {
+        printf "<td class=\"testbot\">%s</td>", $patch->{"testbot"};
+    }
+    print "</tr>\n";
     $row++;
 }
 print "</table></div>\n";
