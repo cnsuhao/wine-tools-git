@@ -116,6 +116,8 @@ foreach my $file (sort readdir DIR)
                 rename "$dir/$file",        "$dir/OLD/$file";
                 rename "$dir/$file.status", "$dir/OLD/$file.status";
                 rename "$dir/$file.order",  "$dir/OLD/$file.order";
+                rename "$dir/$file.testbot", "$dir/OLD/$file.testbot";
+                rename "$dir/$file.testfail", "$dir/OLD/$file.testfail";
             }
         }
         else
@@ -126,6 +128,8 @@ foreach my $file (sort readdir DIR)
                 unlink "$dir/$file";
                 unlink "$dir/$file.status";
                 unlink "$dir/$file.order";
+                unlink "$dir/$file.testbot";
+                unlink "$dir/$file.testfail";
             }
         }
     }
@@ -154,6 +158,8 @@ foreach my $file (sort readdir DIR)
             unlink "$dir/OLD/$file";
             unlink "$dir/OLD/$file.status";
             unlink "$dir/OLD/$file.order";
+            unlink "$dir/OLD/$file.testbot";
+            unlink "$dir/OLD/$file.testfail";
         }
     }
 }

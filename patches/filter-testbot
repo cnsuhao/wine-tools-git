@@ -1,0 +1,82 @@
+#!/usr/bin/perl -w
+#
+# Filter a testbot result report.
+#
+# Copyright 2010 Alexandre Julliard
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+use strict;
+
+my $step = 0;
+my $patch = 0;
+my $failed = 0;
+
+while (<>)
+{
+    if (/^--- BEGIN GENERAL ---$/)
+    {
+        $step = 1;
+        next;
+    }
+    if (/^--- BEGIN NEW_ERRORS ---$/)
+    {
+        $step = 2;
+        next;
+    }
+    if (/^--- BEGIN FULL_LOGS ---$/)
+    {
+        $step = 3;
+        next;
+    }
+    if (/^--- END GENERAL ---$/)
+    {
+        die "no patch id found" unless $patch > 0;
+        if ($failed)
+        {
+            open TESTFAIL, ">patches/$patch.testfail" or die "cannot create $patch.testfail";
+        }
+        open TESTBOT, ">patches/$patch.testbot" or die "cannot create $patch.testbot";
+        $step = 0;
+        next;
+    }
+    if (/^--- END/)
+    {
+        $step = 0;
+        next;
+    }
+    if ($step == 1 && /^Patch: (\d+)/)
+    {
+        $patch = $1;
+        next;
+    }
+    if ($step == 1 && /^Test-Result:\s+Failed/)
+    {
+        $failed = 1;
+        next;
+    }
+    if ($step == 2 && $failed)
+    {
+        print TESTFAIL $_;
+        next;
+    }
+    if ($step == 3)
+    {
+        print TESTBOT $_;
+        next;
+    }
+}
+close TESTFAIL if $failed;
+close TESTBOT;
