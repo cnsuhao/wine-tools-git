@@ -68,7 +68,6 @@ then
     loader/wine.man \
     server/wineserver.man \
     tools/winemaker.man \
-    tools/wineprefixcreate.man \
     tools/widl/widl.man \
     tools/winebuild/winebuild.man \
     tools/winedump/winedump.man \
