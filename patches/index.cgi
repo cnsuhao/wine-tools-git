@@ -30,6 +30,7 @@ my %status_descr =
  "committed"  => "Committed",
  "applyfail"  => "Apply failure",
  "buildfail"  => "Build failure",
+ "deferred"   => "Deferred",
  "formatting" => "Formatting",
  "other"      => "Other project",
  "nopatch"    => "No patch",
@@ -52,6 +53,7 @@ my @legend =
  [ "superseded", "<ul><li>An updated version of the patch has been submitted.</li>" .
                  "<li>Someone else fixed the problem already.</li></ul>" ],
  [ "testcase",   "<ul><li>You need to write some test cases demonstrating that the patch is correct.</li></ul>" ],
+ [ "deferred",   "<ul><li>The patch is deferred because of code freeze for an upcoming release. Either resend after the release, make the patch less intrusive, or make a convincing argument that it needs to be included in the release.</li></ul>" ],
  [ "other",      "<ul><li>The patch belongs to another WineHQ project (website, appdb, etc.) and will be applied by the respective maintainer.</li></ul>" ],
  [ "applyfail",  "<ul><li>The patch got mangled in transit.</li>" .
                  "<li>It's not relative to the latest git.</li>" .

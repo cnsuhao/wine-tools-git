@@ -28,6 +28,7 @@ my %status_expiry =
  "committed"  => 1,
  "applyfail"  => 7,
  "buildfail"  => 7,
+ "deferred"   => 7,
  "formatting" => 7,
  "other"      => 7,
  "nopatch"    => 3,
