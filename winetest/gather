@@ -403,7 +403,7 @@ my $legend =
 <p class=\"legend\">Some tests <span class=\"result mixed\">fail</span> in some reports.</p>
 <p class=\"legend\">Some tests <span class=\"result fail\">fail</span> in all reports.</p>
 <p class=\"legend\">This <span class=\"result pass also-skip\">border</span> signals that some tests are skipped.</p>
-<p class=\"legend\">This <span class=\"result pass also-todo\">border</span> and this <span class=\"result todo\">background</span> signal that the implementation needs some work.</p>
+<p class=\"legend\">This <span class=\"result mixed also-todo\">border</span> and this <span class=\"result todo\">background</span> signal that the implementation needs some work.</p>
 </div>";
 
 sub min_to_max($)
