@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# Patches CGI script
+# Update the patches data and index file
 #
 # Copyright 2009 Alexandre Julliard
 #
@@ -80,7 +80,8 @@ my @legend =
                  "<li>The patch fixes a failure but doesn't remove the corresponding todo_wine.</li></ul>" ],
 );
 
-my $dir = "data";
+my $dir = "$ENV{HOME}/patches";
+my $dest = "/home/winehq/opt/source/patches";
 my %patches;
 
 sub format_author($)
@@ -90,13 +91,14 @@ sub format_author($)
     return $_;
 }
 
-print header( -charset => "utf-8" );
-print start_html(-title=>"Patches list",
-                 -encoding=>"utf-8",
-                 -style=>{src=>"patches.css"});
+open INDEX, "> $dest/index.html.new" or die "cannot create $dest/index.html.new";
 
-print "<div class=\"main\">\n";
-print "<table class=\"main\"><tr><th class=\"id\">ID</th>",
+print INDEX start_html(-title=>"Patches list",
+                       -encoding=>"utf-8",
+                       -style=>{src=>"patches.css"});
+
+print INDEX "<div class=\"main\">\n";
+print INDEX "<table class=\"main\"><tr><th class=\"id\">ID</th>",
     "<th class=\"status\">Status</th>",
     "<th class=\"author\">Author</th>",
     "<th class=\"subject\">Subject</th>",
@@ -147,33 +149,37 @@ my $row = 0;
 foreach my $file (sort { $patches{$b}->{"order"} <=> $patches{$a}->{"order"} } keys %patches)
 {
     my $patch = $patches{$file};
-    printf "<tr class=\"%s %s\"><td class=\"id\">%s</td><td class=\"status\"><a href=\"#legend\">%s</a></td><td class=\"author\">%s</td>",
+    printf INDEX "<tr class=\"%s %s\"><td class=\"id\">%s</td><td class=\"status\"><a href=\"#legend\">%s</a></td><td class=\"author\">%s</td>",
            $row & 1 ? "odd" : "even", $patch->{"status"}, $file, $status_descr{$patch->{"status"}} || $patch->{"status"},
            escapeHTML($patch->{"author"});
-    printf "<td class=\"subject\"><a href=\"data/$file\">%s</a></td>",
+    printf INDEX "<td class=\"subject\"><a href=\"data/$file\">%s</a></td>",
            escapeHTML($patch->{"subject"});
     if ($patch->{"testbot"} eq "Failed")
     {
-        print "<td class=\"testbot botfail\"><a href=\"data/$file.testfail\">Failed</a></td>";
+        print INDEX "<td class=\"testbot botfail\"><a href=\"data/$file.testfail\">Failed</a></td>";
     }
     else
     {
-        printf "<td class=\"testbot\">%s</td>", $patch->{"testbot"};
+        printf INDEX "<td class=\"testbot\">%s</td>", $patch->{"testbot"};
     }
-    print "</tr>\n";
+    print INDEX "</tr>\n";
     $row++;
 }
-print "</table></div>\n";
+print INDEX "</table></div>\n";
 
 $row = 0;
-print "<div class=\"legend\"><h2><a name=\"legend\">Legend</a></h2>\n";
-print "<table class=\"legend\"><tr><th class=\"status\">Status</th><th class=\"causes\">Possible causes</th></tr>\n";
+print INDEX "<div class=\"legend\"><h2><a name=\"legend\">Legend</a></h2>\n";
+print INDEX "<table class=\"legend\"><tr><th class=\"status\">Status</th><th class=\"causes\">Possible causes</th></tr>\n";
 foreach my $status (@legend)
 {
-    printf "<tr class=\"%s\"><td class=\"status %s\">%s</td><td class=\"causes\">%s</td></tr>\n",
+    printf INDEX "<tr class=\"%s\"><td class=\"status %s\">%s</td><td class=\"causes\">%s</td></tr>\n",
            $row & 1 ? "odd" : "even", $status->[0], $status_descr{$status->[0]}, $status->[1];
     $row++;
     
 }
-print "</table></div>\n";
-print end_html;
+print INDEX "</table></div>\n";
+print INDEX end_html;
+close INDEX;
+
+!system "rsync", "-q", "-r", "--chmod=+r", "--exclude=OLD/", "$dir/", "$dest/data" or die "rsync failed: $?";
+rename "$dest/index.html.new", "$dest/index.html" or die "failed to update index.html";
