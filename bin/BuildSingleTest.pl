@@ -36,6 +36,7 @@ sub ApplyPatch
 
   my $NeedConfig = 0;
   my $NeedMakeInclude = !1;
+  my $NeedBuildDeps = !1;
   my $StripLevel = 1;
   if (open (FH, "<$PatchFile"))
   {
@@ -55,6 +56,10 @@ sub ApplyPatch
       {
         $NeedMakeInclude = 1;
       }
+      elsif ($Line =~ m=.spec=)
+      {
+        $NeedBuildDeps = 1;
+      }
     }
     close FH;
   }
@@ -67,12 +72,13 @@ sub ApplyPatch
     return (-1, $NeedMakeInclude);
   }
 
-  return ($NeedConfig, $NeedMakeInclude);
+  return ($NeedConfig, $NeedMakeInclude, $NeedBuildDeps);
 }
 
 sub BuildTestExecutable
 {
-  my ($BaseName, $PatchType, $Bits, $NeedConfig, $NeedMakeInclude) = @_;
+  my ($BaseName, $PatchType, $Bits, $NeedConfig, $NeedMakeInclude,
+      $NeedBuildDeps) = @_;
 
   if ($NeedMakeInclude)
   {
@@ -95,6 +101,16 @@ sub BuildTestExecutable
   if ($NeedConfig)
   {
     system("cd $DataDir/build-mingw${Bits}; ./config.status --file $PatchType/$BaseName/tests/Makefile >> $LogDir/BuildSingleTest.log 2>&1");
+    if ($? != 0)
+    {
+      LogMsg "Reconfig failed\n";
+      return !1;
+    }
+  }
+
+  if ($NeedBuildDeps)
+  {
+    system("cd $DataDir/build-mingw${Bits}; make __builddeps__ >> $LogDir/BuildSingleTest.log 2>&1");
     if ($? != 0)
     {
       LogMsg "Reconfig failed\n";
@@ -200,19 +216,19 @@ else
   FatalError "Invalid number of bits $BitIndicators\n";
 }
 
-my ($NeedConfig, $NeedMakeInclude) = ApplyPatch($PatchFile);
+my ($NeedConfig, $NeedMakeInclude, $NeedBuildDeps) = ApplyPatch($PatchFile);
 if ($NeedConfig < 0)
 {
   exit(1);
 }
 
 if ($Run32 && ! BuildTestExecutable($BaseName, $PatchType, 32, 0 < $NeedConfig,
-                                    $NeedMakeInclude))
+                                    $NeedMakeInclude, $NeedBuildDeps))
 {
   exit(1);
 }
 if ($Run64 && ! BuildTestExecutable($BaseName, $PatchType, 64, 0 < $NeedConfig,
-                                    $NeedMakeInclude))
+                                    $NeedMakeInclude, $NeedBuildDeps))
 {
   exit(1);
 }
