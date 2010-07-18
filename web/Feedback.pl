@@ -33,7 +33,7 @@ sub _initialize
 
   my @PropertyDescriptors;
   $PropertyDescriptors[0] = CreateBasicPropertyDescriptor("Name", "Name", !1, !1, "A", 40);
-  $PropertyDescriptors[1] = CreateBasicPropertyDescriptor("EMail", "EMail", !1, !1, "A", 40);
+  $PropertyDescriptors[1] = CreateBasicPropertyDescriptor("EMail", "Email", !1, !1, "A", 40);
   $PropertyDescriptors[2] = CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, 1, "A", 1024);
 
   $self->SUPER::_initialize(\@PropertyDescriptors);
@@ -73,7 +73,7 @@ sub GetTitle
 sub GetHeaderText
 {
   return "Remarks on how to improve this service are highly appreciated! " .
-         "If you wish to stay anonymously, you don't have to enter your name " .
+         "If you wish to stay anonymous, you don't have to enter your name " .
          "or email address.";
 }
 
