@@ -49,7 +49,7 @@ sub _initialize
   $PropertyDescriptors3[1] = CreateBasicPropertyDescriptor("CmdLineArg", "Command line arguments", !1, !1, "A", 50);
   $PropertyDescriptors3[2] = CreateBasicPropertyDescriptor("Run64", "Run 64-bit tests in addition to 32-bit tests", !1, 1, "B", 1);
   $PropertyDescriptors3[3] = CreateBasicPropertyDescriptor("DebugLevel", "Debug level (WINETEST_DEBUG)", !1, 1, "N", 2);
-  $PropertyDescriptors3[4] = CreateBasicPropertyDescriptor("ReportSuccessfulTests", "Report successfull tests (WINETEST_REPORT_SUCCESS)", !1, 1, "B", 1);
+  $PropertyDescriptors3[4] = CreateBasicPropertyDescriptor("ReportSuccessfulTests", "Report successful tests (WINETEST_REPORT_SUCCESS)", !1, 1, "B", 1);
   $self->{PropertyDescriptors3} = \@PropertyDescriptors3;
 
   if ($self->{Page} == 2)
