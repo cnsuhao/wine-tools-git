@@ -236,32 +236,37 @@ function update_lang_from_resfile($lang, $resfile)
 
 function gen_lang_a($lang)
 {
+    global $branch;
     $extra = is_pedantic() ? "&amp;pedantic=" : "";
-    return "<a href=\"lang.php?lang=".urlencode($lang)."$extra\">";
+    return "<a href=\"lang.php?branch=$branch&amp;lang=".urlencode($lang)."$extra\">";
 }
 
 function gen_resfile_a($lang, $resfile)
 {
+    global $branch;
     $extra = is_pedantic() ? "&amp;pedantic=" : "";
-    return "<a href=\"resfile.php?lang=".urlencode($lang)."&amp;resfile=".urlencode($resfile)."$extra\">";
+    return "<a href=\"resfile.php?branch=$branch&amp;lang=".urlencode($lang)."&amp;resfile=".urlencode($resfile)."$extra\">";
 }
 
 function gen_resource_a($lang, $resfile, $type, $id, $compare=FALSE)
 {
+    global $branch;
     $extra = ($compare) ? "&amp;compare=" : "";
     $extra .= is_pedantic() ? "&amp;pedantic=" : "";
-    return "<a href=\"resource.php?lang=".urlencode($lang)."&amp;resfile=".urlencode($resfile).
+    return "<a href=\"resource.php?branch=$branch&amp;lang=".urlencode($lang)."&amp;resfile=".urlencode($resfile).
            "&amp;type=".urlencode($type)."&amp;id=".urlencode($id)."$extra\">";
 }
 
 function dump_menu_root($link = TRUE)
 {
-    $extra = is_pedantic() ? "?pedantic=" : "";
+    global $branch;
+    $extra = is_pedantic() ? "&amp;pedantic=" : "";
     if ($link)
-        echo "<a href=\"index.php$extra\">";
-    echo "Wine translations";
-    if ($link)
-        echo "</a>";
+        echo "<a href=\"index.php?branch=$branch$extra\">$branch</a>";
+    else if ($branch == "stable")
+        echo "<a href=\"index.php?branch=master$extra\">master</a> | stable";
+    else
+        echo "master | <a href=\"index.php?branch=stable$extra\">stable</a>";
 
     if (strpos($_SERVER['PHP_SELF'], "index.php"))
     {
@@ -319,7 +324,7 @@ function dump_menu_resource($lang, $resfile, $type, $id)
 
 function dump_pedantic($url, $highest_level = FALSE)
 {
-    echo "<a style=\"float: right; margin-top: -13px;\" href=\"".$url;
+    echo "<a style=\"float: right;\" href=\"".$url;
     if (is_pedantic())
     {
         echo "\" title=\"'Normal' mode will only show errors.\"";

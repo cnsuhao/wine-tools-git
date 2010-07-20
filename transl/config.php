@@ -1,3 +1,5 @@
 <?php
-$DATAROOT = "data";
+$branch = $_REQUEST['branch'];
+if ($branch != "stable") $branch = "master";
+$DATAROOT = $branch;
 ?>
