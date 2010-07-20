@@ -66,6 +66,8 @@ umask 022
     set -e
     (cd wine && git pull) || exit
     head=$(cd wine && git rev-parse --short=12 HEAD) || exit
+    branch=$(cd wine && git symbolic-ref HEAD) || exit
+    branch=${branch#refs/heads/}
 
     if [ -f $destdir/winetest-$head.exe -a -f $destdir/winetest64-$head.exe -a $force -eq 0 ]
     then
@@ -79,7 +81,23 @@ umask 022
      cd build-native &&
      ../wine/configure --enable-win64 --without-x --without-freetype) || exit
 
-    (cd build-native && make depend && make __tooldeps__) || exit
+    (cd build-native && make depend && make __tooldeps__ include) || exit
+
+    # update the translations status
+
+    rm -rf $branch
+    mkdir $branch $branch/res
+    php $toolsdir/transl/parse_resfiles.php -T ./build-native -w ./$branch 2>>$branch/run.log
+    (cd wine && git describe HEAD) >$branch/version
+    mv -f $transldir/$branch $transldir/$branch.old
+    mv -f $branch $transldir/$branch
+    rm -rf $transldir/$branch.old
+
+    echo "translations updated"
+    if [ $branch != master ]
+    then
+        exit 0
+    fi
 
     # then cross-compile the tests
 
@@ -125,17 +143,6 @@ umask 022
     ln -sf winetest64-$head.exe $destdir/winetest64-latest.exe
 
     echo "winetest64-$head.exe built successfully."
-
-    # update the translations status
-
-    rm -rf data
-    mkdir data data/res
-    php $toolsdir/transl/parse_resfiles.php -T ./build-mingw -t ./build-native -w ./data 2>>data/run.log
-    mv -f $transldir/data $transldir/data.old
-    mv -f data $transldir/data
-    rm -rf $transldir/data.old
-
-    echo "translations updated"
 
 ) >$logfile 2>&1 && rm -f $logfile
 
