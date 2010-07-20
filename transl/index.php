@@ -4,6 +4,7 @@ include_once("lib.php");
 
 $pedantic = isset($_REQUEST['pedantic']);
 
+$version = file("$DATAROOT/version");
 $summary = fopen("$DATAROOT/summary", "r");
 $transl = array();
 $sum = 0;
@@ -28,16 +29,14 @@ while ($line = fgets($summary, 1024))
 <head>
     <link rel="stylesheet" href="style.css" type="text/css">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Wine translation statistics <?php echo $TITLE_APPENDIX ?></title>
+    <title>Translation statistics for <?php echo $version[0] ?></title>
 </head>
 <div class="navbar">
 <?php dump_menu_root(FALSE); ?>
 </div>
 <div class="main">
-<h1>Wine translation statistics <?php echo $TITLE_APPENDIX ?></h1>
+<h1>Translation statistics for <?php echo $version[0] ?></h1>
 <div class="contents">
-
-<?php echo $TITLE_DESCR ?>
 
 <p>This page shows the state of the translations of <a href="http://www.winehq.org/">Wine</a>.
 Note that some resources marked as translated may in fact still be English. Sometimes developers
