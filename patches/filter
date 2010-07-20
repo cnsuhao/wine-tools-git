@@ -154,8 +154,8 @@ sub decode_parts(@)
 
 my $message = Email::MIME->new( join("",<STDIN>) );
 
-printf "From: %s\n", encode_utf8($message->Email::Simple::header("from"));
-printf "Subject: %s\n", encode_utf8($message->Email::Simple::header("subject"));
+printf "From: %s\n", encode_utf8($message->Email::Simple::header("from") || "(unknown)");
+printf "Subject: %s\n", encode_utf8($message->Email::Simple::header("subject") || "(none)");
 printf "Message-Id: %s\n", $message->header("message-id");
 printf "Date: %s\n", $message->header("date");
 print "\n";
