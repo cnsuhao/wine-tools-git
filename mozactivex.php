@@ -14,10 +14,10 @@
 
 
 // Name of the file
-$sFileName = "MozillaControl1712-ReactOS.exe";
+$sFileName = "Support%20Files/Mozilla%20ActiveX%20Control/MozillaControl1712.exe";
 
 // Exact size of the file:
-$iFileSize = 4735160;
+$iFileSize = 4771240;
 
 // List of additional locations (commonly used locations are already in download.inc.php)
 $aList = array();
