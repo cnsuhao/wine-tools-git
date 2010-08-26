@@ -12,20 +12,28 @@
  * Copyright (c) 2006 Jonathan Ernst
  */
 
+// Default version if none given
+$sVersion = '0.0.1';
+
+// Suffix appended to base name of file
+$sFileSuffix = '';
+
+// Folder which contains wine gecko files
+$sFolder = 'Wine%20Gecko';
+
 // Check if a specific version was passed
 if(isset($_GET['v'])) {
 	$sVersion = $_GET['v'];
 
 	if(isset($_GET['arch']))
-		$sVersion = $sVersion.'-'.$_GET['arch'];
+		$sFileSuffix = $sVersion.'-'.$_GET['arch'];
 }
 
 // Name of the file
-$sFileName = "wine_gecko".($sVersion?'-'.$sVersion:'').".cab";
+$sFileName = sprintf('%s/%s/wine_gecko-%s.cab', $sFolder, $sVersion, $sFileSuffix ? $sFileSuffix : $sVersion);
 
 // Size array
 $aFileSizes = array(
-	'default'=>5219822,
 	'0.0.1'=>5219822,
 	'0.1.0'=>5746895,
 	'0.9.0'=>7806669,
@@ -36,7 +44,7 @@ $aFileSizes = array(
 );
 
 // Exact size of the file:
-$iFileSize = $aFileSizes[$sVersion ? $sVersion : 'default'];
+$iFileSize = $aFileSizes[$sFileSuffix ? $sFileSuffix : $sVersion];
 if(!$iFileSize) {
 	header("HTTP/1.0 404 Not Found");
 	exit;
