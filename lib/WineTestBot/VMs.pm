@@ -172,16 +172,30 @@ sub LoginInGuest
   my $VMHandle = $_[0];
   my $Interactive = $_[1] ? "Y" : "N";
 
-  if (defined($self->{LoggedInToGuest}) &&
-      $self->{LoggedInToGuest} eq $Interactive)
+  if (defined($self->{LoggedInToGuest}))
   {
-    return undef;
+    if ($self->{LoggedInToGuest} eq $Interactive)
+    {
+      return undef;
+    }
+    VMLogoutFromGuest($VMHandle);
+    delete $self->{LoggedInToGuest};
   }
 
-  my $Err = VMLoginInGuest($VMHandle, $VixGuestUsername, $VixGuestPassword,
-                           $Interactive eq "Y" ?
-                           VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT :
-                           0);
+  my $Try = 0;
+  my $Err = -1;
+  while ($Err != VIX_OK && $Try < 5)
+  {
+    $Err = VMLoginInGuest($VMHandle, $VixGuestUsername, $VixGuestPassword,
+                          $Interactive eq "Y" ?
+                          VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT :
+                          0);
+    if ($Err != VIX_OK)
+    {
+      sleep(15);
+    }
+    $Try++;
+  }
   if ($Err == VIX_OK)
   {
     $self->{LoggedInToGuest} = $Interactive;
@@ -357,8 +371,18 @@ sub CopyFileFromHostToGuest
     return $ErrMessage;
   }
 
-  my $Err = VMCopyFileFromHostToGuest($VMHandle, $HostPathName, $GuestPathName,
-                                      0, VIX_INVALID_HANDLE);
+  my $Try = 0;
+  my $Err = -1;
+  while ($Err != VIX_OK && $Try < 5)
+  {
+    $Err = VMCopyFileFromHostToGuest($VMHandle, $HostPathName, $GuestPathName,
+                                     0, VIX_INVALID_HANDLE);
+    if ($Err != VIX_OK)
+    {
+      sleep(15);
+    }
+    $Try++;
+  }
   return $self->CheckError($Err);
 }
 
@@ -405,8 +429,8 @@ sub RunScriptInGuestTimeout
                                                    $ScriptText, 0,
                                                    VIX_INVALID_HANDLE, undef,
                                                    0);
-  my ($Complete, $Err, $Time)  = VMware::Vix::API::Job::WaitTimeout($Job,
-                                                                    $Timeout);
+  my ($Complete, $Err, $Time) = VMware::Vix::API::Job::WaitTimeout($Job,
+                                                                   $Timeout);
 
   VMware::Vix::API::API::ReleaseHandle($Job);
 
@@ -443,6 +467,28 @@ sub CaptureScreenImage
   }
 
   return (undef, $ImageSize, $ImageBytes);
+}
+
+sub ListDirectoryInGuest
+{
+  my $self = shift;
+  my $PathName = $_[0];
+
+  my ($ErrMessage, $VMHandle) = $self->GetVMHandle();
+  if (defined($ErrMessage))
+  {
+    return $ErrMessage;
+  }
+
+  $ErrMessage = $self->LoginInGuest($VMHandle, !1);
+  if (defined($ErrMessage))
+  {
+    return $ErrMessage;
+  }
+
+  my ($Err, @DirectoryContents) = VMListDirectoryInGuest($VMHandle, $PathName, 
+                                                         0);
+  return ($self->CheckError($Err), @DirectoryContents);
 }
 
 sub Status

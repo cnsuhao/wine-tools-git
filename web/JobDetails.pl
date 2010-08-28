@@ -267,7 +267,7 @@ sub GenerateBody
       {
         $HasLogEntries = 1;
         chomp($Line);
-        if ($Line =~ m/^([^:]+):[^ ]+ start [^ ]+ -$/)
+        if ($Line =~ m/^([^:]+):[^ ]+ start [^ ]+ -\s*$/)
         {
           $CurrentDll = $1;
         }

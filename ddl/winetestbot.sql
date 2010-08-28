@@ -92,16 +92,26 @@ CREATE TABLE PendingPatches
 )
 ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE Branches
+(
+  Name      VARCHAR(20)     NOT NULL,
+  IsDefault ENUM('Y', 'N')  NOT NULL,
+  PRIMARY KEY(Name)
+)
+ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE Jobs
 (
-  Id        INT(5)      NOT NULL AUTO_INCREMENT,
-  UserName  VARCHAR(40) NOT NULL,
-  Priority  INT(1)      NOT NULL,
-  Status    ENUM('queued', 'running', 'completed', 'failed') NOT NULL,
-  Remarks   VARCHAR(50) NULL,
-  Submitted DATETIME    NULL,
-  Ended     DATETIME    NULL,
-  PatchId   INT(7)      NULL,
+  Id         INT(5)      NOT NULL AUTO_INCREMENT,
+  BranchName VARCHAR(20) NOT NULL,
+  UserName   VARCHAR(40) NOT NULL,
+  Priority   INT(1)      NOT NULL,
+  Status     ENUM('queued', 'running', 'completed', 'failed') NOT NULL,
+  Remarks    VARCHAR(50) NULL,
+  Submitted  DATETIME    NULL,
+  Ended      DATETIME    NULL,
+  PatchId    INT(7)      NULL,
+  FOREIGN KEY (BranchName) REFERENCES Branches(Name),
   FOREIGN KEY (UserName) REFERENCES Users(Name),
   FOREIGN KEY (PatchId) REFERENCES Patches(Id);
   PRIMARY KEY (Id)
@@ -115,7 +125,7 @@ CREATE TABLE Steps
   Type                  ENUM('suite', 'single', 'build', 'reconfig') NOT NULL,
   Status                ENUM('queued', 'running', 'completed', 'failed', 'skipped') NOT NULL,
   FileName              VARCHAR(100) NOT NULL,
-  FileType              ENUM('exe32', 'exe64', 'patchdlls', 'patchprograms') NOT NULL,
+  FileType              ENUM('exe32', 'exe64', 'patchdlls', 'patchprograms', 'dll32', 'dll64', 'zip') NOT NULL,
   InStaging             ENUM('Y', 'N') NOT NULL,
   DebugLevel            INT(2) NOT NULL,
   ReportSuccessfulTests ENUM('Y', 'N') NOT NULL,
@@ -142,5 +152,10 @@ CREATE TABLE Tasks
 )
 ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO Roles (Name, IsDefaultRole) Values('admin', 'N');
-INSERT INTO Roles (Name, IsDefaultRole) Values('wine-devel', 'Y');
+INSERT INTO Roles (Name, IsDefaultRole) VALUES('admin', 'N');
+INSERT INTO Roles (Name, IsDefaultRole) VALUES('wine-devel', 'Y');
+
+INSERT INTO Users (Name, EMail, Password, Active, RealName)
+       VALUES('batch', '/dev/null', '*', 'Batch user for internal jobs', NULL);
+
+INSERT INTO Branches (Name, IsDefault) VALUES('master', 'Y');

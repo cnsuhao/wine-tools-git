@@ -24,7 +24,7 @@ sub FatalError
   my $StepKey = defined($Step) ? $Step->GetKey() : "0";
   my $TaskKey = defined($Task) ? $Task->GetKey() : "0";
 
-  LogMsg "RunBuild: $JobKey/$StepKey/$TaskKey $ErrMessage";
+  LogMsg "WineRunBuild: $JobKey/$StepKey/$TaskKey $ErrMessage";
 
   if ($Task)
   {
@@ -107,7 +107,7 @@ delete $ENV{ENV};
 my ($JobId, $StepNo, $TaskNo) = @ARGV;
 if (! $JobId || ! $StepNo || ! $TaskNo)
 {
-  die "Usage: RunBuild.pl JobId StepNo TaskNo";
+  die "Usage: WineRunBuild.pl JobId StepNo TaskNo";
 }
 
 # Untaint parameters
@@ -160,7 +160,7 @@ mkdir "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
 
 my $VM = $Task->VM;
 
-LogMsg "RunBuild: task $JobId/$StepNo/$TaskNo started\n";
+LogMsg "WineRunBuild: task $JobId/$StepNo/$TaskNo started\n";
 
 my $RptFileName = $VM->Name . ".rpt";
 my $StepDir = "$DataDir/jobs/$JobId/$StepNo";
@@ -297,6 +297,6 @@ $Jobs = undef;
 
 TaskComplete($JobId, $StepNo, $TaskNo);
 
-LogMsg "RunBuild: task $JobId/$StepNo/$TaskNo completed\n";
+LogMsg "WineRunBuild: task $JobId/$StepNo/$TaskNo completed\n";
 
 exit;

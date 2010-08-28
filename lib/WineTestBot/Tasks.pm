@@ -67,15 +67,15 @@ sub Run
     my $RunScript;
     if ($Step->Type eq "build")
     {
-      $RunScript = "$BinDir/RunBuild.pl";
+      $RunScript = "$BinDir/${ProjectName}RunBuild.pl";
     }
     elsif ($Step->Type eq "reconfig")
     {
-      $RunScript = "$BinDir/RunReconfig.pl";
+      $RunScript = "$BinDir/${ProjectName}RunReconfig.pl";
     }
     else
     {
-      $RunScript = "$BinDir/RunTask.pl";
+      $RunScript = "$BinDir/${ProjectName}RunTask.pl";
     }
     $Step = undef;
     $Job = undef;

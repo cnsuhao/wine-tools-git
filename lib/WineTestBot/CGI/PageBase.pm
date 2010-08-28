@@ -286,6 +286,9 @@ EOF
     print "        <li class='divider'>&nbsp;</li>\n";
     print "        <li><p><a href='", MakeSecureURL("/admin/VMsList.pl"),
           "'>VMs</a></p></li>\n";
+    print "        <li class='divider'>&nbsp;</li>\n";
+    print "        <li><p><a href='", MakeSecureURL("/admin/BranchesList.pl"),
+          "'>Branches</a></p></li>\n";
     print "        <li class='bot'>&nbsp;</li>\n";
   }
 

@@ -25,7 +25,7 @@ sub FatalError
   my $StepKey = defined($Step) ? $Step->GetKey() : "0";
   my $TaskKey = defined($Task) ? $Task->GetKey() : "0";
 
-  LogMsg "RunTask: $JobKey/$StepKey/$TaskKey $ErrMessage";
+  LogMsg "WineRunTask: $JobKey/$StepKey/$TaskKey $ErrMessage";
 
   if ($Task)
   {
@@ -82,12 +82,12 @@ sub TakeScreenshot
     }
     else
     {
-      LogMsg "RunTask: Can't save screenshot: $!\n";
+      LogMsg "WineRunTask: Can't save screenshot: $!\n";
     }
   }
   else
   {
-    LogMsg "RunTask: Can't capture screenshot: $ErrMessage\n";
+    LogMsg "WineRunTask: Can't capture screenshot: $ErrMessage\n";
   }
 }
 
@@ -148,7 +148,7 @@ delete $ENV{ENV};
 my ($JobId, $StepNo, $TaskNo) = @ARGV;
 if (! $JobId || ! $StepNo || ! $TaskNo)
 {
-  die "Usage: RunTask.pl JobId StepNo TaskNo";
+  die "Usage: WineRunTask.pl JobId StepNo TaskNo";
 }
 
 # Untaint parameters
@@ -202,7 +202,7 @@ umask($oldumask);
 
 my $VM = $Task->VM;
 
-LogMsg "RunTask: task $JobId/$StepNo/$TaskNo (" . $VM->Name . ") started\n";
+LogMsg "WineRunTask: task $JobId/$StepNo/$TaskNo (" . $VM->Name . ") started\n";
 
 my $RptFileName = $VM->Name . ".rpt";
 my $StepDir = "$DataDir/jobs/$JobId/$StepNo";
@@ -337,6 +337,6 @@ $Jobs = undef;
 
 TaskComplete($JobId, $StepNo, $TaskNo);
 
-LogMsg "RunTask: task $JobId/$StepNo/$TaskNo (" . $VM->Name . ") completed\n";
+LogMsg "WineRunTask: task $JobId/$StepNo/$TaskNo (" . $VM->Name . ") completed\n";
 
 exit;

@@ -26,6 +26,7 @@ use IO::Handle;
 use POSIX qw(:fcntl_h);
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::CGI::FreeFormPage;
+use WineTestBot::Branches;
 use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::Engine::Notify;
@@ -130,6 +131,38 @@ sub GenerateFields
           "<div class='ItemValue'>",
           "<input type='file' name='File' size='64' maxlength='64' />",
           "&nbsp;<span class='Required'>*</span></div></div>\n";
+    my $Branches = CreateBranches();
+    my $SelectedBranchKey = $self->GetParam("Branch");
+    if (! defined($SelectedBranchKey))
+    {
+      $SelectedBranchKey = $Branches->GetDefaultBranch()->GetKey();
+    }
+    if (! $Branches->MultipleBranchesPresent())
+    {
+      print "<div><input type='hidden' name='Branch' value='",
+            $self->CGI->escapeHTML($SelectedBranchKey),
+            "'></div>\n";
+    }
+    else
+    {
+      print "<div class='ItemProperty'><label>Branch</label>",
+            "<div class='ItemValue'>",
+            "<select name='Branch' size='1'>";
+      my @SortedKeys = sort { $a cmp $b } @{$Branches->GetKeys()};
+      foreach my $Key (@SortedKeys)
+      {
+        my $Branch = $Branches->GetItem($Key);
+        print "<option value='", $self->CGI->escapeHTML($Key), "'";
+        if ($Branch->GetKey() eq $SelectedBranchKey)
+        {
+          print " selected";
+        }
+        print ">", $self->CGI->escapeHTML($Branch->Name), "</option>";
+      }
+      print "</select>",
+            "&nbsp;<span class='Required'>*</span></div></div>\n";
+    }
+
     $self->{HasRequired} = 1;
   }
   else
@@ -156,6 +189,8 @@ sub GenerateFields
           $self->CGI->escapeHTML($self->{FileName}), "'></div>\n";
     print "<div><input type='hidden' name='FileType' value='",
           $self->CGI->escapeHTML($self->{FileType}), "'></div>\n";
+    print "<div><input type='hidden' name='Branch' value='",
+          $self->CGI->escapeHTML($self->GetParam("Branch")), "'></div>\n";
     if ($self->{Page} != 3)
     {
       if (defined($self->{TestExecutable}))
@@ -206,8 +241,10 @@ sub GenerateFields
       {
         my $VM = $VMs->GetItem($VMKey);
         if ($VM->Bits == 64 || $self->{FileType} eq "exe32" ||
+            $self->{FileType} eq "dll32" ||
             $self->{FileType} eq "patchdlls" ||
-            $self->{FileType} eq "patchprograms")
+            $self->{FileType} eq "patchprograms" ||
+            $self->{FileType} eq "zip")
         {
           my $FieldName = "vm_" . $self->CGI->escapeHTML($VM->GetKey());
           print "<div class='ItemProperty'><label>",
@@ -434,7 +471,9 @@ sub Validate
     {
       $self->{NoCmdLineArgWarn} = 1;
     }
-    elsif (! $self->GetParam("CmdLineArg"))
+    elsif (! $self->GetParam("CmdLineArg") &&
+           $self->GetParam("FileType") ne "dll32" &&
+           $self->GetParam("FileType") ne "dll64")
     {
       $self->{ErrMessage} = "You didn't specify a command line argument. " .
                             "This is most likely not correct, so please " .
@@ -472,18 +511,38 @@ sub DetermineFileType
     if ($Fields[0] == 0x5a4d)
     {
       seek FH, $Fields[30], SEEK_SET;
-      if (sysread(FH, $Buffer, 0x06))
+      if (sysread(FH, $Buffer, 0x18))
       {
-        @Fields = unpack "IS", $Buffer;
-        if ($Fields[0] == 0x00004550 && $Fields[1] == 0x014c)
+        @Fields = unpack "IS2I3S2", $Buffer;
+        if ($Fields[0] == 0x00004550)
         {
-          $FileType = "exe32";
-        }
-        elsif ($Fields[0] == 0x00004550 && $Fields[1] == 0x8664)
-        {
-          $FileType = "exe64";
+          if (($Fields[7] & 0x2000) == 0)
+          {
+            $FileType = "exe";
+          }
+          else
+          {
+            $FileType = "dll";
+          }
+          if ($Fields[1] == 0x014c)
+          {
+            $FileType .= "32";
+          }
+          elsif ($Fields[1] == 0x8664)
+          {
+            $FileType .= "64";
+          }
+          else
+          {
+            $FileType = "unknown";
+          }
         }
       }
+    }
+    # zip files start with PK, 0x03, 0x04
+    elsif ($Fields[0] == 0x4b50 && $Fields[1] == 0x0403)
+    {
+      $FileType = "zip";
     }
   }
 
@@ -586,10 +645,11 @@ sub OnPage1Next
       return !1;
     }
     if ($FileType ne "patchdlls" && $FileType ne "patchprograms" &&
-        $FileType ne "exe32" && $FileType ne "exe64")
+        $FileType ne "exe32" && $FileType ne "exe64" && $FileType ne "dll32" &&
+        $FileType ne "zip")
     {
       $self->{ErrField} = "File";
-      $self->{ErrMessage} = "Unrecognized file type, it's not a patch or PE file";
+      $self->{ErrMessage} = "Unrecognized file typea";
       return !1;
     }
 
@@ -711,6 +771,11 @@ sub OnSubmit
   $NewJob->User($self->GetCurrentSession()->User);
   $NewJob->Priority(5);
   $NewJob->Remarks($self->GetParam("Remarks"));
+  my $Branch = CreateBranches()->GetItem($self->GetParam("Branch"));
+  if (defined($Branch))
+  {
+    $NewJob->Branch($Branch);
+  }
   
   # Add a step to the job
   my $Steps = $NewJob->Steps;
@@ -739,9 +804,17 @@ sub OnSubmit
     $NewStep->FileName($self->GetParam("TestExecutable"));
     $NewStep->FileType("exe32");
     $NewStep->InStaging(!1);
+    $FileType = "exe32";
   }
 
-  $NewStep->Type("single");
+  if ($FileType eq "dll32" && ! $self->GetParam("CmdLineArg"))
+  {
+    $NewStep->Type("suite");
+  }
+  else
+  {
+    $NewStep->Type("single");
+  }
   $NewStep->DebugLevel($self->GetParam("DebugLevel"));
   $NewStep->ReportSuccessfulTests(defined($self->GetParam("ReportSuccessfulTests")));
   
@@ -757,7 +830,8 @@ sub OnSubmit
     {
       my $Task = $Tasks->Add();
       $Task->VM($VM);
-      $Task->Timeout($SingleTimeout);
+      $Task->Timeout($NewStep->Type eq "suite" ?
+                     $SuiteTimeout : $SingleTimeout);
       $Task->CmdLineArg($self->GetParam("CmdLineArg"));
     }
   }

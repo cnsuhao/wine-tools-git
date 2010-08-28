@@ -21,6 +21,7 @@ use strict;
 package JobStatusBlock;
 
 use ObjectModel::CGI::CollectionBlock;
+use WineTestBot::Branches;
 
 use vars qw(@ISA);
 
@@ -50,7 +51,10 @@ sub DisplayProperty
   my $self = shift;
 
   my $PropertyDescriptor = $_[0];
-  if ($PropertyDescriptor->GetName() eq "Patch")
+  my $PropertyName = $PropertyDescriptor->GetName();
+  if ($PropertyName eq "Patch" ||
+      ($PropertyName eq "Branch" &&
+       ! CreateBranches()->MultipleBranchesPresent))
   {
     return !1;
   }

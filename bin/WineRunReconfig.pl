@@ -24,7 +24,7 @@ sub FatalError
   my $StepKey = defined($Step) ? $Step->GetKey() : "0";
   my $TaskKey = defined($Task) ? $Task->GetKey() : "0";
 
-  LogMsg "RunReconfig: $JobKey/$StepKey/$TaskKey $ErrMessage";
+  LogMsg "WineRunReconfig: $JobKey/$StepKey/$TaskKey $ErrMessage";
 
   if ($Task)
   {
@@ -107,7 +107,7 @@ delete $ENV{ENV};
 my ($JobId, $StepNo, $TaskNo) = @ARGV;
 if (! $JobId || ! $StepNo || ! $TaskNo)
 {
-  die "Usage: RunReconfig.pl JobId StepNo TaskNo";
+  die "Usage: WineRunReconfig.pl JobId StepNo TaskNo";
 }
 
 # Untaint parameters
@@ -160,7 +160,7 @@ mkdir "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
 
 my $VM = $Task->VM;
 
-LogMsg "RunReconfig: task $JobId/$StepNo/$TaskNo started\n";
+LogMsg "WineRunReconfig: task $JobId/$StepNo/$TaskNo started\n";
 
 my $StepDir = "$DataDir/jobs/$JobId/$StepNo";
 my $TaskDir = "$StepDir/$TaskNo";
@@ -234,6 +234,6 @@ $Jobs = undef;
 
 TaskComplete($JobId, $StepNo, $TaskNo);
 
-LogMsg "RunReconfig: task $JobId/$StepNo/$TaskNo completed\n";
+LogMsg "WineRunReconfig: task $JobId/$StepNo/$TaskNo completed\n";
 
 exit;

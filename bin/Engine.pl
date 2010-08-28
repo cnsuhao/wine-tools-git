@@ -116,16 +116,16 @@ sub HandleJobStatusChange
     my $Pid = fork;
     if (defined($Pid) && ! $Pid)
     {
-      exec("$BinDir/SendLog.pl $JobKey");
+      exec("$BinDir/${ProjectName}SendLog.pl $JobKey");
     }
     if (defined($Pid) && ! $Pid)
     {
-      LogMsg "Engine: Unable to exec SendLog.pl : $!\n";
+      LogMsg "Engine: Unable to exec ${ProjectName}SendLog.pl : $!\n";
       exit;
     }
     if (! defined($Pid))
     {
-      LogMsg "Engine: Unable to fork for SendLog.pl : $!\n";
+      LogMsg "Engine: Unable to fork for ${ProjectName}SendLog.pl : $!\n";
     }
   }
 
@@ -409,6 +409,34 @@ sub HandlePatchRetrieved
   return defined($ErrMessage) ? "0" . $ErrMessage : "1OK";
 }
 
+sub HandleBuildNotification
+{
+  # Validate build number
+  if ($_[0] !~ m/^(\d+)$/)
+  {
+    return "0Invalid build number";
+  }
+  my $BuildNo = $1;
+
+  $ActiveBackEnd->PrepareForFork();
+  my $Pid = fork;
+  if (defined($Pid) && ! $Pid)
+  {
+    exec("$BinDir/${ProjectName}RetrieveBuild.pl $BuildNo");
+  }
+  if (defined($Pid) && ! $Pid)
+  {
+    LogMsg "Engine: Unable to exec ${ProjectName}BuildHandler.pl : $!\n";
+    exit;
+  }
+  if (! defined($Pid))
+  {
+    LogMsg "Engine: Unable to fork for ${ProjectName}BuildHandler.pl : $!\n";
+  }
+
+  return "1OK";
+}
+
 sub HandleClientCmd
 {
   my $Cmd = shift;
@@ -455,6 +483,10 @@ sub HandleClientCmd
   if ($Cmd eq "patchretrieved")
   {
     return HandlePatchRetrieved(@_);
+  }
+  if ($Cmd eq "buildnotification")
+  {
+    return HandleBuildNotification(@_);
   }
 
   return "0Unknown command $Cmd\n";
