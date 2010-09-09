@@ -804,7 +804,6 @@ sub OnSubmit
     $NewStep->FileName($self->GetParam("TestExecutable"));
     $NewStep->FileType("exe32");
     $NewStep->InStaging(!1);
-    $FileType = "exe32";
   }
 
   if ($FileType eq "dll32" && ! $self->GetParam("CmdLineArg"))
