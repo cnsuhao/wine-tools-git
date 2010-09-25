@@ -100,7 +100,7 @@ sub BuildTestExecutable
 
   if ($NeedConfig)
   {
-    system("cd $DataDir/build-mingw${Bits}; ./config.status --file $PatchType/$BaseName/tests/Makefile >> $LogDir/BuildSingleTest.log 2>&1");
+    system("cd $DataDir/build-mingw${Bits}; ./config.status --file $PatchType/$BaseName/tests/Makefile:Make.vars.in:$PatchType/$BaseName/tests/Makefile.in >> $LogDir/BuildSingleTest.log 2>&1");
     if ($? != 0)
     {
       LogMsg "Reconfig failed\n";
