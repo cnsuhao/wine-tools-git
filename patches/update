@@ -77,7 +77,8 @@ my @legend =
                  "<li>The patch is simply too large for review, you need to find a way to split it.</li></ul>" ],
  [ "testfail",   "<ul><li>You didn't run 'make test' before submitting.</li>" .
                  "<li>The patch requires a Wine fix but doesn't use todo_wine.</li>" .
-                 "<li>The patch fixes a failure but doesn't remove the corresponding todo_wine.</li></ul>" ],
+                 "<li>The patch fixes a failure but doesn't remove the corresponding todo_wine.</li>" .
+                 "<li>The <a href=\"http://testbot.winehq.org/\">testbot</a> detected new failures on Windows.</li></ul>" ],
 );
 
 my $dir = "$ENV{HOME}/patches";
