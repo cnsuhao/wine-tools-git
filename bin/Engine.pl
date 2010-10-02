@@ -41,6 +41,7 @@ use WineTestBot::Log;
 use WineTestBot::Patches;
 use WineTestBot::PendingPatchSets;
 use WineTestBot::Utils;
+use WineTestBot::VMs;
 
 sub FatalError
 {
@@ -437,6 +438,34 @@ sub HandleBuildNotification
   return "1OK";
 }
 
+sub HandleGetScreenshot
+{
+  # Validate VM name
+  if ($_[0] !~ m/^(\w+)$/)
+  {
+    LogMsg "Engine: GetScreenshot: invalid VM name\n";
+    return "0Invalid VM name";
+  }
+  my $VMName = $1;
+
+  my $VMs = CreateVMs();
+  my $VM = $VMs->GetItem($VMName);
+  if (! defined($VM))
+  {
+    LogMsg "Engine: GetScreenshot: unknown VM $VMName\n";
+    return "0Unknown VM $VMName";
+  }
+
+  my ($ErrMessage, $ImageSize, $ImageBytes) = $VM->CaptureScreenImage();
+  if (defined($ErrMessage))
+  {
+    LogMsg "Engine: GetScreenshot: $ErrMessage\n";
+    return "0$ErrMessage";
+  }
+
+  return "1" . $ImageBytes;;
+}
+
 sub HandleClientCmd
 {
   my $Cmd = shift;
@@ -488,7 +517,12 @@ sub HandleClientCmd
   {
     return HandleBuildNotification(@_);
   }
+  if ($Cmd eq "getscreenshot")
+  {
+    return HandleGetScreenshot(@_);
+  }
 
+  LogMsg "Engine: Unknown command $Cmd\n";
   return "0Unknown command $Cmd\n";
 }
 

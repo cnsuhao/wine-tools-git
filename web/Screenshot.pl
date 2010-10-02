@@ -1,5 +1,3 @@
-#!/usr/bin/perl -Tw
-
 use strict;
 
 use Apache2::Const -compile => qw(REDIRECT);
@@ -8,6 +6,7 @@ use CGI::Cookie;
 use Fcntl;
 use WineTestBot::Config;
 use WineTestBot::CGI::Sessions;
+use WineTestBot::Engine::Notify;
 use WineTestBot::VMs;
 
 sub NotAvailable
@@ -50,7 +49,7 @@ sub LiveScreenshot
     return undef;
   }
   
-  my ($ErrMessage, $ImageSize, $ImageBytes) = $VM->CaptureScreenImage();
+  my ($ErrMessage, $ImageBytes) = GetScreenshot($VMName);
   if (defined($ErrMessage))
   {
     return undef;

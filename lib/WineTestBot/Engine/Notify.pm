@@ -36,7 +36,7 @@ require Exporter;
 @EXPORT = qw(&PingEngine &JobSubmit &JobStatusChange &JobCancel &TaskComplete
              &VMStatusChange &ExpectWinetestUpdate &FoundWinetestUpdate
              &NewWinePatchesSubmission &PatchNotification &PatchRetrieved
-             &BuildNotification);
+             &BuildNotification &GetScreenshot);
 @EXPORT_OK = qw($RunningInEngine);
 
 
@@ -264,6 +264,23 @@ sub BuildNotification
   }
  
   return substr($Reply, 1);
+}
+
+sub GetScreenshot
+{
+  my $VMName = $_[0];
+
+  my $Reply = SendCmdReceiveReply("getscreenshot $VMName\n");
+  if (length($Reply) < 1)
+  {
+    return "Unrecognized reply received from engine";
+  }
+  if (substr($Reply, 0, 1) eq "1")
+  {
+    return (undef, substr($Reply, 1));
+  }
+ 
+  return (substr($Reply, 1), undef);
 }
 
 1;
