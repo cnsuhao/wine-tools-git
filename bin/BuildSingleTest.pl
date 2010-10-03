@@ -82,7 +82,7 @@ sub BuildTestExecutable
 
   if ($NeedMakeInclude)
   {
-    system("cd $DataDir/build-mingw${Bits}; ./config.status --file include/Makefile >> $LogDir/BuildSingleTest.log 2>&1");
+    system("cd $DataDir/build-mingw${Bits}; ./config.status --file include/Makefile:Make.vars.in:include/Makefile.in >> $LogDir/BuildSingleTest.log 2>&1");
     if ($? != 0)
     {
       LogMsg "Reconfig in include dir failed\n";
