@@ -75,6 +75,8 @@ my $LDAPSearchFilter = undef;
 my $LDAPRealNameAttribute = undef;
 my $LDAPEMailAttribute = undef;
 
+my $JobPurgeDays = 7;
+
 eval 'require "WineTestBot/ConfigLocal.pl";';
 if ($@)
 {

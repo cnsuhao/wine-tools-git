@@ -39,25 +39,28 @@ use WineTestBot::PendingPatchSets;
 $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
 
-my $DeleteBefore = time() - 7 * 86400;
-my $Jobs = CreateJobs();
-foreach my $JobKey (@{$Jobs->GetKeys()})
+if ($WineTestBot::Config::JobPurgeDays != 0)
 {
-  my $Job = $Jobs->GetItem($JobKey);
-  if (defined($Job->Ended) && $Job->Ended < $DeleteBefore)
+  my $DeleteBefore = time() - $WineTestBot::Config::JobPurgeDays * 86400;
+  my $Jobs = CreateJobs();
+  foreach my $JobKey (@{$Jobs->GetKeys()})
   {
-    LogMsg "Janitor: deleting job ", $Job->Id, "\n";
-    system "rm", "-rf", "$DataDir/jobs/" . $Job->Id;
-    my $ErrMessage = $Jobs->DeleteItem($Job);
-    if (defined($ErrMessage))
+    my $Job = $Jobs->GetItem($JobKey);
+    if (defined($Job->Ended) && $Job->Ended < $DeleteBefore)
     {
-      LogMsg "Janitor: ", $ErrMessage, "\n";
+      LogMsg "Janitor: deleting job ", $Job->Id, "\n";
+      system "rm", "-rf", "$DataDir/jobs/" . $Job->Id;
+      my $ErrMessage = $Jobs->DeleteItem($Job);
+      if (defined($ErrMessage))
+      {
+        LogMsg "Janitor: ", $ErrMessage, "\n";
+      }
     }
   }
+  $Jobs = undef;
 }
-$Jobs = undef;
 
-$DeleteBefore = time() - 1 * 86400;
+my $DeleteBefore = time() - 1 * 86400;
 my $Sets = WineTestBot::PendingPatchSets::CreatePendingPatchSets();
 foreach my $SetKey (@{$Sets->GetKeys()})
 {
@@ -83,25 +86,28 @@ foreach my $SetKey (@{$Sets->GetKeys()})
   }
 }
 
-$DeleteBefore = time() - 7 * 86400;
-my $Patches = CreatePatches();
-foreach my $PatchKey (@{$Patches->GetKeys()})
+if ($WineTestBot::Config::JobPurgeDays != 0)
 {
-  my $Patch = $Patches->GetItem($PatchKey);
-  if ($Patch->Received < $DeleteBefore)
+  $DeleteBefore = time() - 7 * 86400;
+  my $Patches = CreatePatches();
+  foreach my $PatchKey (@{$Patches->GetKeys()})
   {
-    $Jobs = CreateJobs();
-    $Jobs->AddFilter("Patch", [$Patch]);
-    if ($Jobs->IsEmpty())
+    my $Patch = $Patches->GetItem($PatchKey);
+    if ($Patch->Received < $DeleteBefore)
     {
-      LogMsg "Janitor: deleting patch ", $Patch->Id, "\n";
-      unlink("$DataDir/patches/" . $Patch->Id);
-      my $ErrMessage = $Patches->DeleteItem($Patch);
-      if (defined($ErrMessage))
+      my $Jobs = CreateJobs();
+      $Jobs->AddFilter("Patch", [$Patch]);
+      if ($Jobs->IsEmpty())
       {
-        LogMsg "Janitor: ", $ErrMessage, "\n";
+        LogMsg "Janitor: deleting patch ", $Patch->Id, "\n";
+        unlink("$DataDir/patches/" . $Patch->Id);
+        my $ErrMessage = $Patches->DeleteItem($Patch);
+        if (defined($ErrMessage))
+        {
+          LogMsg "Janitor: ", $ErrMessage, "\n";
+        }
       }
     }
   }
+  $Patches = undef;
 }
-$Patches = undef;
