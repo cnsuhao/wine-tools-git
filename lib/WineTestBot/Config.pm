@@ -76,6 +76,7 @@ my $LDAPRealNameAttribute = undef;
 my $LDAPEMailAttribute = undef;
 
 my $JobPurgeDays = 7;
+my $JobArchiveDays = 0;
 
 eval 'require "WineTestBot/ConfigLocal.pl";';
 if ($@)

@@ -88,7 +88,7 @@ foreach my $SetKey (@{$Sets->GetKeys()})
 
 if ($WineTestBot::Config::JobPurgeDays != 0)
 {
-  $DeleteBefore = time() - 7 * 86400;
+  $DeleteBefore = time() - $WineTestBot::Config::JobPurgeDays * 86400;
   my $Patches = CreatePatches();
   foreach my $PatchKey (@{$Patches->GetKeys()})
   {
@@ -110,4 +110,31 @@ if ($WineTestBot::Config::JobPurgeDays != 0)
     }
   }
   $Patches = undef;
+}
+
+if ($WineTestBot::Config::JobArchiveDays != 0)
+{
+  my $ArchiveBefore = time() - $WineTestBot::Config::JobArchiveDays * 86400;
+  my $Jobs = CreateJobs();
+  $Jobs->FilterNotArchived();
+  foreach my $JobKey (@{$Jobs->GetKeys()})
+  {
+    my $Job = $Jobs->GetItem($JobKey);
+    if (defined($Job->Ended) && $Job->Ended < $ArchiveBefore)
+    {
+      LogMsg "Janitor: archiving job ", $Job->Id, "\n";
+
+      my $Steps = $Job->Steps;
+      foreach my $StepKey (@{$Steps->GetKeys()})
+      {
+        my $Step = $Steps->GetItem($StepKey);
+        unlink "$DataDir/jobs/" . $Job->Id . "/" . $Step->No . "/" .
+               $Step->FileName;
+      }
+
+      $Job->Archived(1);
+      $Job->Save();
+    }
+  }
+  $Jobs = undef;
 }

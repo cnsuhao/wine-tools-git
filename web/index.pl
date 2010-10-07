@@ -52,7 +52,8 @@ sub DisplayProperty
 
   my $PropertyDescriptor = $_[0];
   my $PropertyName = $PropertyDescriptor->GetName();
-  if ($PropertyName eq "Patch" ||
+  if ($PropertyName eq "Archived" ||
+      $PropertyName eq "Patch" ||
       ($PropertyName eq "Branch" &&
        ! CreateBranches()->MultipleBranchesPresent))
   {
@@ -194,8 +195,26 @@ sub GenerateBody
   print "</div>\n";
 
   print "<h2><a name='jobs'></a>Jobs</h2>\n";
-  my $JobsCollectionBlock = new JobStatusBlock(CreateJobs(), $self);
+  my $Jobs = CreateJobs();
+  $Jobs->FilterNotArchived();
+  my $JobsCollectionBlock = new JobStatusBlock($Jobs, $self);
   $JobsCollectionBlock->GenerateList();
+
+  if ($WineTestBot::Config::JobArchiveDays != 0)
+  {
+    my $PropertyDescriptor = $Jobs->GetPropertyDescriptorByName('Id');
+    my $MaxIdLength = $PropertyDescriptor->GetMaxLength();
+    print <<EOF
+<br>
+<form action='/JobDetails.pl' method='post' enctype='multipart/form-data'>
+<div class='ItemProperty'>
+<label>Archived job id</label><div class='ItemValue'><input type='text' name='Key' maxlength='$MaxIdLength' size='$MaxIdLength'/></div>
+&nbsp;
+<input type='submit' name='Action' value='Show details'/>
+</div>
+</form>
+EOF
+  }
 
   print "<h2><a name='vms'></a>VMs</h2>\n";
   my $VMsCollectionBlock = new VMStatusBlock(CreateVMs(), $self);

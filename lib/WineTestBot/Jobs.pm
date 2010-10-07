@@ -49,6 +49,7 @@ sub InitializeNew
 {
   my $self = shift;
 
+  $self->Archived(!1);
   $self->Branch(CreateBranches()->GetDefaultBranch());
   $self->Status("queued");
   $self->Submitted(time());
@@ -282,22 +283,24 @@ BEGIN
   $PropertyDescriptors[0] =
     CreateBasicPropertyDescriptor("Id", "Job id", 1, 1, "S",  5);
   $PropertyDescriptors[1] =
-    CreateItemrefPropertyDescriptor("Branch", "Branch", !1, 1, \&CreateBranches, ["BranchName"]);
+    CreateBasicPropertyDescriptor("Archived", "Job is archived", !1, 1, "B", 1);
   $PropertyDescriptors[2] =
-    CreateItemrefPropertyDescriptor("User", "Author", !1, 1, \&WineTestBot::Users::CreateUsers, ["UserName"]);
+    CreateItemrefPropertyDescriptor("Branch", "Branch", !1, 1, \&CreateBranches, ["BranchName"]);
   $PropertyDescriptors[3] =
-    CreateBasicPropertyDescriptor("Priority", "Priority", !1, 1, "N", 1);
+    CreateItemrefPropertyDescriptor("User", "Author", !1, 1, \&WineTestBot::Users::CreateUsers, ["UserName"]);
   $PropertyDescriptors[4] =
-    CreateBasicPropertyDescriptor("Status", "Status", !1, 1, "A", 9);
+    CreateBasicPropertyDescriptor("Priority", "Priority", !1, 1, "N", 1);
   $PropertyDescriptors[5] =
-    CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "A", 50);
+    CreateBasicPropertyDescriptor("Status", "Status", !1, 1, "A", 9);
   $PropertyDescriptors[6] =
-    CreateBasicPropertyDescriptor("Submitted", "Submitted", !1, !1, "DT", 19);
+    CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "A", 50);
   $PropertyDescriptors[7] =
-    CreateBasicPropertyDescriptor("Ended", "Ended", !1, !1, "DT", 50);
+    CreateBasicPropertyDescriptor("Submitted", "Submitted", !1, !1, "DT", 19);
   $PropertyDescriptors[8] =
-    CreateItemrefPropertyDescriptor("Patch", "Submitted from patch", !1, !1, \&WineTestBot::Patches::CreatePatches, ["PatchId"]);
+    CreateBasicPropertyDescriptor("Ended", "Ended", !1, !1, "DT", 50);
   $PropertyDescriptors[9] =
+    CreateItemrefPropertyDescriptor("Patch", "Submitted from patch", !1, !1, \&WineTestBot::Patches::CreatePatches, ["PatchId"]);
+  $PropertyDescriptors[10] =
     CreateDetailrefPropertyDescriptor("Steps", "Steps", !1, !1, \&CreateSteps);
 }
 
@@ -575,6 +578,13 @@ sub Check
   }
 
   return undef;
+}
+
+sub FilterNotArchived
+{
+  my $self = shift;
+
+  $self->AddFilter("Archived", [!1]);
 }
 
 1;
