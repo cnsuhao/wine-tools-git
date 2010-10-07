@@ -76,6 +76,22 @@ sub GetDisplayValue
     return $Item->Patch->FromName;
   }
 
+  if ($PropertyDescriptor->GetName() eq "Status" &&
+      $Item->Status eq "completed")
+  {
+    my $Failures = 0;
+    my $Steps = $Item->Steps;
+    foreach my $StepKey (@{$Steps->GetKeys()})
+    {
+      my $Tasks = $Steps->GetItem($StepKey)->Tasks;
+      foreach my $TaskKey (@{$Tasks->GetKeys()})
+      {
+        $Failures += $Tasks->GetItem($TaskKey)->TestFailures;
+      }
+    }
+    return $Item->Status . "/" . $Failures . " failures";
+  }
+
   return $self->SUPER::GetDisplayValue(@_);
 }
 
