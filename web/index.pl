@@ -89,7 +89,7 @@ sub GetDisplayValue
         $Failures += $Tasks->GetItem($TaskKey)->TestFailures;
       }
     }
-    return $Item->Status . "/" . $Failures . " failures";
+    return $Item->Status . " - " . $Failures . " failures";
   }
 
   return $self->SUPER::GetDisplayValue(@_);
