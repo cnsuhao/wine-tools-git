@@ -205,9 +205,22 @@ sub GenerateBody
     if ($Item->Status eq "running" &&
         ($Item->Type eq "single" || $Item->Type eq "suite"))
     {
-      my $URI = "/Screenshot.pl?VMName=" . uri_escape($VM->Name);
-      print "<div class='Screenshot'><img src='" .
-            $self->CGI->escapeHTML($URI) . "' alt='Screenshot' /></div>\n";
+      if (defined($self->GetParam($ScreenshotParamName)))
+      {
+        my $URI = "/Screenshot.pl?VMName=" . uri_escape($VM->Name);
+        print "<div class='Screenshot'><img src='" .
+              $self->CGI->escapeHTML($URI) . "' alt='Screenshot' /></div>\n";
+      }
+      else
+      {
+        my $URI = $ENV{"SCRIPT_NAME"} . "?Key=" . uri_escape($self->{JobId}) .
+                  "&$ScreenshotParamName=1";
+        $URI .= "#k" . uri_escape($Key);
+        print "<div class='TaskMoreInfoLink'><a href='" .
+              $self->CGI->escapeHTML($URI) .
+              "'>Show live screenshot</a></div>";
+        print "\n";
+      }
     }
     elsif (-r "$TaskDir/screenshot.png")
     {
