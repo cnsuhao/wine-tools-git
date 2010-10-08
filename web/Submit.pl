@@ -770,7 +770,14 @@ sub OnSubmit
   my $NewJob = $Jobs->Add();
   $NewJob->User($self->GetCurrentSession()->User);
   $NewJob->Priority(5);
-  $NewJob->Remarks($self->GetParam("Remarks"));
+  if ($self->GetParam("Remarks"))
+  {
+    $NewJob->Remarks($self->GetParam("Remarks"));
+  }
+  else
+  {
+    $NewJob->Remarks($self->GetParam("CmdLineArg"));
+  }
   my $Branch = CreateBranches()->GetItem($self->GetParam("Branch"));
   if (defined($Branch))
   {
