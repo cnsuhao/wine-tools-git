@@ -911,6 +911,22 @@ class DialogResource extends Resource
     function is_hex_different(&$other, $lparam)
     {
         $field = $lparam[0];
+
+        if ($lparam[1] == "EXSTYLE")
+        {
+            if ((($this->header['language'] & 0xff) == 0x01 /* LANG_ARABIC  */) ||
+                (($this->header['language'] & 0xff) == 0x0d /* LANG_HEBREW  */) ||
+                (($this->header['language'] & 0xff) == 0x29 /* LANG_PERSIAN */))
+            {
+                /* WS_EX_LAYOUTRTL (0x400000) should be present */
+                if (($this->$field & 0x400000) == 0)
+                    return TRUE;
+
+                /* We can ignore WS_EX_LAYOUTRTL for RTL languages */
+                return (($this->$field & ~0x400000) != $other->$field);
+            }
+        }
+
         return ($this->$field != $other->$field);
     }
 
