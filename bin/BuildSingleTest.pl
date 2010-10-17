@@ -64,11 +64,11 @@ sub ApplyPatch
     close FH;
   }
 
-  system("patch --strip=$StripLevel --force --directory=$DataDir/wine-git " .
-         "--input=$PatchFile >> $LogDir/BuildSingleTest.log 2>&1");
+  system("git apply --directory=$DataDir/wine-git $PatchFile " .
+         ">> $LogDir/BuildSingleTest.log 2>&1");
   if ($? != 0)
   {
-    LogMsg "Patch failed\n";
+    LogMsg "Patch failed to apply\n";
     return (-1, $NeedMakeInclude);
   }
 
