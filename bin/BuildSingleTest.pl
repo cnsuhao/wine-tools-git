@@ -32,22 +32,19 @@ sub FatalError
 
 sub ApplyPatch
 {
-  my $PatchFile = $_[0];
+  my ($PatchFile, $PatchType, $BaseName) = @_;
 
   my $NeedConfig = 0;
   my $NeedMakeInclude = !1;
   my $NeedBuildDeps = !1;
-  my $StripLevel = 1;
+  my $NeedImplib = !1;
   if (open (FH, "<$PatchFile"))
   {
     my $Line;
     while (defined($Line = <FH>) &&
-           ($NeedConfig == 0 || ! $NeedMakeInclude || $StripLevel == 1))
+           ($NeedConfig == 0 || ! $NeedMakeInclude || ! $NeedBuildDeps ||
+            ! $NeedImplib))
     {
-      if ($Line =~ m/RCS file|^\+\+\+.*working copy/)
-      {
-        $StripLevel = 0;
-      }
       if ($Line =~ m=tests/Makefile\.in=)
       {
         $NeedConfig = 1;
@@ -59,6 +56,10 @@ sub ApplyPatch
       elsif ($Line =~ m=.spec=)
       {
         $NeedBuildDeps = 1;
+      }
+      elsif ($PatchType eq "dlls" && $Line =~ m=$BaseName/Makefile\.in=)
+      {
+        $NeedImplib = 1;
       }
     }
     close FH;
@@ -72,16 +73,17 @@ sub ApplyPatch
     return (-1, $NeedMakeInclude);
   }
 
-  return ($NeedConfig, $NeedMakeInclude, $NeedBuildDeps);
+  return ($NeedConfig, $NeedMakeInclude, $NeedBuildDeps, $NeedImplib);
 }
 
 sub BuildTestExecutable
 {
   my ($BaseName, $PatchType, $Bits, $NeedConfig, $NeedMakeInclude,
-      $NeedBuildDeps) = @_;
+      $NeedBuildDeps, $NeedImplib) = @_;
 
   if ($NeedMakeInclude)
   {
+    LogMsg "Performing reconfig in include dir\n";
     system("cd $DataDir/build-mingw${Bits}; ./config.status --file include/Makefile:Make.vars.in:include/Makefile.in >> $LogDir/BuildSingleTest.log 2>&1");
     if ($? != 0)
     {
@@ -98,8 +100,28 @@ sub BuildTestExecutable
     }
   }
 
+  if ($NeedImplib)
+  {
+    LogMsg "Rebuilding $BaseName import lib\n";
+    system("cd $DataDir/build-mingw${Bits}; ./config.status --file $PatchType/$BaseName/Makefile:Make.vars.in:$PatchType/$BaseName/Makefile.in >> $LogDir/BuildSingleTest.log 2>&1");
+    if ($? != 0)
+    {
+      LogMsg "Unable to regenerate $PatchType/$BaseName/Makefile\n";
+    }
+    else
+    {
+      system("make -C $DataDir/build-mingw${Bits}/$PatchType/$BaseName " .
+             "lib$BaseName.a >> $LogDir/BuildSingleTest.log 2>&1");
+      if ($? != 0)
+      {
+        LogMsg "Make of import library failed\n";
+      }
+    }
+  }
+
   if ($NeedConfig)
   {
+    LogMsg "Performing tests reconfig\n";
     system("cd $DataDir/build-mingw${Bits}; ./config.status --file $PatchType/$BaseName/tests/Makefile:Make.vars.in:$PatchType/$BaseName/tests/Makefile.in >> $LogDir/BuildSingleTest.log 2>&1");
     if ($? != 0)
     {
@@ -110,6 +132,7 @@ sub BuildTestExecutable
 
   if ($NeedBuildDeps)
   {
+    LogMsg "Making build dependencies\n";
     system("cd $DataDir/build-mingw${Bits}; make __builddeps__ >> $LogDir/BuildSingleTest.log 2>&1");
     if ($? != 0)
     {
@@ -127,6 +150,7 @@ sub BuildTestExecutable
   $TestExecutable .= "_test.exe";
   unlink($TestExecutable);
  
+  LogMsg "Making test executable\n";
   system("make -C $TestsDir >> $LogDir/BuildSingleTest.log 2>&1");
   if ($? != 0)
   {
@@ -216,19 +240,22 @@ else
   FatalError "Invalid number of bits $BitIndicators\n";
 }
 
-my ($NeedConfig, $NeedMakeInclude, $NeedBuildDeps) = ApplyPatch($PatchFile);
+my ($NeedConfig, $NeedMakeInclude, $NeedBuildDeps, $NeedImplib) = 
+  ApplyPatch($PatchFile, $PatchType, $BaseName);
 if ($NeedConfig < 0)
 {
   exit(1);
 }
 
 if ($Run32 && ! BuildTestExecutable($BaseName, $PatchType, 32, 0 < $NeedConfig,
-                                    $NeedMakeInclude, $NeedBuildDeps))
+                                    $NeedMakeInclude, $NeedBuildDeps,
+                                    $NeedImplib))
 {
   exit(1);
 }
 if ($Run64 && ! BuildTestExecutable($BaseName, $PatchType, 64, 0 < $NeedConfig,
-                                    $NeedMakeInclude, $NeedBuildDeps))
+                                    $NeedMakeInclude, $NeedBuildDeps,
+                                    $NeedImplib))
 {
   exit(1);
 }
