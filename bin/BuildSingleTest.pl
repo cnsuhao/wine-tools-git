@@ -65,7 +65,8 @@ sub ApplyPatch
     close FH;
   }
 
-  system("git apply --directory=$DataDir/wine-git $PatchFile " .
+  LogMsg "Applying patch\n";
+  system("git apply --verbose --directory=$DataDir/wine-git $PatchFile " .
          ">> $LogDir/BuildSingleTest.log 2>&1");
   if ($? != 0)
   {
