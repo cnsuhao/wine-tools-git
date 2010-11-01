@@ -38,6 +38,7 @@ my %status_descr =
  "split"      => "Needs splitting",
  "depend"     => "Dependency",
  "superseded" => "Superseded",
+ "sequence"   => "Bad sequence",
  "testcase"   => "Needs tests",
  "testfail"   => "Test failure",
 );
@@ -50,6 +51,7 @@ my @legend =
  [ "committed",  "<ul><li>You have done everything right; congratulations!</li>" .
                  "<li>You screwed up but AJ missed it, send a fix before someone notices ;-)</li></ul>" ],
  [ "depend",     "<ul><li>The patch is part of a series in which a previous patch hasn't been applied. Resend when the dependent patch is fixed.</li></ul>" ],
+ [ "sequence",   "<ul><li>The patch is part of a series but it's not correctly numbered. Resend the series with correct sequence numbers to enable the <a href=\"http://testbot.winehq.org/\">testbot</a> to figure it out.</li></ul>" ],
  [ "superseded", "<ul><li>An updated version of the patch has been submitted.</li>" .
                  "<li>Someone else fixed the problem already.</li></ul>" ],
  [ "testcase",   "<ul><li>You need to write some test cases demonstrating that the patch is correct.</li></ul>" ],
