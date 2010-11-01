@@ -108,7 +108,8 @@ sub CountFailures
     {
       $Failures += $1;
     }
-    elsif ($Line =~ m/ done \(-/ || $Line =~ m/ done \(258\)/)
+    elsif ($Line =~ m/ done \(258\)/ ||
+           $Line =~ m/: unhandled exception [0-9a-fA-F]{8} at /)
     {
       $Failures++;
     }

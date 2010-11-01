@@ -156,7 +156,9 @@ sub CompareLogs
     {
       foreach my $Line ($Diff->Items(2))
       {
-        if ($Line =~ m/: Test failed: / || $Line =~ m/Timeout/i)
+        if ($Line =~ m/: Test failed: / || 
+            $Line =~ m/: unhandled exception [0-9a-fA-F]{8} at / ||
+            $Line =~ m/Timeout/i)
         {
           $Messages .= "$Line\n";
         }
@@ -180,7 +182,7 @@ sub SendLog
   my @SortedKeys = sort @{$StepsTasks->GetKeys()};
 
   open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
-  print SENDMAIL "From: <$RobotEMail> (Marvin)\n";
+  print SENDMAIL "From: Marvin <$RobotEMail>\n";
   print SENDMAIL "To: $To\n";
   my $Subject = "TestBot job " . $Job->Id . " results";
   my $Description = $Job->GetDescription();
@@ -237,19 +239,15 @@ EOF
         {
           $CurrentDll = $1;
         }
-        if ($Line =~ m/: Test failed: / || $Line =~ m/ done \(-/ ||
-            $Line =~ m/ done \(258\)/)
+        if ($Line =~ m/: Test failed: / || $Line =~ m/ done \(258\)/ ||
+            $Line =~ m/: unhandled exception [0-9a-fA-F]{8} at /)
         {
           if ($PrintedDll ne $CurrentDll)
           {
             print SENDMAIL "\n$CurrentDll:\n";
             $PrintedDll = $CurrentDll;
           }
-          if ($Line =~ m/^[^:]+:([^ ]+) done \(-/)
-          {
-            print SENDMAIL "$1: Crashed\n";
-          }
-          elsif ($Line =~ m/^[^:]+:([^ ]+) done \(258\)/)
+          if ($Line =~ m/^[^:]+:([^ ]+) done \(258\)/)
           {
             print SENDMAIL "$1: Timeout\n";
           }
@@ -419,7 +417,7 @@ EOF
   if ($Messages)
   {
     open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
-    print SENDMAIL "From: <$RobotEMail> (Marvin)\n";
+    print SENDMAIL "From: Marvin <$RobotEMail>\n";
     print SENDMAIL "To: $To\n";
     print SENDMAIL "Cc: wine-devel\@winehq.org\n";
     print SENDMAIL "Subject: Re: ", $Job->Patch->Subject, "\n";
@@ -444,7 +442,7 @@ EOF
   {
     my $Patch = $Job->Patch;
     open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
-    print SENDMAIL "From: <$RobotEMail> (Marvin)\n";
+    print SENDMAIL "From: Marvin <$RobotEMail>\n";
     print SENDMAIL "To: $PatchResultsEMail\n";
     print SENDMAIL "X-TestBot-Results: ", $Patch->Id,
           ($Messages ? " failed\n" : " passed\n");

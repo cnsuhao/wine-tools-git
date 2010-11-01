@@ -275,6 +275,7 @@ sub GenerateBody
       my $First = 1;
       my $CurrentDll = "";
       my $PrintedDll = "";
+      my $Crashed = !1;
       my $Line;
       while (defined($Line = <LOGFILE>))
       {
@@ -284,8 +285,9 @@ sub GenerateBody
         {
           $CurrentDll = $1;
         }
-        if ($FullLog || $Line =~ m/: Test failed: / || $Line =~ m/ done \(-/ ||
-            $Line =~ m/ done \(258\)/)
+        if ($FullLog || $Line =~ m/: Test failed: / ||
+            $Line =~ m/ done \(258\)/ ||
+            $Line =~ m/: unhandled exception [0-9a-fA-F]{8} at /)
         {
           if ($PrintedDll ne $CurrentDll && ! $FullLog)
           {
@@ -305,11 +307,11 @@ sub GenerateBody
             print "<pre><code>";
             $First = !1;
           }
-          if (! $FullLog && $Line =~ m/^[^:]+:([^ ]+) done \(-/)
+          if ($Line =~ m/: unhandled exception [0-9a-fA-F]{8} at /)
           {
-            print "$1: Crashed\n";
+            $Crashed = 1;
           }
-          elsif (! $FullLog && $Line =~ m/^[^:]+:([^ ]+) done \(258\)/)
+          if (! $FullLog && $Line =~ m/^[^:]+:([^ ]+) done \(258\)/)
           {
             print "$1: Timeout\n";
           }
