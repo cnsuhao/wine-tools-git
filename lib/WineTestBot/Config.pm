@@ -34,8 +34,10 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
              $DbPassword $MaxRevertingVMs $MaxRunningVMs $MaxExtraPoweredOnVms $SleepAfterRevert
              $AdminEMail $RobotEMail $SuiteTimeout $SingleTimeout
              $BuildTimeout $ReconfigTimeout $OverheadTimeout $TagPrefix
-             $ProjectName $PatchesMailingList $PatchResultsEMail);
-
+             $ProjectName $PatchesMailingList $PatchResultsEMail $LDAPServer
+             $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter
+             $LDAPRealNameAttribute $LDAPEMailAttribute $JobPurgeDays
+             $JobArchiveDays);
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -46,7 +48,8 @@ require Exporter;
              $SingleTimeout $BuildTimeout $ReconfigTimeout $OverheadTimeout
              $TagPrefix $ProjectName $PatchesMailingList $PatchResultsEMail
              $LDAPServer $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter
-             $LDAPRealNameAttribute $LDAPEMailAttribute);
+             $LDAPRealNameAttribute $LDAPEMailAttribute $JobPurgeDays
+             $JobArchiveDays);
 @EXPORT_OK = qw($DbDataSource $DbUsername $DbPassword);
 
 $LogDir = "/var/log/winetestbot";
@@ -68,15 +71,15 @@ $ProjectName = "Wine";
 $PatchesMailingList = "wine-patches";
 $PatchResultsEMail = undef;
 
-my $LDAPServer = undef;
-my $LDAPBindDN = undef;
-my $LDAPSearchBase = undef;
-my $LDAPSearchFilter = undef;
-my $LDAPRealNameAttribute = undef;
-my $LDAPEMailAttribute = undef;
+$LDAPServer = undef;
+$LDAPBindDN = undef;
+$LDAPSearchBase = undef;
+$LDAPSearchFilter = undef;
+$LDAPRealNameAttribute = undef;
+$LDAPEMailAttribute = undef;
 
-my $JobPurgeDays = 7;
-my $JobArchiveDays = 0;
+$JobPurgeDays = 7;
+$JobArchiveDays = 0;
 
 eval 'require "WineTestBot/ConfigLocal.pl";';
 if ($@)
