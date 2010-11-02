@@ -109,6 +109,20 @@ sub ApplyPatch
     $NeedConfigure = 1;
   }
 
+  if ($NeedImplib)
+  {
+    if (open (FH, "<$DataDir/wine-git/$PatchType/$BaseName/Makefile.in"))
+    {
+      $NeedImplib = !1;
+      my $Line;
+      while (defined($Line = <FH>) && ! $NeedImplib)
+      {
+        $NeedImplib = ($Line =~ m/^\s*IMPORTLIB\s*=.*$BaseName/)
+      }
+      close FH;
+    }
+  }
+
   return ($NeedMakefile, $NeedMakeInclude, $NeedBuildDeps, $NeedImplib,
           $NeedConfigure);
 }
@@ -166,7 +180,7 @@ sub BuildTestExecutable
              "lib$BaseName.a >> $LogDir/BuildSingleTest.log 2>&1");
       if ($? != 0)
       {
-        LogMsg "Make of import library failed\n";
+        InfoMsg "Make of import library failed\n";
       }
     }
   }
