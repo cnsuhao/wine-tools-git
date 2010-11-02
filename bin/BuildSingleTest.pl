@@ -294,7 +294,7 @@ else
 
 my ($NeedMakefile, $NeedMakeInclude, $NeedBuildDeps, $NeedImplib,
     $NeedConfigure) = ApplyPatch($PatchFile, $PatchType, $BaseName);
-if ($NeedConfigure < 0)
+if ($NeedMakefile < 0)
 {
   exit(1);
 }
