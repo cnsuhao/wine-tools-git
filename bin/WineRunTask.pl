@@ -253,15 +253,15 @@ if (defined($ErrMessage))
   FatalError "Can't copy TestLauncher to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
-my $Script = "\@cd \\winetest\r\n\@set WINETEST_DEBUG=" . $Step->DebugLevel .
+my $Script = "\@echo off\r\ncd \\winetest\r\nset WINETEST_DEBUG=" . $Step->DebugLevel .
              "\r\n";
 if ($Step->ReportSuccessfulTests)
 {
-  $Script .= "\@set WINETEST_REPORT_SUCCESS=1\r\n";
+  $Script .= "set WINETEST_REPORT_SUCCESS=1\r\n";
 }
 if ($Step->Type eq "single")
 {
-  $Script .= "\@$TestLauncher -t " . $Task->Timeout . " $FileName ";
+  $Script .= "$TestLauncher -t " . $Task->Timeout . " $FileName ";
   my $CmdLineArg = $Task->CmdLineArg;
   if ($CmdLineArg)
   {
@@ -271,7 +271,7 @@ if ($Step->Type eq "single")
 }
 elsif ($Step->Type eq "suite")
 {
-  $Script .= "\@$FileName ";
+  $Script .= "$FileName ";
   my $Tag = lc($TagPrefix) . "-" . lc($VM->Name);
   $Tag =~ s/[^a-zA-Z0-9]/-/g;
   if ($VM->Bits == 64)
@@ -279,11 +279,11 @@ elsif ($Step->Type eq "suite")
     $Tag .= "-" . ($FileType eq "exe64" ? "64" : "32");
   }
   $Script .= "-q -o $RptFileName -t $Tag -m $AdminEMail\r\n" .
-             "\@$FileName -q -s $RptFileName\r\n";
+             "$FileName -q -s $RptFileName\r\n";
 }
 
 # Needed to exit the command prompt on Win9x/WinMe
-$Script .= "\@exit\r\n";
+$Script .= "cls\r\n";
 
 $ErrMessage = $VM->RunScriptInGuestTimeout("", $Script, $Task->Timeout + 15);
 if (defined($ErrMessage))
