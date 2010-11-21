@@ -204,13 +204,26 @@ sub Cancel
       foreach my $TaskKey (@{$Tasks->GetKeys()})
       {
         my $Task = $Tasks->GetItem($TaskKey);
-        $Status = $Task->Status;
-        if ($Status eq "queued")
+        if ($Task->Status eq "queued")
         {
           $Task->Status("skipped");
           $Task->Save();
         }
-        elsif ($Status eq "running")
+      }
+    }
+  }
+
+  foreach my $StepKey (@{$Steps->GetKeys()})
+  {
+    my $Step = $Steps->GetItem($StepKey);
+    my $Status = $Step->Status;
+    if ($Status eq "queued" || $Status eq "running")
+    {
+      my $Tasks = $Step->Tasks;
+      foreach my $TaskKey (@{$Tasks->GetKeys()})
+      {
+        my $Task = $Tasks->GetItem($TaskKey);
+        if ($Task->Status eq "running")
         {
           if (defined($Task->ChildPid))
           {
