@@ -129,7 +129,11 @@ my ($wine, $wine_build, $version, $major, $minor, $plid, $product);
 $box->{data} .= "<h2>Operating system version</h2>\n";
 $box->{data} .= "<table class=\"output\">\n";
 while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
-    $box->{data} .= sprintf "<tr><td>$1</td><td>%s</td></tr>\n", escapeHTML($2);
+    if ($1 eq "URL") {
+        $box->{data} .= sprintf "<tr><td>$1</td><td><a href=\"%s\">%s</a></td></tr>\n", escapeHTML($2), escapeHTML($2);
+    } else {
+        $box->{data} .= sprintf "<tr><td>$1</td><td>%s</td></tr>\n", escapeHTML($2);
+    }
     if      ($1 eq "bRunningUnderWine") {
         $wine = $2;
     } elsif ($1 eq "dwMajorVersion") {
