@@ -64,7 +64,7 @@ my @legend =
  [ "buildfail",  "<ul><li>Syntax error or other compile problem.</li>" .
                  "<li>You forgot to include some changes or new files required for compilation.</li>" .
                  "<li>The patch causes compiler warnings (maintainer mode implies -Werror).</li></ul>" ],
- [ "formatting", "<ul><li>The patch author's name or email address are incorrect or missing.</li>" .
+ [ "formatting", "<ul><li>The patch author's full name or email address are incorrect or missing.</li>" .
                  "<li>Whitespace got mangled in transit.</li>" .
                  "<li>Indentation is messed up (usually from editing with a non-standard tab size).</li>" .
                  "<li>8-bit chars got mangled in transit (usually when sending patches to resource files).</li>" .
