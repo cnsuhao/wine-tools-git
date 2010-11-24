@@ -62,6 +62,9 @@ $WineTestBot::Config::AdminEMail = undef;
 # From address of mails sent by WineTestBot to users
 $WineTestBot::Config::RobotEMail = undef;
 
+# Host name of the web interface
+$WineTestBot::Config::WebHostName = undef;
+
 # Prefix of the tag used for sending winetest reports
 $WineTestBot::Config::TagPrefix = undef;
 

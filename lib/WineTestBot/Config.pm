@@ -37,7 +37,7 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
              $ProjectName $PatchesMailingList $PatchResultsEMail $LDAPServer
              $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter
              $LDAPRealNameAttribute $LDAPEMailAttribute $JobPurgeDays
-             $JobArchiveDays);
+             $JobArchiveDays $WebHostName);
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -49,7 +49,7 @@ require Exporter;
              $TagPrefix $ProjectName $PatchesMailingList $PatchResultsEMail
              $LDAPServer $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter
              $LDAPRealNameAttribute $LDAPEMailAttribute $JobPurgeDays
-             $JobArchiveDays);
+             $JobArchiveDays $WebHostName);
 @EXPORT_OK = qw($DbDataSource $DbUsername $DbPassword);
 
 $LogDir = "/var/log/winetestbot";
@@ -70,6 +70,8 @@ $OverheadTimeout = 3 * 60;
 $ProjectName = "Wine";
 $PatchesMailingList = "wine-patches";
 $PatchResultsEMail = undef;
+
+$WebHostName = undef;
 
 $LDAPServer = undef;
 $LDAPBindDN = undef;

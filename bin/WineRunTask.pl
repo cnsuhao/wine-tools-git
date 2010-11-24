@@ -278,6 +278,12 @@ elsif ($Step->Type eq "suite")
   {
     $Tag .= "-" . ($FileType eq "exe64" ? "64" : "32");
   }
+  if (defined($WebHostName))
+  {
+    my $StepTask = 100 * $StepNo + $TaskNo;
+    $Script .= '-u "http://' . $WebHostName . "/JobDetails.pl?Key=" .
+               $JobId . "&scrshot_" . $StepTask . "=1#k" . $StepTask . '" ';
+  }
   $Script .= "-q -o $RptFileName -t $Tag -m $AdminEMail\r\n" .
              "$FileName -q -s $RptFileName\r\n";
 }
