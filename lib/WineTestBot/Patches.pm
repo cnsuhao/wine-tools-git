@@ -212,6 +212,8 @@ sub Submit
       $Tasks = $NewStep->Tasks;
       $VMs = CreateVMs();
       $VMs->AddFilter("Type", ["base"]);
+      # Don't schedule the 'offline' ones
+      $VMs->AddFilter("Status", ["reverting", "sleeping", "idle", "running", "dirty"]);
       my $Have64VMs = !1;
       my $SortedKeys = $VMs->SortKeysBySortOrder($VMs->GetKeys());
       foreach my $VMKey (@$SortedKeys)
