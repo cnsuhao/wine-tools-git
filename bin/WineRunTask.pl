@@ -34,7 +34,7 @@ sub FatalError
     $Task->Save();
     $Job->UpdateStatus();
 
-    if ($Task->VM->Type eq "extra" || $Task->VM->$Type eq "retired")
+    if ($Task->VM->Type eq "extra" || $Task->VM->Type eq "retired")
     {
       $Task->VM->PowerOff();
     }
