@@ -427,7 +427,7 @@ sub Schedule
     my $VM = $VMs->GetItem($VMKey);
     if (! defined($MaxRevertingVMs) || $RevertingVMs < $MaxRevertingVMs)
     {
-      if ($VM->Type eq "extra")
+      if ($VM->Type eq "extra" || $VM->Type eq "retired")
       {
         if (! defined($MaxExtraPoweredOnVms) || $PoweredOnExtraVMs < $MaxExtraPoweredOnVms)
         {
@@ -448,7 +448,8 @@ sub Schedule
     my $VM = $VMs->GetItem($VMKey);
     if (! defined($DirtyVMsBlockingJobs{$VMKey}) &&
         (! defined($MaxRevertingVMs) || $RevertingVMs < $MaxRevertingVMs) &&
-        $VM->Status eq 'dirty' && $VM->Type ne "extra")
+        $VM->Status eq 'dirty' && $VM->Type ne "extra" &&
+        $VM->Type ne "retired")
     {
       $VM->RunRevert();
       $RevertingVMs++;
