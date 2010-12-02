@@ -45,7 +45,7 @@ ENGINE=InnoDB DEFAULT CHARSET=utf8;
 CREATE TABLE VMs
 (
   Name         VARCHAR(20)      NOT NULL,
-  Type         ENUM('base', 'extra', 'build') NOT NULL,
+  Type         ENUM('base', 'extra', 'build', 'retired') NOT NULL,
   SortOrder    INT(3)           NOT NULL,
   Bits         ENUM('32', '64') NOT NULL,
   Status       ENUM('reverting', 'sleeping', 'idle', 'running', 'dirty', 'offline') NOT NULL,

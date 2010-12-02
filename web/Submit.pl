@@ -230,7 +230,7 @@ sub GenerateFields
       $VMs->AddFilter("Status", ["reverting", "sleeping", "idle", "running", "dirty"]);
       if ($self->{ShowAll})
       {
-        $VMs->AddFilter("Type", ["base", "extra"]);
+        $VMs->AddFilter("Type", ["base", "extra", "retired"]);
       }
       else
       {

@@ -579,7 +579,7 @@ BEGIN
   $PropertyDescriptors[0] =
     CreateBasicPropertyDescriptor("Name", "VM name", 1, 1, "A", 20);
   $PropertyDescriptors[1] =
-    CreateBasicPropertyDescriptor("Type", "Type of VM", !1, 1, "A", 5);
+    CreateBasicPropertyDescriptor("Type", "Type of VM", !1, 1, "A", 7);
   $PropertyDescriptors[2] =
     CreateBasicPropertyDescriptor("SortOrder", "Display order", !1, 1, "N", 3);
   $PropertyDescriptors[3] =
@@ -644,7 +644,8 @@ sub CountPoweredOnExtraVMs
     my $VM = $self->GetItem($VMKey);
     my $VMStatus = $VM->Status;
 
-    if ($VM->Type eq "extra" &&
+    if (($VM->Type eq "extra" ||
+         $VM->Type eq "retired") &&
         ($VMStatus eq "reverting" ||
          $VMStatus eq "sleeping" ||
          $VMStatus eq "idle" ||
