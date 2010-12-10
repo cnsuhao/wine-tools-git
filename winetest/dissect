@@ -233,6 +233,10 @@ while ($_ = <IN>) {
     {
         print SUM "- $module - missing - - - - -\n";
     }
+    elsif ($2 eq "skipped")
+    {
+        print SUM "- $module - skipped - - - - -\n";
+    }
 }
 
 /^Test output:/ or mydie "no test header: $_";
@@ -245,13 +249,19 @@ my $testbox;
 while (<IN>) {
     if (!defined $dll) {        # new test
         next if /^\s*$/;
-        m[([_.a-z0-9]+):([_a-z0-9]+) start ([/_.a-z0-9]+) (-|[.0-9a-f]+)\r?$]
+        m[([_.a-z0-9]+):([_a-z0-9]+) (start|skipped) ([/_.a-z0-9]+) (-|[.0-9a-f]+)\r?$]
           or next;
-        ($dll,$unit,$source,$rev) = ($1,$2,$3,$4);
+        ($dll,$unit,$source,$rev) = ($1,$2,$4,$5);
         $testbox = create_box( "$dll:$unit", "testfile", "<a href=\"$gitweb/?a=history;f=$source;hb=$testbuild\">$source</a>" );
         if (defined($dllinfo{$dll}->{version}) && !defined($dllinfo{$dll}->{first}))
         {
             $dllinfo{$dll}->{first} = "$dll:$unit";
+        }
+        if ($3 eq "skipped")
+        {
+            $testbox->{data} .= sprintf "<div class=\"test result skipped\">Skipped by user request.</div>\n";
+            print SUM "- $dll $unit skipped - - - $source $rev\n";
+            $dll = undef;
         }
     } elsif (/^(.*$unit.*: (\d+) tests executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\.)\r?$/) {
         $lines++;
@@ -319,6 +329,10 @@ foreach my $dll (sort keys %dllinfo)
     if ($dllinfo{$dll}->{version} eq "dll is missing")
     {
         $box->{data} .= sprintf "<tr><td>%s</td><td class=\"skipped\">missing</td></tr>\n", escapeHTML($dll);
+    }
+    elsif ($dllinfo{$dll}->{version} eq "skipped")
+    {
+        $box->{data} .= sprintf "<tr><td>%s</td><td class=\"skipped\">skipped by user request</td></tr>\n", escapeHTML($dll);
     }
     elsif ($dllinfo{$dll}->{version} eq "load error 1157")
     {

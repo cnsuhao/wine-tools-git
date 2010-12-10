@@ -144,7 +144,12 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
 
         if ($count eq "missing")
         {
-            $report->{dllmissing}->{$dll} = 1;
+            $report->{dllmissing}->{$dll} = "dll missing";
+            next;
+        }
+        if ($unit eq "-" and $count eq "skipped")
+        {
+            $report->{dllmissing}->{$dll} = "skipped";
             next;
         }
 
@@ -160,6 +165,11 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
             } else {
                 $report->{$testname} = { status => $todos };
             }
+        } elsif ($count eq "skipped") {
+            $report->{$testname} = { status => "skipped",
+                                     count  => [ 1, 1 ],
+                                     skips  => [ 1, 1 ]
+                                   };
         } else {
             $report->{$testname} = { status => "run",
                                      count  => [ $count, $count ],
@@ -199,11 +209,11 @@ sub merge_status($$)
     my ($group_result, $result) = @_;
     if (!defined $group_result->{status}) {
         $group_result->{status} = $result->{status};
-    } elsif ($group_result->{status} eq "dll missing" and
+    } elsif ($group_result->{status} =~ /^(dll missing|skipped)$/ and
              $result->{status} eq "run") {
         $group_result->{status} = "run";
     } elsif ($group_result->{status} eq "run" and
-             $result->{status} eq "dll missing") {
+             $result->{status} =~ /^(dll missing|skipped)$/) {
         ; # Nothing to do
     } elsif ($group_result->{status} ne $result->{status}) {
         $group_result->{status} = "mixed";
@@ -232,7 +242,7 @@ foreach my $group (@groups) {
                 my $filelimit = $report->{filelimit};
                 if (exists $report->{dllmissing}->{$dll}) {
                     # Mark this test as missing because of a missing dll
-                    $report->{$testname} = { status => "dll missing",
+                    $report->{$testname} = { status => $report->{dllmissing}->{$dll},
                                              count  => [ 1, 1 ],
                                              skips  => [ 1, 1 ]
                                            };
@@ -256,6 +266,7 @@ foreach my $group (@groups) {
         }
         $group->{$testname} = $group_result;
         if ($group_result->{status} eq "dll missing" or
+            $group_result->{status} eq "skipped" or
             ($group_result->{status} eq "run" and
              $group_result->{errors}->[1] == 0 and
              $group_result->{todos}->[1] == 0 and
@@ -278,7 +289,7 @@ foreach my $group (@groups) {
         $report->{todos} = 0;
         foreach my $testname (sort keys %alltests) {
             my $result = $report->{$testname};
-            if ($result->{status} !~ /^(?:dll missing|run)$/ or
+            if ($result->{status} !~ /^(?:dll missing|run|skipped)$/ or
                 ($result->{status} eq "run" and
                  $result->{errors}->[1] != 0))
             {
@@ -427,7 +438,7 @@ sub get_result_class($)
         $class .= " also-skip" if ($result->{skips}->[1]);
         return "result $class";
     }
-    if ($result->{status} eq "dll missing")
+    if ($result->{status} eq "dll missing" or $result->{status} eq "skipped")
     {
         return "result pass also-skip";
     }
@@ -455,6 +466,7 @@ sub get_result_title($$)
         $dll.=".dll" if ($dll !~ /\./);
         return "No tests run as $dll is not present on this system";
     }
+    if ($result->{status} eq "skipped") { return "Test skipped by user request"; }
     if ($result->{status} eq "winetest crash") { return "Test did not run as winetest crashed"; }
     if ($result->{status} eq "filelimit") { return "Test is missing because of a partial report file"; }
     if ($result->{status} eq "missing") { return "Test did not run for an unknown reason"; }
@@ -525,6 +537,10 @@ sub singletest($$$) {
     elsif ($status eq "missing")
     {
         $msg = "not&nbsp;run";
+    }
+    elsif ($status eq "skipped")
+    {
+        $msg = "skipped";
     }
     elsif ($status eq "mixed")
     {
