@@ -184,6 +184,24 @@ sub GetItem
   return $Item;
 }
 
+sub ItemExists
+{
+  my $self = shift;
+  my $Key = $_[0];
+
+  if (! defined($Key))
+  {
+    return !1;
+  }
+
+  if (! $self->{Loaded})
+  {
+    $self->Load();
+  }
+
+  return exists($self->{Items}{$Key});
+}
+
 sub GetItems
 {
   my $self = shift;

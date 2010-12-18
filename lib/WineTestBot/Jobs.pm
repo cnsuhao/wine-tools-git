@@ -351,12 +351,15 @@ sub CompareTaskStatus
   return $Compare;
 }
 
-sub Schedule
+sub ScheduleOnHost
 {
   my $self = shift;
+  my $Host = $_[0];
 
-  my ($RevertingVMs, $RunningVMs) = CreateVMs()->CountRevertingRunningVMs();
-  my $PoweredOnExtraVMs = CreateVMs()->CountPoweredOnExtraVMs();
+  my $HostVMs = CreateVMs();
+  $HostVMs->FilterHost([$Host]);
+  my ($RevertingVMs, $RunningVMs) = $HostVMs->CountRevertingRunningVMs();
+  my $PoweredOnExtraVMs = $HostVMs->CountPoweredOnExtraVMs();
   my %DirtyVMsBlockingJobs;
 
   $self->AddFilter("Status", ["queued", "running"]);
@@ -378,7 +381,8 @@ sub Schedule
       my @SortedTasks = sort CompareTaskStatus @{$Tasks->GetItems()};
       foreach my $Task (@SortedTasks)
       {
-        if ($Task->Status eq "queued")
+        if ($Task->Status eq "queued" &&
+            $HostVMs->ItemExists($Task->VM->GetKey()))
         {
           if ($Task->VM->Status eq "idle" &&
               (! defined($MaxRunningVMs) || $RunningVMs < $MaxRunningVMs) &&
@@ -419,12 +423,11 @@ sub Schedule
     return undef;
   }
 
-  my $VMs = CreateVMs();
   my @DirtyVMsByIndex = sort { $DirtyVMsBlockingJobs{$a} <=> $DirtyVMsBlockingJobs{$b} } keys %DirtyVMsBlockingJobs;
   my $VMKey;
   foreach $VMKey (@DirtyVMsByIndex)
   {
-    my $VM = $VMs->GetItem($VMKey);
+    my $VM = $HostVMs->GetItem($VMKey);
     if (! defined($MaxRevertingVMs) || $RevertingVMs < $MaxRevertingVMs)
     {
       if ($VM->Type eq "extra" || $VM->Type eq "retired")
@@ -443,9 +446,9 @@ sub Schedule
       }
     }
   }
-  foreach $VMKey (@{$VMs->GetKeys()})
+  foreach $VMKey (@{$HostVMs->GetKeys()})
   {
-    my $VM = $VMs->GetItem($VMKey);
+    my $VM = $HostVMs->GetItem($VMKey);
     if (! defined($DirtyVMsBlockingJobs{$VMKey}) &&
         (! defined($MaxRevertingVMs) || $RevertingVMs < $MaxRevertingVMs) &&
         $VM->Status eq 'dirty' && $VM->Type ne "extra" &&
@@ -457,6 +460,29 @@ sub Schedule
   }
 
   return undef;
+}
+
+sub Schedule
+{
+  my $self = shift;
+
+  my $VMs = CreateVMs();
+  my %Hosts;
+  foreach my $VMKey (@{$VMs->GetKeys()})
+  {
+    $Hosts{$VMs->GetItem($VMKey)->VmxHost} = 1;
+  }
+  my $ErrMessage;
+  foreach my $Host (keys %Hosts)
+  {
+    my $HostErrMessage = $self->ScheduleOnHost($Host);
+    if (! defined($ErrMessage))
+    {
+      $ErrMessage = $HostErrMessage;
+    }
+  }
+
+  return $ErrMessage;
 }
 
 sub Check

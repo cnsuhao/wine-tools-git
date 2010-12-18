@@ -673,4 +673,12 @@ sub SortKeysBySortOrder
   return \@SortedKeys;
 }
 
+sub FilterHost
+{
+  my $self = shift;
+  my $Host = $_[0];
+
+  $self->AddFilter("VmxHost", $Host);
+}
+
 1;
