@@ -253,12 +253,20 @@ if (defined($ErrMessage))
   FatalError "Can't copy TestLauncher to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
+$ErrMessage = $VM->CopyFileFromHostToGuest("$BinDir/GenFixEnv.exe",
+                                           "C:\\winetest\\GenFixEnv.exe");
+if (defined($ErrMessage))
+{
+  FatalError "Can't copy GenFixEnv to VM: $ErrMessage\n",
+             $FullErrFileName, $Job, $Step, $Task;
+}
 my $Script = "\@echo off\r\ncd \\winetest\r\nset WINETEST_DEBUG=" . $Step->DebugLevel .
              "\r\n";
 if ($Step->ReportSuccessfulTests)
 {
   $Script .= "set WINETEST_REPORT_SUCCESS=1\r\n";
 }
+$Script .= "GenFixEnv FixEnv.bat\r\ncall FixEnv.bat\r\ndel FixEnv.bat\r\n";
 if ($Step->Type eq "single")
 {
   $Script .= "$TestLauncher -t " . $Task->Timeout . " $FileName ";
