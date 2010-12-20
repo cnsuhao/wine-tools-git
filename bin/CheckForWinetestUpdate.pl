@@ -32,7 +32,7 @@ sub AddJob
   my $Jobs = WineTestBot::Jobs->CreateJobs();
   my $NewJob = $Jobs->Add();
   $NewJob->User(WineTestBot::Users->GetBatchUser());
-  $NewJob->Priority($BaseJob && $Bits == 32 ? 1 : 7);
+  $NewJob->Priority($BaseJob && $Bits == 32 ? 6 : 7);
   $NewJob->Remarks("http://test.winehq.org job - " .
                    ($Bits == 32 ? ($BaseJob ? "base" : "other") : "64-bit") .
                    " VMs");
@@ -209,6 +209,7 @@ utime time, $Response->last_modified, $LatestFileName;
 
 if ($Bits == 32)
 {
+  AddReconfigJob();
   AddJob(1, $FileNameRandomPart, $Bits);
   
   $FileNameRandomPart = GenerateRandomString(32);
@@ -225,8 +226,6 @@ if ($Bits == 32)
   {
     AddJob(!1, $FileNameRandomPart, $Bits);
   }
-
-  AddReconfigJob();
 }
 else
 {
