@@ -39,7 +39,16 @@ static void GenerateFromReg(FILE *BatchFile)
             Type = REG_SZ;
          }
          if (Type == REG_SZ)
-            fprintf(BatchFile, "SET \"%s=%s\"\n", ValueName, Data);
+         {
+            if (strcmp(ValueName, "TEMP") != 0 && strcmp(ValueName, "TMP") != 0)
+               fprintf(BatchFile, "SET \"%s=%s\"\n", ValueName, Data);
+            else
+            {
+               char Short[sizeof(Data)];
+               GetShortPathNameA(Data, Short, sizeof(Short));
+               fprintf(BatchFile, "SET \"%s=%s\"\n", ValueName, Short);
+            }
+         }
       }
       Index++;
    }
@@ -98,31 +107,3 @@ int main(int argc, char *argv[])
 
    return 0;
 }
-
-#ifdef TODO
-static void init_functionpointers(void)
-{
-}
-
-static void test_Predefined(void)
-{
-    /*
-     * If anything fails here, your test environment is probably not set up
-     * correctly.
-     */
-
-    /*
-     * Enumerate all values in HKCU\Environment and verify that environment
-     * variables with those names/values are present.
-     */
-
-    /*
-     * Check value of %USERPROFILE%, should be same as GetUserProfileDirectory()
-     */
-    if (pOpenProcessToken == NULL || pGetUserProfileDirectoryA == NULL)
-    {
-        skip("Skipping USERPROFILE check\n");
-        return;
-    }
-}
-#endif
