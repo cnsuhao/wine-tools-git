@@ -84,16 +84,12 @@ static void GenerateUserProfile(FILE *BatchFile)
    CloseHandle(Token);
 }
 
-static void GenerateLocalAppData(FILE *BatchFile)
+static void GenerateCSIDL(FILE *BatchFile)
 {
-   char LocalAppData[_MAX_PATH]; 
+   char Path[_MAX_PATH]; 
    HMODULE Mod;
    HRESULT (WINAPI *pSHGetFolderPathA)(HWND, int, HANDLE, DWORD, LPSTR);
    HRESULT Res;
-
-   if (GetEnvironmentVariable("LOCALAPPDATA", LocalAppData,
-                              sizeof(LocalAppData) != 0))
-      return;
 
    Mod = LoadLibraryA("shell32.dll");
    pSHGetFolderPathA = (void *) GetProcAddress(Mod, "SHGetFolderPathA");
@@ -105,10 +101,20 @@ static void GenerateLocalAppData(FILE *BatchFile)
    }
    if (pSHGetFolderPathA != NULL)
    {
-      Res = pSHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL,
-                              SHGFP_TYPE_CURRENT, LocalAppData);
-      if (SUCCEEDED(Res))
-         fprintf(BatchFile, "SET \"LOCALAPPDATA=%s\"\n", LocalAppData);
+      if (GetEnvironmentVariable("APPDATA", Path, sizeof(Path)) == 0)
+      {
+         Res = pSHGetFolderPathA(NULL, CSIDL_APPDATA, NULL,
+                                 SHGFP_TYPE_CURRENT, Path);
+         if (SUCCEEDED(Res))
+            fprintf(BatchFile, "SET \"APPDATA=%s\"\n", Path);
+      }
+      if (GetEnvironmentVariable("LOCALAPPDATA", Path, sizeof(Path)) == 0)
+      {
+         Res = pSHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL,
+                                 SHGFP_TYPE_CURRENT, Path);
+         if (SUCCEEDED(Res))
+            fprintf(BatchFile, "SET \"LOCALAPPDATA=%s\"\n", Path);
+      }
    }
    FreeLibrary(Mod);
 }
@@ -132,7 +138,7 @@ int main(int argc, char *argv[])
    fprintf(BatchFile, "@echo off\n");
    GenerateFromReg(BatchFile);
    GenerateUserProfile(BatchFile);
-   GenerateLocalAppData(BatchFile);
+   GenerateCSIDL(BatchFile);
 
    fclose(BatchFile);
 
