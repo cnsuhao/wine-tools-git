@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <windows.h>
+#include <shlobj.h>
 
 static void GenerateFromReg(FILE *BatchFile)
 {
@@ -83,6 +84,35 @@ static void GenerateUserProfile(FILE *BatchFile)
    CloseHandle(Token);
 }
 
+static void GenerateLocalAppData(FILE *BatchFile)
+{
+   char LocalAppData[_MAX_PATH]; 
+   HMODULE Mod;
+   HRESULT (WINAPI *pSHGetFolderPathA)(HWND, int, HANDLE, DWORD, LPSTR);
+   HRESULT Res;
+
+   if (GetEnvironmentVariable("LOCALAPPDATA", LocalAppData,
+                              sizeof(LocalAppData) != 0))
+      return;
+
+   Mod = LoadLibraryA("shell32.dll");
+   pSHGetFolderPathA = (void *) GetProcAddress(Mod, "SHGetFolderPathA");
+   if (pSHGetFolderPathA == NULL)
+   {
+      FreeLibrary(Mod);
+      Mod = LoadLibraryA("shfolder.dll");
+      pSHGetFolderPathA = (void *) GetProcAddress(Mod, "SHGetFolderPathA");
+   }
+   if (pSHGetFolderPathA != NULL)
+   {
+      Res = pSHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL,
+                              SHGFP_TYPE_CURRENT, LocalAppData);
+      if (SUCCEEDED(Res))
+         fprintf(BatchFile, "SET \"LOCALAPPDATA=%s\"\n", LocalAppData);
+   }
+   FreeLibrary(Mod);
+}
+
 int main(int argc, char *argv[])
 {
    FILE *BatchFile;
@@ -102,6 +132,7 @@ int main(int argc, char *argv[])
    fprintf(BatchFile, "@echo off\n");
    GenerateFromReg(BatchFile);
    GenerateUserProfile(BatchFile);
+   GenerateLocalAppData(BatchFile);
 
    fclose(BatchFile);
 
