@@ -62,7 +62,7 @@ $MaxExtraPoweredOnVms = 2;
 $SleepAfterRevert = 30;
 
 $SuiteTimeout = 30 * 60;
-$SingleTimeout = 5 * 60;
+$SingleTimeout = 2 * 60;
 $BuildTimeout = 5 * 60;
 $ReconfigTimeout = 45 * 60;
 $OverheadTimeout = 3 * 60;
