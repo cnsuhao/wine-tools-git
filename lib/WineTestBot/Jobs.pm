@@ -384,13 +384,14 @@ sub ScheduleOnHost
         if ($Task->Status eq "queued" &&
             $HostVMs->ItemExists($Task->VM->GetKey()))
         {
-          if ($Task->VM->Status eq "idle" &&
+          my $VM = $HostVMs->GetItem($Task->VM->GetKey());
+          if ($VM->Status eq "idle" &&
               (! defined($MaxRunningVMs) || $RunningVMs < $MaxRunningVMs) &&
               $RevertingVMs == 0 &&
               (! defined($RevertPriority) || $Job->Priority <= $RevertPriority))
           {
-            $Task->VM->Status("running");
-            my ($ErrProperty, $ErrMessage) = $Task->VM->Save();
+            $VM->Status("running");
+            my ($ErrProperty, $ErrMessage) = $HostVMs->Save();
             if (defined($ErrMessage))
             {
               return $ErrMessage;
@@ -403,9 +404,9 @@ sub ScheduleOnHost
             $Job->UpdateStatus;
             $RunningVMs++;
           }
-          elsif ($Task->VM->Status eq "dirty")
+          elsif ($VM->Status eq "dirty")
           {
-            my $VMKey = $Task->VM->GetKey();
+            my $VMKey = $VM->GetKey();
             if (! defined($DirtyVMsBlockingJobs{$VMKey}) ||
                 $Job->Priority < $DirtyVMsBlockingJobs{$VMKey})
             {
