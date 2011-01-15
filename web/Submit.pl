@@ -649,7 +649,7 @@ sub OnPage1Next
         $FileType ne "zip")
     {
       $self->{ErrField} = "File";
-      $self->{ErrMessage} = "Unrecognized file typea";
+      $self->{ErrMessage} = "Unrecognized file type";
       return !1;
     }
 
