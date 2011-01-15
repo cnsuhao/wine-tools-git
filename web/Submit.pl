@@ -553,6 +553,9 @@ sub DetermineFileType
     if (open (FH, "<$FileName"))
     {
       my $Line;
+      my $PatchFound = !1;
+      my $PrevPlus = !1;
+      my $PrevMinus = !1;
       while (defined($Line = <FH>))
       {
         if ($Line =~ m/^\+\+\+ .*\/(dlls|programs)\/([^\/]+)\/tests\/([^\/\s]+)/)
@@ -587,8 +590,36 @@ sub DetermineFileType
             }
           }
         }
+        elsif ($Line =~ m/^\+\+\+ /)
+        {
+          if ($PrevMinus)
+          {
+            $PatchFound = 1;
+            $PrevMinus = !1;
+          }
+          $PrevPlus = 1;
+        }
+        elsif ($Line =~ m/^--- /)
+        {
+          if ($PrevPlus)
+          {
+            $PatchFound = 1;
+            $PrevPlus = !1;
+          }
+          $PrevMinus = 1;
+        }
+        else
+        {
+          $PrevPlus = !1;
+          $PrevMinus = !1;
+        }
       }
       close FH;
+
+      if ($FileType eq "unknown" && $PatchFound)
+      {
+        $ErrMessage = "Patch doesn't affect tests";
+      }
     }
   }
 
