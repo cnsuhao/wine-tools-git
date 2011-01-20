@@ -25,12 +25,8 @@ function create_resfiles($dir, $files)
             continue;
         }
 
-        if (preg_match("/.mc$/", $file))
-        {
-            $file .= ".rc";
-        }
-        $targets .= preg_replace("/\.rc$/", ".res", $file). " ";
-        $objs .= "$objdir/$dir/" . preg_replace("/\.rc$/", ".res", $file) . " ";
+        $targets .= preg_replace("/\.[mr]c$/", ".res", $file). " ";
+        $objs .= "$objdir/$dir/" . preg_replace("/\.[mr]c$/", ".res", $file) . " ";
     }
     if ($targets == "")
         return;
