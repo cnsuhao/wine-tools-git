@@ -27,15 +27,15 @@ WineTestBot::PendingPatchSets - PendingPatchSet collection
 
 package WineTestBot::PendingPatchSet;
 
-use ObjectModel::Item;
 use WineTestBot::Config;
 use WineTestBot::Patches;
 use WineTestBot::Utils;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT);
 
 require Exporter;
-@ISA = qw(ObjectModel::Item Exporter);
+@ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
 sub CheckSubsetComplete
 {
@@ -111,17 +111,17 @@ sub Submit
 package WineTestBot::PendingPatchSets;
 
 use ObjectModel::BasicPropertyDescriptor;
-use ObjectModel::Collection;
 use ObjectModel::DetailrefPropertyDescriptor;
 use WineTestBot::Config;
 use WineTestBot::PendingPatches;
 use WineTestBot::Patches;
 use WineTestBot::Utils;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT @PropertyDescriptors);
 
 require Exporter;
-@ISA = qw(ObjectModel::Collection Exporter);
+@ISA = qw(WineTestBot::WineTestBotCollection Exporter);
 @EXPORT = qw(&CreatePendingPatchSets);
 
 my @PropertyDescriptors;

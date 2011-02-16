@@ -28,16 +28,16 @@ package WineTestBot::User;
 
 use Digest::SHA1 qw(sha1_hex);
 use URI::Escape;
-use ObjectModel::Item;
 use WineTestBot::Config;
 use WineTestBot::Roles;
 use WineTestBot::UserRoles;
 use WineTestBot::Utils;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw (@ISA @EXPORT);
 
 require Exporter;
-@ISA = qw(ObjectModel::Item Exporter);
+@ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
 sub InitializeNew
 {
@@ -301,16 +301,16 @@ package WineTestBot::Users;
 
 use Net::LDAP;
 use ObjectModel::BasicPropertyDescriptor;
-use ObjectModel::Collection;
 use ObjectModel::DetailrefPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
 use WineTestBot::Config;
 use WineTestBot::UserRoles;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw (@ISA @EXPORT @PropertyDescriptors $CurrentUser);
 
 require Exporter;
-@ISA = qw(ObjectModel::Collection Exporter);
+@ISA = qw(WineTestBot::WineTestBotCollection Exporter);
 @EXPORT = qw(&CreateUsers &SetCurrentUser &GetCurrentUser &GetBatchUser
              &Authenticate);
 

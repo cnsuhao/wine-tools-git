@@ -545,8 +545,9 @@ sub PrepareForFork
 sub UseDBIBackEnd
 {
   my $class = shift;
+  my $DbSelector = shift;
 
-  $ObjectModel::BackEnd::ActiveBackEnd = $class->new();
-  $ObjectModel::BackEnd::ActiveBackEnd->{ConnectArgs} = \@_;
+  $ObjectModel::BackEnd::ActiveBackEnds{$DbSelector} = $class->new();
+  $ObjectModel::BackEnd::ActiveBackEnds{$DbSelector}->{ConnectArgs} = \@_;
 }
 1;

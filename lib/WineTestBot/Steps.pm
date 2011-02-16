@@ -27,13 +27,13 @@ WineTestBot::Steps - Job step collection
 package WineTestBot::Step;
 
 use File::Copy;
-use ObjectModel::Item;
 use WineTestBot::Config;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT);
 
 require Exporter;
-@ISA = qw(ObjectModel::Item Exporter);
+@ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
 sub InitializeNew
 {
@@ -88,15 +88,15 @@ sub HandleStaging
 package WineTestBot::Steps;
 
 use ObjectModel::BasicPropertyDescriptor;
-use ObjectModel::Collection;
 use ObjectModel::DetailrefPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
 use WineTestBot::Tasks;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT @PropertyDescriptors);
 
 require Exporter;
-@ISA = qw(ObjectModel::Collection Exporter);
+@ISA = qw(WineTestBot::WineTestBotCollection Exporter);
 @EXPORT = qw(&CreateSteps);
 
 BEGIN

@@ -27,14 +27,14 @@ WineTestBot::Jobs - Job collection
 
 package WineTestBot::Job;
 
-use ObjectModel::Item;
 use WineTestBot::Branches;
 use WineTestBot::Engine::Notify;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT);
 
 require Exporter;
-@ISA = qw(ObjectModel::Item Exporter);
+@ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
 sub _initialize
 {
@@ -271,7 +271,6 @@ package WineTestBot::Jobs;
 
 use POSIX qw(:errno_h);
 use ObjectModel::BasicPropertyDescriptor;
-use ObjectModel::Collection;
 use ObjectModel::DetailrefPropertyDescriptor;
 use ObjectModel::ItemrefPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
@@ -282,11 +281,12 @@ use WineTestBot::Patches;
 use WineTestBot::Steps;
 use WineTestBot::Users;
 use WineTestBot::VMs;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT @PropertyDescriptors);
 
 require Exporter;
-@ISA = qw(ObjectModel::Collection Exporter);
+@ISA = qw(WineTestBot::WineTestBotCollection Exporter);
 @EXPORT = qw(&CreateJobs);
 
 my @PropertyDescriptors;

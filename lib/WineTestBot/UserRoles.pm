@@ -26,24 +26,24 @@ WineTestBot::UserRoles - User role collection
 
 package WineTestBot::UserRole;
 
-use ObjectModel::Item;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT);
 
 require Exporter;
-@ISA = qw(ObjectModel::Item Exporter);
+@ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
 package WineTestBot::UserRoles;
 
-use ObjectModel::Collection;
 use ObjectModel::ItemrefPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
 use WineTestBot::Roles;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT @PropertyDescriptors);
 
 require Exporter;
-@ISA = qw(ObjectModel::Collection Exporter);
+@ISA = qw(WineTestBot::WineTestBotCollection Exporter);
 @EXPORT = qw(&CreateUserRoles);
 
 BEGIN

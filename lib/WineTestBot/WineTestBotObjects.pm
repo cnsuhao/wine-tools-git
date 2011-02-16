@@ -1,6 +1,6 @@
-# Base class for data storage back ends
+# Base collection and item classes for WineTestBot
 #
-# Copyright 2009 Ge van Geldorp
+# Copyright 2009-2011 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -20,33 +20,40 @@ use strict;
 
 =head1 NAME
 
-ObjectModel::BackEnd - Base class for data storage back ends
-
-=head1 SYNOPSIS
-
-=head2 NOTES
+WineTestBot::WineTestBotCollection - Base collection class for WineTestBot
 
 =cut
 
-package ObjectModel::BackEnd;
+package WineTestBot::WineTestBotItem;
 
-use vars qw(@ISA @EXPORT %ActiveBackEnds);
+use ObjectModel::BackEnd;
+use ObjectModel::Item;
+use WineTestBot::Config;
+
+use vars qw (@ISA @EXPORT);
 
 require Exporter;
-@ISA = qw(Exporter);
-@EXPORT = qw(%ActiveBackEnds);
+@ISA = qw(ObjectModel::Item Exporter);
 
-sub new
+sub GetBackEnd
 {
-  my $class = shift;
-  my $self = {};
-  $self = bless $self, $class;
-  $self->_initialize();
-  return $self;
+  return $ActiveBackEnds{'WineTestBot'};
 }
 
-sub _initialize
+package WineTestBot::WineTestBotCollection;
+
+use ObjectModel::BackEnd;
+use ObjectModel::Item;
+use WineTestBot::Config;
+
+use vars qw (@ISA @EXPORT);
+
+require Exporter;
+@ISA = qw(ObjectModel::Collection Exporter);
+
+sub GetBackEnd
 {
+  return $ActiveBackEnds{'WineTestBot'};
 }
 
 1;

@@ -27,15 +27,15 @@ WineTestBot::Tasks - Job task collection
 package WineTestBot::Task;
 
 use ObjectModel::BackEnd;
-use ObjectModel::Item;
 use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::Steps;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT);
 
 require Exporter;
-@ISA = qw(ObjectModel::Item Exporter);
+@ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
 sub InitializeNew
 {
@@ -57,7 +57,7 @@ sub Run
   $self->Status("running");
   $self->Save();
 
-  $ActiveBackEnd->PrepareForFork();
+  $self->GetBackEnd()->PrepareForFork();
   my $Pid = fork;
   if (defined($Pid) && ! $Pid)
   {
@@ -100,15 +100,15 @@ sub Run
 package WineTestBot::Tasks;
 
 use ObjectModel::BasicPropertyDescriptor;
-use ObjectModel::Collection;
 use ObjectModel::ItemrefPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
 use WineTestBot::VMs;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT @PropertyDescriptors);
 
 require Exporter;
-@ISA = qw(ObjectModel::Collection Exporter);
+@ISA = qw(WineTestBot::WineTestBotCollection Exporter);
 @EXPORT = qw(&CreateTasks);
 
 BEGIN

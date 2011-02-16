@@ -85,14 +85,14 @@ package WineTestBot::VM;
 use VMware::Vix::Simple;
 use VMware::Vix::API::Constants;
 use ObjectModel::BackEnd;
-use ObjectModel::Item;
 use WineTestBot::Config;
 use WineTestBot::Engine::Notify;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw (@ISA @EXPORT);
 
 require Exporter;
-@ISA = qw(ObjectModel::Item Exporter);
+@ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
 sub _initialize
 {
@@ -534,7 +534,7 @@ sub RunRevert
   $self->Status("reverting");
   $self->Save();
 
-  $ActiveBackEnd->PrepareForFork();
+  $self->GetBackEnd()->PrepareForFork();
   my $Pid = fork;
   if (defined($Pid) && ! $Pid)
   {
@@ -556,13 +556,13 @@ package WineTestBot::VMs;
 use VMware::Vix::Simple;
 use VMware::Vix::API::Constants;
 use ObjectModel::BasicPropertyDescriptor;
-use ObjectModel::Collection;
 use ObjectModel::PropertyDescriptor;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw (@ISA @EXPORT @PropertyDescriptors);
 
 require Exporter;
-@ISA = qw(ObjectModel::Collection Exporter);
+@ISA = qw(WineTestBot::WineTestBotCollection Exporter);
 @EXPORT = qw(&CreateVMs);
 
 sub _initialize

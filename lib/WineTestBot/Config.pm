@@ -91,7 +91,8 @@ if ($@)
   exit;
 }
 
-ObjectModel::DBIBackEnd->UseDBIBackEnd($DbDataSource, $DbUsername, $DbPassword, 
+ObjectModel::DBIBackEnd->UseDBIBackEnd('WineTestBot', $DbDataSource,
+                                       $DbUsername, $DbPassword, 
                                        { RaiseError => 1 });
 
 umask 002;

@@ -117,7 +117,7 @@ sub Load
 {
   my $self = shift;
 
-  $ActiveBackEnd->LoadCollection($self);
+  $self->GetBackEnd()->LoadCollection($self);
 
   $self->{Loaded} = 1;
 }
@@ -167,7 +167,7 @@ sub GetItem
 
   if (! exists($self->{Items}{$Key}))
   {
-    my $NewItem = $ActiveBackEnd->LoadItem($self, $Key);
+    my $NewItem = $self->GetBackEnd()->LoadItem($self, $Key);
     if (defined($NewItem))
     {
       $self->{Items}{$NewItem->GetKey()} = $NewItem;
@@ -269,7 +269,7 @@ sub Validate
         }
         if (! $HasSequenceKey)
         {
-          my $ExistingItem = $ActiveBackEnd->LoadItem($self, $Item->GetKey());
+          my $ExistingItem = $self->GetBackEnd()->LoadItem($self, $Item->GetKey());
           if (defined($ExistingItem))
           {
             $ErrMessage = $self->GetItemName() . $ErrMessage .
@@ -288,7 +288,7 @@ sub SaveNoValidate
 {
   my $self = shift;
 
-  $ActiveBackEnd->SaveCollection($self);
+  $self->GetBackEnd()->SaveCollection($self);
 
   foreach my $PropertyDescriptor (@{$self->GetPropertyDescriptors()})
   {
@@ -371,7 +371,7 @@ sub DeleteItem
     return $ErrMessage;
   }
   my $Key = $Item->GetKey();
-  $ErrMessage = $ActiveBackEnd->DeleteItem($Item);
+  $ErrMessage = $self->GetBackEnd()->DeleteItem($Item);
   if (defined($ErrMessage))
   {
     return $ErrMessage;
@@ -402,7 +402,7 @@ sub DeleteAll
     }
   }
 
-  my $ErrMessage = $ActiveBackEnd->DeleteAll($self);
+  my $ErrMessage = $self->GetBackEnd()->DeleteAll($self);
   if (defined($ErrMessage))
   {
     return $ErrMessage;

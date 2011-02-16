@@ -27,12 +27,12 @@ WineTestBot::CGI::Sessions - Session collection
 
 package WineTestBot::CGI::Session;
 
-use ObjectModel::Item;
 use WineTestBot::Utils;
+use WineTestBot::WineTestBotObjects;
 
 require Exporter;
 use vars qw(@ISA @EXPORT);
-@ISA = qw(ObjectModel::Item Exporter);
+@ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
 sub InitializeNew
 {
@@ -46,17 +46,17 @@ sub InitializeNew
 package WineTestBot::CGI::Sessions;
 
 use CGI::Cookie;
-use ObjectModel::Collection;
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::ItemrefPropertyDescriptor;
 use WineTestBot::Config;
 use WineTestBot::Users;
 use WineTestBot::Utils;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT @PropertyDescriptors);
 
 require Exporter;
-@ISA = qw(ObjectModel::Collection Exporter);
+@ISA = qw(WineTestBot::WineTestBotCollection Exporter);
 @EXPORT = qw(&CreateSessions &NewSession);
 
 BEGIN

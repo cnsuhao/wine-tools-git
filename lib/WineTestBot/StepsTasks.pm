@@ -26,13 +26,13 @@ WineTestBot::StepsTasks - Job step/tasks collection
 
 package WineTestBot::StepTask;
 
-use ObjectModel::Item;
 use WineTestBot::Config;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT);
 
 require Exporter;
-@ISA = qw(ObjectModel::Item Exporter);
+@ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
 sub GetTitle
 {
@@ -72,17 +72,17 @@ sub GetTitle
 package WineTestBot::StepsTasks;
 
 use ObjectModel::BasicPropertyDescriptor;
-use ObjectModel::Collection;
 use ObjectModel::ItemrefPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
 use WineTestBot::Steps;
 use WineTestBot::Tasks;
 use WineTestBot::VMs;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT @PropertyDescriptors);
 
 require Exporter;
-@ISA = qw(ObjectModel::Collection Exporter);
+@ISA = qw(WineTestBot::WineTestBotCollection Exporter);
 @EXPORT = qw(&CreateStepsTasks);
 
 BEGIN

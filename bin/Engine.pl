@@ -113,7 +113,7 @@ sub HandleJobStatusChange
 
   if ($OldStatus eq "running" && $NewStatus ne "running")
   {
-    $ActiveBackEnd->PrepareForFork();
+    $ActiveBackEnds{'WineTestBot'}->PrepareForFork();
     my $Pid = fork;
     if (defined($Pid) && ! $Pid)
     {
@@ -196,7 +196,7 @@ sub CheckForWinetestUpdate
 {
   my $Bits = $_[0];
 
-  $ActiveBackEnd->PrepareForFork();
+  $ActiveBackEnds{'WineTestBot'}->PrepareForFork();
   my $Pid = fork;
   if (defined($Pid) && ! $Pid)
   {
@@ -348,7 +348,7 @@ sub HandlePatchNotification
 
   if ($MaxExistingPatchId < $LatestPatchId)
   {
-    $ActiveBackEnd->PrepareForFork();
+    $ActiveBackEnds{'WineTestBot'}->PrepareForFork();
     my $Pid = fork;
     if (defined($Pid) && ! $Pid)
     {
@@ -419,7 +419,7 @@ sub HandleBuildNotification
   }
   my $BuildNo = $1;
 
-  $ActiveBackEnd->PrepareForFork();
+  $ActiveBackEnds{'WineTestBot'}->PrepareForFork();
   my $Pid = fork;
   if (defined($Pid) && ! $Pid)
   {

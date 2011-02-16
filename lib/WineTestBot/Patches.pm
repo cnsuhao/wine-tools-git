@@ -28,19 +28,19 @@ WineTestBot::Patches - Patch collection
 package WineTestBot::Patch;
 
 use Encode qw/decode/;
-use ObjectModel::Item;
 use WineTestBot::Config;
 use WineTestBot::PendingPatchSets;
 use WineTestBot::Jobs;
 use WineTestBot::Users;
 use WineTestBot::Utils;
 use WineTestBot::VMs;
+use WineTestBot::WineTestBotObjects;
 use WineTestBot::Engine::Notify;
 
 use vars qw(@ISA @EXPORT);
 
 require Exporter;
-@ISA = qw(ObjectModel::Item Exporter);
+@ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
 sub InitializeNew
 {
@@ -287,14 +287,14 @@ sub GetEMailRecipient
 package WineTestBot::Patches;
 
 use ObjectModel::BasicPropertyDescriptor;
-use ObjectModel::Collection;
 use ObjectModel::PropertyDescriptor;
 use WineTestBot::Config;
+use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT);
 
 require Exporter;
-@ISA = qw(ObjectModel::Collection Exporter);
+@ISA = qw(WineTestBot::WineTestBotCollection Exporter);
 @EXPORT = qw(&CreatePatches);
 
 my @PropertyDescriptors;

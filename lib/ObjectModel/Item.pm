@@ -418,7 +418,7 @@ sub Save
     return ($ErrProperty, $ErrMessage);
   }
 
-  $ActiveBackEnd->SaveItem($self);
+  $self->GetBackEnd()->SaveItem($self);
 
   foreach my $PropertyDescriptor (@{$self->GetPropertyDescriptors()})
   {
