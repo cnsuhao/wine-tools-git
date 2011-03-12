@@ -1,6 +1,8 @@
 Order Allow,Deny
 Allow From All
 
+SetEnv no-gzip dont-vary
+
 <Files chunked>
   Allow from All
   Options ExecCGI
