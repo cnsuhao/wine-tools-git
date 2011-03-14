@@ -1,0 +1,17 @@
+#!/usr/bin/perl
+#
+# Generate some data to test chunked transfers
+#
+
+use CGI qw(:standard);
+
+$| = 1;
+
+print "Content-type: text/plain\n\n";
+
+for (my $i = 0; $i < 10; $i++)
+{
+    print "Line $i\n";
+    select(undef, undef, undef, 0.1);
+}
+print "Done\n";

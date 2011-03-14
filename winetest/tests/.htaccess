@@ -1,0 +1,8 @@
+Order Allow,Deny
+Allow From All
+
+<Files chunked>
+  Allow from All
+  Options ExecCGI
+  SetHandler cgi-script
+</Files>
