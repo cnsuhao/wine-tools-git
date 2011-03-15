@@ -29,8 +29,24 @@ if(isset($_GET['v'])) {
 		$sFileSuffix = $sVersion.'-'.$_GET['arch'];
 }
 
+if(!$sFileSuffix)
+	$sFileSuffix = $sVersion;
+
+switch($sVersion) {
+case '0.0.1':
+case '0.1.0':
+case '0.9.0':
+case '0.9.1':
+case '1.0.0':
+case '1.1.0':
+	$sExt = 'cab';
+	break;
+default:
+	$sExt = 'msi';
+}
+
 // Name of the file
-$sFileName = sprintf('%s/%s/wine_gecko-%s.cab', $sFolder, $sVersion, $sFileSuffix ? $sFileSuffix : $sVersion);
+$sFileName = sprintf('%s/%s/wine_gecko-%s.%s', $sFolder, $sVersion, $sFileSuffix, $sExt);
 
 // Size array
 $aFileSizes = array(
@@ -40,11 +56,13 @@ $aFileSizes = array(
 	'0.9.1'=>7806837,
 	'1.0.0-x86'=>8119486,
 	'1.1.0-x86'=>8868851,
-	'1.1.0-x86_64'=>8940997
+	'1.1.0-x86_64'=>8940997,
+	'1.2.0-x86'=>12604928,
+	'1.2.0-x86_64'=>12841472
 );
 
 // Exact size of the file:
-$iFileSize = $aFileSizes[$sFileSuffix ? $sFileSuffix : $sVersion];
+$iFileSize = $aFileSizes[$sFileSuffix];
 if(!$iFileSize) {
 	header("HTTP/1.0 404 Not Found");
 	exit;
