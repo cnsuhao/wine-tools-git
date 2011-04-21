@@ -33,7 +33,7 @@ use open ':utf8';
 use CGI qw(:standard);
 charset("utf-8");
 
-use vars qw/$gitdir $gitweb $queuedir $datadir $maxmult $maxfilesize/;
+use vars qw/$gitdir $gitweb $queuedir $datadir $maxmult $maxuserskips $maxfilesize/;
 require "winetest.conf";
 
 my $name0=$0;
@@ -220,6 +220,7 @@ if ($wine_build) {
     $merge_base eq $testbuild or mydie "wine build '$wine_build' not a descendant of build $testbuild\n";
 }
 
+my $user_skips = 0;
 my %dllinfo;
 /^Dll info:\r?$/ or mydie "no Dll info header: $_";
 $box->{data} .= "<h2>DLL version</h2>\n";
@@ -236,6 +237,7 @@ while ($_ = <IN>) {
     elsif ($2 eq "skipped")
     {
         print SUM "- $module - skipped - - - - -\n";
+        mydie "too many dlls skipped by user request\n" if ++$user_skips > $maxuserskips;
     }
 }
 
@@ -262,6 +264,7 @@ while (<IN>) {
             $testbox->{data} .= sprintf "<div class=\"test result skipped\">Skipped by user request.</div>\n";
             print SUM "- $dll $unit skipped - - - $source $rev\n";
             $dll = undef;
+            mydie "too many tests skipped by user request\n" if ++$user_skips > $maxuserskips;
         }
     } elsif (/^(.*$unit.*: (\d+) tests executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\.)\r?$/) {
         $lines++;
