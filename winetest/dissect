@@ -33,7 +33,7 @@ use open ':utf8';
 use CGI qw(:standard);
 charset("utf-8");
 
-use vars qw/$gitdir $gitweb $queuedir $datadir $maxmult $maxuserskips $maxfilesize/;
+use vars qw/$gitdir $gitweb $queuedir $datadir $maxmult $maxuserskips $maxfilesize $acceptwin9x/;
 require "winetest.conf";
 
 my $name0=$0;
@@ -151,6 +151,8 @@ while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
     }
 }
 $box->{data} .= "</table>\n";
+
+if ($plid != 2) { mydie "platform $plid not accepted\n" unless $acceptwin9x; }
 
 $version = "unknown";
 if ($plid==1 && $major==4) {
