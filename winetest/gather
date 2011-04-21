@@ -209,11 +209,15 @@ sub merge_status($$)
     my ($group_result, $result) = @_;
     if (!defined $group_result->{status}) {
         $group_result->{status} = $result->{status};
-    } elsif ($group_result->{status} =~ /^(dll missing|skipped)$/ and
+    } elsif ($group_result->{status} eq "skipped") {
+        $group_result->{status} = $result->{status};
+    } elsif ($result->{status} eq "skipped") {
+        ; # Nothing to do
+    } elsif ($group_result->{status} eq "dll missing" and
              $result->{status} eq "run") {
         $group_result->{status} = "run";
     } elsif ($group_result->{status} eq "run" and
-             $result->{status} =~ /^(dll missing|skipped)$/) {
+             $result->{status} eq "dll missing") {
         ; # Nothing to do
     } elsif ($group_result->{status} ne $result->{status}) {
         $group_result->{status} = "mixed";
