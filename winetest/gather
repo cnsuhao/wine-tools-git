@@ -291,6 +291,7 @@ foreach my $group (@groups) {
         $report->{errors} = 0;
         $report->{successes} = 0;
         $report->{todos} = 0;
+        $report->{runs} = 0;
         foreach my $testname (sort keys %alltests) {
             my $result = $report->{$testname};
             if ($result->{status} !~ /^(?:dll missing|run|skipped)$/ or
@@ -304,10 +305,14 @@ foreach my $group (@groups) {
             {
                 $report->{todos}++;
             }
+            if ($result->{status} !~ /^(?:dll missing|skipped)$/)
+            {
+                $report->{runs}++;
+            }
         }
     }
     foreach my $report (@{$group->{reports}}) {
-        $group->{successes}++ if !$report->{errors};
+        $group->{successes}++ if !$report->{errors} && $report->{runs};
     }
 }
 
