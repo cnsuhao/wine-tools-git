@@ -171,7 +171,7 @@ foreach my $file (sort { $patches{$b}->{"order"} <=> $patches{$a}->{"order"} } k
 print INDEX "</table></div>\n";
 
 $row = 0;
-print INDEX "<div class=\"legend\"><h2><a name=\"legend\">Legend</a></h2>\n";
+print INDEX "<div class=\"legend\"><h2 id=\"legend\">Legend</h2>\n";
 print INDEX "<table class=\"legend\"><tr><th class=\"status\">Status</th><th class=\"causes\">Possible causes</th></tr>\n";
 foreach my $status (@legend)
 {
