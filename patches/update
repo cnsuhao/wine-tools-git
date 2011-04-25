@@ -100,6 +100,15 @@ print INDEX start_html(-title=>"Patches list",
                        -encoding=>"utf-8",
                        -style=>{src=>"patches.css"});
 
+print INDEX "<div id=\"logo_glass\"><a href=\"/patches/\"><img src=\"http://winehq.org/images/winehq_logo_glass_sm.png\"></a></div>\n";
+print INDEX "<div id=\"logo_text\"><a href=\"/patches/\"><img src=\"http://winehq.org/images/winehq_logo_text.png\" alt=\"WineHQ\" title=\"WineHQ\"></a></div>\n";
+print INDEX "<div id=\"tabs\"><ul>",
+    "<li><a href=\"http://www.winehq.org/\">WineHQ</a></li>",
+    "<li><a href=\"http://wiki.winehq.org/\">Wiki</a></li>",
+    "<li><a href=\"http://appdb.winehq.org/\">AppDB</a></li>",
+    "<li><a href=\"http://bugs.winehq.org/\">Bugzilla</a></li>",
+    "<li><a href=\"http://forums.winehq.org/\">Forums</a></li></ul></div>\n";
+print INDEX "<div id=\"logo_blurb\">Wine source repository &ndash; Patch status</div>\n";
 print INDEX "<div id=\"main_content\"><div id=\"content\"><div class=\"main\">\n";
 print INDEX "<table class=\"main\"><tr><th class=\"id\">ID</th>",
     "<th class=\"status\">Status</th>",
@@ -178,7 +187,6 @@ foreach my $status (@legend)
     printf INDEX "<tr class=\"%s\"><td class=\"status %s\">%s</td><td class=\"causes\">%s</td></tr>\n",
            $row & 1 ? "odd" : "even", $status->[0], $status_descr{$status->[0]}, $status->[1];
     $row++;
-    
 }
 print INDEX "</table></div></div></div>\n";
 print INDEX end_html;
