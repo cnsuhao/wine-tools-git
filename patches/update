@@ -100,7 +100,7 @@ print INDEX start_html(-title=>"Patches list",
                        -encoding=>"utf-8",
                        -style=>{src=>"patches.css"});
 
-print INDEX "<div class=\"main\">\n";
+print INDEX "<div id=\"main_content\"><div id=\"content\"><div class=\"main\">\n";
 print INDEX "<table class=\"main\"><tr><th class=\"id\">ID</th>",
     "<th class=\"status\">Status</th>",
     "<th class=\"author\">Author</th>",
@@ -180,7 +180,7 @@ foreach my $status (@legend)
     $row++;
     
 }
-print INDEX "</table></div>\n";
+print INDEX "</table></div></div></div>\n";
 print INDEX end_html;
 close INDEX;
 
