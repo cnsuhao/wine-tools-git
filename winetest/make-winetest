@@ -109,14 +109,12 @@ umask 022
     (cd build-mingw &&
      make depend &&
      make programs/winetest &&
-     cd programs/winetest &&
-     $mingw32-gcc -v 2> build.nfo &&
-     make dist) || exit
+     upx -9 -qq programs/winetest/winetest.exe) || exit
 
     # install everything
 
-    chmod 644 build-mingw/programs/winetest/winetest-dist.exe
-    mv -f build-mingw/programs/winetest/winetest-dist.exe $destdir/winetest-$head.exe
+    chmod 644 build-mingw/programs/winetest/winetest.exe
+    mv -f build-mingw/programs/winetest/winetest.exe $destdir/winetest-$head.exe
     ln -sf winetest-$head.exe $destdir/winetest-latest.exe
     rm -f $servicedir/*.cookie $servicedir/*.url
     sha1sum $destdir/winetest-latest.exe | cut -c1-40 > $servicedir/winetest-$head.cookie
@@ -133,13 +131,10 @@ umask 022
 
     (cd build-mingw64 &&
      make depend &&
-     make programs/winetest &&
-     cd programs/winetest &&
-     $mingw64-gcc -v 2> build.nfo &&
-     make dist) || exit
+     make programs/winetest) || exit
 
-    chmod 644 build-mingw64/programs/winetest/winetest-dist.exe
-    mv -f build-mingw64/programs/winetest/winetest-dist.exe $destdir/winetest64-$head.exe
+    chmod 644 build-mingw64/programs/winetest/winetest.exe
+    mv -f build-mingw64/programs/winetest/winetest.exe $destdir/winetest64-$head.exe
     ln -sf winetest64-$head.exe $destdir/winetest64-latest.exe
 
     echo "winetest64-$head.exe built successfully."
