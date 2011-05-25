@@ -124,7 +124,7 @@ while (($_ = <IN>) =~ s/^    //)
     $box->{data} .= "<div class=\"output\">" . escapeHTML($_) . "</div>\n";
 }
 
-my ($wine, $wine_build, $version, $major, $minor, $plid, $product);
+my ($wine, $wine_build, $version, $major, $minor, $plid, $product, $host);
 /^Operating system version:\r?$/ or mydie "no OS header: $_";
 $box->{data} .= "<h2>Operating system version</h2>\n";
 $box->{data} .= "<table class=\"output\">\n";
@@ -148,6 +148,8 @@ while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
         $wine_build = $2;
     } elsif ($1 eq "Platform") {
         $archive = "winetest64-$shortbuild.exe" if ($2 eq "x86_64");
+    } elsif ($1 eq "Host system") {
+        $host = $2;
     }
 }
 $box->{data} .= "</table>\n";
@@ -196,10 +198,14 @@ if ($plid==1 && $major==4) {
         }
     } 
 } elsif ($plid==3) {
-    $version = "ce$major$minor";
+    #$version = "ce$major$minor";
 }
 if ($wine) {
-    $version = "wine";
+    my %known_hosts = ( "Linux" => "linux",
+                        "Darwin" => "mac",
+                        "FreeBSD" => "bsd",
+                        "SunOS" => "solaris" );
+    $version = $host && defined($known_hosts{$host}) ? $known_hosts{$host} : "wine";
 }
 if ($wine_build) {
     my $wine_commit;
