@@ -125,6 +125,12 @@ table th {
     margin: 0;
 }
 
+div.buglist {
+    margin: 5px 20px;
+    background-color: white;
+    width: 100%;
+    border: 1px solid #601919;
+}
 table.main, table.legend { width: 100%; }
 
 table.legend ul { margin: 2px 0; }
@@ -134,6 +140,11 @@ tr.odd { background-color: #f8e8e8; }
 
 .id, .status, .testbot { text-align: center; }
 .id, .status, .author { white-space: nowrap; padding: 0 3px; }
+.sha1 { white-space: nowrap; font-family: monospace; padding: 2px 12px; }
+
+.id :link, .sha1 :link, .subject :link { color: #A50D0D; text-decoration: none; }
+.id :visited, .sha1 :visited, .subject :visited { color: #ff0000; text-decoration: none; }
+.id :hover, .sha1 :hover, .subject :hover { color: #FF6666; text-decoration: underline; }
 
 .nil,        .nil :link,        .nil :visited        { color: blue; font-weight: bold; }
 .pending,    .pending :link,    .pending :visited    { color: blue; }

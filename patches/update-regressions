@@ -1,0 +1,172 @@
+#!/usr/bin/perl -w
+#
+# Copyright 2011 Henri Verbeet
+# Copyright 2011 Alexandre Julliard
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+use strict;
+use warnings;
+use Text::CSV::Encoded;
+use CGI qw(:standard);
+use open ':utf8';
+binmode STDOUT, ':utf8';
+
+$ENV{"GIT_DIR"} = "/home/winehq/opt/source/git/wine.git";
+
+my $bugzilla_base = "http://bugs.winehq.org/show_bug.cgi?id=";
+my $gitweb_base = "http://source.winehq.org/git/wine.git/commit/";
+my $dest = "/home/winehq/opt/source";
+
+my %regressions;
+my %commits;
+my @invalid;
+my @unknown;
+
+my %authors;
+my $count = 0;
+
+sub read_bugs()
+{
+    my $csv = Text::CSV::Encoded->new({ encoding_in     => "utf-8",
+                                        encoding_out    => "utf-8" });
+
+    open LIST, "-|", "wget", "-qO-", "http://bugs.winehq.org/buglist.cgi?bug_status=UNCONFIRMED&bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&columnlist=cf_regression_sha1sum%2Cshort_desc&keywords=regression&keywords_type=anywords&product=Wine&query_format=advanced&ctype=csv" or die "cannot query bug list";
+
+    <LIST>;  # skip header line
+    while (<LIST>)
+    {
+        if ($csv->parse($_))
+        {
+            my ($bug_id, $commit_id, $desc) = $csv->fields();
+            $regressions{$bug_id} = { "commit_id" => $commit_id, "description" => $desc };
+
+            if (!$commit_id)
+            {
+                push @unknown, $bug_id;
+                next;
+            }
+
+            if (!defined $commits{$commit_id})
+            {
+                open LOG, "-|", "git", "log", "-1", "--format=\%an\%n\%s", $commit_id or die "cannot start git log";
+                my $author = <LOG>;
+                my $subject = <LOG>;
+                chomp $author;
+                chomp $subject;
+                close LOG;
+                next unless $author && $subject;
+                $commits{$commit_id} = { "author" => $author, "subject" => $subject };
+            }
+            push @{$authors{$commits{$commit_id}->{"author"}}}, $bug_id;
+            $count++;
+        }
+        else
+        {
+            my $err = $csv->error_input;
+            die "Failed to parse line: $err\n";
+        }
+    }
+    close LIST;
+}
+
+sub print_bugs($@)
+{
+    my $row = shift;
+    printf OUTPUT "<table class=\"main\">\n";
+    foreach my $id (sort {$b <=> $a} @_)
+    {
+        my $regression = $regressions{$id};
+        my $commit_id = $regression->{"commit_id"};
+
+        printf OUTPUT "<tr class=\"regression %s\">", ++$row & 1 ? "odd" : "even";
+        printf OUTPUT "<td class=\"id\"><a href=\"%s%u\">%u</a></td>", $bugzilla_base, $id, $id;
+        printf OUTPUT "<td class=\"sha1\"><a href=\"%s%s\" title=\"%s\">%s</a></td>",
+                      $gitweb_base, escapeHTML($commit_id),
+                      escapeHTML($commits{$commit_id}->{"subject"}), escapeHTML(substr($commit_id,0,12));
+        printf OUTPUT "<td class=\"subject\" width=\"100%%\"><a href=\"%s%u\">%s</a></td></tr>\n",
+                      $bugzilla_base, $id, escapeHTML($regression->{"description"});
+    }
+    printf OUTPUT "</table>\n";
+}
+
+read_bugs();
+
+open OUTPUT, "> $dest/regressions.new" or die "cannot create $dest/regressions.new";
+
+my $js = <<END;
+function toggle_display(id)
+{
+    var e = document.getElementById(id);
+    var display = e.style.display;
+    e.style.display = display == "none" ? "" : "none";
+}
+END
+
+print OUTPUT start_html(-title=>"Regressions",
+                       -encoding=>"utf-8",
+                       -style=>{src=>"patches/patches.css"},
+                       -script=>$js);
+
+print OUTPUT "<div id=\"logo_glass\"><a href=\"/regressions\"><img src=\"http://winehq.org/images/winehq_logo_glass_sm.png\"></a></div>\n";
+print OUTPUT "<div id=\"logo_text\"><a href=\"/regressions\"><img src=\"http://winehq.org/images/winehq_logo_text.png\" alt=\"WineHQ\" title=\"WineHQ\"></a></div>\n";
+print OUTPUT "<div id=\"tabs\"><ul>",
+    "<li><a href=\"http://www.winehq.org/\">WineHQ</a></li>",
+    "<li><a href=\"http://wiki.winehq.org/\">Wiki</a></li>",
+    "<li><a href=\"http://appdb.winehq.org/\">AppDB</a></li>",
+    "<li><a href=\"http://bugs.winehq.org/\">Bugzilla</a></li>",
+    "<li><a href=\"http://forums.winehq.org/\">Forums</a></li></ul></div>\n";
+print OUTPUT "<div id=\"logo_blurb\">Wine source repository &ndash; Regressions</div>\n";
+
+print OUTPUT "<div id=\"main_content\"><div id=\"content\"><div class=\"main\">\n";
+printf OUTPUT "<h2>%u bisected regressions</h2>\n", $count;
+
+print OUTPUT "<table class=\"main\"><tr><th class=\"count\">Count</th>",
+             "<th style=\"width: 100%;\" class=\"author\">Author</th></tr>\n";
+
+my $row = 0;
+foreach my $author (sort {@{$authors{$b}} <=> @{$authors{$a}} || $a cmp $b} keys %authors)
+{
+    printf OUTPUT "<tr class=\"regression %s\"><td class=\"id\" valign=\"top\">"
+                  ."<span onclick=\"toggle_display('bugs_%u');\">%u</span></td>",
+                  $row & 1 ? "odd" : "even", $row, scalar(@{$authors{$author}});
+    printf OUTPUT "<td class=\"author\"><span onclick=\"toggle_display('bugs_%u');\">%s</span>"
+                  ."<div class=\"buglist\" id=\"bugs_%u\" style=\"display: none;\">\n",
+                  $row, escapeHTML($author), $row;
+    print_bugs $row, @{$authors{$author}};
+    print OUTPUT "</div></td></tr>";
+    ++$row;
+}
+print OUTPUT "</table></div>\n";
+
+print OUTPUT "<div class=\"main\">\n";
+printf OUTPUT "<h2>%u regressions without commit id</h2>\n", scalar @unknown;
+print OUTPUT "<table class=\"main\"><tr><th class=\"id\">Id</th>",
+             "<th style=\"width: 100%;\" class=\"subject\">Description</th></tr>\n";
+
+$row = 0;
+foreach my $id (sort {$b <=> $a} @unknown)
+{
+    my $regression = $regressions{$id};
+    printf OUTPUT "<tr class=\"buglist %s\">", ++$row & 1 ? "odd" : "even";
+    printf OUTPUT "<td class=\"id\"><a href=\"%s%u\">%u</a></td>", $bugzilla_base, $id, $id;
+    printf OUTPUT "<td class=\"subject\"><a href=\"%s%u\">%s</a></td></tr>\n",
+                  $bugzilla_base, $id, escapeHTML($regression->{"description"});
+}
+
+print OUTPUT "</table></div>\n";
+print OUTPUT end_html;
+close OUTPUT;
+
+rename "$dest/regressions.new", "$dest/regressions" or die "failed to update regressions";
