@@ -195,6 +195,8 @@ if ($plid==1 && $major==4) {
             } elsif ($product==3) {
                 $version = "2008";
             }
+        } elsif ($minor == 2) {
+            $version = "win8";
         }
     } 
 } elsif ($plid==3) {
