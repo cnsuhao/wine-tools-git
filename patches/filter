@@ -20,7 +20,7 @@
 
 use strict;
 use Email::MIME;
-use IPC::Open2;
+use File::Temp;
 use Encode;
 
 my $debug = 0;
@@ -127,16 +127,18 @@ sub decode_parts(@)
             $name =~ /\.bz2$/ ||
             $name =~ /\.gz$/)
         {
-            my $cmd = "gunzip -c";
+            my ($file, $filename) = File::Temp::tempfile();
+            my $cmd = "gunzip -c >$filename";
             if ($type =~ /^application\/x-bzip2/ || $name =~ /\.bz2$/)
             {
-                $cmd = "bunzip2 -c";
+                $cmd = "bunzip2 -c >$filename";
             }
-            open2( *READ, *WRITE, $cmd) or die "cannot run $cmd";
+            open WRITE, "|$cmd" or die "cannot run $cmd";
             print WRITE $part->body;
             close WRITE;
-            push @lines, filter_patch(<READ>);
-            close READ;
+            push @lines, filter_patch(<$file>);
+            close $file;
+            unlink $filename;
         }
         elsif ($type =~ /^multipart/)
         {
