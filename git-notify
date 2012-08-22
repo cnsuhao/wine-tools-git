@@ -42,7 +42,7 @@ sub get_repos_name();
 my $mailer = "/usr/bin/mail";
 
 # CIA notification address
-my $cia_address = "cia\@cia.navi.cx";
+my $cia_address = "cia\@cia.vc";
 
 # debug mode
 my $debug = 0;
