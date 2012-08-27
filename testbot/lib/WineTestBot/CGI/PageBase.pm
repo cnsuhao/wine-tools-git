@@ -231,7 +231,7 @@ ${ProjectName} Test Bot
     <li><a href='http://wiki.winehq.org'>Wiki</a></li>
     <li><a href='http://appdb.winehq.org/'>AppDB</a></li>
     <li><a href='http://bugs.winehq.org/'>Bugzilla</a></li>
-    <li class='s'><a href='http://testbot.winehq.org/'>TestBot</a></li>
+    <li class='s'><a href='http://${WebHostName}/'>TestBot</a></li>
     <li><a href='http://forums.winehq.org/'>Forums</a></li>
   </ul>
 </div>
