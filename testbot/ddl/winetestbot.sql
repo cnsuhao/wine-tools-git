@@ -63,7 +63,7 @@ CREATE TABLE Patches
   Id          INT(7)          NOT NULL,
   Received    DATETIME        NOT NULL,
   Disposition VARCHAR(40)     NOT NULL,
-  AffectsTests ENUM('Y', 'N') NOT NULL
+  AffectsTests ENUM('Y', 'N') NOT NULL,
   FromName    VARCHAR(40)     NULL,
   FromEMail   VARCHAR(40)     NULL,
   Subject     VARCHAR(120)    NULL,
