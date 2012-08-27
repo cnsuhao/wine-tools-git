@@ -26,7 +26,7 @@ WineTestBot::Users - User collection
 
 package WineTestBot::User;
 
-use Digest::SHA1 qw(sha1_hex);
+use Digest::SHA qw(sha1_hex);
 use URI::Escape;
 use WineTestBot::Config;
 use WineTestBot::Roles;
