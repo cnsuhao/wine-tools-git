@@ -310,7 +310,7 @@ BEGIN
   $PropertyDescriptors[3] =
     CreateBasicPropertyDescriptor("FromName", "Author", !1, !1, "A", 40);
   $PropertyDescriptors[4] =
-    CreateBasicPropertyDescriptor("FromEMail", "Email address author", !1, !1, "A", 40);
+    CreateBasicPropertyDescriptor("FromEMail", "Author's email address", !1, !1, "A", 40);
   $PropertyDescriptors[5] =
     CreateBasicPropertyDescriptor("Subject", "Subject", !1, !1, "A", 120);
   $PropertyDescriptors[6] =

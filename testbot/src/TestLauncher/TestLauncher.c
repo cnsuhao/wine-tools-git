@@ -59,13 +59,13 @@ static BOOL DllPresent(char *DllName)
  * dismissed.
  * This can happen when running tests for a system DLL on a Windows version which does not include
  * that DLL. It messes up our testing because the child just hangs around until the timeout expires,
- * taking up testing time and generating an timeout error.
+ * taking up testing time and generating a timeout error.
  * Since the message is produced by the child process before any application code is run, we can't
  * suppress it using SetErrorMode() or ProcessDefaultHardErrorMode. It is possible to suppress using
  * the registry value ErrorMode in HKEY_LOCAL_MACHINE\CurrentControlSet\Control\Windows but that has
  * a global effect.
- * So instead we just dive into the executables import table, determine which modules are being
- * imported and check if these are present.
+ * So instead we just dive into the executable's import table, determine which modules are being
+ * imported and check if they are present.
  */
 static BOOL AllImportedDllsPresent(char *TestExeName)
 {

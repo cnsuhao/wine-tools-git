@@ -116,7 +116,7 @@ BEGIN
   $PropertyDescriptors[6] =
     CreateBasicPropertyDescriptor("DebugLevel", "Debug level (WINETEST_DEBUG)", !1, 1, "N", 2);
   $PropertyDescriptors[7] =
-    CreateBasicPropertyDescriptor("ReportSuccessfulTests", "Report successfull tests (WINETEST_REPORT_SUCCESS)", !1, 1, "B", 1);
+    CreateBasicPropertyDescriptor("ReportSuccessfulTests", "Report successful tests (WINETEST_REPORT_SUCCESS)", !1, 1, "B", 1);
   $PropertyDescriptors[8] =
     CreateDetailrefPropertyDescriptor("Tasks", "Tasks", !1, !1, \&CreateTasks);
 }
