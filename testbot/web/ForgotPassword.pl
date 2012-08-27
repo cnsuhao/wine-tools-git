@@ -50,7 +50,7 @@ sub GetHeaderText
 {
   return "Please enter your username or your email address<br>\n" .
          "If you don't have an account yet, you can " .
-         "<a href='Register.php'>register</a> for one.";
+         "<a href='Register.pl'>register</a> for one.";
 }
 
 sub GetActions

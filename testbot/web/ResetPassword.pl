@@ -52,7 +52,7 @@ sub GetTitle
 sub GetHeaderText
 {
   return "If you don't have an account yet, you can " .
-         "<a href='Register.php'>register</a> for one.";
+         "<a href='Register.pl'>register</a> for one.";
 }
 
 sub GetInputType
