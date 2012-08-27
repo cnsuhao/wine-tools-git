@@ -366,7 +366,6 @@ sub ScheduleOnHost
   my @SortedJobs = sort CompareJobPriority @{$self->GetItems()};
 
   my $DirtyIndex = 0;
-  my $RevertPriority;
   foreach my $Job (@SortedJobs)
   {
     my $Steps = $Job->Steps;
@@ -387,8 +386,7 @@ sub ScheduleOnHost
           my $VM = $HostVMs->GetItem($Task->VM->GetKey());
           if ($VM->Status eq "idle" &&
               (! defined($MaxRunningVMs) || $RunningVMs < $MaxRunningVMs) &&
-              $RevertingVMs == 0 &&
-              (! defined($RevertPriority) || $Job->Priority <= $RevertPriority))
+              $RevertingVMs == 0)
           {
             $VM->Status("running");
             my ($ErrProperty, $ErrMessage) = $HostVMs->Save();
