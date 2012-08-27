@@ -1,5 +1,4 @@
-// GenFixEnv.cpp : Defines the entry point for the console application.
-//
+/* GenFixEnv.cpp : Defines the entry point for the console application. */
 
 #include <stdio.h>
 #include <windows.h>
