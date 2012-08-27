@@ -60,7 +60,6 @@ sub CreateItem
   return WineTestBot::UserRole->new($self);
 }
 
-use Data::Dumper;
 sub CreateUserRoles
 {
   my $User = shift;
