@@ -469,28 +469,6 @@ sub CaptureScreenImage
   return (undef, $ImageSize, $ImageBytes);
 }
 
-sub ListDirectoryInGuest
-{
-  my $self = shift;
-  my $PathName = $_[0];
-
-  my ($ErrMessage, $VMHandle) = $self->GetVMHandle();
-  if (defined($ErrMessage))
-  {
-    return $ErrMessage;
-  }
-
-  $ErrMessage = $self->LoginInGuest($VMHandle, !1);
-  if (defined($ErrMessage))
-  {
-    return $ErrMessage;
-  }
-
-  my ($Err, @DirectoryContents) = VMListDirectoryInGuest($VMHandle, $PathName, 
-                                                         0);
-  return ($self->CheckError($Err), @DirectoryContents);
-}
-
 sub Status
 {
   my $self = shift;
