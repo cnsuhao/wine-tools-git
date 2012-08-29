@@ -1,0 +1,70 @@
+1. PURPOSE
+----------
+
+The goal of the WineTestBot is to make sure that only valid conformance
+tests enter the Wine codebase.
+
+The goal of Wine's conformance tests is to describe the behavior of the
+Windows APIs, ignoring bugs and quirks specific to one Windows version.
+They are then used to make sure Wine's behavior is correct. But the
+correctness of the tests themselves can only be verified by running
+them on multiple Windows versions which is out of the reach of most Wine
+developers. This is the issue that the WineTestBot intends to fix.
+
+
+2. MEANS
+--------
+
+The WineTestBot provides ways to run the conformance tests on a set of
+Windows machines. There are three ways this can happen:
+
+* Registered users can submit patches and binaries using the web site
+  and have them run on the set of Windows machines of their choosing.
+
+* Conformance test patches sent to the wine-patches mailing list are
+  run on the default set of Windows machines. Any failure is reported
+  to the patch author and to the wine-devel mailing list.
+
+* The WineTestBot also runs the full conformance test suite whenever
+  there is a round of Wine commits.
+
+
+3. GENERAL ARCHITECTURE
+-----------------------
+
+Most of the work is done on virtual machines for two reasons:
+
+* By its very nature the WineTestBot runs untrusted code. Virtual
+  machines provide a way to isolate the effect of malicious code and
+  can safely be reset to a clean state from the outside.
+
+* It's easy to reset the VMs to a clean state between each test, thus
+  ensuring they all run in a pristine environment.
+
+This results in four types of machines being involved in the
+WineTestBot:
+
+* The WineTestBot server
+  It hosts the website, WineTestBot server processes, and, usually,
+  also the WineTestBot database. This is the machine that orchestrates
+  everything.
+
+* VM hosts
+  These host the Linux Build VM and the Windows Test VMs. The
+  WineTestBot server tells them which VMs to power on or revert to a
+  clean state at a given time.
+
+* Linux Build VM
+  This is the virtual machine that is used to compile the patches and
+  generate the Windows binaries to test. It receives its commands
+  directly from the WineTestBot server.
+
+* Windows Test VMs
+  These are the Windows machines the tests run on. They receive the test
+  binaries directly from the WineTestBot server.
+
+
+4. INSTALLATION
+---------------
+
+See the doc/INSTALL.txt file.
