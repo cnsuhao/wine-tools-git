@@ -541,6 +541,25 @@ sub ClientRead
   return $GotSomething;
 }
 
+sub InitVMs()
+{
+  # Kill any stale RevertVM.pl process so they don't mess with our VMs
+  system('killall RevertVM.pl 2>/dev/null');
+
+  # On startup we don't know what state the VMs are in. So consider them all
+  # to be dirty.
+  my $VMs = CreateVMs();
+  foreach my $VMKey (@{$VMs->GetKeys()})
+  {
+    my $VM = $VMs->GetItem($VMKey);
+    if ($VM->Status ne "offline")
+    {
+        $VM->Status("dirty");
+        $VM->Save();
+    }
+  }
+}
+
 sub SafetyNet
 {
   my $Jobs = CreateJobs();
@@ -634,6 +653,8 @@ sub main
   $SIG{CHLD} = \&REAPER;
 
   $WineTestBot::Engine::Notify::RunningInEngine = 1;
+
+  InitVMs();
 
   my $SockName = "$DataDir/socket/engine";
   my $uaddr = sockaddr_un($SockName);
