@@ -234,7 +234,7 @@ $ErrMessage = $VM->CopyFileFromHostToGuest("$StepDir/$FileName",
                                            "$DataDir/staging/$FileName");
 if (defined($ErrMessage))
 {
-  FatalError "Can't copy exe to VM: $ErrMessage\n",
+  FatalError "Can't copy patch to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
 my $Script = "#!/bin/sh\n";

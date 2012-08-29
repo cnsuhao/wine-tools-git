@@ -47,7 +47,7 @@ if ($StartPatchId =~ m/^(\d+)$/)
 }
 else
 {
-  die "Invalid StartPatchId $StartPatchId";
+  die "RetrievePatches: Invalid StartPatchId $StartPatchId";
 }
 if ($EndPatchId =~ m/^(\d+)$/)
 {
@@ -55,11 +55,11 @@ if ($EndPatchId =~ m/^(\d+)$/)
 }
 else
 {
-  die "Invalid EndPatchId $EndPatchId";
+  die "RetrievePatches: Invalid EndPatchId $EndPatchId";
 }
 if ($EndPatchId < $StartPatchId)
 {
-  die "EndPatchId $EndPatchId shouldn't be smaller than StartPatchId $StartPatchId";
+  die "RetrievePatches: EndPatchId $EndPatchId shouldn't be smaller than StartPatchId $StartPatchId";
 }
 
 my $BaseURL = "http://source.winehq.org/patches/data";

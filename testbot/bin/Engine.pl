@@ -463,7 +463,7 @@ sub HandleGetScreenshot
     return "0$ErrMessage";
   }
 
-  return "1" . $ImageBytes;;
+  return "1" . $ImageBytes;
 }
 
 sub HandleClientCmd
