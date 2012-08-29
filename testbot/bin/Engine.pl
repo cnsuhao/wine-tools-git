@@ -410,34 +410,6 @@ sub HandlePatchRetrieved
   return defined($ErrMessage) ? "0" . $ErrMessage : "1OK";
 }
 
-sub HandleBuildNotification
-{
-  # Validate build number
-  if ($_[0] !~ m/^(\d+)$/)
-  {
-    return "0Invalid build number";
-  }
-  my $BuildNo = $1;
-
-  $ActiveBackEnds{'WineTestBot'}->PrepareForFork();
-  my $Pid = fork;
-  if (defined($Pid) && ! $Pid)
-  {
-    exec("$BinDir/${ProjectName}RetrieveBuild.pl $BuildNo");
-  }
-  if (defined($Pid) && ! $Pid)
-  {
-    LogMsg "Engine: Unable to exec ${ProjectName}BuildHandler.pl : $!\n";
-    exit;
-  }
-  if (! defined($Pid))
-  {
-    LogMsg "Engine: Unable to fork for ${ProjectName}BuildHandler.pl : $!\n";
-  }
-
-  return "1OK";
-}
-
 sub HandleGetScreenshot
 {
   # Validate VM name
@@ -512,10 +484,6 @@ sub HandleClientCmd
   if ($Cmd eq "patchretrieved")
   {
     return HandlePatchRetrieved(@_);
-  }
-  if ($Cmd eq "buildnotification")
-  {
-    return HandleBuildNotification(@_);
   }
   if ($Cmd eq "getscreenshot")
   {
