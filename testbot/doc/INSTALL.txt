@@ -1,60 +1,159 @@
-Dependencies:
+1. WineTestBot server setup
+---------------------------
 
-Apache2 with mod_perl
-MySQL
-Perl DBD and DBI::mysql modules
-Sendmail
-VMware Vix API (http://www.vmware.com/support/developer/vix-api)
+Dependencies:
+- Apache2 with mod_perl
+- MySQL
+- Perl DBD and DBI::mysql modules
+- Sendmail
+- VMware Vix API (http://www.vmware.com/support/developer/vix-api)
 
 MySQL setup:
-- Create a new database 'winetestbot' and create tables in that db using the
-  ddl/winetestbot.sql script
-- Create a new user (e.g. 'winetestbot') and grant that user SELECT, INSERT,
-  UPDATE and DELETE on all tables in the database. The user does not need any
-  data definition grants
+- Create a new 'winetestbot' database and its tables using the
+  ddl/winetestbot.sql script.
+- Set the 'winetestbot' user password
+  INSERT, UPDATE and DELETE on all tables in the database. So this is
+  something like:
+  SET PASSWORD FOR 'winetestbot'@'localhost' = PASSWORD('mypassword');
 
 Apache setup:
-- Create a new virtual host, use vhost_winetestbot.conf in this dir as template.
-- If you want to enable SSL, make sure you have your certificate set up. If
-  you don't want SSL, edit lib/WineTestBot/Config.pm and set UseSSL to "!1".
-- On OpenSUSE, I had to add "perl" to APACHE_MODULES in /etc/sysconfig/apache2.
+- Create a new virtual host, use doc/vhost_winetestbot.conf as a
+  template.
+- If you want to enable SSL, make sure you have your certificate set
+  up. If you don't want SSL, edit lib/WineTestBot/Config.pm and set
+  UseSSL to "!1".
+- On OpenSUSE, I had to add "perl" to APACHE_MODULES in
+  /etc/sysconfig/apache2.
+- On Debian you may have to install libapache2-mod-perl2 and create a
+  perl.load symbolic link in /etc/apache2/mods-enabled.
 
-General setup:
-- Create a new system group 'winetest' and a system user 'winetest', make sure
-  to make user winetest a member of group winetest
-- Unpack winetestbot source to /usr/lib/winetestbot (so this document should
-  be available as /usr/lib/winetestbot/doc/INSTALL.txt)
-- Create directory /var/lib/winetestbot, create subdirs 'jobs', 'latest',
-  'socket' and 'staging' within this dir. Set owner/group to winetest/winetest
-  for jobs, latest, socket, but set owner/group to wwwrun/winetest for staging
-  (where 'wwwrun' is the account your apache server runs under). Run
-  chmod g+w /var/lib/winetestbot/*
-- Create an empty logfile /var/log/winetestbot/log and make it writeable to
-  group winetest.
-- Install scripts/initd in /etc/init.d/winetestbot and activate it (on OpenSUSE:
-  "chkconfig winetestbot on", "service winetestbot start")
-- Set up a crontab entry for root to periodically run
-  scripts/CheckWineTestBot.pl
-- Copy lib/WineTestBot/ConfigLocalTemplate.pl and to
-  lib/WineTestBot/ConfigLocal.pl and edit it.
-- Restart Apache, you should now be able to browse to the home page
-- Register a new account for yourself
-- Using the mysql client, set the ResetCode in your Users entry to a known
-  value, e.g.
+General setup for the web site:
+- Create a new system group 'winetest' and a system user 'winetest',
+  make sure to make user winetest a member of group winetest.
+- Unpack the WineTestBot source to /usr/lib/winetestbot (so this
+  document should be available as /usr/lib/winetestbot/doc/INSTALL.txt).
+- Create directory /var/lib/winetestbot, create subdirs 'jobs',
+  'latest', 'socket' and 'staging' within this dir. Set owner/group to
+  winetest/winetest for jobs, latest, socket, but set owner/group to
+  wwwrun/winetest for staging (where 'wwwrun' is the account your apache
+  server runs under). Run:
+    mkdir /var/lib/winetestbot
+    cd /var/lib/winetestbot
+    mkdir jobs latest patches socket staging
+    chown winetest:winetest jobs latest socket
+    chown WWWRUN:winetest staging
+    chmod g+w *
+- Create an empty logfile /var/log/winetestbot/log and make it writable
+  to group winetest.
+    mkdir /var/log/winetestbot
+    touch /var/log/winetestbot/log
+    chgrp winetest /var/log/winetestbot/log
+    chmod g+w /var/log/winetestbot/log
+- Install scripts/initd in /etc/init.d/winetestbot and activate it (on
+  OpenSUSE: "chkconfig winetestbot on", "service winetestbot start").
+- Copy lib/WineTestBot/ConfigLocalTemplate.pl to
+  lib/WineTestBot/ConfigLocal.pl and fill in the options for your site.
+- Restart Apache, you should now be able to browse to the home page.
+- Register a new account for yourself.
+- Using the mysql client, set the ResetCode in your Users entry to a
+  known value, e.g.
   mysql> update Users set ResetCode = 'a' where Name = '<username>';
 - Browse to http://server.name/ResetPassword.pl and enter your username,
   the resetcode you just updated and a new password.
 - Make yourself admin by adding a row to UserRoles:
   mysql> insert into UserRoles values('<username>', 'admin');
-- When you refresh the home page, you should now have an "Admin" menu in the
-  sidebar
+- When you refresh the home page, you should now have an "Admin" menu
+  in the sidebar.
 
-Wine build VM setup:
-- Create a new system group 'winetest' and a system user 'winetest', make sure
-  to make user winetest a member of group winetest
-- Unpack winetestbot source to /usr/lib/winetestbot (so this document should
-  be available as /usr/lib/winetestbot/doc/INSTALL.txt)
-- Create directory /var/lib/winetestbot
-- Create an empty logfile /var/log/winetestbot/log and make it writeable to
-  group winetest.
-- Clone Wine git repo to /var/lib/winetestbot/wine.git
+Janitorial tasks:
+- Run the Janitor.pl script once per day to perform the janitorial
+  tasks. For instance:
+  17 30 * * * /usr/lib/winetestbot/bin/Janitor.pl
+- Run the CheckWineTestBot.pl script periodically to get notified in
+  case the WineTestBot server dies. For instance:
+  * 5 * * * /usr/lib/winetestbot/scripts/CheckWineTestBot.pl
+
+Setup for Wine's patches site:
+- See http://source.winehq.org/patches/ for reference.
+- Before trying to set this up make sure that you can submit patches
+  using the WineTestBot web interface and that the results are sane.
+  You may also want to run with $PatchFromEMailOverride set for a while
+  to spot any issue under load.
+- First bootstrap things with RetrievePatches.pl. Go to the patches
+  website and write down the id of the oldest and newest patches you
+  want to inject into WineTestBot. Then run:
+  ./bin/RetrievePatches.pl OLD_PATCH_ID NEW_PATCH_ID
+
+- If that goes well you can then keep WineTestBot up to date by
+  following the steps below.
+- Set up an email address to receive the patches site notifications
+  and send that email address to the patches maintainer.
+- Arrange for the PatchNotificationHandler.pl script to be fed the
+  notification emails. One way to do so would be to use procmail and
+  add the following lines to the .procmailrc file:
+    :0:
+    * ^Subject: New patches available at
+    | /usr/lib/winetestbot/bin/PatchNotificationHandler.pl
+
+Setup for Winetest updates:
+- Use a cron job to run CheckForWinetestUpdate.pl periodically. For
+  instance:
+  * 0 * * * /usr/lib/winetestbot/scripts/CheckForWinetestUpdate.pl
+
+Setup for wine-patches:
+- FIXME: WineTestBot now expects to receive the patches to test from
+  Wine's Patches site instead of straight from the wine-patches mailing
+  list. Furthermore WinePatchesHandler.pl is currently broken (because
+  the patch ids are no longer auto-generated). So this should be
+  skipped.
+- Arrange for the WinePatchesHandler.pl script to be fed the
+  wine-patches emails. One way to do so would be to subscribe the
+  winetest user to the wine-patches mailing list and to then add the
+  following lines to the .procmailrc file:
+    :0:
+    * ^List-Id: Wine Patch Submissions
+    | /usr/lib/winetestbot/bin/WinePatchesHandler.pl
+- Or if you have a set of patches to test in the mbox format you can
+  test with:
+  formail -s /usr/lib/winetestbot/bin/WinePatchesHandler.pl <mbox-file
+
+
+2. VM hosts setup
+-----------------
+
+Dependencies:
+- VMware
+
+
+3. Wine build VM setup
+----------------------
+
+- Create a Linux VM and set it up so it can generate PE executables
+  with MinGW. For instance on Debian you should install autoconf,
+  bison, flex, gcc, gcc-mingw-w64, git and make. If you are going to have
+  64bit VMs then make sure MinGW can generate 64bit PE executables.
+- Install netcat.
+- Create a new system group 'winetest' and a system user 'winetest',
+  make sure to make user winetest a member of group winetest.
+- Unpack winetestbot source to /usr/lib/winetestbot (so this document
+  should be available as /usr/lib/winetestbot/doc/INSTALL.txt).
+- Create the /var/lib/winetestbot and /var/log/winetestbot directories
+  and make them writable to group winetest.
+    mkdir /var/log/winetestbot /var/lib/winetestbot
+    chgrp winetest /var/log/winetestbot /var/lib/winetestbot
+    chmod g+w /var/log/winetestbot /var/lib/winetestbot
+- Clone the Wine git repository to /var/lib/winetestbot/wine-git.
+- Take a snapshot of the running VM. Make sure restoring this snapshot
+  will result in a running build VM.
+- Register this VM as a build VM on the web site.
+
+
+4. Windows test VM setup
+------------------------
+
+- FIXME: To document
+- Take a snapshot of the running VM. Make sure restoring this snapshot
+  will result in a running Windows VM.
+- Register this VM on the web site. On a production WineTestBot server
+  you would likely want to make it an 'extra' VM until you have
+  confirmed that it works as expected.

@@ -161,3 +161,13 @@ INSERT INTO Users (Name, EMail, Password, Active, RealName)
        VALUES('batch', '/dev/null', '*', 'Batch user for internal jobs', NULL);
 
 INSERT INTO Branches (Name, IsDefault) VALUES('master', 'Y');
+
+# Remember to change the winetestbot user password!
+# (see doc/INSTALL.txt)
+CREATE USER 'winetestbot'@'localhost' IDENTIFIED BY 'changeme!';
+
+# Note that this user does not need any data definition grants.
+GRANT SELECT on winetestbot.* TO 'winetestbot';
+GRANT INSERT on winetestbot.* TO 'winetestbot';
+GRANT UPDATE on winetestbot.* TO 'winetestbot';
+GRANT DELETE on winetestbot.* TO 'winetestbot';
