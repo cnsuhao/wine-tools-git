@@ -71,10 +71,10 @@ sub GetDefaultBranch
 
 BEGIN
 {
-  $PropertyDescriptors[0] =
-    CreateBasicPropertyDescriptor("Name",      "Branch name",          1,  1, "A", 20);
-  $PropertyDescriptors[1] =
-    CreateBasicPropertyDescriptor("IsDefault", "Default branch",       !1,  1, "B",  1);
+  @PropertyDescriptors = (
+    CreateBasicPropertyDescriptor("Name",      "Branch name",          1,  1, "A", 20),
+    CreateBasicPropertyDescriptor("IsDefault", "Default branch",       !1,  1, "B",  1),
+  );
 }
 
 sub MultipleBranchesPresent()

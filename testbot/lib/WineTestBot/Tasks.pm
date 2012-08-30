@@ -113,24 +113,17 @@ require Exporter;
 
 BEGIN
 {
-  $PropertyDescriptors[0] =
-    CreateBasicPropertyDescriptor("No", "Task no",  1,  1, "N", 2);
-  $PropertyDescriptors[1] =
-    CreateBasicPropertyDescriptor("Status", "Status",  !1,  1, "A", 9);
-  $PropertyDescriptors[2] =
-    CreateItemrefPropertyDescriptor("VM", "VM", !1,  1, \&CreateVMs, ["VMName"]);
-  $PropertyDescriptors[3] =
-    CreateBasicPropertyDescriptor("Timeout", "Timeout", !1, 1, "N", 4);
-  $PropertyDescriptors[4] =
-    CreateBasicPropertyDescriptor("CmdLineArg", "Command line args", !1, !1, "A", 256);
-  $PropertyDescriptors[5] =
-    CreateBasicPropertyDescriptor("ChildPid", "Process id of child process", !1, !1, "N", 5);
-  $PropertyDescriptors[6] =
-    CreateBasicPropertyDescriptor("Started", "Execution started", !1, !1, "DT", 19);
-  $PropertyDescriptors[7] =
-    CreateBasicPropertyDescriptor("Ended", "Execution ended", !1, !1, "DT", 19);
-  $PropertyDescriptors[8] =
-    CreateBasicPropertyDescriptor("TestFailures", "Number of test failures", !1, !1, "N", 5);
+  @PropertyDescriptors = (
+    CreateBasicPropertyDescriptor("No", "Task no",  1,  1, "N", 2),
+    CreateBasicPropertyDescriptor("Status", "Status",  !1,  1, "A", 9),
+    CreateItemrefPropertyDescriptor("VM", "VM", !1,  1, \&CreateVMs, ["VMName"]),
+    CreateBasicPropertyDescriptor("Timeout", "Timeout", !1, 1, "N", 4),
+    CreateBasicPropertyDescriptor("CmdLineArg", "Command line args", !1, !1, "A", 256),
+    CreateBasicPropertyDescriptor("ChildPid", "Process id of child process", !1, !1, "N", 5),
+    CreateBasicPropertyDescriptor("Started", "Execution started", !1, !1, "DT", 19),
+    CreateBasicPropertyDescriptor("Ended", "Execution ended", !1, !1, "DT", 19),
+    CreateBasicPropertyDescriptor("TestFailures", "Number of test failures", !1, !1, "N", 5),
+  );
 }
 
 sub CreateItem

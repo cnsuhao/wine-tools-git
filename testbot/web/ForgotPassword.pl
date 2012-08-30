@@ -35,8 +35,9 @@ sub _initialize
 
   $self->GetPageBase()->CheckSecurePage();
 
-  my @PropertyDescriptors;
-  $PropertyDescriptors[0] = CreateBasicPropertyDescriptor("Name", "Username or EMail", 1, 1, "A", 40);
+  my @PropertyDescriptors = (
+    CreateBasicPropertyDescriptor("Name", "Username or EMail", 1, 1, "A", 40),
+  );
 
   $self->SUPER::_initialize(\@PropertyDescriptors);
 }

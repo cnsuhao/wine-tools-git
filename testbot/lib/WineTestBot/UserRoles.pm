@@ -48,8 +48,9 @@ require Exporter;
 
 BEGIN
 {
-  $PropertyDescriptors[0] =
-    CreateItemrefPropertyDescriptor("Role", "Role", 1,  1, \&CreateRoles, ["RoleName"]);
+  @PropertyDescriptors = (
+    CreateItemrefPropertyDescriptor("Role", "Role", 1,  1, \&CreateRoles, ["RoleName"]),
+  );
 
 }
 

@@ -293,28 +293,19 @@ my @PropertyDescriptors;
 
 BEGIN
 {
-  $PropertyDescriptors[0] =
-    CreateBasicPropertyDescriptor("Id", "Job id", 1, 1, "S",  5);
-  $PropertyDescriptors[1] =
-    CreateBasicPropertyDescriptor("Archived", "Job is archived", !1, 1, "B", 1);
-  $PropertyDescriptors[2] =
-    CreateItemrefPropertyDescriptor("Branch", "Branch", !1, 1, \&CreateBranches, ["BranchName"]);
-  $PropertyDescriptors[3] =
-    CreateItemrefPropertyDescriptor("User", "Author", !1, 1, \&WineTestBot::Users::CreateUsers, ["UserName"]);
-  $PropertyDescriptors[4] =
-    CreateBasicPropertyDescriptor("Priority", "Priority", !1, 1, "N", 1);
-  $PropertyDescriptors[5] =
-    CreateBasicPropertyDescriptor("Status", "Status", !1, 1, "A", 9);
-  $PropertyDescriptors[6] =
-    CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "A", 50);
-  $PropertyDescriptors[7] =
-    CreateBasicPropertyDescriptor("Submitted", "Submitted", !1, !1, "DT", 19);
-  $PropertyDescriptors[8] =
-    CreateBasicPropertyDescriptor("Ended", "Ended", !1, !1, "DT", 50);
-  $PropertyDescriptors[9] =
-    CreateItemrefPropertyDescriptor("Patch", "Submitted from patch", !1, !1, \&WineTestBot::Patches::CreatePatches, ["PatchId"]);
-  $PropertyDescriptors[10] =
-    CreateDetailrefPropertyDescriptor("Steps", "Steps", !1, !1, \&CreateSteps);
+  @PropertyDescriptors = (
+    CreateBasicPropertyDescriptor("Id", "Job id", 1, 1, "S",  5),
+    CreateBasicPropertyDescriptor("Archived", "Job is archived", !1, 1, "B", 1),
+    CreateItemrefPropertyDescriptor("Branch", "Branch", !1, 1, \&CreateBranches, ["BranchName"]),
+    CreateItemrefPropertyDescriptor("User", "Author", !1, 1, \&WineTestBot::Users::CreateUsers, ["UserName"]),
+    CreateBasicPropertyDescriptor("Priority", "Priority", !1, 1, "N", 1),
+    CreateBasicPropertyDescriptor("Status", "Status", !1, 1, "A", 9),
+    CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "A", 50),
+    CreateBasicPropertyDescriptor("Submitted", "Submitted", !1, !1, "DT", 19),
+    CreateBasicPropertyDescriptor("Ended", "Ended", !1, !1, "DT", 50),
+    CreateItemrefPropertyDescriptor("Patch", "Submitted from patch", !1, !1, \&WineTestBot::Patches::CreatePatches, ["PatchId"]),
+    CreateDetailrefPropertyDescriptor("Steps", "Steps", !1, !1, \&CreateSteps),
+  );
 }
 
 sub CreateItem

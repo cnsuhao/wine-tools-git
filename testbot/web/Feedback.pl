@@ -31,10 +31,11 @@ sub _initialize
 {
   my $self = shift;
 
-  my @PropertyDescriptors;
-  $PropertyDescriptors[0] = CreateBasicPropertyDescriptor("Name", "Name", !1, !1, "A", 40);
-  $PropertyDescriptors[1] = CreateBasicPropertyDescriptor("EMail", "Email", !1, !1, "A", 40);
-  $PropertyDescriptors[2] = CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, 1, "A", 1024);
+  my @PropertyDescriptors = (
+    CreateBasicPropertyDescriptor("Name", "Name", !1, !1, "A", 40),
+    CreateBasicPropertyDescriptor("EMail", "Email", !1, !1, "A", 40),
+    CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, 1, "A", 1024),
+  );
 
   $self->SUPER::_initialize(\@PropertyDescriptors);
 

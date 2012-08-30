@@ -35,11 +35,12 @@ sub _initialize
 
   $self->GetPageBase()->CheckSecurePage();
 
-  my @PropertyDescriptors;
-  $PropertyDescriptors[0] = CreateBasicPropertyDescriptor("Name", "Username", 1, 1, "A", 40);
-  $PropertyDescriptors[1] = CreateBasicPropertyDescriptor("ResetCode", "Activation code", !1, 1, "A", 32);
-  $PropertyDescriptors[2] = CreateBasicPropertyDescriptor("Password1", "Password", !1, 1, "A", 32);
-  $PropertyDescriptors[3] = CreateBasicPropertyDescriptor("Password2", "Password (repeat)", !1, 1, "A", 32);
+  my @PropertyDescriptors = (
+    CreateBasicPropertyDescriptor("Name", "Username", 1, 1, "A", 40),
+    CreateBasicPropertyDescriptor("ResetCode", "Activation code", !1, 1, "A", 32),
+    CreateBasicPropertyDescriptor("Password1", "Password", !1, 1, "A", 32),
+    CreateBasicPropertyDescriptor("Password2", "Password (repeat)", !1, 1, "A", 32),
+  );
 
   $self->SUPER::_initialize(\@PropertyDescriptors);
 }

@@ -301,20 +301,15 @@ my @PropertyDescriptors;
 
 BEGIN
 {
-  $PropertyDescriptors[0] =
-    CreateBasicPropertyDescriptor("Id", "Patch id", 1, 1, "N",  7);
-  $PropertyDescriptors[1] =
-    CreateBasicPropertyDescriptor("Received", "Received", !1, 1, "DT", 19);
-  $PropertyDescriptors[2] =
-    CreateBasicPropertyDescriptor("AffectsTests", "Affects tests", !1, 1, "B", 1);
-  $PropertyDescriptors[3] =
-    CreateBasicPropertyDescriptor("FromName", "Author", !1, !1, "A", 40);
-  $PropertyDescriptors[4] =
-    CreateBasicPropertyDescriptor("FromEMail", "Author's email address", !1, !1, "A", 40);
-  $PropertyDescriptors[5] =
-    CreateBasicPropertyDescriptor("Subject", "Subject", !1, !1, "A", 120);
-  $PropertyDescriptors[6] =
-    CreateBasicPropertyDescriptor("Disposition", "Disposition", !1, 1, "A", 40);
+  @PropertyDescriptors = (
+    CreateBasicPropertyDescriptor("Id", "Patch id", 1, 1, "N",  7),
+    CreateBasicPropertyDescriptor("Received", "Received", !1, 1, "DT", 19),
+    CreateBasicPropertyDescriptor("AffectsTests", "Affects tests", !1, 1, "B", 1),
+    CreateBasicPropertyDescriptor("FromName", "Author", !1, !1, "A", 40),
+    CreateBasicPropertyDescriptor("FromEMail", "Author's email address", !1, !1, "A", 40),
+    CreateBasicPropertyDescriptor("Subject", "Subject", !1, !1, "A", 120),
+    CreateBasicPropertyDescriptor("Disposition", "Disposition", !1, 1, "A", 40),
+  );
 }
 
 sub CreateItem

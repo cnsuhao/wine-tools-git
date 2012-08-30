@@ -49,10 +49,10 @@ require Exporter;
 
 BEGIN
 {
-  $PropertyDescriptors[0] =
-    CreateBasicPropertyDescriptor("No", "Part no", 1, 1, "N", 2);
-  $PropertyDescriptors[1] =
-    CreateItemrefPropertyDescriptor("Patch", "Submitted via patch", !1, 1, \&WineTestBot::Patches::CreatePatches, ["PatchId"]);
+  @PropertyDescriptors = (
+    CreateBasicPropertyDescriptor("No", "Part no", 1, 1, "N", 2),
+    CreateItemrefPropertyDescriptor("Patch", "Submitted via patch", !1, 1, \&WineTestBot::Patches::CreatePatches, ["PatchId"]),
+  );
 }
 
 sub CreateItem

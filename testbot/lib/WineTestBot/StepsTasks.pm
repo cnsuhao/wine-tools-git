@@ -87,35 +87,22 @@ require Exporter;
 
 BEGIN
 {
-  $PropertyDescriptors[0] =
-    CreateBasicPropertyDescriptor("Id", "Id", 1,  1, "N", 4);
-  $PropertyDescriptors[1] =
-    CreateBasicPropertyDescriptor("StepNo", "Step no", !1,  1, "N", 2);
-  $PropertyDescriptors[2] =
-    CreateBasicPropertyDescriptor("TaskNo", "Task no", ! 1,  1, "N", 2);
-  $PropertyDescriptors[3] =
-    CreateBasicPropertyDescriptor("Type", "Step type", !1, 1, "A", 6);
-  $PropertyDescriptors[4] =
-    CreateBasicPropertyDescriptor("Status", "Status",  !1,  1, "A", 9);
-  $PropertyDescriptors[5] =
-    CreateItemrefPropertyDescriptor("VM", "VM", !1,  1, \&CreateVMs, ["VMName"]);
-  $PropertyDescriptors[6] =
-    CreateBasicPropertyDescriptor("Timeout", "Timeout", !1, 1, "N", 4);
-  $PropertyDescriptors[7] =
-    CreateBasicPropertyDescriptor("FileName", "File name",  !1,  1, "A", 64);
-  $PropertyDescriptors[8] =
-    CreateBasicPropertyDescriptor("FileType", "File Type",  !1,  1, "A", 64);
-  $PropertyDescriptors[9] =
-    CreateBasicPropertyDescriptor("CmdLineArg", "Command line args", !1, !1, "A", 256);
-  $PropertyDescriptors[10] =
-    CreateBasicPropertyDescriptor("ChildPid", "Process id of child process", !1, !1, "N", 5);
-  $PropertyDescriptors[11] =
-    CreateBasicPropertyDescriptor("Started", "Execution started", !1, !1, "DT", 19);
-  $PropertyDescriptors[12] =
-    CreateBasicPropertyDescriptor("Ended", "Execution ended", !1, !1, "DT", 19);
-  $PropertyDescriptors[13] =
-    CreateBasicPropertyDescriptor("TestFailures", "Number of test failures", !1, !1, "N", 5);
-
+  @PropertyDescriptors = (
+    CreateBasicPropertyDescriptor("Id", "Id", 1,  1, "N", 4),
+    CreateBasicPropertyDescriptor("StepNo", "Step no", !1,  1, "N", 2),
+    CreateBasicPropertyDescriptor("TaskNo", "Task no", ! 1,  1, "N", 2),
+    CreateBasicPropertyDescriptor("Type", "Step type", !1, 1, "A", 6),
+    CreateBasicPropertyDescriptor("Status", "Status",  !1,  1, "A", 9),
+    CreateItemrefPropertyDescriptor("VM", "VM", !1,  1, \&CreateVMs, ["VMName"]),
+    CreateBasicPropertyDescriptor("Timeout", "Timeout", !1, 1, "N", 4),
+    CreateBasicPropertyDescriptor("FileName", "File name",  !1,  1, "A", 64),
+    CreateBasicPropertyDescriptor("FileType", "File Type",  !1,  1, "A", 64),
+    CreateBasicPropertyDescriptor("CmdLineArg", "Command line args", !1, !1, "A", 256),
+    CreateBasicPropertyDescriptor("ChildPid", "Process id of child process", !1, !1, "N", 5),
+    CreateBasicPropertyDescriptor("Started", "Execution started", !1, !1, "DT", 19),
+    CreateBasicPropertyDescriptor("Ended", "Execution ended", !1, !1, "DT", 19),
+    CreateBasicPropertyDescriptor("TestFailures", "Number of test failures", !1, !1, "N", 5),
+   );
 }
 
 sub _initialize

@@ -554,26 +554,18 @@ sub _initialize
 
 BEGIN
 {
-  $PropertyDescriptors[0] =
-    CreateBasicPropertyDescriptor("Name", "VM name", 1, 1, "A", 20);
-  $PropertyDescriptors[1] =
-    CreateBasicPropertyDescriptor("Type", "Type of VM", !1, 1, "A", 7);
-  $PropertyDescriptors[2] =
-    CreateBasicPropertyDescriptor("SortOrder", "Display order", !1, 1, "N", 3);
-  $PropertyDescriptors[3] =
-    CreateBasicPropertyDescriptor("Bits", "32 or 64 bits", !1, 1, "N", 2);
-  $PropertyDescriptors[4] =
-    CreateBasicPropertyDescriptor("Status", "Current status", !1, 1, "A", 9);
-  $PropertyDescriptors[5] =
-    CreateBasicPropertyDescriptor("VmxHost", "Host where VM is located", !1, !1, "A", 64);
-  $PropertyDescriptors[6] =
-    CreateBasicPropertyDescriptor("VmxFilePath", "Path to .vmx file", !1, 1, "A", 64);
-  $PropertyDescriptors[7] =
-    CreateBasicPropertyDescriptor("IdleSnapshot", "Name of idle snapshot", !1, 1, "A", 32);
-  $PropertyDescriptors[8] =
-    CreateBasicPropertyDescriptor("Interactive", "Needs interactive flag", !1, 1, "B", 1);
-  $PropertyDescriptors[9] =
-    CreateBasicPropertyDescriptor("Description", "Description", !1, !1, "A", 40);
+  @PropertyDescriptors = (
+    CreateBasicPropertyDescriptor("Name", "VM name", 1, 1, "A", 20),
+    CreateBasicPropertyDescriptor("Type", "Type of VM", !1, 1, "A", 7),
+    CreateBasicPropertyDescriptor("SortOrder", "Display order", !1, 1, "N", 3),
+    CreateBasicPropertyDescriptor("Bits", "32 or 64 bits", !1, 1, "N", 2),
+    CreateBasicPropertyDescriptor("Status", "Current status", !1, 1, "A", 9),
+    CreateBasicPropertyDescriptor("VmxHost", "Host where VM is located", !1, !1, "A", 64),
+    CreateBasicPropertyDescriptor("VmxFilePath", "Path to .vmx file", !1, 1, "A", 64),
+    CreateBasicPropertyDescriptor("IdleSnapshot", "Name of idle snapshot", !1, 1, "A", 32),
+    CreateBasicPropertyDescriptor("Interactive", "Needs interactive flag", !1, 1, "B", 1),
+    CreateBasicPropertyDescriptor("Description", "Description", !1, !1, "A", 40),
+  );
 }
 
 sub CreateItem

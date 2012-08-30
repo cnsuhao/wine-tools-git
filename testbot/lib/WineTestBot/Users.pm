@@ -316,21 +316,15 @@ require Exporter;
 
 BEGIN
 {
-  $PropertyDescriptors[0] =
-    CreateBasicPropertyDescriptor("Name",      "Username",             1,  1, "A", 40);
-  $PropertyDescriptors[1] =
-    CreateBasicPropertyDescriptor("EMail",     "EMail",               !1,  1, "A", 40);
-  $PropertyDescriptors[2] =
-    CreateBasicPropertyDescriptor("Active",    "Active",              !1,  1, "B",  1);
-  $PropertyDescriptors[3] =
-    CreateBasicPropertyDescriptor("Password",  "Password",            !1, !1, "A", 49);
-  $PropertyDescriptors[4] =
-    CreateBasicPropertyDescriptor("RealName",  "Real name",           !1,  1, "A", 40);
-  $PropertyDescriptors[5] =
-    CreateBasicPropertyDescriptor("ResetCode", "Password reset code", !1, !1, "A", 32);
-  $PropertyDescriptors[6] =
-    CreateDetailrefPropertyDescriptor("Roles",   "Roles",    !1, !1, \&CreateUserRoles);
-
+  @PropertyDescriptors = (
+    CreateBasicPropertyDescriptor("Name",      "Username",   1,  1, "A", 40),
+    CreateBasicPropertyDescriptor("EMail",     "EMail",     !1,  1, "A", 40),
+    CreateBasicPropertyDescriptor("Active",    "Active",    !1,  1, "B",  1),
+    CreateBasicPropertyDescriptor("Password",  "Password",  !1, !1, "A", 49),
+    CreateBasicPropertyDescriptor("RealName",  "Real name", !1,  1, "A", 40),
+    CreateBasicPropertyDescriptor("ResetCode", "Password reset code", !1, !1, "A", 32),
+    CreateDetailrefPropertyDescriptor("Roles", "Roles",     !1, !1, \&CreateUserRoles),
+  );
 }
 
 sub CreateItem

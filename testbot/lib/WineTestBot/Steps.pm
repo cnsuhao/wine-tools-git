@@ -101,24 +101,17 @@ require Exporter;
 
 BEGIN
 {
-  $PropertyDescriptors[0] =
-    CreateBasicPropertyDescriptor("No",     "Step no",  1,  1, "N", 2);
-  $PropertyDescriptors[1] =
-    CreateBasicPropertyDescriptor("Status", "Status",  !1,  1, "A", 9);
-  $PropertyDescriptors[2] =
-    CreateBasicPropertyDescriptor("Type", "Step type",  !1,  1, "A", 8);
-  $PropertyDescriptors[3] =
-    CreateBasicPropertyDescriptor("FileName", "File name",  !1,  1, "A", 100);
-  $PropertyDescriptors[4] =
-    CreateBasicPropertyDescriptor("FileType", "File type",  !1,  1, "A", 13);
-  $PropertyDescriptors[5] =
-    CreateBasicPropertyDescriptor("InStaging", "File is in staging area", !1, 1, "B", 1);
-  $PropertyDescriptors[6] =
-    CreateBasicPropertyDescriptor("DebugLevel", "Debug level (WINETEST_DEBUG)", !1, 1, "N", 2);
-  $PropertyDescriptors[7] =
-    CreateBasicPropertyDescriptor("ReportSuccessfulTests", "Report successful tests (WINETEST_REPORT_SUCCESS)", !1, 1, "B", 1);
-  $PropertyDescriptors[8] =
-    CreateDetailrefPropertyDescriptor("Tasks", "Tasks", !1, !1, \&CreateTasks);
+  @PropertyDescriptors = (
+    CreateBasicPropertyDescriptor("No", "Step no",  1,  1, "N", 2),
+    CreateBasicPropertyDescriptor("Status", "Status",  !1,  1, "A", 9),
+    CreateBasicPropertyDescriptor("Type", "Step type",  !1,  1, "A", 8),
+    CreateBasicPropertyDescriptor("FileName", "File name",  !1,  1, "A", 100),
+    CreateBasicPropertyDescriptor("FileType", "File type",  !1,  1, "A", 13),
+    CreateBasicPropertyDescriptor("InStaging", "File is in staging area", !1, 1, "B", 1),
+    CreateBasicPropertyDescriptor("DebugLevel", "Debug level (WINETEST_DEBUG)", !1, 1, "N", 2),
+    CreateBasicPropertyDescriptor("ReportSuccessfulTests", "Report successful tests (WINETEST_REPORT_SUCCESS)", !1, 1, "B", 1),
+    CreateDetailrefPropertyDescriptor("Tasks", "Tasks", !1, !1, \&CreateTasks),
+  );
 }
 
 sub CreateItem

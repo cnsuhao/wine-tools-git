@@ -61,12 +61,11 @@ require Exporter;
 
 BEGIN
 {
-  $PropertyDescriptors[0] =
-    CreateBasicPropertyDescriptor("Id",        "Session id",         1,  1, "A", 32);
-  $PropertyDescriptors[1] =
-    CreateItemrefPropertyDescriptor("User",    "User",              !1,  1, \&CreateUsers, ["UserName"]);
-  $PropertyDescriptors[2] =
-    CreateBasicPropertyDescriptor("Permanent", "Permanent session", !1,  1, "B",  1);
+  @PropertyDescriptors = (
+    CreateBasicPropertyDescriptor("Id",        "Session id",         1,  1, "A", 32),
+    CreateItemrefPropertyDescriptor("User",    "User",              !1,  1, \&CreateUsers, ["UserName"]),
+    CreateBasicPropertyDescriptor("Permanent", "Permanent session", !1,  1, "B",  1),
+  );
 }
 
 sub CreateItem
