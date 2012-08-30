@@ -302,7 +302,7 @@ BEGIN
     CreateBasicPropertyDescriptor("Status", "Status", !1, 1, "A", 9),
     CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "A", 50),
     CreateBasicPropertyDescriptor("Submitted", "Submitted", !1, !1, "DT", 19),
-    CreateBasicPropertyDescriptor("Ended", "Ended", !1, !1, "DT", 50),
+    CreateBasicPropertyDescriptor("Ended", "Ended", !1, !1, "DT", 19),
     CreateItemrefPropertyDescriptor("Patch", "Submitted from patch", !1, !1, \&WineTestBot::Patches::CreatePatches, ["PatchId"]),
     CreateDetailrefPropertyDescriptor("Steps", "Steps", !1, !1, \&CreateSteps),
   );

@@ -54,7 +54,7 @@ require Exporter;
 BEGIN
 {
   @PropertyDescriptors = (
-    CreateBasicPropertyDescriptor("Name", "Role name", 1,  1, "A", 40),
+    CreateBasicPropertyDescriptor("Name", "Role name", 1,  1, "A", 20),
     CreateBasicPropertyDescriptor("IsDefaultRole", "Should new users get this role by default", !1, 1, "B", 1),
   );
 }

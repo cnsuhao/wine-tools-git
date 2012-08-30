@@ -122,7 +122,7 @@ BEGIN
     CreateBasicPropertyDescriptor("ChildPid", "Process id of child process", !1, !1, "N", 5),
     CreateBasicPropertyDescriptor("Started", "Execution started", !1, !1, "DT", 19),
     CreateBasicPropertyDescriptor("Ended", "Execution ended", !1, !1, "DT", 19),
-    CreateBasicPropertyDescriptor("TestFailures", "Number of test failures", !1, !1, "N", 5),
+    CreateBasicPropertyDescriptor("TestFailures", "Number of test failures", !1, !1, "N", 6),
   );
 }
 
