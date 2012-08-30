@@ -297,7 +297,7 @@ sub HandleNewWinePatchesSubmission
   my $Parser = new MIME::Parser;
   $Parser->output_dir($WorkDir);
   my $Entity = $Parser->parse_open($FullMessageFileName);
-  CreatePatches()->NewSubmission($Entity);
+  CreatePatches()->NewPatch($Entity);
 
   # Clean up
   system("rm -rf $WorkDir");
@@ -401,7 +401,7 @@ sub HandlePatchRetrieved
   my $Parser = new MIME::Parser;
   $Parser->output_dir($WorkDir);
   my $Entity = $Parser->parse_open($FullFileName);
-  my $ErrMessage = CreatePatches()->NewPatch($PatchId, $Entity);
+  my $ErrMessage = CreatePatches()->NewPatch($Entity, $PatchId);
 
   # Clean up
   system("rm -rf $WorkDir");

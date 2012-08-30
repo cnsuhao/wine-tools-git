@@ -1,6 +1,7 @@
 # Patch collection and items
 #
 # Copyright 2010 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -363,96 +364,13 @@ sub IsTestPatch
   return !1;
 }
 
-sub NewSubmission
-{
-  my $self = shift;
-  my $MsgEntity = $_[0];
-
-  my $Patch = $self->Add();
-  $Patch->FromSubmission($MsgEntity);
-
-  my @PatchBodies;
-  foreach my $Part ($MsgEntity->parts_DFS)
-  {
-    if (defined($Part->bodyhandle))
-    {
-      if ($Part->effective_type ne "text/html" &&
-          $self->IsPatch($Part->bodyhandle))
-      {
-        $PatchBodies[scalar(@PatchBodies)] = $Part->bodyhandle;
-      }
-      else
-      {
-        $Part->bodyhandle->purge();
-      }
-    }
-  }
-
-  my $ErrMessage;
-  if (scalar(@PatchBodies) == 1)
-  {
-    $Patch->AffectsTests($self->IsTestPatch($PatchBodies[0]));
-    my $Subject = $Patch->Subject;
-    $Subject =~ s/32\/64//;
-    $Subject =~ s/64\/32//;
-    if ($Subject =~ m/\d+\/\d+/)
-    {
-      $Patch->Disposition("Checking series");
-      my $ErrKey;
-      my $ErrProperty;
-      ($ErrKey, $ErrProperty, $ErrMessage) = $self->Save();
-      link($PatchBodies[0]->path, "$DataDir/patches/" . $Patch->Id);
-      if (! defined($ErrMessage))
-      {
-        $ErrMessage = WineTestBot::PendingPatchSets::CreatePendingPatchSets()->NewSubmission($Patch);
-      }
-    }
-    else
-    {
-      $Patch->Disposition("Checking patch");
-      my $ErrKey;
-      my $ErrProperty;
-      ($ErrKey, $ErrProperty, $ErrMessage) = $self->Save();
-      link($PatchBodies[0]->path, "$DataDir/patches/" . $Patch->Id);
-      if (! defined($ErrMessage))
-      {
-        $ErrMessage = $Patch->Submit($PatchBodies[0]->path, !1);
-      }
-    }
-  }
-  elsif (scalar(@PatchBodies) == 0)
-  {
-    $Patch->Disposition("No patch found");
-  }
-  else
-  {
-    $Patch->Disposition("Message contains multiple patches");
-  }
-
-  foreach my $PatchBody (@PatchBodies)
-  {
-    $PatchBody->purge();
-  }
-  
-  if (! defined($ErrMessage))
-  {
-    my ($ErrKey, $ErrProperty, $ErrMessage) = $self->Save();
-    if (defined($ErrMessage))
-    {
-      return $ErrMessage;
-    }
-  }
-
-  return undef;
-}
-
 sub NewPatch
 {
   my $self = shift;
-  my ($PatchId, $MsgEntity) = @_;
+  my ($MsgEntity, $PatchId) = @_;
 
   my $Patch = $self->Add();
-  $Patch->Id($PatchId);
+  $Patch->Id($PatchId) if (defined $PatchId);
   $Patch->FromSubmission($MsgEntity);
 
   my @PatchBodies;
