@@ -558,10 +558,10 @@ BEGIN
 {
   @PropertyDescriptors = (
     CreateBasicPropertyDescriptor("Name", "VM name", 1, 1, "A", 20),
-    CreateEnumPropertyDescriptor("Type", "Type of VM", !1, 1, ['base', 'extra', 'build', 'retired']),
+    CreateEnumPropertyDescriptor("Type", "Type of VM", !1, 1, ['extra', 'base', 'build', 'retired']),
     CreateBasicPropertyDescriptor("SortOrder", "Display order", !1, 1, "N", 3),
     CreateEnumPropertyDescriptor("Bits", "32 or 64 bits", !1, 1, ['32', '64']),
-    CreateEnumPropertyDescriptor("Status", "Current status", !1, 1, ['idle', 'reverting', 'sleeping', 'running', 'dirty', 'offline']),
+    CreateEnumPropertyDescriptor("Status", "Current status", !1, 1, ['dirty', 'reverting', 'sleeping', 'idle', 'running', 'offline']),
     CreateBasicPropertyDescriptor("VmxHost", "Host where VM is located", !1, !1, "A", 64),
     CreateBasicPropertyDescriptor("VmxFilePath", "Path to .vmx file", !1, 1, "A", 64),
     CreateBasicPropertyDescriptor("IdleSnapshot", "Name of idle snapshot", !1, 1, "A", 32),
