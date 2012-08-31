@@ -272,9 +272,10 @@ sub GenerateField
     }
     else
     {
+      my $Size=$PropertyDescriptor->GetMaxLength();
+      $Size=45 if ($Size > 45);
       print "<input type='$InputType' name='", $PropertyDescriptor->GetName(),
-            "' maxlength='", $PropertyDescriptor->GetMaxLength(), "' size='",
-            $PropertyDescriptor->GetMaxLength(), "'";
+            "' maxlength='", $PropertyDescriptor->GetMaxLength(), "' size='$Size'";
       if ($Value && $InputType ne "password")
       {
         print " value='", $self->CGI->escapeHTML($Value), "'";
