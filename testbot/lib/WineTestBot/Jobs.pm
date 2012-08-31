@@ -1,6 +1,7 @@
 # Job collection and items
 #
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -271,6 +272,7 @@ package WineTestBot::Jobs;
 
 use POSIX qw(:errno_h);
 use ObjectModel::BasicPropertyDescriptor;
+use ObjectModel::EnumPropertyDescriptor;
 use ObjectModel::DetailrefPropertyDescriptor;
 use ObjectModel::ItemrefPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
@@ -299,7 +301,7 @@ BEGIN
     CreateItemrefPropertyDescriptor("Branch", "Branch", !1, 1, \&CreateBranches, ["BranchName"]),
     CreateItemrefPropertyDescriptor("User", "Author", !1, 1, \&WineTestBot::Users::CreateUsers, ["UserName"]),
     CreateBasicPropertyDescriptor("Priority", "Priority", !1, 1, "N", 1),
-    CreateBasicPropertyDescriptor("Status", "Status", !1, 1, "A", 9),
+    CreateEnumPropertyDescriptor("Status", "Status", !1, 1, ['queued', 'running', 'completed', 'failed']),
     CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "A", 50),
     CreateBasicPropertyDescriptor("Submitted", "Submitted", !1, !1, "DT", 19),
     CreateBasicPropertyDescriptor("Ended", "Ended", !1, !1, "DT", 19),

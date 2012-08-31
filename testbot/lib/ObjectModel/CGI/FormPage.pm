@@ -1,6 +1,7 @@
 # Base class for web pages containing a form
 #
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -222,6 +223,12 @@ sub GetInputType
   my $self = shift;
   my $PropertyDescriptor = shift;
 
+  my $Class=$PropertyDescriptor->GetClass();
+  if ($PropertyDescriptor->GetClass() eq "Enum")
+  {
+    return "select";
+  }
+
   if ($PropertyDescriptor->GetType() eq "B")
   {
     return "checkbox";
@@ -249,6 +256,17 @@ sub GenerateField
         print "checked='checked' ";
       }
       print "/>";
+    }
+    elsif ($InputType eq "select")
+    {
+      print "<select name='", $PropertyDescriptor->GetName(), "'>\n";
+      foreach my $V (@{$PropertyDescriptor->GetValues()})
+      {
+        print "  <option value='", $self->CGI->escapeHTML($V), "'";
+        print " selected='selected'" if ($Value eq $V);
+        print ">", $self->CGI->escapeHTML($V), "</option>\n";
+      }
+      print "</select>";
     }
     elsif ($InputType eq "textarea")
     {

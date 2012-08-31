@@ -1,6 +1,7 @@
 # Base class for web pages containing a db bound form
 #
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -137,7 +138,8 @@ sub SaveProperty
   my $self = shift;
   my ($PropertyDescriptor, $Value) = @_;
 
-  if ($PropertyDescriptor->GetType() eq "B" && $Value)
+  if ($PropertyDescriptor->GetClass() eq "Basic" &&
+      $PropertyDescriptor->GetType() eq "B" && $Value)
   {
     $Value = 1;
   }

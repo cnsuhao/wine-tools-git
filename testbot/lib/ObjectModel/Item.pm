@@ -1,6 +1,7 @@
 # Item
 #
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -195,7 +196,8 @@ sub AUTOLOAD
   {
     if ($PropertyName eq $PropertyDescriptor->GetName())
     {
-      if ($PropertyDescriptor->GetClass() eq "Basic")
+      if ($PropertyDescriptor->GetClass() eq "Basic" or
+          $PropertyDescriptor->GetClass() eq "Enum")
       {
         if (@_)
         {

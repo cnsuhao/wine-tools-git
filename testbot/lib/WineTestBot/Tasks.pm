@@ -1,6 +1,7 @@
 # Individual task of a job collection and items
 #
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -100,6 +101,7 @@ sub Run
 package WineTestBot::Tasks;
 
 use ObjectModel::BasicPropertyDescriptor;
+use ObjectModel::EnumPropertyDescriptor;
 use ObjectModel::ItemrefPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
 use WineTestBot::VMs;
@@ -115,7 +117,7 @@ BEGIN
 {
   @PropertyDescriptors = (
     CreateBasicPropertyDescriptor("No", "Task no",  1,  1, "N", 2),
-    CreateBasicPropertyDescriptor("Status", "Status",  !1,  1, "A", 9),
+    CreateEnumPropertyDescriptor("Status", "Status",  !1,  1, ['queued', 'running', 'completed', 'failed', 'skipped']),
     CreateItemrefPropertyDescriptor("VM", "VM", !1,  1, \&CreateVMs, ["VMName"]),
     CreateBasicPropertyDescriptor("Timeout", "Timeout", !1, 1, "N", 4),
     CreateBasicPropertyDescriptor("CmdLineArg", "Command line args", !1, !1, "A", 256),

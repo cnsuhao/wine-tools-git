@@ -1,6 +1,7 @@
 # Job step collection and items
 #
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -88,6 +89,7 @@ sub HandleStaging
 package WineTestBot::Steps;
 
 use ObjectModel::BasicPropertyDescriptor;
+use ObjectModel::EnumPropertyDescriptor;
 use ObjectModel::DetailrefPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
 use WineTestBot::Tasks;
@@ -103,10 +105,10 @@ BEGIN
 {
   @PropertyDescriptors = (
     CreateBasicPropertyDescriptor("No", "Step no",  1,  1, "N", 2),
-    CreateBasicPropertyDescriptor("Status", "Status",  !1,  1, "A", 9),
-    CreateBasicPropertyDescriptor("Type", "Step type",  !1,  1, "A", 8),
+    CreateEnumPropertyDescriptor("Status", "Status",  !1,  1, ['queued', 'running', 'completed', 'failed', 'skipped']),
+    CreateEnumPropertyDescriptor("Type", "Step type",  !1,  1, ['suite', 'single', 'build', 'reconfig']),
     CreateBasicPropertyDescriptor("FileName", "File name",  !1,  1, "A", 100),
-    CreateBasicPropertyDescriptor("FileType", "File type",  !1,  1, "A", 13),
+    CreateEnumPropertyDescriptor("FileType", "File type",  !1,  1, ['exe32', 'exe64', 'patchdlls', 'patchprograms', 'dll32', 'dll64', 'zip']),
     CreateBasicPropertyDescriptor("InStaging", "File is in staging area", !1, 1, "B", 1),
     CreateBasicPropertyDescriptor("DebugLevel", "Debug level (WINETEST_DEBUG)", !1, 1, "N", 2),
     CreateBasicPropertyDescriptor("ReportSuccessfulTests", "Report successful tests (WINETEST_REPORT_SUCCESS)", !1, 1, "B", 1),

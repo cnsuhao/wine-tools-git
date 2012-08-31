@@ -1,6 +1,7 @@
 # VM collection and items
 #
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -534,6 +535,7 @@ package WineTestBot::VMs;
 use VMware::Vix::Simple;
 use VMware::Vix::API::Constants;
 use ObjectModel::BasicPropertyDescriptor;
+use ObjectModel::EnumPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
 use WineTestBot::WineTestBotObjects;
 
@@ -556,10 +558,10 @@ BEGIN
 {
   @PropertyDescriptors = (
     CreateBasicPropertyDescriptor("Name", "VM name", 1, 1, "A", 20),
-    CreateBasicPropertyDescriptor("Type", "Type of VM", !1, 1, "A", 7),
+    CreateEnumPropertyDescriptor("Type", "Type of VM", !1, 1, ['base', 'extra', 'build', 'retired']),
     CreateBasicPropertyDescriptor("SortOrder", "Display order", !1, 1, "N", 3),
-    CreateBasicPropertyDescriptor("Bits", "32 or 64 bits", !1, 1, "N", 2),
-    CreateBasicPropertyDescriptor("Status", "Current status", !1, 1, "A", 9),
+    CreateEnumPropertyDescriptor("Bits", "32 or 64 bits", !1, 1, ['32', '64']),
+    CreateEnumPropertyDescriptor("Status", "Current status", !1, 1, ['idle', 'reverting', 'sleeping', 'running', 'dirty', 'offline']),
     CreateBasicPropertyDescriptor("VmxHost", "Host where VM is located", !1, !1, "A", 64),
     CreateBasicPropertyDescriptor("VmxFilePath", "Path to .vmx file", !1, 1, "A", 64),
     CreateBasicPropertyDescriptor("IdleSnapshot", "Name of idle snapshot", !1, 1, "A", 32),

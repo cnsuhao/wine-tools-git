@@ -1,6 +1,7 @@
 # VM details page
 #
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -30,31 +31,6 @@ sub _initialize
   my $self = shift;
 
   $self->SUPER::_initialize(@_, CreateVMs());
-}
-
-sub GenerateField
-{
-  my $self = shift;
-  my ($PropertyDescriptor, $Display) = @_;
-
-  if ($PropertyDescriptor->GetName() ne "Bits" || $Display ne "rw")
-  {
-    $self->SUPER::GenerateField(@_);
-    return;
-  }
-
-  my $Bits = $self->GetPropertyValue($PropertyDescriptor);
-  if (! defined($Bits))
-  {
-    $Bits = 0;
-  }
-  print "<div class='ItemValue'><input type='radio' name='", $PropertyDescriptor->GetName(),
-        "' value='32' ", $Bits == 32 ? "checked='checked' " : "",
-        "/>32 bits<br>\n";
-  print "<input type='radio' name='", $PropertyDescriptor->GetName(),
-        "' value='64' ", $Bits == 64 ? "checked='checked' " : "",
-        "/>64 bits<br>\n";
-  print "</div>\n";
 }
 
 package main;
