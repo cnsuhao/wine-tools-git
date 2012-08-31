@@ -1,9 +1,10 @@
-CROSSCC32=i686-pc-mingw32-gcc
-CROSSSTRIP=i686-pc-mingw32-strip
-BINDIR=../../bin
+bindir = ../../bin
 
-all: ${BINDIR}/GenFixEnv.exe
+CROSSCC32    = i686-w64-mingw32-gcc
+CROSSSTRIP32 = i686-w64-mingw32-strip
 
-${BINDIR}/GenFixEnv.exe: GenFixEnv.c
-	${CROSSCC32} -o ${BINDIR}/GenFixEnv.exe -O2 -D_WIN32_IE=0x0500 GenFixEnv.c
-	${CROSSSTRIP} ${BINDIR}/GenFixEnv.exe
+all: $(bindir)/GenFixEnv.exe
+
+$(bindir)/GenFixEnv.exe: GenFixEnv.c
+	$(CROSSCC32) -o $@ $<
+	$(CROSSSTRIP32) $@
