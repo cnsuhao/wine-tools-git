@@ -1,5 +1,5 @@
 /*
- * TestLauncher.cpp : Defines the entry point for the console application.
+ * Verifies that the dlls needed for the test are present.
  *
  * Copyright 2009 Ge van Geldorp
  *

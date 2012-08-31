@@ -1,5 +1,7 @@
 /*
- * GenFixEnv.cpp : Defines the entry point for the console application.
+ * Generates a batch file that sets up the environment.
+ * This can be used in case the mechanism for running a process in the VM
+ * does not properly set up the environment for the currently logged in user.
  *
  * Copyright 2009 Ge van Geldorp
  *
