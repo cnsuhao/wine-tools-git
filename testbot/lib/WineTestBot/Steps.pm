@@ -1,5 +1,3 @@
-# Job step collection and items
-#
 # Copyright 2009 Ge van Geldorp
 # Copyright 2012 Francois Gouget
 #
@@ -19,13 +17,19 @@
 
 use strict;
 
+package WineTestBot::Step;
+
 =head1 NAME
 
-WineTestBot::Steps - Job step collection
+WineTestBot::Step - A Job's Step
+
+=head1 DESCRIPTION
+
+A Job is composed of multiple Steps that each do a specific operation: build
+the test executable, or run a given test, etc. A Step is in turn composed of
+a WineTestBot::Task object for each VM it should be run on.
 
 =cut
-
-package WineTestBot::Step;
 
 use File::Copy;
 use WineTestBot::Config;
@@ -87,6 +91,12 @@ sub HandleStaging
 }
 
 package WineTestBot::Steps;
+
+=head1 NAME
+
+WineTestBot::Steps - A collection of Job Steps
+
+=cut
 
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::EnumPropertyDescriptor;

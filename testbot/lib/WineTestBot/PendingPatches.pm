@@ -1,6 +1,5 @@
-# Incomplete series part collection and items
-#
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -18,13 +17,18 @@
 
 use strict;
 
+package WineTestBot::PendingPatch;
+
 =head1 NAME
 
-WineTestBot::PendingPatches - Incomplete series part collection
+WineTestBot::PendingPatch - Tracks the patches of an incomplete series
+
+=head1 DESCRIPTION
+
+Ties a WineTestBot::Patch object to the WineTestBot::PendingPatchSet object
+identifying the patch series it belongs to.
 
 =cut
-
-package WineTestBot::PendingPatch;
 
 use WineTestBot::WineTestBotObjects;
 
@@ -34,6 +38,12 @@ require Exporter;
 @ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
 package WineTestBot::PendingPatches;
+
+=head1 NAME
+
+WineTestBot::PendingPatches - A collection of WineTestBot::PendingPatch objects
+
+=cut
 
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::ItemrefPropertyDescriptor;

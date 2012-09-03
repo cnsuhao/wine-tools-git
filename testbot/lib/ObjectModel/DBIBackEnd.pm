@@ -21,6 +21,16 @@ use ObjectModel::BackEnd;
 
 package ObjectModel::DBIBackEnd;
 
+=head1 NAME
+
+ObjectModel::DBIBackEnd - A storage backend implemented using DBI
+
+=head1 SEE ALSO
+
+ObjectModel::BackEnd
+
+=cut
+
 use Time::Local;
 
 use vars qw(@ISA @EXPORT);

@@ -1,5 +1,3 @@
-# WineTestBot configuration
-#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or
@@ -18,13 +16,13 @@
 
 use strict;
 
+package WineTestBot::Config;
+
 =head1 NAME
 
-WineTestBot::Config - Configuration settings
+WineTestBot::Config - Site-independent configuration settings
 
 =cut
-
-package WineTestBot::Config;
 
 use ObjectModel::DBIBackEnd;
 

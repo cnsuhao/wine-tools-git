@@ -1,5 +1,3 @@
-# Base class for data storage back ends
-#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or
@@ -18,17 +16,18 @@
 
 use strict;
 
+package ObjectModel::BackEnd;
+
 =head1 NAME
 
 ObjectModel::BackEnd - Base class for data storage back ends
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
-=head2 NOTES
+See ObjectModel::DBIBackEnd for the list of methods that actual implementations
+should provide.
 
 =cut
-
-package ObjectModel::BackEnd;
 
 use vars qw(@ISA @EXPORT %ActiveBackEnds);
 

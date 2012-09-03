@@ -1,5 +1,3 @@
-# Job collection and items
-#
 # Copyright 2009 Ge van Geldorp
 # Copyright 2012 Francois Gouget
 #
@@ -19,14 +17,38 @@
 
 use strict;
 
-=head1 NAME
-
-WineTestBot::Jobs - Job collection
-
-=cut
-
 
 package WineTestBot::Job;
+
+=head1 NAME
+
+WineTestBot::Job - A job submitted by a user
+
+=head1 DESCRIPTION
+
+A Job is created when a WineTestBot::User asks for something to be tested
+(for automatically generated Jobs this would be the batch user). There are many
+paths that can result in the creation of a job:
+
+=over
+
+=item *
+A use submits a patch or binary to test.
+
+=item *
+WineTestBot finds a patch to test on the mailing list (and has all the pieces
+it needs for that patch, see WineTestBot::PendingPatchSet).
+
+=item *
+WineTestBot notices a Wine commit round and decides to run the full suite of
+tests. In this case there is no WineTestBot::Patch object associated with the
+Job.
+
+=back
+
+A Job is composed of multiple WineTestBot::Step objects.
+
+=cut
 
 use WineTestBot::Branches;
 use WineTestBot::Engine::Notify;
@@ -270,6 +292,17 @@ sub GetDescription
 
 package WineTestBot::Jobs;
 
+=head1 NAME
+
+WineTestBot::Jobs - A Job collection
+
+=head1 DESCRIPTION
+
+This collection contains all known jobs: those have have been run as well as
+those that are yet to be run.
+
+=cut
+
 use POSIX qw(:errno_h);
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::EnumPropertyDescriptor;
@@ -415,6 +448,7 @@ sub ScheduleOnHost
     return undef;
   }
 
+  # Sort the VMs by decreasing order of priority of their Jobs
   my @DirtyVMsByIndex = sort { $DirtyVMsBlockingJobs{$a} <=> $DirtyVMsBlockingJobs{$b} } keys %DirtyVMsBlockingJobs;
   my $VMKey;
   foreach $VMKey (@DirtyVMsByIndex)
@@ -454,6 +488,17 @@ sub ScheduleOnHost
   return undef;
 }
 
+=pod
+=over 12
+
+=item C<Schedule()>
+
+Goes through the WineTestBot hosts and schedules the Job tasks on each of
+them using WineTestBot::Jobs::ScheduleOnHost().
+
+=back
+=cut
+
 sub Schedule
 {
   my $self = shift;
@@ -476,6 +521,21 @@ sub Schedule
 
   return $ErrMessage;
 }
+
+=pod
+=over 12
+
+=item C<Check()>
+
+Goes through the list of Jobs, and for each of them updates their status by
+checking whether they still have running Steps / Tasks, and whether those
+have succeeded or failed.
+
+As a side effect this also updates the status of the WineTestBot::Step and
+WineTestBot::Task objects.
+
+=back
+=cut
 
 sub Check
 {

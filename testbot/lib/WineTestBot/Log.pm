@@ -1,5 +1,3 @@
-# WineTestBot logging
-#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or
@@ -18,13 +16,13 @@
 
 use strict;
 
+package WineTestBot::Log;
+
 =head1 NAME
 
 WineTestBot::Log - Logging
 
 =cut
-
-package WineTestBot::Log;
 
 use WineTestBot::Config;
 

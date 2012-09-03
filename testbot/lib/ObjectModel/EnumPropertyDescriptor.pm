@@ -16,14 +16,18 @@
 
 use strict;
 
+package ObjectModel::EnumPropertyDescriptor;
+
 =head1 NAME
 
-ObjectModel::EnumPropertyDescriptor - Defines a property that can only take
-a set of values.
+ObjectModel::EnumPropertyDescriptor - Defines an enumeration property
+
+=head1 DESCRIPTION
+
+This handles the ENUM columns. In particular ValidateValue() checks that the
+new value is allowed.
 
 =cut
-
-package ObjectModel::EnumPropertyDescriptor;
 
 use ObjectModel::PropertyDescriptor;
 

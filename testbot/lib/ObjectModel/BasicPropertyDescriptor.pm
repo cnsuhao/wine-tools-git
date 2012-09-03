@@ -1,6 +1,5 @@
-# Item property description
-#
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -20,7 +19,11 @@ use strict;
 
 =head1 NAME
 
-ObjectModel::PropertyDescriptor - Base class for item property descriptions
+ObjectModel::BasicPropertyDescriptor - Defines a basic property
+
+=head1 DESCRIPTION
+
+This handles the boolean, a number and string columns.
 
 =cut
 

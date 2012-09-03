@@ -1,6 +1,5 @@
-# Item property description
-#
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -18,13 +17,19 @@
 
 use strict;
 
+package ObjectModel::PropertyDescriptor;
+
 =head1 NAME
 
 ObjectModel::PropertyDescriptor - Base class for item property descriptions
 
-=cut
+=head1 DESCRIPTION
 
-package ObjectModel::PropertyDescriptor;
+This includes the basic information for retrieving and storing the property
+in the database, whether it is part of the primary key and whether it is
+required or not.
+
+=cut
 
 use vars qw(@ISA @EXPORT);
 

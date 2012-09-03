@@ -1,5 +1,3 @@
-# Item
-#
 # Copyright 2009 Ge van Geldorp
 # Copyright 2012 Francois Gouget
 #
@@ -19,13 +17,13 @@
 
 use strict;
 
+package ObjectModel::Item;
+
 =head1 NAME
 
 ObjectModel::Item - Base class for items
 
 =cut
-
-package ObjectModel::Item;
 
 use ObjectModel::BackEnd;
 use ObjectModel::Collection;

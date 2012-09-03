@@ -1,6 +1,5 @@
-# Merged job steps/tasks
-#
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -18,13 +17,18 @@
 
 use strict;
 
+package WineTestBot::StepTask;
+
 =head1 NAME
 
-WineTestBot::StepsTasks - Job step/tasks collection
+WineTestBot::StepTask - Merged job steps/tasks
+
+=head1 DESCRIPTION
+
+This ties together a given WineTestBot::Task object with the corresponding
+WineTestBot::Step object.
 
 =cut
-
-package WineTestBot::StepTask;
 
 use WineTestBot::Config;
 use WineTestBot::WineTestBotObjects;
@@ -70,6 +74,12 @@ sub GetTitle
 }
 
 package WineTestBot::StepsTasks;
+
+=head1 NAME
+
+WineTestBot::StepsTasks - A collection of StepsTasks objects
+
+=cut
 
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::ItemrefPropertyDescriptor;

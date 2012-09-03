@@ -1,5 +1,3 @@
-# Role of a user collection and items
-#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or
@@ -18,13 +16,13 @@
 
 use strict;
 
+package WineTestBot::UserRole;
+
 =head1 NAME
 
-WineTestBot::UserRoles - User role collection
+WineTestBot::UserRole - A UserRole item
 
 =cut
-
-package WineTestBot::UserRole;
 
 use WineTestBot::WineTestBotObjects;
 
@@ -34,6 +32,12 @@ require Exporter;
 @ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
 package WineTestBot::UserRoles;
+
+=head1 NAME
+
+WineTestBot::UserRoles - A collection of WineTestBot::UserRole objects
+
+=cut
 
 use ObjectModel::ItemrefPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;

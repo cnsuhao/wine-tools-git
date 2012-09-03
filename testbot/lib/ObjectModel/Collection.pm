@@ -1,5 +1,3 @@
-# Collection of items
-#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or
@@ -18,13 +16,24 @@
 
 use strict;
 
+package ObjectModel::Collection;
+
 =head1 NAME
 
 ObjectModel::Collection - Base class for item collections
 
-=cut
+=head1 DESCRIPTION
 
-package ObjectModel::Collection;
+Provides a set of methods to manipulate a collection of objects, and in
+particular load and save them to a database table using ObjectModel::BackEnd.
+Also provides a set of filtering methods to specify the set of objects we are
+interested in so only those objects are retrieved from the database.
+
+Note that there may be multiple collections corresponding to a given table at
+the same time. This is how one retrieves the objects based on different
+criteria.
+
+=cut
 
 use vars qw(@ISA @EXPORT_OK);
 

@@ -1,5 +1,3 @@
-# Item property description
-#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or
@@ -18,13 +16,13 @@
 
 use strict;
 
+package ObjectModel::DetailrefPropertyDescriptor;
+
 =head1 NAME
 
-ObjectModel::PropertyDescriptor - Base class for item property descriptions
+ObjectModel::DetailrefPropertyDescriptor - A reference to a collection of related objects
 
 =cut
-
-package ObjectModel::DetailrefPropertyDescriptor;
 
 use vars qw(@ISA @EXPORT);
 

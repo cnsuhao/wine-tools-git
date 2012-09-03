@@ -1,5 +1,3 @@
-# Individual task of a job collection and items
-#
 # Copyright 2009 Ge van Geldorp
 # Copyright 2012 Francois Gouget
 #
@@ -19,13 +17,20 @@
 
 use strict;
 
+package WineTestBot::Task;
+
 =head1 NAME
 
-WineTestBot::Tasks - Job task collection
+WineTestBot::Task - A task associated with a given WineTestBot::Step object
+
+=head1 DESCRIPTION
+
+A WineTestBot::Step is composed of one or more Tasks, each responsible for
+performing that Step in a WineTestBot::VM virtual machine. For instance a Step
+responsible for running a given test would have one Task object for each
+virtual machine that the test must be performed in.
 
 =cut
-
-package WineTestBot::Task;
 
 use ObjectModel::BackEnd;
 use WineTestBot::Config;
@@ -49,6 +54,21 @@ sub InitializeNew
 
   $self->SUPER::InitializeNew(@_);
 }
+
+=pod
+=over 12
+
+=item C<Run()>
+
+Starts a script in the background to execute the specified task. The command is
+of the form:
+
+    ${ProjectName}Run${Type}.pl ${JobId} ${StepNo} ${TaskNo}
+
+Where $Type corresponds to the Task's type.
+
+=back
+=cut
 
 sub Run
 {
@@ -99,6 +119,12 @@ sub Run
 }
 
 package WineTestBot::Tasks;
+
+=head1 NAME
+
+WineTestBot::Tasks - A collection of WineTestBot::Task objects
+
+=cut
 
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::EnumPropertyDescriptor;

@@ -1,6 +1,5 @@
-# Branch collection and items
-#
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -18,13 +17,13 @@
 
 use strict;
 
+package WineTestBot::Branch;
+
 =head1 NAME
 
-WineTestBot::Branches - Branch collection
+WineTestBot::Branch - Describes a Wine branch
 
 =cut
-
-package WineTestBot::Branch;
 
 use WineTestBot::WineTestBotObjects;
 use WineTestBot::Config;
@@ -42,6 +41,12 @@ sub InitializeNew
 }
 
 package WineTestBot::Branches;
+
+=head1 NAME
+
+WineTestBot::Branches - A collection of WineTestBot::Branch objects
+
+=cut
 
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;

@@ -1,5 +1,3 @@
-# Base collection and item classes for WineTestBot
-#
 # Copyright 2009-2011 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or
@@ -18,13 +16,13 @@
 
 use strict;
 
+package WineTestBot::WineTestBotItem;
+
 =head1 NAME
 
-WineTestBot::WineTestBotCollection - Base collection class for WineTestBot
+WineTestBot::WineTestBotItem - Base item class for WineTestBot
 
 =cut
-
-package WineTestBot::WineTestBotItem;
 
 use ObjectModel::BackEnd;
 use ObjectModel::Item;
@@ -40,7 +38,14 @@ sub GetBackEnd
   return $ActiveBackEnds{'WineTestBot'};
 }
 
+
 package WineTestBot::WineTestBotCollection;
+
+=head1 NAME
+
+WineTestBot::WineTestBotCollection - Base collection class for WineTestBot
+
+=cut
 
 use ObjectModel::BackEnd;
 use ObjectModel::Item;

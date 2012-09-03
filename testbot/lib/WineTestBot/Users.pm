@@ -1,5 +1,3 @@
-# User collection and items
-#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or
@@ -18,13 +16,13 @@
 
 use strict;
 
+package WineTestBot::User;
+
 =head1 NAME
 
-WineTestBot::Users - User collection
+WineTestBot::Users - A User
 
 =cut
-
-package WineTestBot::User;
 
 use Digest::SHA qw(sha1_hex);
 use URI::Escape;
@@ -298,6 +296,12 @@ sub HasRole
 }
 
 package WineTestBot::Users;
+
+=head1 NAME
+
+WineTestBot::Users - A collection of WineTestBot::User objects
+
+=cut
 
 use Net::LDAP;
 use ObjectModel::BasicPropertyDescriptor;

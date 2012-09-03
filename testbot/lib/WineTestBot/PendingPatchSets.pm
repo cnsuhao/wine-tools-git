@@ -1,6 +1,5 @@
-# Incomplete patch series collection and items
-#
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -18,14 +17,25 @@
 
 use strict;
 
+package WineTestBot::PendingPatchSet;
+
 =head1 NAME
 
-WineTestBot::PendingPatchSets - PendingPatchSet collection
+WineTestBot::PendingPatchSet - An object tracking a pending patchset
+
+=head1 DESCRIPTION
+
+A patchset is a set of patches that depend on each other. They are numbered so
+that one knows in which order to apply them. This is typically indicated by a
+subject of the form '[3/5] Subject'. This means one must track which patchset
+a patch belongs to so it is tested (and applied) together with the earlier
+parts rather than in isolation. Furthermore the parts of the set may arrive in
+the wrong order so processing of later parts must be deferred until the earlier
+ones have been received.
+
+The WineTestBot::PendingPatchSet class is where this tracking is implemented.
 
 =cut
-
-
-package WineTestBot::PendingPatchSet;
 
 use WineTestBot::Config;
 use WineTestBot::Patches;
@@ -36,6 +46,17 @@ use vars qw(@ISA @EXPORT);
 
 require Exporter;
 @ISA = qw(WineTestBot::WineTestBotItem Exporter);
+
+=pod
+=over 12
+
+=item C<CheckSubsetComplete()>
+
+Returns true if all the patches needed for the specified part in the patchset
+have been received.
+
+=back
+=cut
 
 sub CheckSubsetComplete
 {
@@ -53,12 +74,33 @@ sub CheckSubsetComplete
   return ! $MissingPart;
 }
 
+=pod
+=over 12
+
+=item C<CheckComplete()>
+
+Returns true if all the patches of the patchset have been received.
+
+=back
+=cut
+
 sub CheckComplete
 {
   my $self = shift;
 
   return $self->CheckSubsetComplete($self->TotalParts)
 }
+
+=pod
+=over 12
+
+=item C<SubmitSubset()>
+
+Combines the patches leading to the specified part in the patchset, and then
+calls WineTestBot::Patch::Submit() so it gets scheduled for testing.
+
+=back
+=cut
 
 sub SubmitSubset
 {
@@ -100,6 +142,16 @@ sub SubmitSubset
   return $ErrMessage;
 }
 
+=pod
+=over 12
+
+=item C<Submit()>
+
+Submits the last patch in the patchset.
+
+=back
+=cut
+
 sub Submit
 {
   my $self = shift;
@@ -109,6 +161,12 @@ sub Submit
 }
 
 package WineTestBot::PendingPatchSets;
+
+=head1 NAME
+
+WineTestBot::PendingPatchSets - A collection of WineTestBot::PendingPatchSet objects
+
+=cut
 
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::DetailrefPropertyDescriptor;
@@ -141,6 +199,18 @@ sub CreateItem
 
   return WineTestBot::PendingPatchSet->new($self);
 }
+
+=pod
+=over 12
+
+=item C<NewSubmission()>
+
+Adds a new part to the current patchset and submits it as well as all the
+other parts for which all the previous parts are available. If the new part
+makes the patchset complete, then the patchset itself is deleted.
+
+=back
+=cut
 
 sub NewSubmission
 {
@@ -229,6 +299,23 @@ sub NewSubmission
 
   return $ErrMessage;
 }
+
+=pod
+=over 12
+
+=item C<CheckForCompleteSet()>
+
+Goes over the pending patchsets and submits the patches for all those that
+are complete. See WineTestBot::PendingPatchSet::Submit().
+The WineTestBot::PendingPatchSet objects of all complete patchsets are also
+deleted.
+
+Note that this only submits the last patch in the set, because each part of a
+patchset is submitted as it becomes available so the earlier parts are supposed
+to have been submitted already.
+
+=back
+=cut
 
 sub CheckForCompleteSet
 {

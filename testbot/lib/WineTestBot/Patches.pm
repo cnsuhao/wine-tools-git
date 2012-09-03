@@ -1,5 +1,3 @@
-# Patch collection and items
-#
 # Copyright 2010 Ge van Geldorp
 # Copyright 2012 Francois Gouget
 #
@@ -19,14 +17,20 @@
 
 use strict;
 
+package WineTestBot::Patch;
+
 =head1 NAME
 
-WineTestBot::Patches - Patch collection
+WineTestBot::Patch - A patch to be tested
+
+=head1 DESCRIPTION
+
+A WineTestBot::Patch object tracks a patch submitted by a user or collected
+from the mailing list. If it is part of a patch series, then a
+WineTestBot::PendingPatchSet object will be created to track the series and
+linked to this patch through a WineTestBot::PendingPatch object.
 
 =cut
-
-
-package WineTestBot::Patch;
 
 use Encode qw/decode/;
 use WineTestBot::Config;
@@ -51,6 +55,16 @@ sub InitializeNew
 
   $self->SUPER::InitializeNew();
 }
+
+=pod
+=over 12
+
+=item C<FromSubmission()>
+
+Initializes a WineTestBot::Patch object from the given message.
+
+=back
+=cut
 
 sub FromSubmission
 {
@@ -86,6 +100,24 @@ sub FromSubmission
 
   $self->Disposition("Processing");
 }
+
+=pod
+=over 12
+
+=item C<Submit()>
+
+Analyzes the current patch to determine which Wine tests are impacted. Then for
+each impacted test it creates a high priority WineTestBot::Job to run that test.
+This also creates the WineTestBot::Step objects for that Job, as well as the
+WineTestBot::Task objects to run the test on each 'base' VM. Finally it calls
+C<WineTestBot::Jobs::Schedule()> to run the new Jobs.
+
+Note that the path to the file containing the actual patch is passed as a
+parameter. This is used to apply a combined patch for patch series. See
+WineTestBot::PendingPatchSet::SubmitSubset().
+
+=back
+=cut
 
 sub Submit
 {
@@ -287,6 +319,12 @@ sub GetEMailRecipient
 
 package WineTestBot::Patches;
 
+=head1 NAME
+
+WineTestBot::Patches - A collection of WineTestBot::Patch objects
+
+=cut
+
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
 use WineTestBot::Config;
@@ -363,6 +401,21 @@ sub IsTestPatch
 
   return !1;
 }
+
+=pod
+=over 12
+
+=item C<NewPatch()>
+
+Creates a WineTestBot::Patch object for the given message. If that the message
+does impact Wine's tests then the Patch object disposition is set and no
+further action is performed. Otherwise if the patch is part of a series then
+it gets tied to a WineTestBot::PendingPatchSet object by
+WineTestBot::PendingPatchSets::NewSubmission(). If the patch is independent of
+others, then C<WineTestBot::Patch::Submit()> is called right away.
+
+=back
+=cut
 
 sub NewPatch
 {

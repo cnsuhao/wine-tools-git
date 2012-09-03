@@ -1,5 +1,3 @@
-# Role collection and items
-#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or
@@ -18,13 +16,17 @@
 
 use strict;
 
+package WineTestBot::Role;
+
 =head1 NAME
 
-WineTestBot::Roles - Role collection
+WineTestBot::Role - A Role item
+
+=head1 DESCRIPTION
+
+A Role is a class of users and defines what they can do.
 
 =cut
-
-package WineTestBot::Role;
 
 use WineTestBot::WineTestBotObjects;
 
@@ -40,6 +42,12 @@ sub HasRole
 }
 
 package WineTestBot::Roles;
+
+=head1 NAME
+
+WineTestBot::Roles - A collection of WineTestBot::Role objects
+
+=cut
 
 use ObjectModel::PropertyDescriptor;
 use ObjectModel::BasicPropertyDescriptor;

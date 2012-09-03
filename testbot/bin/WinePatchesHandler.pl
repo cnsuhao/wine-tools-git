@@ -1,6 +1,8 @@
 #!/usr/bin/perl -Tw
 #
-# Tell the engine to expect a winetest.exe update on test.winehq.org
+# This script expects to receive a wine-patches email on stdin and submits it
+# to WineTestBot for testing. It is meant to be called from a tool such as
+# procmail.
 #
 # Copyright 2009 Ge van Geldorp
 #
