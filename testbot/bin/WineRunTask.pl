@@ -264,14 +264,14 @@ if (defined($ErrMessage))
 my $TestLauncher = "TestLauncher" . 
                    ($FileType eq "exe64" ? "64" : "32") .
                    ".exe";
-$ErrMessage = $VM->CopyFileFromHostToGuest("$BinDir/$TestLauncher",
+$ErrMessage = $VM->CopyFileFromHostToGuest("$BinDir/windows/$TestLauncher",
                                            "C:\\winetest\\$TestLauncher");
 if (defined($ErrMessage))
 {
   FatalError "Can't copy TestLauncher to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
-$ErrMessage = $VM->CopyFileFromHostToGuest("$BinDir/GenFixEnv.exe",
+$ErrMessage = $VM->CopyFileFromHostToGuest("$BinDir/windows/GenFixEnv.exe",
                                            "C:\\winetest\\GenFixEnv.exe");
 if (defined($ErrMessage))
 {
