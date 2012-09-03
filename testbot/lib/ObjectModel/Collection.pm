@@ -236,6 +236,14 @@ sub IsEmpty
   return scalar(keys %{$self->{Items}}) == 0;
 }
 
+sub CombineKey
+{
+  my $self = shift;
+
+  my $CombinedKey = join("#@#", @_);
+  return $CombinedKey;
+}
+
 sub SplitKey
 {
   my $self = shift;

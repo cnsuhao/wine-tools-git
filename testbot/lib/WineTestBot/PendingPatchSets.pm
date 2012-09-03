@@ -230,13 +230,7 @@ sub NewSubmission
   my $PartNo = int($1);
   my $MaxPartNo = int($2);
 
-  my $DummySet = CreatePendingPatchSets()->Add();
-  $DummySet->EMail($Patch->FromEMail);
-  $DummySet->TotalParts($MaxPartNo);
-  my $SetKey = $DummySet->GetKey();
-  $DummySet = undef;
-
-  my $Set = $self->GetItem($SetKey);
+  my $Set = $self->GetItem($self->CombineKey($Patch->FromEMail, $MaxPartNo));
   if (! defined($Set))
   {
     $Set = $self->Add();
