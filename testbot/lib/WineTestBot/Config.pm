@@ -28,7 +28,8 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
              $VixHostType $VixHostUsername $VixHostPassword
              $VixGuestUsername $VixGuestPassword $DbDataSource $DbUsername
              $DbPassword $MaxRevertingVMs $MaxRunningVMs $MaxExtraPoweredOnVms $SleepAfterRevert
-             $AdminEMail $RobotEMail $SuiteTimeout $SingleTimeout
+             $AdminEMail $RobotEMail $WinePatchToOverride $WinePatchCc
+             $SuiteTimeout $SingleTimeout
              $BuildTimeout $ReconfigTimeout $OverheadTimeout $TagPrefix
              $ProjectName $PatchesMailingList $PatchResultsEMail $LDAPServer
              $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter
@@ -40,7 +41,8 @@ require Exporter;
 @EXPORT = qw($UseSSL $LogDir $DataDir $BinDir $VixHostType
              $VixHostUsername $VixHostPassword $VixGuestUsername
              $VixGuestPassword $MaxRevertingVMs $MaxRunningVMs $MaxExtraPoweredOnVms
-             $SleepAfterRevert $AdminEMail $RobotEMail $SuiteTimeout
+             $SleepAfterRevert $AdminEMail $RobotEMail $WinePatchToOverride
+             $WinePatchCc $SuiteTimeout
              $SingleTimeout $BuildTimeout $ReconfigTimeout $OverheadTimeout
              $TagPrefix $ProjectName $PatchesMailingList $PatchResultsEMail
              $LDAPServer $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter

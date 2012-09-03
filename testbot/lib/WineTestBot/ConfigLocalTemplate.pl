@@ -62,8 +62,17 @@ $WineTestBot::Config::AdminEMail = undef;
 # From address of mails sent by WineTestBot to users
 $WineTestBot::Config::RobotEMail = undef;
 
+# If set, sends the results to the specified email address instead of the
+# patch author. Set it to undef once your WineTestBot installation works and
+# can provide useful results to Wine developers.
+$WineTestBot::Config::WinePatchToOverride = $WineTestBot::Config::AdminEMail;
+
+# If set, CC the results to the specified email address, for instance the
+# wine-devel mailing list.
+$WineTestBot::Config::WinePatchCc = "";
+
 # Email address to send the results to for integration with the Wine Patches
-# site
+# web site
 $WineTestBot::Config::PatchResultsEMail = undef;
 
 # Host name of the web interface

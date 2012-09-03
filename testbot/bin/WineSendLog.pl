@@ -173,7 +173,7 @@ sub CompareLogs
 sub SendLog
 {
   my $Job = shift;
-  my $To = $Job->GetEMailRecipient();
+  my $To = $WinePatchToOverride || $Job->GetEMailRecipient();
   if (! defined($To))
   {
     return;
@@ -420,7 +420,7 @@ EOF
     open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
     print SENDMAIL "From: Marvin <$RobotEMail>\n";
     print SENDMAIL "To: $To\n";
-    print SENDMAIL "Cc: wine-devel\@winehq.org\n";
+    print SENDMAIL "Cc: $WinePatchCc\n";
     print SENDMAIL "Subject: Re: ", $Job->Patch->Subject, "\n";
     print SENDMAIL <<"EOF";
 
