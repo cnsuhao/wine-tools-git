@@ -67,8 +67,6 @@ $ProjectName = "Wine";
 $PatchesMailingList = "wine-patches";
 $PatchResultsEMail = undef;
 
-$WebHostName = undef;
-
 $LDAPServer = undef;
 $LDAPBindDN = undef;
 $LDAPSearchBase = undef;
