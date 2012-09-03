@@ -25,6 +25,7 @@ use strict;
 my $Dir;
 sub BEGIN
 {
+  $main::BuildEnv = 1;
   $0 =~ m=^(.*)/[^/]*$=;
   $Dir = $1;
 }

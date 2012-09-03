@@ -24,8 +24,6 @@ WineTestBot::Config - Site-independent configuration settings
 
 =cut
 
-use ObjectModel::DBIBackEnd;
-
 use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
              $VixHostType $VixHostUsername $VixHostPassword
              $VixGuestUsername $VixGuestPassword $DbDataSource $DbUsername
@@ -81,17 +79,22 @@ $LDAPEMailAttribute = undef;
 $JobPurgeDays = 7;
 $JobArchiveDays = 0;
 
-eval 'require "WineTestBot/ConfigLocal.pl";';
-if ($@)
+if (!$main::BuildEnv)
 {
-  print STDERR "Please create a valid lib/WineTestBot/ConfigLocal.pl, use " .
-               "lib/WineTestBot/ConfigLocalTemplate.pl as template\n";
-  exit;
-}
+  $main::BuildEnv = 0;
+  eval 'require "WineTestBot/ConfigLocal.pl";';
+  if ($@)
+  {
+    print STDERR "Please create a valid lib/WineTestBot/ConfigLocal.pl, " .
+        "use lib/WineTestBot/ConfigLocalTemplate.pl as template\n";
+    exit;
+  }
 
-ObjectModel::DBIBackEnd->UseDBIBackEnd('WineTestBot', $DbDataSource,
-                                       $DbUsername, $DbPassword, 
-                                       { RaiseError => 1 });
+  require ObjectModel::DBIBackEnd;
+  ObjectModel::DBIBackEnd->UseDBIBackEnd('WineTestBot', $DbDataSource,
+                                         $DbUsername, $DbPassword,
+                                         { RaiseError => 1 });
+}
 
 umask 002;
 
