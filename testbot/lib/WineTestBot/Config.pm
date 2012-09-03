@@ -65,7 +65,6 @@ $OverheadTimeout = 3 * 60;
 
 $ProjectName = "Wine";
 $PatchesMailingList = "wine-patches";
-$PatchResultsEMail = undef;
 
 $LDAPServer = undef;
 $LDAPBindDN = undef;
