@@ -1,5 +1,7 @@
 #!/usr/bin/perl -Tw
 #
+# Sends and runs the tasks in the Windows test VMs.
+#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or

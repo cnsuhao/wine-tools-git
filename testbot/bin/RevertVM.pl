@@ -1,5 +1,10 @@
 #!/usr/bin/perl -Tw
 #
+# Reverts a VM so that it is ready to run jobs. Note that in addition to the
+# hypervisor revert operation this implies letting the VM settle down and
+# checking that it responds to our commands. If this fails the administrator
+# is notified and the VM is marked as offline.
+#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or

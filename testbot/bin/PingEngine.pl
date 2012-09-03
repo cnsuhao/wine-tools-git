@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# Ping WineTestBot engine to see if it is alive
+# Pings the WineTestBot engine to see if it is still alive.
 #
 # Copyright 2009 Ge van Geldorp
 #

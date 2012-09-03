@@ -1,8 +1,7 @@
 #!/usr/bin/perl -Tw
 #
-# Janitorial tasks
-# Run this from crontab once per day, e.g.
-# 17 1 * * * /usr/lib/winetestbot/bin/Janitor.pl
+# This script performs janitorial tasks. It removes incomplete patch series,
+# archives old jobs and purges older jobs and patches.
 #
 # Copyright 2009 Ge van Geldorp
 #

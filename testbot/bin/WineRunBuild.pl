@@ -1,5 +1,8 @@
 #!/usr/bin/perl -Tw
 #
+# Communicates with the build machine to have it perform the 'build' task.
+# See the bin/BuildSingleTest.pl script.
+#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or

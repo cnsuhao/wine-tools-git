@@ -1,5 +1,9 @@
 #!/usr/bin/perl -Tw
 #
+# Checks if a new winetest binary is available on http://test.winehq.org/data/.
+# If so, triggers an update of the build VM to the latest Wine source and
+# runs the full test suite on the standard Windows test VMs.
+#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or

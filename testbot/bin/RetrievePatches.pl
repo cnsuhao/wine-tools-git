@@ -1,5 +1,8 @@
 #!/usr/bin/perl -Tw
 #
+# Retrieve the latest patches from http://source.winehq.org/patches and submit
+# them for testing. See also PatchNotificationHandler.pl.
+#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or

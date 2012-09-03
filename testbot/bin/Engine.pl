@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# WineTestBot engine
+# The WineTestBot server, aka the engine that makes it all work.
 #
 # Copyright 2009 Ge van Geldorp
 #
@@ -527,6 +527,22 @@ sub InitVMs()
     }
   }
 }
+
+=pod
+=over 12
+
+=item C<SafetyNet()>
+
+This is called on startup and regularly after that to catch thing that fall
+through the cracks, possibly because of an Engine restart.
+Specifically it updates the status of all the current Jobs, Steps and
+Tasks, then schedules Tasks to be run, checks the staging directory for
+wine-patches emails dropped by WinePatchesHandler.pl, for notifications of
+changes on Wine's Patches web site dropped by PatchNotificationHandler.pl, and
+checks whether any pending patchsets are now complete and thus can be scheduled.
+
+=back
+=cut
 
 sub SafetyNet
 {

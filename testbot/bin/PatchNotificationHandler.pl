@@ -1,6 +1,7 @@
 #!/usr/bin/perl -Tw
 #
-# Tell the engine to expect a winetest.exe update on test.winehq.org
+# Notifies WineTestBot that there are new patches to test on
+# http://source.winehq.org/patches.
 #
 # Copyright 2009 Ge van Geldorp
 #

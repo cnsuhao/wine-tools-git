@@ -1,5 +1,9 @@
 #!/usr/bin/perl -Tw
 #
+# Performs the 'build' task in the build machine. Specifically this applies a
+# conformance test patch, rebuilds the impacted test and retrieves the
+# resulting 32 and 64 bit binaries.
+#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or

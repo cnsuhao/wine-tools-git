@@ -1,6 +1,7 @@
 #!/usr/bin/perl -Tw
 #
-# Send job log to submitting user
+# Sends the job log to the submitting user and informs the Wine Patches web
+# site of the test results.
 #
 # Copyright 2009 Ge van Geldorp
 #

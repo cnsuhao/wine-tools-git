@@ -1,5 +1,9 @@
 #!/usr/bin/perl -Tw
 #
+# Performs the 'reconfig' task in the build machine. Specifically this updates
+# the build machine's Wine repository, re-runs configure, and rebuilds the
+# 32 and 64 bit winetest binaries.
+#
 # Copyright 2009 Ge van Geldorp
 #
 # This library is free software; you can redistribute it and/or
