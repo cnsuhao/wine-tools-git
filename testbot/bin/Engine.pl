@@ -46,6 +46,7 @@ use WineTestBot::VMs;
 sub FatalError
 {
   LogMsg "Engine: ", @_;
+  LogMsg "Engine: WineTestBot Engine shutdown caused by a fatal error\n";
 
   exit 1;
 }
@@ -637,6 +638,7 @@ sub main
   $SIG{CHLD} = \&REAPER;
 
   $WineTestBot::Engine::Notify::RunningInEngine = 1;
+  LogMsg "Engine: Starting the WineTestBot Engine\n";
 
   InitVMs();
 
@@ -758,6 +760,7 @@ sub main
     }
   }
 
+  LogMsg "Engine: Normal WineTestBot Engine shutdown\n";
   return 0;
 }
 
