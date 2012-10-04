@@ -32,16 +32,28 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(&LogMsg);
 
-sub LogMsg
+my $logfile;
+sub LogMsg(@)
 {
-  my $oldumask = umask(002);
-  my $LOGFILE;
-  if (open LOGFILE, ">>$LogDir/log")
+  if (!defined $logfile)
   {
-    print LOGFILE scalar localtime, " ", @_;
-    close LOGFILE;
+    my $oldumask = umask(002);
+    if (open($logfile, ">>", "$LogDir/log"))
+    {
+      # Flush after each print
+      my $tmp=select($logfile);
+      $| = 1;
+      select($tmp);
+    }
+    else
+    {
+      require File::Basename;
+      print STDERR File::Basename::basename($0), ":warning: could not open '$LogDir/log' for writing: $!\n";
+      $logfile = undef;
+    }
+    umask($oldumask);
   }
-  umask($oldumask);
+  print $logfile scalar localtime, " ", @_ if ($logfile);
 }
 
 1;
