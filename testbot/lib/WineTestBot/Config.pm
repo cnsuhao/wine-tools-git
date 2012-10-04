@@ -50,9 +50,9 @@ require Exporter;
              $JobArchiveDays $WebHostName);
 @EXPORT_OK = qw($DbDataSource $DbUsername $DbPassword);
 
-$LogDir = "/var/log/winetestbot";
-$DataDir = "/var/lib/winetestbot";
-$BinDir = "/usr/lib/winetestbot/bin";
+$LogDir = "/home/winehq/tools/testbot/var";
+$DataDir = "/home/winehq/tools/testbot/var";
+$BinDir = "/home/winehq/tools/testbot/bin";
 
 $MaxRevertingVMs = 1;
 $MaxRunningVMs = 2;

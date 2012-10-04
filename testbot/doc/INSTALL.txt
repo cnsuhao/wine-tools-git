@@ -28,29 +28,28 @@ Apache setup:
   perl.load symbolic link in /etc/apache2/mods-enabled.
 
 General setup for the web site:
-- Create a new system group 'winetest' and a system user 'winetest',
-  make sure to make user winetest a member of group winetest.
-- Unpack the WineTestBot source to /usr/lib/winetestbot (so this
-  document should be available as /usr/lib/winetestbot/doc/INSTALL.txt).
-- Create directory /var/lib/winetestbot, create subdirs 'jobs',
-  'latest', 'socket' and 'staging' within this dir. Set owner/group to
-  winetest/winetest for jobs, latest, socket, but set owner/group to
-  wwwrun/winetest for staging (where 'wwwrun' is the account your apache
-  server runs under). Run:
-    mkdir /var/lib/winetestbot
-    cd /var/lib/winetestbot
+- Create a new system group 'winehq' and a system user 'winehq',
+  make sure to make user winehq a member of group winehq.
+- Clone Wine's tools repository to $HOME/tools (so this document
+  should be available as $HOME/tools/testbot/doc/INSTALL.txt).
+- Create directory $HOME/tools/testbot/var, create subdirs
+  'jobs', 'latest', 'socket' and 'staging' and a file called log within this
+  directory. Set owner/group to wwwrun/winehq for staging (where 'wwwrun' is
+  the account your apache server runs under). Run:
+    cd $HOME/tools/testbot
+    mkdir var
+    cd var
+    touch log
     mkdir jobs latest patches socket staging
-    chown winetest:winetest jobs latest socket
-    chown WWWRUN:winetest staging
+    sudo chown WWWRUN:winehq staging
     chmod g+w *
-- Create an empty logfile /var/log/winetestbot/log and make it writable
-  to group winetest.
-    mkdir /var/log/winetestbot
-    touch /var/log/winetestbot/log
-    chgrp winetest /var/log/winetestbot/log
-    chmod g+w /var/log/winetestbot/log
-- Install scripts/initd in /etc/init.d/winetestbot and activate it (on
-  OpenSUSE: "chkconfig winetestbot on", "service winetestbot start").
+- If the installation path is different from the default, then some paths
+  in the following files will need to be modified:
+    testbot/lib/startup.pl
+    testbot/scripts/CheckWineTestBot.pl
+- Install scripts/initd in /etc/init.d/winetestbot and adjust the paths and
+  user name if necessary. Then activate it.
+  (typically "chkconfig winetestbot on" or "service winetestbot start")
 - Copy lib/WineTestBot/ConfigLocalTemplate.pl to
   lib/WineTestBot/ConfigLocal.pl and fill in the options for your site.
 - Restart Apache, you should now be able to browse to the home page.
@@ -68,10 +67,10 @@ General setup for the web site:
 Janitorial tasks:
 - Run the Janitor.pl script once per day to perform the janitorial
   tasks. For instance:
-  17 30 * * * /usr/lib/winetestbot/bin/Janitor.pl
+  17 30 * * * /home/winehq/tools/testbot/bin/Janitor.pl
 - Run the CheckWineTestBot.pl script periodically to get notified in
   case the WineTestBot server dies. For instance:
-  * 5 * * * /usr/lib/winetestbot/scripts/CheckWineTestBot.pl
+  * 5 * * * /home/winehq/tools/testbot/scripts/CheckWineTestBot.pl
 
 Setup for Wine's patches site:
 - See http://source.winehq.org/patches/ for reference.
@@ -90,15 +89,15 @@ Setup for Wine's patches site:
   and send that email address to the patches maintainer.
 - Arrange for the PatchNotificationHandler.pl script to be fed the
   notification emails. One way to do so would be to use procmail and
-  add the following lines to the .procmailrc file:
+  add the following lines to the $HOME/.procmailrc file:
     :0:
     * ^Subject: New patches available at
-    | /usr/lib/winetestbot/bin/PatchNotificationHandler.pl
+    | $HOME/tools/testbot/bin/PatchNotificationHandler.pl
 
 Setup for Winetest updates:
 - Use a cron job to run CheckForWinetestUpdate.pl periodically. For
   instance:
-  * 0 * * * /usr/lib/winetestbot/scripts/CheckForWinetestUpdate.pl
+  * 0 * * * /home/winehq/tools/testbot/scripts/CheckForWinetestUpdate.pl
 
 Setup for wine-patches:
 - FIXME: WineTestBot now expects to receive the patches to test from
@@ -108,14 +107,14 @@ Setup for wine-patches:
   skipped.
 - Arrange for the WinePatchesHandler.pl script to be fed the
   wine-patches emails. One way to do so would be to subscribe the
-  winetest user to the wine-patches mailing list and to then add the
+  winehq user to the wine-patches mailing list and to then add the
   following lines to the .procmailrc file:
     :0:
     * ^List-Id: Wine Patch Submissions
-    | /usr/lib/winetestbot/bin/WinePatchesHandler.pl
+    | $HOME/tools/testbot/bin/WinePatchesHandler.pl
 - Or if you have a set of patches to test in the mbox format you can
   test with:
-  formail -s /usr/lib/winetestbot/bin/WinePatchesHandler.pl <mbox-file
+  formail -s $HOME/tools/testbot/bin/WinePatchesHandler.pl <mbox-file
 
 
 2. VM hosts setup
@@ -130,19 +129,18 @@ Dependencies:
 
 - Create a Linux VM and set it up so it can generate PE executables
   with MinGW. For instance on Debian you should install autoconf,
-  bison, flex, gcc, gcc-mingw-w64, git and make. If you are going to have
-  64bit VMs then make sure MinGW can generate 64bit PE executables.
+  bison, flex, gcc, gcc-mingw-w64, git and make. If you are going to
+  have 64bit VMs then make sure MinGW can generate 64bit PE executables.
 - Install netcat.
-- Create a new system group 'winetest' and a system user 'winetest',
-  make sure to make user winetest a member of group winetest.
-- Unpack winetestbot source to /usr/lib/winetestbot (so this document
-  should be available as /usr/lib/winetestbot/doc/INSTALL.txt).
-- Create the /var/lib/winetestbot and /var/log/winetestbot directories
-  and make them writable to group winetest.
-    mkdir /var/log/winetestbot /var/lib/winetestbot
-    chgrp winetest /var/log/winetestbot /var/lib/winetestbot
-    chmod g+w /var/log/winetestbot /var/lib/winetestbot
-- Clone the Wine git repository to /var/lib/winetestbot/wine-git.
+- Create a new system group 'winehq' and a system user 'winehq',
+  make sure to make user winehq a member of group winehq.
+- Clone Wine's tools repository to $HOME/tools (so this document
+  should be available as $HOME/tools/testbot/doc/INSTALL.txt).
+- Create the $HOME/tools/testbot/var and $HOME/tools/testbot/log
+  directories and make them writable to group winehq.
+    mkdir $HOME/tools/testbot/var $HOME/tools/testbot/log
+    chmod g+w $HOME/tools/testbot/var $HOME/tools/testbot/log
+- Clone the Wine git repository to $HOME/tools/testbot/var/wine-git.
 - Take a snapshot of the running VM. Make sure restoring this snapshot
   will result in a running build VM.
 - Register this VM as a build VM on the web site.

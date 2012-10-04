@@ -16,7 +16,7 @@
 
 use strict;
 
-use lib qw(/usr/lib/winetestbot/lib);
+use lib qw(/home/winehq/tools/testbot/lib);
 
 use ObjectModel::CGI::Page;
 use WineTestBot::CGI::PageBase;
