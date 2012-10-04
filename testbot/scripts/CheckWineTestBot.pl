@@ -19,7 +19,14 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
 
 use strict;
-use lib "/usr/lib/winetestbot/lib";
+
+my $Dir;
+sub BEGIN
+{
+  $0 =~ m=^(.*)/[^/]*$=;
+  $Dir = $1;
+}
+use lib "$Dir/../lib";
 
 use WineTestBot::Config;
 use WineTestBot::Engine::Notify;
