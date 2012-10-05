@@ -43,6 +43,6 @@ while (-e ("$DataDir/staging/${FileNameRandomPart}_patchnotification"))
 copy(\*STDIN, "$DataDir/staging/${FileNameRandomPart}_patchnotification");
 
 # Let the engine handle it
-PatchNotification("${FileNameRandomPart}_patchnotification");
+WinePatchWebNotification("${FileNameRandomPart}_patchnotification");
 
 exit 0;

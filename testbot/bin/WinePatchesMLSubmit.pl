@@ -44,6 +44,6 @@ while (-e ("$DataDir/staging/${FileNameRandomPart}_wine-patches"))
 copy(\*STDIN, "$DataDir/staging/${FileNameRandomPart}_wine-patches");
 
 # Let the engine handle it
-NewWinePatchesSubmission("${FileNameRandomPart}_wine-patches");
+WinePatchMLSubmission("${FileNameRandomPart}_wine-patches");
 
 exit 0;

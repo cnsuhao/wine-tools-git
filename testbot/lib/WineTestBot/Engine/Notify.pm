@@ -35,8 +35,8 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(&PingEngine &JobSubmit &JobStatusChange &JobCancel &TaskComplete
              &VMStatusChange &ExpectWinetestUpdate &FoundWinetestUpdate
-             &NewWinePatchesSubmission &PatchNotification &PatchRetrieved
-             &GetScreenshot);
+             &WinePatchMLSubmission &WinePatchWebNotification
+             &WinePatchWebSubmission &GetScreenshot);
 @EXPORT_OK = qw($RunningInEngine);
 
 
@@ -198,11 +198,11 @@ sub FoundWinetestUpdate
   return substr($Reply, 1);
 }
 
-sub NewWinePatchesSubmission
+sub WinePatchMLSubmission
 {
   my $FileName = $_[0];
 
-  my $Reply = SendCmdReceiveReply("newwinepatchessubmission $FileName\n");
+  my $Reply = SendCmdReceiveReply("winepatchmlsubmission $FileName\n");
   if (length($Reply) < 1)
   {
     return "Unrecognized reply received from engine";
@@ -215,11 +215,11 @@ sub NewWinePatchesSubmission
   return substr($Reply, 1);
 }
 
-sub PatchNotification
+sub WinePatchWebNotification
 {
   my $FileName = $_[0];
 
-  my $Reply = SendCmdReceiveReply("patchnotification $FileName\n");
+  my $Reply = SendCmdReceiveReply("winepatchwebnotification $FileName\n");
   if (length($Reply) < 1)
   {
     return "Unrecognized reply received from engine";
@@ -232,11 +232,11 @@ sub PatchNotification
   return substr($Reply, 1);
 }
 
-sub PatchRetrieved
+sub WinePatchWebSubmission
 {
   my ($FileName, $PatchId) = @_;
 
-  my $Reply = SendCmdReceiveReply("patchretrieved $FileName $PatchId\n");
+  my $Reply = SendCmdReceiveReply("winepatchwebsubmission $FileName $PatchId\n");
   if (length($Reply) < 1)
   {
     return "Unrecognized reply received from engine";

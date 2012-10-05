@@ -277,7 +277,7 @@ sub HandleFoundWinetestUpdate
   return "1OK";
 }
 
-sub HandleNewWinePatchesSubmission
+sub HandleWinePatchMLSubmission
 {
   # Validate file name
   if ($_[0] !~ m/([0-9a-fA-F]{32}_wine-patches)/)
@@ -307,7 +307,7 @@ sub HandleNewWinePatchesSubmission
   return "1OK";
 }
 
-sub HandlePatchNotification
+sub HandleWinePatchWebNotification
 {
   # Validate file name
   if ($_[0] !~ m/([0-9a-fA-F]{32}_patchnotification)/)
@@ -353,24 +353,24 @@ sub HandlePatchNotification
     my $Pid = fork;
     if (defined($Pid) && ! $Pid)
     {
-      exec("$BinDir/RetrievePatches.pl " . ($MaxExistingPatchId + 1) . " " .
+      exec("$BinDir/WinePatchesWebGet.pl " . ($MaxExistingPatchId + 1) . " " .
            $LatestPatchId);
     }
     if (defined($Pid) && ! $Pid)
     {
-      LogMsg "Engine: Unable to exec RetrievePatches.pl : $!\n";
+      LogMsg "Engine: Unable to exec WinePatchesWebGet.pl : $!\n";
       exit;
     }
     if (! defined($Pid))
     {
-      LogMsg "Engine: Unable to fork for RetrievePatches.pl : $!\n";
+      LogMsg "Engine: Unable to fork for WinePatchesWebGet.pl : $!\n";
     }
   }
 
   return "1OK";
 }
 
-sub HandlePatchRetrieved
+sub HandleWinePatchWebSubmission
 {
   # Validate file name
   if ($_[0] !~ m/([0-9a-fA-F]{32}_patch_\d+)/)
@@ -474,17 +474,17 @@ sub HandleClientCmd
   {
     return HandleFoundWinetestUpdate(@_);
   }
-  if ($Cmd eq "newwinepatchessubmission")
+  if ($Cmd eq "winepatchmlsubmission")
   {
-    return HandleNewWinePatchesSubmission(@_);
+    return HandleWinePatchMLSubmission(@_);
   }
-  if ($Cmd eq "patchnotification")
+  if ($Cmd eq "winepatchwebnotification")
   {
-    return HandlePatchNotification(@_);
+    return HandleWinePatchWebNotification(@_);
   }
-  if ($Cmd eq "patchretrieved")
+  if ($Cmd eq "winepatchwebsubmission")
   {
-    return HandlePatchRetrieved(@_);
+    return HandleWinePatchWebSubmission(@_);
   }
   if ($Cmd eq "getscreenshot")
   {
@@ -538,8 +538,8 @@ This is called on startup and regularly after that to catch thing that fall
 through the cracks, possibly because of an Engine restart.
 Specifically it updates the status of all the current Jobs, Steps and
 Tasks, then schedules Tasks to be run, checks the staging directory for
-wine-patches emails dropped by WinePatchesHandler.pl, for notifications of
-changes on Wine's Patches web site dropped by PatchNotificationHandler.pl, and
+wine-patches emails dropped by WinePatchesMLSubmit.pl, for notifications of
+changes on Wine's Patches web site dropped by WinePatchesWebNotify.pl, and
 checks whether any pending patchsets are now complete and thus can be scheduled.
 
 =back
@@ -561,11 +561,11 @@ sub SafetyNet
     {
       if ($DirEntry =~ m/[0-9a-fA-F]{32}_wine-patches/)
       {
-        HandleNewWinePatchesSubmission($DirEntry);
+        HandleWinePatchMLSubmission($DirEntry);
       }
       elsif ($DirEntry =~ m/[0-9a-fA-F]{32}_patchnotification/)
       {
-        HandlePatchNotification($DirEntry);
+        HandleWinePatchWebNotification($DirEntry);
       }
     }
   }

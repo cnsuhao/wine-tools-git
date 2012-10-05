@@ -1,7 +1,7 @@
 #!/usr/bin/perl -Tw
 #
 # Retrieve the latest patches from http://source.winehq.org/patches and submit
-# them for testing. See also PatchNotificationHandler.pl.
+# them for testing. See also WinePatchesWebNotify.pl.
 #
 # Copyright 2009 Ge van Geldorp
 #
@@ -41,7 +41,7 @@ use WineTestBot::Engine::Notify;
 my ($StartPatchId, $EndPatchId) = @ARGV;
 if (! $StartPatchId || ! $EndPatchId)
 {
-  die "Usage: RetrievePatches.pl <StartPatchId> <EndPatchId>";
+  die "Usage: WinePatchesWebGet.pl <StartPatchId> <EndPatchId>";
 }
 
 if ($StartPatchId =~ m/^(\d+)$/)
@@ -50,7 +50,7 @@ if ($StartPatchId =~ m/^(\d+)$/)
 }
 else
 {
-  die "RetrievePatches: Invalid StartPatchId $StartPatchId";
+  die "WinePatchesWebGet: Invalid StartPatchId $StartPatchId";
 }
 if ($EndPatchId =~ m/^(\d+)$/)
 {
@@ -58,11 +58,11 @@ if ($EndPatchId =~ m/^(\d+)$/)
 }
 else
 {
-  die "RetrievePatches: Invalid EndPatchId $EndPatchId";
+  die "WinePatchesWebGet: Invalid EndPatchId $EndPatchId";
 }
 if ($EndPatchId < $StartPatchId)
 {
-  die "RetrievePatches: EndPatchId $EndPatchId shouldn't be smaller than StartPatchId $StartPatchId";
+  die "WinePatchesWebGet: EndPatchId $EndPatchId shouldn't be smaller than StartPatchId $StartPatchId";
 }
 
 my $BaseURL = "http://source.winehq.org/patches/data";
@@ -76,7 +76,7 @@ foreach my $PatchId ($StartPatchId..$EndPatchId)
   my $Response = $UA->request($Request);
   if ($Response->code != RC_OK)
   {
-    LogMsg "RetrievePatches: Unexpected HTTP response code ", 
+    LogMsg "WinePatchesWebGet: Unexpected HTTP response code ",
            $Response->code, "\n";
     exit 1;
   }
@@ -88,15 +88,15 @@ foreach my $PatchId ($StartPatchId..$EndPatchId)
   my $StagingFileName = "$DataDir/staging/${FileNameRandomPart}_patch_$PatchId";
   if (! open STAGINGFILE, ">$StagingFileName")
   {
-    LogMsg "RetrievePatches: can't create staging file $StagingFileName: $!\n";
+    LogMsg "WinePatchesWebGet: can't create staging file $StagingFileName: $!\n";
     exit 1;
   }
   print STAGINGFILE $Response->decoded_content();
   close STAGINGFILE;
 
-  PatchRetrieved("${FileNameRandomPart}_patch_$PatchId", $PatchId);
+  WinePatchWebSubmission("${FileNameRandomPart}_patch_$PatchId", $PatchId);
 
-  LogMsg "RetrievePatches: retrieved patch $PatchId\n";
+  LogMsg "WinePatchesWebGet: retrieved patch $PatchId\n";
 }
 
 exit;

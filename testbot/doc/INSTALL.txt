@@ -78,21 +78,21 @@ Setup for Wine's patches site:
   using the WineTestBot web interface and that the results are sane.
   You may also want to run with $PatchFromEMailOverride set for a while
   to spot any issue under load.
-- First bootstrap things with RetrievePatches.pl. Go to the patches
+- First bootstrap things with WinePatchesWebGet.pl. Go to the patches
   website and write down the id of the oldest and newest patches you
   want to inject into WineTestBot. Then run:
-  ./bin/RetrievePatches.pl OLD_PATCH_ID NEW_PATCH_ID
+  ./bin/WinePatchesWebGet.pl OLD_PATCH_ID NEW_PATCH_ID
 
 - If that goes well you can then keep WineTestBot up to date by
   following the steps below.
 - Set up an email address to receive the patches site notifications
   and send that email address to the patches maintainer.
-- Arrange for the PatchNotificationHandler.pl script to be fed the
+- Arrange for the WinePatchesWebNotify.pl script to be fed the
   notification emails. One way to do so would be to use procmail and
   add the following lines to the $HOME/.procmailrc file:
     :0:
     * ^Subject: New patches available at
-    | $HOME/tools/testbot/bin/PatchNotificationHandler.pl
+    | $HOME/tools/testbot/bin/WinePatchesWebNotify.pl
 
 Setup for Winetest updates:
 - Use a cron job to run CheckForWinetestUpdate.pl periodically. For
@@ -102,19 +102,19 @@ Setup for Winetest updates:
 Setup for wine-patches:
 - FIXME: WineTestBot now expects to receive the patches to test from
   Wine's Patches site instead of straight from the wine-patches mailing
-  list. Furthermore WinePatchesHandler.pl is currently broken (because
+  list. Furthermore WinePatchesMLSubmit.pl is currently broken (because
   the patch ids are no longer auto-generated). So this should be
   skipped.
-- Arrange for the WinePatchesHandler.pl script to be fed the
+- Arrange for the WinePatchesMLSubmit.pl script to be fed the
   wine-patches emails. One way to do so would be to subscribe the
   winehq user to the wine-patches mailing list and to then add the
   following lines to the .procmailrc file:
     :0:
     * ^List-Id: Wine Patch Submissions
-    | $HOME/tools/testbot/bin/WinePatchesHandler.pl
+    | $HOME/tools/testbot/bin/WinePatchesMLSubmit.pl
 - Or if you have a set of patches to test in the mbox format you can
   test with:
-  formail -s $HOME/tools/testbot/bin/WinePatchesHandler.pl <mbox-file
+  formail -s $HOME/tools/testbot/bin/WinePatchesMLSubmit.pl <mbox-file
 
 
 2. VM hosts setup
