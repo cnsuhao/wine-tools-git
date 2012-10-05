@@ -141,6 +141,9 @@ Dependencies:
     mkdir $HOME/tools/testbot/var $HOME/tools/testbot/log
     chmod g+w $HOME/tools/testbot/var $HOME/tools/testbot/log
 - Clone the Wine git repository to $HOME/tools/testbot/var/wine-git.
+- In the winetest account, run Reconfig.pl.
+  Check $HOME/tools/testbot/log/Reconfig.log to make sure it
+  succeeded.
 - Take a snapshot of the running VM. Make sure restoring this snapshot
   will result in a running build VM.
 - Register this VM as a build VM on the web site.
