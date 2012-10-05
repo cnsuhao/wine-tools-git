@@ -34,6 +34,7 @@ use WineTestBot::Engine::Notify;
 $ENV{PATH} = "/sbin:/usr/sbin:/usr/bin:/bin";
 delete $ENV{ENV};
 
+my $rc = 0;
 if (! PingEngine())
 {
   system "service winetestbot restart > /dev/null";
@@ -53,6 +54,8 @@ EOF
   else
   {
     print SENDMAIL "Unable to restart the engine\n";
+    $rc = 1;
   }
   close(SENDMAIL);
 }
+exit($rc);
