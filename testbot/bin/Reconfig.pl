@@ -86,7 +86,7 @@ sub BuildCross
 {
   my $Bits = $_[0];
 
-  my $Host = ($Bits == 64 ? "x86_64-w64-mingw32" : "i686-pc-mingw32");
+  my $Host = ($Bits == 64 ? "x86_64-w64-mingw32" : "i686-w64-mingw32");
   mkdir "$DataDir/build-mingw$Bits" if (! -d "$DataDir/build-mingw$Bits");
   system("cd $DataDir/build-mingw$Bits && " .
          "rm -rf * && " .
