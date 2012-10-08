@@ -4,7 +4,7 @@
  */
 
 // Default version if none given
-$sVersion = '0.0.4';
+$sVersion = '0.0.8';
 
 // Suffix appended to base name of file
 $sFileSuffix = '';
@@ -27,7 +27,8 @@ $sFileName = sprintf('%s/%s/wine-mono-%s.%s', $sFolder, $sVersion, $sFileSuffix,
 
 // Size array
 $aFileSizes = array(
-	'0.0.4'=>44408320
+	'0.0.4'=>44408320,
+	'0.0.8'=>46967296
 );
 
 // Exact size of the file:
