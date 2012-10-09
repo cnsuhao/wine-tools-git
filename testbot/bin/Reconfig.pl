@@ -63,15 +63,27 @@ sub GitPull
   return 1;
 }
 
+my $ncpus;
+sub CountCPUs()
+{
+    if (open(my $fh, "<", "/proc/cpuinfo"))
+    {
+        # Linux
+        map { $ncpus++ if (/^processor/); } <$fh>;
+        close($fh);
+    }
+    $ncpus ||= 1;
+}
+
 sub BuildNative
 {
   mkdir "$DataDir/build-native" if (! -d "$DataDir/build-native");
   system("cd $DataDir/build-native && " .
          "rm -rf * && " .
          "../wine-git/configure --enable-win64 --without-x --without-freetype " .
-         ">> $LogDir/Reconfig.log 2>&1 &&" .
-         "make depend >> $LogDir/Reconfig.log 2>&1 &&" .
-         "make __tooldeps__ >> $LogDir/Reconfig.log 2>&1");
+         ">> $LogDir/Reconfig.log 2>&1 && " .
+         "make -j$ncpus depend >> $LogDir/Reconfig.log 2>&1 && " .
+         "make -j$ncpus __tooldeps__ >> $LogDir/Reconfig.log 2>&1");
 
   if ($? != 0)
   {
@@ -91,9 +103,9 @@ sub BuildCross
   system("cd $DataDir/build-mingw$Bits && " .
          "rm -rf * && " .
          "../wine-git/configure --host=$Host --with-wine-tools=../build-native " .
-         "--without-x --without-freetype >> $LogDir/Reconfig.log 2>&1 &&" .
-         "make depend >> $LogDir/Reconfig.log 2>&1 &&" .
-         "make programs/winetest >> $LogDir/Reconfig.log 2>&1");
+         "--without-x --without-freetype >> $LogDir/Reconfig.log 2>&1 && " .
+         "make -j$ncpus depend >> $LogDir/Reconfig.log 2>&1 && " .
+         "make -j$ncpus programs/winetest >> $LogDir/Reconfig.log 2>&1");
   if ($? != 0)
   {
     LogMsg "Build cross ($Bits bits) failed\n";
@@ -113,6 +125,8 @@ if (! GitPull())
 {
   exit(1);
 }
+
+CountCPUs();
 
 if (! BuildNative())
 {

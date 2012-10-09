@@ -148,6 +148,18 @@ sub ApplyPatch
           $NeedConfigure);
 }
 
+my $ncpus;
+sub CountCPUs()
+{
+    if (open(my $fh, "<", "/proc/cpuinfo"))
+    {
+        # Linux
+        map { $ncpus++ if (/^processor/); } <$fh>;
+        close($fh);
+    }
+    $ncpus ||= 1;
+}
+
 sub BuildTestExecutable
 {
   my ($BaseName, $PatchType, $Bits, $NeedConfigure, $NeedMakefile,
@@ -178,7 +190,7 @@ sub BuildTestExecutable
       return !1;
     }
 
-    system("make -C $DataDir/build-mingw${Bits}/include " .
+    system("make -j$ncpus -C $DataDir/build-mingw${Bits}/include " .
            ">> $LogDir/BuildSingleTest.log 2>&1");
     if ($? != 0)
     {
@@ -197,7 +209,7 @@ sub BuildTestExecutable
     }
     else
     {
-      system("make -C $DataDir/build-mingw${Bits}/$PatchType/$BaseName " .
+      system("make -j$ncpus -C $DataDir/build-mingw${Bits}/$PatchType/$BaseName " .
              "lib$BaseName.a >> $LogDir/BuildSingleTest.log 2>&1");
       if ($? != 0)
       {
@@ -220,7 +232,7 @@ sub BuildTestExecutable
   if ($NeedBuildDeps)
   {
     InfoMsg "Making build dependencies\n";
-    system("cd $DataDir/build-mingw${Bits}; make __builddeps__ >> $LogDir/BuildSingleTest.log 2>&1");
+    system("cd $DataDir/build-mingw${Bits}; make -j$ncpus __builddeps__ >> $LogDir/BuildSingleTest.log 2>&1");
     if ($? != 0)
     {
       LogMsg "Making build dependencies failed\n";
@@ -238,7 +250,7 @@ sub BuildTestExecutable
   unlink($TestExecutable);
  
   InfoMsg "Making test executable\n";
-  system("make -C $TestsDir >> $LogDir/BuildSingleTest.log 2>&1");
+  system("make -j$ncpus -C $TestsDir >> $LogDir/BuildSingleTest.log 2>&1");
   if ($? != 0)
   {
     LogMsg "Make failed\n";
@@ -333,6 +345,8 @@ if ($NeedMakefile < 0)
 {
   exit(1);
 }
+
+CountCPUs();
 
 if ($Run32 && ! BuildTestExecutable($BaseName, $PatchType, 32,
                                     $NeedConfigure, 0 < $NeedMakefile,
