@@ -80,9 +80,9 @@ sub BuildNative
   mkdir "$DataDir/build-native" if (! -d "$DataDir/build-native");
   system("( cd $DataDir/build-native && set -x && " .
          "  rm -rf * && " .
-         "  ../wine-git/configure --enable-win64 --without-x --without-freetype && " .
-         "  make -j$ncpus depend && " .
-         "  make -j$ncpus __tooldeps__ " .
+         "  time ../wine-git/configure --enable-win64 --without-x --without-freetype && " .
+         "  time make -j$ncpus depend && " .
+         "  time make -j$ncpus __tooldeps__ " .
          ") >>$LogDir/Reconfig.log 2>&1");
 
   if ($? != 0)
@@ -102,9 +102,9 @@ sub BuildCross
   mkdir "$DataDir/build-mingw$Bits" if (! -d "$DataDir/build-mingw$Bits");
   system("( cd $DataDir/build-mingw$Bits && set -x && " .
          "  rm -rf * && " .
-         "  ../wine-git/configure --host=$Host --with-wine-tools=../build-native --without-x --without-freetype && " .
-         "  make -j$ncpus depend  && " .
-         "  make -j$ncpus programs/winetest " .
+         "  time ../wine-git/configure --host=$Host --with-wine-tools=../build-native --without-x --without-freetype && " .
+         "  time make -j$ncpus depend  && " .
+         "  time make -j$ncpus programs/winetest " .
          ") >>$LogDir/Reconfig.log 2>&1");
   if ($? != 0)
   {
