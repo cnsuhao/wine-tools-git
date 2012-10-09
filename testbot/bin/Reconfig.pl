@@ -103,7 +103,7 @@ sub BuildCross
   return 1;
 }
 
-$ENV{PATH} = "/usr/bin:/bin:/usr/local/mingw/bin:/usr/local/mingw64/bin";
+$ENV{PATH} = "/usr/lib/ccache:/usr/bin:/bin";
 delete $ENV{ENV};
 
 # Start with clean logfile
