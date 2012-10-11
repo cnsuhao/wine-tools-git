@@ -36,7 +36,7 @@ use WineTestBot::Config;
 sub InfoMsg
 {
   my $oldumask = umask(002);
-  if (open LOGFILE, ">>$LogDir/BuildSingleTest.log")
+  if (open LOGFILE, ">>$LogDir/Build.log")
   {
     print LOGFILE @_;
     close LOGFILE;
@@ -47,9 +47,9 @@ sub InfoMsg
 sub LogMsg
 {
   my $oldumask = umask(002);
-  if (open LOGFILE, ">>$LogDir/BuildSingleTest.log")
+  if (open LOGFILE, ">>$LogDir/Build.log")
   {
-    print LOGFILE "BuildSingleTest: ", @_;
+    print LOGFILE "Build: ", @_;
     close LOGFILE;
   }
   umask($oldumask);
@@ -109,7 +109,7 @@ sub ApplyPatch
 
   InfoMsg "Applying patch\n";
   system("git apply --verbose --directory=$DataDir/wine-git $PatchFile " .
-         ">> $LogDir/BuildSingleTest.log 2>&1");
+         ">> $LogDir/Build.log 2>&1");
   if ($? != 0)
   {
     LogMsg "Patch failed to apply\n";
@@ -121,7 +121,7 @@ sub ApplyPatch
     InfoMsg "Running autoconf\n";
     system("( cd $DataDir/wine-git && set -x && " .
            "  autoconf --output configure configure.ac " .
-           ") >>$LogDir/BuildSingleTest.log 2>&1");
+           ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
        LogMsg "Autoconf failed\n";
@@ -172,7 +172,7 @@ sub BuildTestExecutable
     my $Host = ($Bits == 64 ? "x86_64-w64-mingw32" : "i686-pc-mingw32");
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
            "  ../wine-git/configure --host=$Host --with-wine-tools=../build-native --without-x --without-freetype " .
-           ") >>$LogDir/BuildSingleTest.log 2>&1");
+           ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
       LogMsg "Reconfigure of $Bits-bit crossbuild failed\n";
@@ -185,7 +185,7 @@ sub BuildTestExecutable
     InfoMsg "Recreating include/Makefile\n";
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
            "  ./config.status --file include/Makefile:Make.vars.in:include/Makefile.in " .
-           ") >>$LogDir/BuildSingleTest.log 2>&1");
+           ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
       LogMsg "Recreation of include/Makefile failed\n";
@@ -194,7 +194,7 @@ sub BuildTestExecutable
 
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
            "  make -j$ncpus include " .
-           ") >> $LogDir/BuildSingleTest.log 2>&1");
+           ") >> $LogDir/Build.log 2>&1");
     if ($? != 0)
     {
       LogMsg "Make in include dir failed\n";
@@ -207,7 +207,7 @@ sub BuildTestExecutable
     InfoMsg "Rebuilding $BaseName import lib\n";
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
            "  ./config.status --file $PatchType/$BaseName/Makefile:Make.vars.in:$PatchType/$BaseName/Makefile.in " .
-           ") >>$LogDir/BuildSingleTest.log 2>&1");
+           ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
       LogMsg "Unable to regenerate $PatchType/$BaseName/Makefile\n";
@@ -216,7 +216,7 @@ sub BuildTestExecutable
     {
       system("( cd $DataDir/build-mingw$Bits && set -x && " .
              "  make -j$ncpus -C $PatchType/$BaseName lib$BaseName.a " .
-             ") >>$LogDir/BuildSingleTest.log 2>&1");
+             ") >>$LogDir/Build.log 2>&1");
       if ($? != 0)
       {
         InfoMsg "Make of import library failed\n";
@@ -229,7 +229,7 @@ sub BuildTestExecutable
     InfoMsg "Recreating tests/Makefile\n";
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
            "  ./config.status --file $PatchType/$BaseName/tests/Makefile:Make.vars.in:$PatchType/$BaseName/tests/Makefile.in " .
-           ") >>$LogDir/BuildSingleTest.log 2>&1");
+           ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
       LogMsg "Recreation of tests/Makefile failed\n";
@@ -242,7 +242,7 @@ sub BuildTestExecutable
     InfoMsg "Making build dependencies\n";
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
            "  make -j$ncpus __builddeps__ " .
-           ") >>$LogDir/BuildSingleTest.log 2>&1");
+           ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
       LogMsg "Making build dependencies failed\n";
@@ -262,7 +262,7 @@ sub BuildTestExecutable
   InfoMsg "Making test executable\n";
   system("( cd $DataDir/build-mingw$Bits && set -x && " .
          "  make -j$ncpus -C $TestsDir " .
-         ") >>$LogDir/BuildSingleTest.log 2>&1");
+         ") >>$LogDir/Build.log 2>&1");
   if ($? != 0)
   {
     LogMsg "Make failed\n";
@@ -281,12 +281,12 @@ $ENV{PATH} = "/usr/lib/ccache:/usr/bin:/bin";
 delete $ENV{ENV};
 
 # Start with clean logfile
-unlink("$LogDir/BuildSingleTest.log");
+unlink("$LogDir/Build.log");
 
 my ($PatchFile, $PatchType, $BaseName, $BitIndicators) = @ARGV;
 if (! $PatchFile || ! $PatchType || ! $BaseName || !$BitIndicators)
 {
-  FatalError "Usage: BuildSingleTest.pl <patchfile> <patchtype> <basename> <bits>\n";
+  FatalError "Usage: Build.pl <patchfile> <patchtype> <basename> <bits>\n";
 }
 
 # Untaint parameters

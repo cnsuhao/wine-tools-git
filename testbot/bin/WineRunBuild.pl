@@ -86,7 +86,7 @@ sub ProcessRawlog
         while (defined($Line = <RAWLOG>))
         {
           chomp($Line);
-          if ($Line =~ m/^BuildSingleTest: (.*)$/)
+          if ($Line =~ m/^Build: (.*)$/)
           {
             if ($1 eq "ok")
             {
@@ -241,7 +241,7 @@ if (defined($ErrMessage))
              $FullErrFileName, $Job, $Step, $Task;
 }
 my $Script = "#!/bin/sh\n";
-$Script .= "$BinDir/build/BuildSingleTest.pl $FileName " . $Step->FileType .
+$Script .= "$BinDir/build/Build.pl $FileName " . $Step->FileType .
            " $BaseName 32";
 if ($Run64)
 {
@@ -251,14 +251,14 @@ $Script .= "\n";
 $ErrMessage = $VM->RunScriptInGuestTimeout("", $Script, $Task->Timeout);
 if (defined($ErrMessage))
 {
-  $VM->CopyFileFromGuestToHost("$LogDir/BuildSingleTest.log",
+  $VM->CopyFileFromGuestToHost("$LogDir/Build.log",
                                $FullRawlogFileName);
   ProcessRawlog($FullRawlogFileName, $FullLogFileName, $FullErrFileName);
   FatalError "Failure running script in VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
 
-$ErrMessage = $VM->CopyFileFromGuestToHost("$LogDir/BuildSingleTest.log",
+$ErrMessage = $VM->CopyFileFromGuestToHost("$LogDir/Build.log",
                                            $FullRawlogFileName);
 if (defined($ErrMessage))
 {
