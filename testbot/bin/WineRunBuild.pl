@@ -1,7 +1,7 @@
 #!/usr/bin/perl -Tw
 #
 # Communicates with the build machine to have it perform the 'build' task.
-# See the bin/BuildSingleTest.pl script.
+# See the bin/build/Build.pl script.
 #
 # Copyright 2009 Ge van Geldorp
 #
@@ -241,7 +241,7 @@ if (defined($ErrMessage))
              $FullErrFileName, $Job, $Step, $Task;
 }
 my $Script = "#!/bin/sh\n";
-$Script .= "$BinDir/BuildSingleTest.pl $FileName " . $Step->FileType .
+$Script .= "$BinDir/build/BuildSingleTest.pl $FileName " . $Step->FileType .
            " $BaseName 32";
 if ($Run64)
 {

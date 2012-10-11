@@ -29,7 +29,7 @@ sub BEGIN
   $0 =~ m=^(.*)/[^/]*$=;
   $Dir = $1;
 }
-use lib "$Dir/../lib";
+use lib "$Dir/../../lib";
 
 use WineTestBot::Config;
 

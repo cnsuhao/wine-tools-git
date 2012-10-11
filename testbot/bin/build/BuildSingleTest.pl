@@ -29,7 +29,7 @@ sub BEGIN
   $0 =~ m=^(.*)/[^/]*$=;
   $Dir = $1;
 }
-use lib "$Dir/../lib";
+use lib "$Dir/../../lib";
 
 use WineTestBot::Config;
 
@@ -258,7 +258,7 @@ sub BuildTestExecutable
   }
   $TestExecutable .= "_test.exe";
   unlink("$DataDir/build-mingw${Bits}/$TestExecutable");
- 
+
   InfoMsg "Making test executable\n";
   system("( cd $DataDir/build-mingw$Bits && set -x && " .
          "  make -j$ncpus -C $TestsDir " .

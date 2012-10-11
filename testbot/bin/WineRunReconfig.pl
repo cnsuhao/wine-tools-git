@@ -1,7 +1,7 @@
 #!/usr/bin/perl -Tw
 #
 # Communicates with the build machine to have it perform the 'reconfig' task.
-# See the bin/Reconfig.pl script.
+# See the bin/build/Reconfig.pl script.
 #
 # Copyright 2009 Ge van Geldorp
 #
@@ -194,7 +194,7 @@ if (defined($ErrMessage))
   FatalError "Can't set VM status to running: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
-my $Script = "#!/bin/sh\n$BinDir/Reconfig.pl\n";
+my $Script = "#!/bin/sh\n$BinDir/build/Reconfig.pl\n";
 $ErrMessage = $VM->RunScriptInGuestTimeout("", $Script, $Task->Timeout);
 if (defined($ErrMessage))
 {
@@ -212,10 +212,10 @@ if (defined($ErrMessage))
   FatalError "Can't copy log from VM: $ErrMessage\n", $FullErrFileName,
              $Job, $Step, $Task;
 }
-my $ReconfigSucceeded = ProcessRawlog($FullRawlogFileName, $FullLogFileName,
-                                      $FullErrFileName);
+my $Success = ProcessRawlog($FullRawlogFileName, $FullLogFileName,
+                              $FullErrFileName);
 
-if ($ReconfigSucceeded)
+if ($Success)
 {
   $ErrMessage = $VM->RemoveSnapshot($VM->IdleSnapshot);
   if (defined($ErrMessage))
