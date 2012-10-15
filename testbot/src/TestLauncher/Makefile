@@ -8,9 +8,9 @@ CROSSSTRIP64 = x86_64-w64-mingw32-strip
 all: $(bindir)/TestLauncher32.exe $(bindir)/TestLauncher64.exe
 
 $(bindir)/TestLauncher32.exe: TestLauncher.c
-	$(CROSSCC32) -o $@ $<
+	$(CROSSCC32) -Wall -o $@ $<
 	$(CROSSSTRIP32) $@
 
 $(bindir)/TestLauncher64.exe: TestLauncher.c
-	$(CROSSCC64) -o $@ $<
+	$(CROSSCC64) -Wall -o $@ $<
 	$(CROSSSTRIP64) $@

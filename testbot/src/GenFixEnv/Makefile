@@ -6,5 +6,5 @@ CROSSSTRIP32 = i686-w64-mingw32-strip
 all: $(bindir)/GenFixEnv.exe
 
 $(bindir)/GenFixEnv.exe: GenFixEnv.c
-	$(CROSSCC32) -o $@ $<
+	$(CROSSCC32) -Wall -o $@ $<
 	$(CROSSSTRIP32) $@
