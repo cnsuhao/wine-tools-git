@@ -26,17 +26,28 @@
 #define strncpy_s(dest, size, src, max) strncpy((dest), (src), (max))
 #define strcat_s(dest, size, src) strcat((dest), (src))
 #endif
-
 #define countof(Array) (sizeof(Array) / sizeof(Array[0]))
-#define ReportError LocationFile = __FILE__; LocationLine = __LINE__; OutputError
 
-static const char *LocationFile;
-static unsigned LocationLine;
 static unsigned Failures = 0;
 static unsigned Skips = 0;
 static char TestName[_MAX_PATH];
 
-static void OutputError(const char *Format, ...)
+
+#define ReportError (_SetErrorLocation(__FILE__, __LINE__), 0) ? (void)0 : _ReportError
+
+static const char *LocationFile;
+static unsigned LocationLine;
+static void _SetErrorLocation(const char* file, int line)
+{
+    LocationFile = file;
+    LocationLine = line;
+}
+
+#ifdef __GNUC__
+static void _ReportError(const char *Format, ...) __attribute__((format (printf,1,2) ));
+#endif
+
+static void _ReportError(const char *Format, ...)
 {
    va_list ArgList;
 
