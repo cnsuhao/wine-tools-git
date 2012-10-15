@@ -316,15 +316,15 @@ sub HandleWinePatchWebNotification
   }
   my $FullMessageFileName = "$DataDir/staging/$1";
 
-  my $LatestPatchId;
+  my $LatestWebPatchId;
   if (open(NOTIFICATION, "<$FullMessageFileName"))
   {
     my $Line;
-    while (defined($Line = <NOTIFICATION>) && ! defined($LatestPatchId))
+    while (defined($Line = <NOTIFICATION>) && ! defined($LatestWebPatchId))
     {
       if ($Line =~ m/^The latest patch is (\d+)$/)
       {
-        $LatestPatchId = $1;
+        $LatestWebPatchId = $1;
       }
     }
     close(NOTIFICATION);
@@ -332,29 +332,29 @@ sub HandleWinePatchWebNotification
 
   unlink($FullMessageFileName);
 
-  if (! defined($LatestPatchId))
+  if (! defined($LatestWebPatchId))
   {
     return "0No patch id found in message";
   }
 
-  my $MaxExistingPatchId = 0;
+  my $MaxExistingWebPatchId = 0;
   my $Patches = CreatePatches();
   foreach my $PatchKey (@{$Patches->GetKeys()})
   {
-    if ($MaxExistingPatchId < $Patches->GetItem($PatchKey)->Id)
+    if ($MaxExistingWebPatchId < $Patches->GetItem($PatchKey)->WebPatchId)
     {
-      $MaxExistingPatchId = $Patches->GetItem($PatchKey)->Id;
+      $MaxExistingWebPatchId = $Patches->GetItem($PatchKey)->WebPatchId;
     }
   }
 
-  if ($MaxExistingPatchId < $LatestPatchId)
+  if ($MaxExistingWebPatchId < $LatestWebPatchId)
   {
     $ActiveBackEnds{'WineTestBot'}->PrepareForFork();
     my $Pid = fork;
     if (defined($Pid) && ! $Pid)
     {
-      exec("$BinDir/WinePatchesWebGet.pl " . ($MaxExistingPatchId + 1) . " " .
-           $LatestPatchId);
+      exec("$BinDir/WinePatchesWebGet.pl " . ($MaxExistingWebPatchId + 1) .
+           " " . $LatestWebPatchId);
     }
     if (defined($Pid) && ! $Pid)
     {
@@ -382,11 +382,12 @@ sub HandleWinePatchWebSubmission
   {
     return "0Invalid patch id";
   }
-  my $PatchId = $1;
+  my $WebPatchId = $1;
   my $Patches = CreatePatches();
-  if (defined($Patches->GetItem($PatchId)))
+  $Patches->AddFilter("WebPatchId", [$WebPatchId]);
+  if (@{$Patches->GetKeys()})
   {
-    LogMsg "Engine: patch $PatchId already exists\n";
+    LogMsg "Engine: patch $WebPatchId already exists\n";
     return "1OK";
   }
 
@@ -402,7 +403,7 @@ sub HandleWinePatchWebSubmission
   my $Parser = new MIME::Parser;
   $Parser->output_dir($WorkDir);
   my $Entity = $Parser->parse_open($FullFileName);
-  my $ErrMessage = CreatePatches()->NewPatch($Entity, $PatchId);
+  my $ErrMessage = CreatePatches()->NewPatch($Entity, $WebPatchId);
 
   # Clean up
   system("rm -rf $WorkDir");

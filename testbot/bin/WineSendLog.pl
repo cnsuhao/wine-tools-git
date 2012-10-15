@@ -445,13 +445,13 @@ EOF
     open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
     print SENDMAIL "From: Marvin <$RobotEMail>\n";
     print SENDMAIL "To: $PatchResultsEMail\n";
-    print SENDMAIL "X-TestBot-Results: ", $Patch->Id,
+    print SENDMAIL "X-TestBot-Results: ", $Patch->WebPatchId,
           ($Messages ? " failed\n" : " passed\n");
-    print SENDMAIL "Subject: TestBot results for patch ", $Patch->Id,
+    print SENDMAIL "Subject: TestBot results for patch ", $Patch->WebPatchId,
           ($Messages ? ": Failed\n" : ": Passed\n");
     print SENDMAIL "\n";
     print SENDMAIL "--- BEGIN GENERAL ---\n";
-    print SENDMAIL "Patch: ", $Patch->Id, "\n";
+    print SENDMAIL "Patch: ", $Patch->WebPatchId, "\n";
     print SENDMAIL "Patch-Subject: ", $Patch->Subject, "\n";
     print SENDMAIL "Test-Result: ", $Messages ? "Failed" : "Passed", "\n";
     print SENDMAIL "--- END GENERAL ---\n";

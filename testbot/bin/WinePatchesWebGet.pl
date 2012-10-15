@@ -38,31 +38,31 @@ use WineTestBot::Log;
 use WineTestBot::Utils;
 use WineTestBot::Engine::Notify;
 
-my ($StartPatchId, $EndPatchId) = @ARGV;
-if (! $StartPatchId || ! $EndPatchId)
+my ($StartWebPatchId, $EndWebPatchId) = @ARGV;
+if (! $StartWebPatchId || ! $EndWebPatchId)
 {
-  die "Usage: WinePatchesWebGet.pl <StartPatchId> <EndPatchId>";
+  die "Usage: WinePatchesWebGet.pl <StartWebPatchId> <EndWebPatchId>";
 }
 
-if ($StartPatchId =~ m/^(\d+)$/)
+if ($StartWebPatchId =~ m/^(\d+)$/)
 {
-  $StartPatchId = $1;
+  $StartWebPatchId = $1;
 }
 else
 {
-  die "WinePatchesWebGet: Invalid StartPatchId $StartPatchId";
+  die "WinePatchesWebGet: Invalid StartWebPatchId $StartWebPatchId";
 }
-if ($EndPatchId =~ m/^(\d+)$/)
+if ($EndWebPatchId =~ m/^(\d+)$/)
 {
-  $EndPatchId = $1;
+  $EndWebPatchId = $1;
 }
 else
 {
-  die "WinePatchesWebGet: Invalid EndPatchId $EndPatchId";
+  die "WinePatchesWebGet: Invalid EndWebPatchId $EndWebPatchId";
 }
-if ($EndPatchId < $StartPatchId)
+if ($EndWebPatchId < $StartWebPatchId)
 {
-  die "WinePatchesWebGet: EndPatchId $EndPatchId shouldn't be smaller than StartPatchId $StartPatchId";
+  die "WinePatchesWebGet: EndWebPatchId $EndWebPatchId shouldn't be smaller than StartWebPatchId $StartWebPatchId";
 }
 
 my $BaseURL = "http://source.winehq.org/patches/data";
@@ -70,9 +70,9 @@ my $BaseURL = "http://source.winehq.org/patches/data";
 my $UA = LWP::UserAgent->new();
 $UA->agent("WineTestBot");
 
-foreach my $PatchId ($StartPatchId..$EndPatchId)
+foreach my $WebPatchId ($StartWebPatchId..$EndWebPatchId)
 {
-  my $Request = HTTP::Request->new(GET => "$BaseURL/$PatchId");
+  my $Request = HTTP::Request->new(GET => "$BaseURL/$WebPatchId");
   my $Response = $UA->request($Request);
   if ($Response->code != RC_OK)
   {
@@ -81,11 +81,11 @@ foreach my $PatchId ($StartPatchId..$EndPatchId)
     exit 1;
   }
   my $FileNameRandomPart = GenerateRandomString(32);
-  while (-e "$DataDir/staging/${FileNameRandomPart}_patch_$PatchId")
+  while (-e "$DataDir/staging/${FileNameRandomPart}_patch_$WebPatchId")
   {
     $FileNameRandomPart = GenerateRandomString(32);
   }
-  my $StagingFileName = "$DataDir/staging/${FileNameRandomPart}_patch_$PatchId";
+  my $StagingFileName = "$DataDir/staging/${FileNameRandomPart}_patch_$WebPatchId";
   if (! open STAGINGFILE, ">$StagingFileName")
   {
     LogMsg "WinePatchesWebGet: can't create staging file $StagingFileName: $!\n";
@@ -94,9 +94,9 @@ foreach my $PatchId ($StartPatchId..$EndPatchId)
   print STAGINGFILE $Response->decoded_content();
   close STAGINGFILE;
 
-  WinePatchWebSubmission("${FileNameRandomPart}_patch_$PatchId", $PatchId);
+  WinePatchWebSubmission("${FileNameRandomPart}_patch_$WebPatchId", $WebPatchId);
 
-  LogMsg "WinePatchesWebGet: retrieved patch $PatchId\n";
+  LogMsg "WinePatchesWebGet: retrieved patch $WebPatchId\n";
 }
 
 exit;

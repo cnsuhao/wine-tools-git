@@ -60,14 +60,16 @@ ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE Patches
 (
-  Id          INT(7)          NOT NULL,
+  Id          INT(7)          NOT NULL AUTO_INCREMENT,
+  WebPatchId  INT(7)          NULL,
   Received    DATETIME        NOT NULL,
   Disposition VARCHAR(40)     NOT NULL,
   AffectsTests ENUM('Y', 'N') NOT NULL,
   FromName    VARCHAR(40)     NULL,
   FromEMail   VARCHAR(40)     NULL,
   Subject     VARCHAR(120)    NULL,
-  PRIMARY KEY (Id)
+  PRIMARY KEY (Id),
+  INDEX PatchesWebPatchId (WebPatchId)
 )
 ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
