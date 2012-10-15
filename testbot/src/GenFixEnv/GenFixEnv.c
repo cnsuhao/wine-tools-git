@@ -83,7 +83,6 @@ static void GenerateUserProfile(FILE *BatchFile)
    BOOL (WINAPI *pGetUserProfileDirectoryA)(HANDLE,LPSTR,LPDWORD);
    HMODULE hadvapi32 = GetModuleHandleA("advapi32.dll");
    HMODULE huserenv = LoadLibraryA("userenv.dll");
-   BOOL NoErr;
    HANDLE Token;
    char Data[1024];
    DWORD DataSize;
