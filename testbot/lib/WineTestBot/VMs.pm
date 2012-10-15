@@ -351,7 +351,7 @@ sub WaitForToolsInGuest
     return $ErrMessage;
   }
 
-  my $Err = VMWaitForToolsInGuest($VMHandle, 60);
+  my $Err = VMWaitForToolsInGuest($VMHandle, WaitForToolsInVM);
   return $self->CheckError($Err);
 }
 
