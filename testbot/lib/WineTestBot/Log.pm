@@ -38,20 +38,18 @@ sub LogMsg(@)
   if (!defined $logfile)
   {
     my $oldumask = umask(002);
-    if (open($logfile, ">>", "$LogDir/log"))
-    {
-      # Flush after each print
-      my $tmp=select($logfile);
-      $| = 1;
-      select($tmp);
-    }
-    else
+    if (!open($logfile, ">>", "$LogDir/log"))
     {
       require File::Basename;
       print STDERR File::Basename::basename($0), ":warning: could not open '$LogDir/log' for writing: $!\n";
-      $logfile = undef;
+      open($logfile, ">>&=", 2);
     }
     umask($oldumask);
+
+    # Flush after each print
+    my $tmp=select($logfile);
+    $| = 1;
+    select($tmp);
   }
   print $logfile scalar localtime, " ", @_ if ($logfile);
 }
