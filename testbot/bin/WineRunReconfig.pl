@@ -195,7 +195,7 @@ if (defined($ErrMessage))
              $FullErrFileName, $Job, $Step, $Task;
 }
 my $Script = "#!/bin/sh\n$BinDir/build/Reconfig.pl\n";
-$ErrMessage = $VM->RunScriptInGuestTimeout("", $Script, $Task->Timeout);
+$ErrMessage = $VM->RunScriptInGuestTimeout($Script, $Task->Timeout);
 if (defined($ErrMessage))
 {
   $VM->CopyFileFromGuestToHost("$LogDir/Reconfig.log",

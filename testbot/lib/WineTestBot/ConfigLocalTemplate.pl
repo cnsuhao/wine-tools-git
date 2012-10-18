@@ -105,4 +105,7 @@ $WineTestBot::Config::LDAPRealNameAttribute = undef;
 # LDAP attribute for a users email address
 $WineTestBot::Config::LDAPEMailAttribute = undef;
 
+# The port the VM agents are listening on
+$WineTestBot::Config::AgentPort = undef;
+
 1;

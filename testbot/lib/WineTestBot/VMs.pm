@@ -85,10 +85,13 @@ package WineTestBot::VM;
 
 use VMware::Vix::Simple;
 use VMware::Vix::API::Constants;
+
 use ObjectModel::BackEnd;
 use WineTestBot::Config;
 use WineTestBot::Engine::Notify;
+use WineTestBot::TestAgent;
 use WineTestBot::WineTestBotObjects;
+use WineTestBot::Log;
 
 use vars qw (@ISA @EXPORT);
 
@@ -341,106 +344,33 @@ sub PowerOff
   return $self->UpdateStatus($VMHandle);
 }
 
-sub WaitForToolsInGuest
+sub WaitForToolsInGuest($;$)
 {
-  my $self = shift;
+  my ($self, $Timeout) = @_;
 
-  my ($ErrMessage, $VMHandle) = $self->GetVMHandle();
-  if (defined($ErrMessage))
-  {
-    return $ErrMessage;
-  }
-
-  my $Err = VMWaitForToolsInGuest($VMHandle, WaitForToolsInVM);
-  return $self->CheckError($Err);
+  $Timeout ||= $WaitForToolsInVM;
+  LogMsg("Waiting for ", $self->Name, " (up to ${Timeout}s)\n");
+  my ($Status, $Err) = TestAgent::GetStatus($self->Hostname, $Timeout);
+  # In fact we don't care about the status
+  return $Err;
 }
 
-sub CopyFileFromHostToGuest
+sub CopyFileFromHostToGuest($$$)
 {
-  my $self = shift;
-  my ($HostPathName, $GuestPathName) = @_;
-
-  my ($ErrMessage, $VMHandle) = $self->GetVMHandle();
-  if (defined($ErrMessage))
-  {
-    return $ErrMessage;
-  }
-
-  $ErrMessage = $self->LoginInGuest($VMHandle, !1);
-  if (defined($ErrMessage))
-  {
-    return $ErrMessage;
-  }
-
-  my $Try = 0;
-  my $Err = -1;
-  while ($Err != VIX_OK && $Try < 5)
-  {
-    $Err = VMCopyFileFromHostToGuest($VMHandle, $HostPathName, $GuestPathName,
-                                     0, VIX_INVALID_HANDLE);
-    if ($Err != VIX_OK)
-    {
-      sleep(15);
-    }
-    $Try++;
-  }
-  return $self->CheckError($Err);
+  my ($self, $HostPathName, $GuestPathName) = @_;
+  return TestAgent::SendFile($self->Hostname,  $HostPathName, $GuestPathName);
 }
 
-sub CopyFileFromGuestToHost
+sub CopyFileFromGuestToHost($$$)
 {
-  my $self = shift;
-  my ($GuestPathName, $HostPathName) = @_;
-
-  my ($ErrMessage, $VMHandle) = $self->GetVMHandle();
-  if (defined($ErrMessage))
-  {
-    return $ErrMessage;
-  }
-
-  $ErrMessage = $self->LoginInGuest($VMHandle, !1);
-  if (defined($ErrMessage))
-  {
-    return $ErrMessage;
-  }
-
-  my $Err = VMCopyFileFromGuestToHost($VMHandle, $GuestPathName, $HostPathName,
-                                      0, VIX_INVALID_HANDLE);
-  return $self->CheckError($Err);
+  my ($self, $GuestPathName, $HostPathName) = @_;
+  return TestAgent::GetFile($self->Hostname,  $GuestPathName, $HostPathName);
 }
 
-sub RunScriptInGuestTimeout
+sub RunScriptInGuestTimeout($$$)
 {
-  my $self = shift;
-  my ($Interpreter, $ScriptText, $Timeout) = @_;
-
-  my ($ErrMessage, $VMHandle) = $self->GetVMHandle();
-  if (defined($ErrMessage))
-  {
-    return $ErrMessage;
-  }
-
-  $ErrMessage = $self->LoginInGuest($VMHandle, $self->Interactive);
-  if (defined($ErrMessage))
-  {
-    return $ErrMessage;
-  }
-
-  my $Job = VMware::Vix::API::VM::RunScriptInGuest($VMHandle, $Interpreter,
-                                                   $ScriptText, 0,
-                                                   VIX_INVALID_HANDLE, undef,
-                                                   0);
-  my ($Complete, $Err, $Time) = VMware::Vix::API::Job::WaitTimeout($Job,
-                                                                   $Timeout);
-
-  VMware::Vix::API::API::ReleaseHandle($Job);
-
-  if (! $Complete)
-  {
-    return "Exceeded timeout limit of $Timeout sec";
-  }
-
-  return $self->CheckError($Err);
+  my ($self, $ScriptText, $Timeout) = @_;
+  return TestAgent::RunScript($self->Hostname, $ScriptText, $Timeout);
 }
 
 sub CaptureScreenImage
@@ -565,6 +495,7 @@ BEGIN
     CreateBasicPropertyDescriptor("VmxHost", "Host where VM is located", !1, !1, "A", 64),
     CreateBasicPropertyDescriptor("VmxFilePath", "Path to .vmx file", !1, 1, "A", 64),
     CreateBasicPropertyDescriptor("IdleSnapshot", "Name of idle snapshot", !1, 1, "A", 32),
+    CreateBasicPropertyDescriptor("Hostname", "The VM hostname", !1, 1, "A", 64),
     CreateBasicPropertyDescriptor("Interactive", "Needs interactive flag", !1, 1, "B", 1),
     CreateBasicPropertyDescriptor("Description", "Description", !1, !1, "A", 40),
   );

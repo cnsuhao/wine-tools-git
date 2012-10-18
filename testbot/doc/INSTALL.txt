@@ -7,6 +7,7 @@ Dependencies:
 - Perl DBD and DBI::mysql modules
 - Sendmail
 - VMware Vix API (http://www.vmware.com/support/developer/vix-api)
+- IO::Socket::IP (libio-socket-ip-perl)
 
 MySQL setup:
 - Create a new 'winetestbot' database and its tables using the
@@ -131,7 +132,6 @@ Dependencies:
   with MinGW. For instance on Debian you should install autoconf,
   bison, flex, gcc, gcc-mingw-w64, git and make. If you are going to
   have 64bit VMs then make sure MinGW can generate 64bit PE executables.
-- Install netcat.
 - Create a new system group 'winehq' and a system user 'winehq',
   make sure to make user winehq a member of group winehq.
 - Clone Wine's tools repository to $HOME/tools (so this document
@@ -144,6 +144,10 @@ Dependencies:
 - In the winehq account, run Reconfig.pl.
   Check $HOME/tools/testbot/log/Reconfig.log to make sure it
   succeeded.
+- Start the TestAgent server: ./bin/build/testagentd PORT SRCHOST
+  Where PORT is the $AgentPort that was configured in ConfigLocal.pl
+  on the WineTestBot server, and SRCHOST is either omitted or the hostname
+  of the WineTestBot server.
 - Take a snapshot of the running VM. Make sure restoring this snapshot
   will result in a running build VM.
 - Register this VM as a build VM on the web site.
@@ -152,7 +156,13 @@ Dependencies:
 4. Windows test VM setup
 ------------------------
 
-- FIXME: To document
+- Grab winetestbot.iso from the build VM.
+- Add it to the Windows VM and copy the winetest directory to c:\winetest.
+- Then remove the iso from the Windows VM again.
+- Start the TestAgent server: TestAgentd PORT SRCHOST
+  Where PORT is the $AgentPort that was configured in ConfigLocal.pl
+  on the WineTestBot server, and SRCHOST is either omitted or the hostname
+  of the WineTestBot server.
 - Take a snapshot of the running VM. Make sure restoring this snapshot
   will result in a running Windows VM.
 - Register this VM on the web site. On a production WineTestBot server

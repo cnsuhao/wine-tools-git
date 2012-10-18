@@ -317,7 +317,7 @@ elsif ($Step->Type eq "suite")
 # Needed to exit the command prompt on Win9x/WinMe
 $Script .= "cls\r\n";
 
-$ErrMessage = $VM->RunScriptInGuestTimeout("", $Script, $Task->Timeout + 15);
+$ErrMessage = $VM->RunScriptInGuestTimeout($Script, $Task->Timeout + 15);
 if (defined($ErrMessage))
 {
   RetrieveLogFile $Job, $Step, $Task, "C:\\winetest\\$RptFileName",

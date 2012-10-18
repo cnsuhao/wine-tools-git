@@ -75,6 +75,34 @@ sub CountCPUs()
     $ncpus ||= 1;
 }
 
+sub BuildTestAgentd
+{
+  # If testagentd already exists it's likely already running
+  # so don't rebuild it.
+  if (! -x "$BinDir/build/testagentd")
+  {
+    system("( cd $BinDir/../src/testagentd && set -x && " .
+           "  time make -j$ncpus build " .
+           ") >>$LogDir/Reconfig.log 2>&1");
+    if ($? != 0)
+    {
+      LogMsg "Build testagentd failed\n";
+      return !1;
+    }
+  }
+
+  system("( cd $BinDir/../src/testagentd && set -x && " .
+         "  time make -j$ncpus iso " .
+         ") >>$LogDir/Reconfig.log 2>&1");
+  if ($? != 0)
+  {
+    LogMsg "Build winetestbot.iso failed\n";
+    return !1;
+  }
+
+  return 1;
+}
+
 sub BuildNative
 {
   mkdir "$DataDir/build-native" if (! -d "$DataDir/build-native");
@@ -132,6 +160,11 @@ if (! GitPull())
 }
 
 CountCPUs();
+
+if (! BuildTestAgentd())
+{
+  exit(1);
+}
 
 if (! BuildNative())
 {

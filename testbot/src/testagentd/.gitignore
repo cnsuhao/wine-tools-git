@@ -1,0 +1,4 @@
+*.o
+*.obj
+TestAgentd.exe
+winetestbot.iso

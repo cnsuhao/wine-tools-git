@@ -33,8 +33,8 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
              $BuildTimeout $ReconfigTimeout $OverheadTimeout $TagPrefix
              $ProjectName $PatchesMailingList $PatchResultsEMail $LDAPServer
              $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter
-             $LDAPRealNameAttribute $LDAPEMailAttribute $JobPurgeDays
-             $JobArchiveDays $WebHostName);
+             $LDAPRealNameAttribute $LDAPEMailAttribute $AgentPort
+             $JobPurgeDays $JobArchiveDays $WebHostName);
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -47,8 +47,8 @@ require Exporter;
              $SingleTimeout $BuildTimeout $ReconfigTimeout $OverheadTimeout
              $TagPrefix $ProjectName $PatchesMailingList $PatchResultsEMail
              $LDAPServer $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter
-             $LDAPRealNameAttribute $LDAPEMailAttribute $JobPurgeDays
-             $JobArchiveDays $WebHostName);
+             $LDAPRealNameAttribute $LDAPEMailAttribute $AgentPort
+             $JobPurgeDays $JobArchiveDays $WebHostName);
 @EXPORT_OK = qw($DbDataSource $DbUsername $DbPassword);
 
 $LogDir = "/home/winehq/tools/testbot/var";
@@ -59,7 +59,7 @@ $MaxRevertingVMs = 1;
 $MaxRunningVMs = 2;
 $MaxExtraPoweredOnVms = 2;
 $SleepAfterRevert = 30;
-$WaitForToolsInVM = 60;
+$WaitForToolsInVM = 30;
 
 $SuiteTimeout = 30 * 60;
 $SingleTimeout = 2 * 60;

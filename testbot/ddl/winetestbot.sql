@@ -52,6 +52,7 @@ CREATE TABLE VMs
   VmxHost      VARCHAR(64)      NULL,
   VmxFilePath  VARCHAR(64)      NOT NULL,
   IdleSnapshot VARCHAR(32)      NOT NULL,
+  Hostname     VARCHAR(64)      NOT NULL,
   Interactive  ENUM('Y', 'N')   NOT NULL,
   Description  VARCHAR(40)      NULL,
   PRIMARY KEY (Name)
