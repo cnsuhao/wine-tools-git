@@ -121,6 +121,11 @@ delete $ENV{ENV};
 # Start with clean logfile
 unlink("$LogDir/Reconfig.log");
 
+if (! -d "$DataDir/staging" and ! mkdir "$DataDir/staging")
+{
+    LogMsg "Unable to create '$DataDir/staging': $!\n";
+    exit(1);
+}
 if (! GitPull())
 {
   exit(1);
