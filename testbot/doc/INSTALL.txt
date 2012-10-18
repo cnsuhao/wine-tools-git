@@ -90,31 +90,31 @@ Setup for Wine's patches site:
 - Arrange for the WinePatchesWebNotify.pl script to be fed the
   notification emails. One way to do so would be to use procmail and
   add the following lines to the $HOME/.procmailrc file:
-    :0:
+    :0c:
     * ^Subject: New patches available at
     | $HOME/tools/testbot/bin/WinePatchesWebNotify.pl
 
 Setup for Winetest updates:
 - Use a cron job to run CheckForWinetestUpdate.pl periodically. For
   instance:
-  * 0 * * * /home/winehq/tools/testbot/scripts/CheckForWinetestUpdate.pl
+  * 0 * * * /home/winehq/tools/testbot/bin/CheckForWinetestUpdate.pl 32
+  * 0 * * * /home/winehq/tools/testbot/bin/CheckForWinetestUpdate.pl 64
 
 Setup for wine-patches:
-- FIXME: WineTestBot now expects to receive the patches to test from
-  Wine's Patches site instead of straight from the wine-patches mailing
-  list. Furthermore WinePatchesMLSubmit.pl is currently broken (because
-  the patch ids are no longer auto-generated). So this should be
-  skipped.
+- A proper WineTestBot system should integrate with Wine's patches site.
+  An alternative is to interface directly with wine-patches as described in
+  this section.
 - Arrange for the WinePatchesMLSubmit.pl script to be fed the
   wine-patches emails. One way to do so would be to subscribe the
   winehq user to the wine-patches mailing list and to then add the
   following lines to the .procmailrc file:
-    :0:
+    :0c:
     * ^List-Id: Wine Patch Submissions
+    * ^TO wine-patches
     | $HOME/tools/testbot/bin/WinePatchesMLSubmit.pl
 - Or if you have a set of patches to test in the mbox format you can
   test with:
-  formail -s $HOME/tools/testbot/bin/WinePatchesMLSubmit.pl <mbox-file
+  formail -ds $HOME/tools/testbot/bin/WinePatchesMLSubmit.pl <mbox-file
 
 
 2. VM hosts setup
@@ -136,12 +136,12 @@ Dependencies:
   make sure to make user winehq a member of group winehq.
 - Clone Wine's tools repository to $HOME/tools (so this document
   should be available as $HOME/tools/testbot/doc/INSTALL.txt).
-- Create the $HOME/tools/testbot/var and $HOME/tools/testbot/log
-  directories and make them writable to group winehq.
-    mkdir $HOME/tools/testbot/var $HOME/tools/testbot/log
-    chmod g+w $HOME/tools/testbot/var $HOME/tools/testbot/log
+- Create the $HOME/tools/testbot/var directory and make it writable to
+  group winehq.
+    mkdir $HOME/tools/testbot/var
+    chmod g+w $HOME/tools/testbot/var
 - Clone the Wine git repository to $HOME/tools/testbot/var/wine-git.
-- In the winetest account, run Reconfig.pl.
+- In the winehq account, run Reconfig.pl.
   Check $HOME/tools/testbot/log/Reconfig.log to make sure it
   succeeded.
 - Take a snapshot of the running VM. Make sure restoring this snapshot
