@@ -6,7 +6,8 @@ Dependencies:
 - MySQL
 - Perl DBD and DBI::mysql modules
 - Sendmail
-- VMware Vix API (http://www.vmware.com/support/developer/vix-api)
+- Sys::Virt (libsys-virt-perl, see http://libvirt.org/)
+- Image::Magick (perlmagick)
 - IO::Socket::IP (libio-socket-ip-perl)
 
 MySQL setup:
@@ -122,7 +123,9 @@ Setup for wine-patches:
 -----------------
 
 Dependencies:
-- VMware
+- libvirtd (see http://libvirt.org/)
+- A virtualization technology supported by libvirt, for instance
+  QEmu/KVM, Xen, VirtualBox or VMware.
 
 
 3. Wine build VM setup

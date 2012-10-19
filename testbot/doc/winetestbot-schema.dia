@@ -2253,7 +2253,7 @@
         </dia:composite>
         <dia:composite type="table_attribute">
           <dia:attribute name="name">
-            <dia:string>#VmxHost#</dia:string>
+            <dia:string>#VirtURI#</dia:string>
           </dia:attribute>
           <dia:attribute name="type">
             <dia:string>#VARCHAR(64)#</dia:string>
@@ -2265,7 +2265,7 @@
             <dia:boolean val="false"/>
           </dia:attribute>
           <dia:attribute name="nullable">
-            <dia:boolean val="true"/>
+            <dia:boolean val="false"/>
           </dia:attribute>
           <dia:attribute name="unique">
             <dia:boolean val="false"/>
@@ -2273,10 +2273,10 @@
         </dia:composite>
         <dia:composite type="table_attribute">
           <dia:attribute name="name">
-            <dia:string>#VmxFilePath#</dia:string>
+            <dia:string>#VirtDomain#</dia:string>
           </dia:attribute>
           <dia:attribute name="type">
-            <dia:string>#VARCHAR(64)#</dia:string>
+            <dia:string>#VARCHAR(32)#</dia:string>
           </dia:attribute>
           <dia:attribute name="comment">
             <dia:string>##</dia:string>

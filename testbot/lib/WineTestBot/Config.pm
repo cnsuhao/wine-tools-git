@@ -25,11 +25,10 @@ WineTestBot::Config - Site-independent configuration settings
 =cut
 
 use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
-             $VixHostType $VixHostUsername $VixHostPassword
-             $VixGuestUsername $VixGuestPassword $DbDataSource $DbUsername
-             $DbPassword $MaxRevertingVMs $MaxRunningVMs $MaxExtraPoweredOnVms
-             $SleepAfterRevert $WaitForToolsInVM $AdminEMail $RobotEMail
-             $WinePatchToOverride $WinePatchCc $SuiteTimeout $SingleTimeout
+             $DbDataSource $DbUsername $DbPassword $MaxRevertingVMs
+             $MaxRunningVMs $MaxExtraPoweredOnVms $SleepAfterRevert
+             $WaitForToolsInVM $AdminEMail $RobotEMail $WinePatchToOverride
+             $WinePatchCc $SuiteTimeout $SingleTimeout
              $BuildTimeout $ReconfigTimeout $OverheadTimeout $TagPrefix
              $ProjectName $PatchesMailingList $PatchResultsEMail $LDAPServer
              $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter
@@ -38,12 +37,10 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw($UseSSL $LogDir $DataDir $BinDir $VixHostType
-             $VixHostUsername $VixHostPassword $VixGuestUsername
-             $VixGuestPassword $MaxRevertingVMs $MaxRunningVMs
-             $MaxExtraPoweredOnVms $SleepAfterRevert $WaitForToolsInVM
-             $AdminEMail $RobotEMail $WinePatchToOverride $WinePatchCc
-             $SuiteTimeout
+@EXPORT = qw($UseSSL $LogDir $DataDir $BinDir
+             $MaxRevertingVMs $MaxRunningVMs $MaxExtraPoweredOnVms
+             $SleepAfterRevert $WaitForToolsInVM $AdminEMail $RobotEMail
+             $WinePatchToOverride $WinePatchCc $SuiteTimeout
              $SingleTimeout $BuildTimeout $ReconfigTimeout $OverheadTimeout
              $TagPrefix $ProjectName $PatchesMailingList $PatchResultsEMail
              $LDAPServer $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter

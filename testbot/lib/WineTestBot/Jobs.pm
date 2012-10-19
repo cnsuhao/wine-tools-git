@@ -377,13 +377,66 @@ sub CompareTaskStatus
   return $Compare;
 }
 
+=pod
+=over 12
+
+=item C<ScheduleOnHost()>
+
+This manages the VMs and WineTestBot::Task objects corresponding to the
+hypervisors of a given host. To stay within the host's resource limits the
+scheduler must take the following constraints into account:
+=over
+
+=item *
+
+Jobs should be run in decreasing order of priority.
+
+=item *
+
+A Job's Steps must be run in sequential order.
+
+=item *
+
+A Step's tasks can be run in parallel but only one task can be running in a VM
+at a given time. Also a VM must be prepared before it can run its task, see the
+VM Statuses.
+
+=item *
+
+The number of VMs running on the host must be kept under $MaxRunningVMs. The
+rational behind this limit is that the host may not be able to run more VMs
+simultaneously, typically due to memory or CPU constraints. Also note that
+this limit must be respected even if there are more than one hypervisor running
+on the host.
+
+=item *
+
+FIXME: The actual limit on the number of powered on VMs is blurred by the
+$MaxExtraPoweredOnVms setting and the last loop in ScheduleOnHost().
+
+=item *
+
+The number of VMs being reverted on the host at a given time must be kept under
+$MaxRevertingVMs. This may be set to 1 in case the hypervisor gets confused
+when reverting too many VMs at once.
+
+=item *
+
+No Task is started while there are VMs that are being reverted. This is so that
+the tests are not disrupted by the disk or CPU activity caused reverting a VM.
+
+=cut
+
+=back
+=cut
+
 sub ScheduleOnHost
 {
   my $self = shift;
-  my $Host = $_[0];
+  my $Hypervisors = $_[0];
 
   my $HostVMs = CreateVMs();
-  $HostVMs->FilterHost([$Host]);
+  $HostVMs->FilterHypervisor($Hypervisors);
   my ($RevertingVMs, $RunningVMs) = $HostVMs->CountRevertingRunningVMs();
   my $PoweredOnExtraVMs = $HostVMs->CountPoweredOnExtraVMs();
   my %DirtyVMsBlockingJobs;
@@ -507,12 +560,15 @@ sub Schedule
   my %Hosts;
   foreach my $VMKey (@{$VMs->GetKeys()})
   {
-    $Hosts{$VMs->GetItem($VMKey)->VmxHost} = 1;
+    my $VM = $VMs->GetItem($VMKey);
+    my $Host = $VM->GetHost();
+    $Hosts{$Host}->{$VM->VirtURI} = 1;
   }
   my $ErrMessage;
   foreach my $Host (keys %Hosts)
   {
-    my $HostErrMessage = $self->ScheduleOnHost($Host);
+    my @HostHypervisors = keys %{$Hosts{$Host}};
+    my $HostErrMessage = $self->ScheduleOnHost(\@HostHypervisors);
     if (! defined($ErrMessage))
     {
       $ErrMessage = $HostErrMessage;

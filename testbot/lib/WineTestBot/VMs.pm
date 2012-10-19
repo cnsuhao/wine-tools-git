@@ -1,5 +1,3 @@
-# VM collection and items
-#
 # Copyright 2009 Ge van Geldorp
 # Copyright 2012 Francois Gouget
 #
@@ -19,16 +17,26 @@
 
 use strict;
 
+package WineTestBot::VM::Hypervisors;
+
 =head1 NAME
 
-WineTestBot::VMs - VM collection
+WineTestBot::VM::Hypervisors - A cache of hypervisor objects
+
+=head1 DESCRIPTION
+
+A hypervisor is the software running on the host that handles the hardware
+virtualisation in support of the VMs. Thus each host has its own hypervisor,
+but some may have more than one, typically if more than one virtualisation
+software is used such as QEmu and VirtualBox.
+
+WineTestBot typically needs to deal with many VMs spread across a few hosts to
+spread the load and thus a few hypervisors. WineTestBot identifies the
+hypervisors via their VirtURI from which we get a Sys::Virt hypervisor.
+This class caches these  objects so only one is created per URI.
 
 =cut
 
-package WineTestBot::VM::HostConnection;
-
-use VMware::Vix::Simple;
-use VMware::Vix::API::Constants;
 use WineTestBot::Config;
 
 use vars qw (@ISA @EXPORT_OK);
@@ -38,53 +46,124 @@ require Exporter;
 
 @EXPORT_OK = qw(new);
 
-sub new
+sub new($)
 {
-  my $class = shift;
+  my ($class) = @_;
 
   my $self = {};
   $self = bless $self, $class;
   return $self;
 }
 
-sub GetHostHandle
+=pod
+=over 12
+
+=head1 C<GetHypervisor()>
+
+Returns the Sys::Virt hypervisor object corresponding to the specified URI.
+This object is cached so only one hypervisor object is created per URI.
+
+=back
+=cut
+
+sub GetHypervisor($$)
 {
-  my $self = shift;
-  my $VixHost = $_[0];
+  my ($self, $URI) = @_;
 
-  my $Key = $VixHost || "";
-  if (defined($self->{$Key}))
+  my $Key = $URI || "";
+  if (!defined $self->{$Key})
   {
-    return (undef, $self->{$Key});
+      eval { $self->{$Key} = Sys::Virt->new(uri => $URI); };
+      return ($@->message(), undef) if ($@);
   }
-
-  my ($Err, $HostHandle) = HostConnect(VIX_API_VERSION,
-                                       $VixHostType, $VixHost, 0,
-                                       $VixHostUsername, $VixHostPassword,
-                                       0, VIX_INVALID_HANDLE);
-  if ($Err != VIX_OK)
-  {
-    return (GetErrorText($Err), VIX_INVALID_HANDLE);
-  }
-  $self->{$Key} = $HostHandle;
 
   return (undef, $self->{$Key});
 }
 
-sub DESTROY
-{
-  my $self = shift;
-
-  foreach my $HostHandle (values %{$self})
-  {
-    HostDisconnect($HostHandle);
-  }
-}
 
 package WineTestBot::VM;
 
-use VMware::Vix::Simple;
-use VMware::Vix::API::Constants;
+=head1 NAME
+
+WineTestBot::VM - A VM instance
+
+=head1 DESCRIPTION
+
+This provides methods for starting, stopping, getting the status of the VM,
+as well as manipulating its snapshots. These methods are implemented through
+Sys::Virt to provide portability across virtualization technologies.
+
+This class also provides methods to copy files to or from the VM and running
+commands in it. This part is used to start the tasks in the VM but is
+implemented independently from the VM's hypervisor since most do not provide
+this functionality.
+
+There are four types of VMs:
+
+=over 12
+
+=item base
+
+This defines the set of Windows VMs that the Wine tests are run on by default,
+especially Wine commits and wine-patches emails.
+
+=item extra
+
+This is a set of extra Windows VMs that users can manually chose to run their
+tests on.
+
+=item build
+
+This is a Unix VM used to build the Wine test binaries.
+
+=item retired
+
+These VMs are no longer used.
+
+=back
+
+
+A VM typically goes through the following states in this order:
+
+=over 12
+
+=item reverting
+
+The VM is currently being reverted to the idle snapshot. Note that the idle
+snapshot is supposed to be taken on a powered on VM so this also powers on the
+VM.
+
+=item sleeping
+
+The VM has been reverted to the idle snapshot and we are now letting it settle
+down for $SleepAfterRevert seconds (for instance so it gets time to renew its
+DHCP leases). It is not running a task yet.
+
+=item idle
+
+The VM powered on and is no longer in its sleeping phase. So it is ready to be
+given a task.
+
+=item running
+
+The VM is running some task.
+
+=item dirty
+
+The VM has completed the task it was given and thus has been powered off. The
+next step will be to revert it to the idle snapshot so it can be used again.
+
+=item offline
+
+This VM should not be used. This is typically the case of Retired VMs but it
+can also happen if an error happens while manipulating the VM.
+
+=back
+
+=cut
+
+use Sys::Virt;
+use Image::Magick;
 
 use ObjectModel::BackEnd;
 use WineTestBot::Config;
@@ -98,26 +177,14 @@ use vars qw (@ISA @EXPORT);
 require Exporter;
 @ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
-sub _initialize
+sub _initialize($$)
 {
-  my $self = shift;
-  my $VMs = $_[0];
+  my ($self, $VMs) = @_;
 
-  $self->{HostConnection} = $VMs->{HostConnection};
-  $self->{VMHandle} = VIX_INVALID_HANDLE;
-  $self->{LoggedInToGuest} = undef;
+  $self->{Hypervisors} = $VMs->{Hypervisors};
+  $self->{Hypervisor} = undef;
+  $self->{Domain} = undef;
   $self->{OldStatus} = undef;
-}
-
-sub DESTROY
-{
-  my $self = shift;
-
-  if ($self->{VMHandle} != VIX_INVALID_HANDLE)
-  {
-    ReleaseHandle($self->{VMHandle});
-    $self->{VMHandle} = VIX_INVALID_HANDLE;
-  }
 }
 
 sub InitializeNew
@@ -130,218 +197,128 @@ sub InitializeNew
   $self->SUPER::InitializeNew(@_);
 }
 
-sub GetVMHandle
+sub GetHost($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
-  if ($self->{VMHandle} != VIX_INVALID_HANDLE)
-  {
-    return (undef, $self->{VMHandle});
-  }
-
-  my $VmxHost = $self->VmxHost;
-  my ($ErrMessage, $HostHandle) = $self->{HostConnection}->GetHostHandle($VmxHost);
-  if (defined($ErrMessage))
-  {
-    return ($ErrMessage, VIX_INVALID_HANDLE);
-  }
-
-  my $Err = VIX_OK;
-  ($Err, $self->{VMHandle}) = VMOpen($HostHandle, $self->VmxFilePath);
-  if ($Err != VIX_OK)
-  {
-    $self->{VMHandle} = VIX_INVALID_HANDLE;
-    return (GetErrorText($Err), VIX_INVALID_HANDLE);
-  }
-
-  return (undef, $self->{VMHandle});
+  # The URI is of the form protocol://user@hostname/hypervisor-specific-data
+  return $1 if ($self->VirtURI =~ m%^[^:]+://(?:[^/@]*@)?([^/]+)/%);
+  return "localhost";
 }
 
-sub CheckError
+sub _GetDomain($)
 {
-  my $self = shift;
-  my $Err = $_[0];
+  my ($self) = @_;
 
-  if ($Err != VIX_OK)
+  if (!defined $self->{Domain})
   {
-    return GetErrorText($Err);
-  }
+    my ($ErrMessage, $Hypervisor) = $self->{Hypervisors}->GetHypervisor($self->VirtURI);
+    return ($ErrMessage,  undef) if (defined $ErrMessage);
 
-  return undef;
+    $self->{Hypervisor} = $Hypervisor;
+    eval { $self->{Domain} = $self->{Hypervisor}->get_domain_by_name($self->VirtDomain) };
+    return ($@->message(), undef) if ($@);
+  }
+  return (undef, $self->{Domain});
 }
 
-sub LoginInGuest
+sub UpdateStatus($$)
 {
-  my $self = shift;
-  my $VMHandle = $_[0];
-  my $Interactive = $_[1] ? "Y" : "N";
-
-  if (defined($self->{LoggedInToGuest}))
-  {
-    if ($self->{LoggedInToGuest} eq $Interactive)
-    {
-      return undef;
-    }
-    VMLogoutFromGuest($VMHandle);
-    delete $self->{LoggedInToGuest};
-  }
-
-  my $Try = 0;
-  my $Err = -1;
-  while ($Err != VIX_OK && $Try < 5)
-  {
-    $Err = VMLoginInGuest($VMHandle, $VixGuestUsername, $VixGuestPassword,
-                          $Interactive eq "Y" ?
-                          VIX_LOGIN_IN_GUEST_REQUIRE_INTERACTIVE_ENVIRONMENT :
-                          0);
-    if ($Err != VIX_OK)
-    {
-      sleep(15);
-    }
-    $Try++;
-  }
-  if ($Err == VIX_OK)
-  {
-    $self->{LoggedInToGuest} = $Interactive;
-  }
-
-  return $self->CheckError($Err);
-}
-
-sub UpdateStatus
-{
-  my $self = shift;
-  my $VMHandle = $_[0];
+  my ($self, $Domain) = @_;
 
   if ($self->Status eq "offline")
   {
     return undef;
   }
 
-  my ($Err, $PowerState) = GetProperties($VMHandle,
-                                         VIX_PROPERTY_VM_POWER_STATE);
-  if ($Err != VIX_OK)
+  my ($State, $Reason) = $Domain->get_state();
+  return $@->message() if ($@);
+  if ($State == Sys::Virt::Domain::STATE_SHUTDOWN or
+      $State == Sys::Virt::Domain::STATE_SHUTOFF)
   {
-    return GetErrorText($Err);
-  }
-  my $Status;
-  if ($PowerState == VIX_POWERSTATE_POWERED_OFF)
-  {
-    $Status = "dirty";
-    $self->Status($Status);
+    $self->Status("dirty");
     $self->Save();
   }
 
   return undef;
 }
 
-sub RevertToSnapshot
+sub _GetSnapshot($$)
 {
-  my $self = shift;
-  my $SnapshotName = $_[0];
+  my ($self, $SnapshotName) = @_;
 
-  my ($ErrMessage, $VMHandle) = $self->GetVMHandle();
-  if (defined($ErrMessage))
-  {
-    return $ErrMessage;
-  }
+  my ($ErrMessage, $Domain) = $self->_GetDomain();
+  return $ErrMessage if (defined $ErrMessage);
 
-  my ($Err, $SnapshotHandle) = VMGetNamedSnapshot($VMHandle, $SnapshotName);
-  if ($Err != VIX_OK)
-  {
-    return GetErrorText($Err);
-  }
-
-  $Err = VMRevertToSnapshot($VMHandle, $SnapshotHandle, VIX_VMPOWEROP_LAUNCH_GUI,
-                            VIX_INVALID_HANDLE);
-  ReleaseHandle($SnapshotHandle);
-  if ($Err != VIX_OK)
-  {
-    return GetErrorText($Err);
-  }
-
-  return $self->UpdateStatus($VMHandle);
+  my $Snapshot;
+  eval { $Snapshot = $Domain->get_snapshot_by_name($SnapshotName) };
+  return ($@->message(), undef, undef) if ($@);
+  return (undef, $Domain, $Snapshot);
 }
 
-sub CreateSnapshot
+sub RevertToSnapshot($$)
 {
-  my $self = shift;
-  my $SnapshotName = $_[0];
+  my ($self, $SnapshotName) = @_;
+  LogMsg("Reverting ", $self->VirtDomain, " to $SnapshotName\n");
 
-  my ($ErrMessage, $VMHandle) = $self->GetVMHandle();
-  if (defined($ErrMessage))
-  {
-    return $ErrMessage;
-  }
+  my ($ErrMessage, $Domain, $Snapshot) = $self->_GetSnapshot($SnapshotName);
+  return $ErrMessage if (defined $ErrMessage);
+  eval { $Snapshot->revert_to(Sys::Virt::DomainSnapshot::REVERT_RUNNING) };
+  return $@->message() if ($@);
 
-  my ($Err, $SnapshotHandle) = VMCreateSnapshot($VMHandle, $SnapshotName, "",
-                                                VIX_SNAPSHOT_INCLUDE_MEMORY,
-                                                VIX_INVALID_HANDLE);
-  if ($Err != VIX_OK)
-  {
-    ReleaseHandle($SnapshotHandle);
-  }
-  return $self->CheckError($Err);
+  return $self->UpdateStatus($Domain);
 }
 
-sub RemoveSnapshot
+sub CreateSnapshot($$)
 {
-  my $self = shift;
-  my $SnapshotName = $_[0];
+  my ($self, $SnapshotName) = @_;
 
-  my ($ErrMessage, $VMHandle) = $self->GetVMHandle();
-  if (defined($ErrMessage))
-  {
-    return $ErrMessage;
-  }
+  my ($ErrMessage, $Domain) = $self->_GetDomain();
+  return $ErrMessage if (defined $ErrMessage);
 
-  my ($Err, $SnapshotHandle) = VMGetNamedSnapshot($VMHandle, $SnapshotName);
-  if ($Err != VIX_OK)
-  {
-    return GetErrorText($Err);
-  }
+  # FIXME: XML escaping
+  my $Xml = "<domainsnapshot><name>$SnapshotName</name></domainsnapshot>";
+  eval { $Domain->create_snapshot($Xml, 0) };
+  return $@->message() if ($@);
+  return undef;
+}
 
-  $Err = VMRemoveSnapshot($VMHandle, $SnapshotHandle, 0);
-  ReleaseHandle($SnapshotHandle);
-  return $self->CheckError($Err);
+sub RemoveSnapshot($$)
+{
+  my ($self, $SnapshotName) = @_;
+
+  my ($ErrMessage, $Domain, $Snapshot) = $self->_GetSnapshot($SnapshotName);
+  return $ErrMessage if (defined $ErrMessage);
+
+  eval { $Snapshot->delete(0) };
+  return $@->message() if ($@);
+  return undef;
 }
 
 sub PowerOn
 {
-  my $self = shift;
+  my ($self) = @_;
 
-  my ($ErrMessage, $VMHandle) = $self->GetVMHandle();
-  if (defined($ErrMessage))
-  {
-    return $ErrMessage;
-  }
+  my ($ErrMessage, $Domain) = $self->_GetDomain();
+  return $ErrMessage if (defined $ErrMessage);
 
-  my $Err = VMPowerOn($VMHandle, VIX_VMPOWEROP_NORMAL, VIX_INVALID_HANDLE);
-  if ($Err != VIX_OK)
-  {
-    return GetErrorText($Err);
-  }
+  eval { $Domain->create(0) };
+  return $@->message() if ($@);
 
-  return $self->UpdateStatus($VMHandle);
+  return $self->UpdateStatus($Domain);
 }
 
 sub PowerOff
 {
-  my $self = shift;
+  my ($self) = @_;
 
-  my ($ErrMessage, $VMHandle) = $self->GetVMHandle();
-  if (defined($ErrMessage))
-  {
-    return $ErrMessage;
-  }
+  my ($ErrMessage, $Domain) = $self->_GetDomain();
+  return $ErrMessage if (defined $ErrMessage);
 
-  my $Err = VMPowerOff($VMHandle, VIX_VMPOWEROP_NORMAL);
-  if ($Err != VIX_OK && $Err != VIX_E_VM_NOT_RUNNING)
-  {
-    return GetErrorText($Err);
-  }
+  eval { $Domain->destroy() };
+  return $@->message() if ($@);
 
-  return $self->UpdateStatus($VMHandle);
+  return $self->UpdateStatus($Domain);
 }
 
 sub WaitForToolsInGuest($;$)
@@ -373,31 +350,51 @@ sub RunScriptInGuestTimeout($$$)
   return TestAgent::RunScript($self->Hostname, $ScriptText, $Timeout);
 }
 
-sub CaptureScreenImage
+my %StreamData;
+
+sub _Stream2Image($$$)
 {
-  my $self = shift;
+    my ($Stream, $Data, $Size) = @_;
+    my $Image=$StreamData{$Stream};
+    $Image->{Size} += $Size;
+    $Image->{Bytes} .= $Data;
+    return $Size;
+}
 
-  my ($ErrMessage, $VMHandle) = $self->GetVMHandle();
-  if (defined($ErrMessage))
+sub CaptureScreenImage($)
+{
+  my ($self) = @_;
+  LogMsg("CaptureScreenImage ", $self->Name, "\n");
+
+  my ($ErrMessage, $Domain) = $self->_GetDomain();
+  return ($ErrMessage, undef, undef) if (defined $ErrMessage);
+
+  my $Stream;
+  eval { $Stream = $self->{Hypervisor}->new_stream(0) };
+  return ($@->message(), undef, undef) if ($@);
+
+  my $Image={Size => 0, Bytes => ""};
+  $StreamData{$Stream}=$Image;
+  eval {
+    $Domain->screenshot($Stream, 0, 0);
+    $Stream->recv_all(\&WineTestBot::VM::_Stream2Image);
+    $Stream->finish();
+  };
+  delete $StreamData{$Stream};
+  return ($@->message(), undef, undef) if ($@);
+
+  # The screenshot format depends on the hypervisor (e.g. PPM for QEmu)
+  # but callers expect PNG images.
+  my $image=Image::Magick->new();
+  my ($width, $height, $size, $format) = $image->Ping(blob => $Image->{Bytes});
+  if ($format ne "PNG")
   {
-    return ($ErrMessage, undef, undef);
+    my @blobs=($Image->{Bytes});
+    $image->BlobToImage(@blobs);
+    $Image->{Bytes}=($image->ImageToBlob(magick => 'png'))[0];
+    $Image->{Size}=length($Image->{Bytes});
   }
-
-  $ErrMessage = $self->LoginInGuest($VMHandle, $self->Interactive);
-  if (defined($ErrMessage))
-  {
-    return ($ErrMessage, undef, undef);
-  }
-
-  my ($Err, $ImageSize, $ImageBytes) = VMCaptureScreenImage($VMHandle,
-                                                            VIX_CAPTURESCREENFORMAT_PNG,
-                                                            VIX_INVALID_HANDLE);
-  if ($Err != VIX_OK)
-  {
-    return (GetErrorText($Err), undef, undef);
-  }
-
-  return (undef, $ImageSize, $ImageBytes);
+  return (undef, $Image->{Size}, $Image->{Bytes});
 }
 
 sub Status
@@ -460,10 +457,20 @@ sub RunRevert
   return undef;
 }
 
+
 package WineTestBot::VMs;
 
-use VMware::Vix::Simple;
-use VMware::Vix::API::Constants;
+=head1 NAME
+
+WineTestBot::VMs - A VM collection
+
+=head1 DESCRIPTION
+
+This is the collection of VMs the testbot knows about, including the build VM
+and retired (no longer used) VMs.
+
+=cut
+
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::EnumPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
@@ -478,9 +485,7 @@ require Exporter;
 sub _initialize
 {
   my $self = shift;
-
-  $self->{HostConnection} = WineTestBot::VM::HostConnection->new();
-
+  $self->{Hypervisors} = WineTestBot::VM::Hypervisors->new();
   $self->SUPER::_initialize(@_);
 }
 
@@ -492,8 +497,8 @@ BEGIN
     CreateBasicPropertyDescriptor("SortOrder", "Display order", !1, 1, "N", 3),
     CreateEnumPropertyDescriptor("Bits", "32 or 64 bits", !1, 1, ['32', '64']),
     CreateEnumPropertyDescriptor("Status", "Current status", !1, 1, ['dirty', 'reverting', 'sleeping', 'idle', 'running', 'offline']),
-    CreateBasicPropertyDescriptor("VmxHost", "Host where VM is located", !1, !1, "A", 64),
-    CreateBasicPropertyDescriptor("VmxFilePath", "Path to .vmx file", !1, 1, "A", 64),
+    CreateBasicPropertyDescriptor("VirtURI", "LibVirt URI of the VM", !1, 1, "A", 64),
+    CreateBasicPropertyDescriptor("VirtDomain", "LibVirt Domain for the VM", !1, 1, "A", 32),
     CreateBasicPropertyDescriptor("IdleSnapshot", "Name of idle snapshot", !1, 1, "A", 32),
     CreateBasicPropertyDescriptor("Hostname", "The VM hostname", !1, 1, "A", 64),
     CreateBasicPropertyDescriptor("Interactive", "Needs interactive flag", !1, 1, "B", 1),
@@ -576,12 +581,12 @@ sub SortKeysBySortOrder
   return \@SortedKeys;
 }
 
-sub FilterHost
+sub FilterHypervisor
 {
   my $self = shift;
-  my $Host = $_[0];
+  my $Hypervisor = $_[0];
 
-  $self->AddFilter("VmxHost", $Host);
+  $self->AddFilter("VirtURI", $Hypervisor);
 }
 
 1;
