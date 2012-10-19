@@ -318,21 +318,18 @@ elsif ($Step->Type eq "suite")
 $Script .= "cls\r\n";
 
 $ErrMessage = $VM->RunScriptInGuestTimeout($Script, $Task->Timeout + 15);
+my $LogErrMessage = RetrieveLogFile $Job, $Step, $Task,
+                                    "C:\\winetest\\$RptFileName",
+                                     $FullLogFileName;
+TakeScreenshot $VM, $FullScreenshotFileName;
 if (defined($ErrMessage))
 {
-  RetrieveLogFile $Job, $Step, $Task, "C:\\winetest\\$RptFileName",
-                  $FullLogFileName;
-  TakeScreenshot $VM, $FullScreenshotFileName;
   FatalError "Failure running script in VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
-TakeScreenshot $VM, $FullScreenshotFileName;
-
-$ErrMessage = RetrieveLogFile $Job, $Step, $Task, "C:\\winetest\\$RptFileName",
-                              $FullLogFileName;
-if (defined($ErrMessage))
+if (defined($LogErrMessage))
 {
-  FatalError "Can't copy log from VM: $ErrMessage\n", $FullErrFileName,
+  FatalError "Can't copy log from VM: $LogErrMessage\n", $FullErrFileName,
              $Job, $Step, $Task;
 }
 
