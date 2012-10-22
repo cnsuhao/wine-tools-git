@@ -1,3 +1,5 @@
+USE winetestbot;
+
 ALTER TABLE Roles
   ADD IsDefaultRole ENUM('Y', 'N') NULL
       AFTER Name;

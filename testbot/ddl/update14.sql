@@ -1,3 +1,5 @@
+USE winetestbot;
+
 ALTER TABLE VMs
   DROP VmxHost,
   DROP VmxFilePath,

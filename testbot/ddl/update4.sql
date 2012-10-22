@@ -1,2 +1,4 @@
+USE winetestbot;
+
 ALTER TABLE Steps
   MODIFY FileName VARCHAR(100) NOT NULL;

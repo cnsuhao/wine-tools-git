@@ -1,3 +1,5 @@
+USE winetestbot;
+
 ALTER TABLE VMs
   ADD Type ENUM('base', 'extra', 'build') NULL AFTER BaseOS;
 

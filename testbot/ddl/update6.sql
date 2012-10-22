@@ -1,3 +1,5 @@
+USE winetestbot;
+
 ALTER TABLE Steps
   ADD FileType ENUM('exe32', 'exe64', 'patchdlls', 'patchprograms') NULL
       AFTER FileName;

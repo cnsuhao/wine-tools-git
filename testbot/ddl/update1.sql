@@ -1,3 +1,5 @@
+USE winetestbot;
+
 ALTER TABLE Steps
   ADD DebugLevel INT(2) NULL,
   ADD ReportSuccessfulTests ENUM('Y', 'N') NULL;

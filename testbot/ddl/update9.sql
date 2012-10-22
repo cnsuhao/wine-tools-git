@@ -1,3 +1,5 @@
+USE winetestbot;
+
 ALTER TABLE Steps
   MODIFY FileType ENUM('exe32', 'exe64', 'patchdlls', 'patchprograms', 'dll32', 'dll64', 'zip') NOT NULL;
 

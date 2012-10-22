@@ -1,3 +1,5 @@
+USE winetestbot;
+
 ALTER TABLE Jobs
   ADD Archived ENUM('Y', 'N') NULL
       AFTER Id,

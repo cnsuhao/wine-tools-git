@@ -1,3 +1,5 @@
+USE winetestbot;
+
 CREATE TABLE Patches
 (
   Id          INT(7)       NOT NULL AUTO_INCREMENT,
