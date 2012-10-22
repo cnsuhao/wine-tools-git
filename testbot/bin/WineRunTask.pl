@@ -250,7 +250,7 @@ if (defined($ErrMessage))
 my $FileType = $Step->FileType;
 if ($FileType ne "exe32" && $FileType ne "exe64")
 {
-  FatalError "Unexpectd file type $FileType found\n",
+  FatalError "Unexpected file type $FileType found\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
 my $FileName = $Step->FileName;

@@ -64,7 +64,7 @@ sub HandleJobSubmit
   my $Job = $Jobs->GetItem($JobKey);
   if (! $Job)
   {
-    LogMsg "Engine: JobSubmit for non-existing job $JobKey\n";
+    LogMsg "Engine: JobSubmit for nonexistent job $JobKey\n";
     return "0Job $JobKey not found";
   }
   # We've already determined that JobKey is valid, untaint it
@@ -141,7 +141,7 @@ sub HandleJobCancel
   my $Job = CreateJobs()->GetItem($JobKey);
   if (! $Job)
   {
-    LogMsg "Engine: JobCancel for non-existing job $JobKey\n";
+    LogMsg "Engine: JobCancel for nonexistent job $JobKey\n";
     return "0Job $JobKey not found";
   }
   # We've already determined that JobKey is valid, untaint it
