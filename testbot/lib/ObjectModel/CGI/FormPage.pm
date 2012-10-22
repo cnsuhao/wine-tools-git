@@ -243,7 +243,7 @@ sub GenerateField
   my ($PropertyDescriptor, $Display) = @_;
 
   my $Value = $self->GetDisplayValue($PropertyDescriptor);
-  if ($Display == "rw")
+  if ($Display eq "rw")
   {
     my $InputType = $self->GetInputType($PropertyDescriptor);
     print "<div class='ItemValue'>";
