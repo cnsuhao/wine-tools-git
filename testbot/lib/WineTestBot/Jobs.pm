@@ -464,7 +464,7 @@ sub ScheduleOnHost
         {
           my $VM = $HostVMs->GetItem($Task->VM->GetKey());
           if ($VM->Status eq "idle" &&
-              (! defined($MaxRunningVMs) || $RunningVMs < $MaxRunningVMs) &&
+              $RunningVMs < $MaxRunningVMs &&
               $RevertingVMs == 0)
           {
             $VM->Status("running");
@@ -507,11 +507,11 @@ sub ScheduleOnHost
   foreach $VMKey (@DirtyVMsByIndex)
   {
     my $VM = $HostVMs->GetItem($VMKey);
-    if (! defined($MaxRevertingVMs) || $RevertingVMs < $MaxRevertingVMs)
+    if ($RevertingVMs < $MaxRevertingVMs)
     {
       if ($VM->Type eq "extra" || $VM->Type eq "retired")
       {
-        if (! defined($MaxExtraPoweredOnVms) || $PoweredOnExtraVMs < $MaxExtraPoweredOnVms)
+        if ($PoweredOnExtraVMs < $MaxExtraPoweredOnVms)
         {
           $VM->RunRevert();
           $PoweredOnExtraVMs++;
@@ -529,7 +529,7 @@ sub ScheduleOnHost
   {
     my $VM = $HostVMs->GetItem($VMKey);
     if (! defined($DirtyVMsBlockingJobs{$VMKey}) &&
-        (! defined($MaxRevertingVMs) || $RevertingVMs < $MaxRevertingVMs) &&
+        $RevertingVMs < $MaxRevertingVMs &&
         $VM->Status eq 'dirty' && $VM->Type ne "extra" &&
         $VM->Type ne "retired")
     {
