@@ -41,8 +41,7 @@ sub DisplayProperty
   my $PropertyName = $PropertyDescriptor->GetName();
 
   return $PropertyName eq "Name" || $PropertyName eq "Bits" ||
-         $PropertyName eq "MemSize" || $PropertyName eq "Status" ||
-         $PropertyName eq "Description";
+         $PropertyName eq "Status" || $PropertyName eq "Description";
 }
 
 sub SortKeys
