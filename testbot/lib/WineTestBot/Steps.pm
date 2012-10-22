@@ -118,7 +118,7 @@ BEGIN
     CreateEnumPropertyDescriptor("Status", "Status",  !1,  1, ['queued', 'running', 'completed', 'failed', 'skipped']),
     CreateEnumPropertyDescriptor("Type", "Step type",  !1,  1, ['suite', 'single', 'build', 'reconfig']),
     CreateBasicPropertyDescriptor("FileName", "File name",  !1,  1, "A", 100),
-    CreateEnumPropertyDescriptor("FileType", "File type",  !1,  1, ['exe32', 'exe64', 'patchdlls', 'patchprograms', 'dll32', 'dll64', 'zip']),
+    CreateEnumPropertyDescriptor("FileType", "File type",  !1,  1, ['exe32', 'exe64', 'patchdlls', 'patchprograms']),
     CreateBasicPropertyDescriptor("InStaging", "File is in staging area", !1, 1, "B", 1),
     CreateBasicPropertyDescriptor("DebugLevel", "Debug level (WINETEST_DEBUG)", !1, 1, "N", 2),
     CreateBasicPropertyDescriptor("ReportSuccessfulTests", "Report successful tests (WINETEST_REPORT_SUCCESS)", !1, 1, "B", 1),

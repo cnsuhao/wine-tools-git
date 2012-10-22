@@ -243,10 +243,8 @@ sub GenerateFields
       {
         my $VM = $VMs->GetItem($VMKey);
         if ($VM->Bits == 64 || $self->{FileType} eq "exe32" ||
-            $self->{FileType} eq "dll32" ||
             $self->{FileType} eq "patchdlls" ||
-            $self->{FileType} eq "patchprograms" ||
-            $self->{FileType} eq "zip")
+            $self->{FileType} eq "patchprograms")
         {
           my $FieldName = "vm_" . $self->CGI->escapeHTML($VM->GetKey());
           print "<div class='ItemProperty'><label>",
@@ -473,9 +471,7 @@ sub Validate
     {
       $self->{NoCmdLineArgWarn} = 1;
     }
-    elsif (! $self->GetParam("CmdLineArg") &&
-           $self->GetParam("FileType") ne "dll32" &&
-           $self->GetParam("FileType") ne "dll64")
+    elsif (! $self->GetParam("CmdLineArg"))
     {
       $self->{ErrMessage} = "You didn't specify a command line argument. " .
                             "This is most likely not correct, so please " .
@@ -624,6 +620,11 @@ sub DetermineFileType
       }
     }
   }
+  elsif ($FileType eq "dll32" || $FileType eq "dll64" || $FileType eq "zip")
+  {
+    # We know what these are but not what to do with them. So reject them early.
+    $FileType = "unknown";
+  }
 
   return ($ErrMessage, $FileType, $DllBaseName, $TestSet);
 }
@@ -678,8 +679,7 @@ sub OnPage1Next
       return !1;
     }
     if ($FileType ne "patchdlls" && $FileType ne "patchprograms" &&
-        $FileType ne "exe32" && $FileType ne "exe64" && $FileType ne "dll32" &&
-        $FileType ne "zip")
+        $FileType ne "exe32" && $FileType ne "exe64")
     {
       $self->{ErrField} = "File";
       $self->{ErrMessage} = "Unrecognized file type";
@@ -846,14 +846,7 @@ sub OnSubmit
     $NewStep->InStaging(!1);
   }
 
-  if ($FileType eq "dll32" && ! $self->GetParam("CmdLineArg"))
-  {
-    $NewStep->Type("suite");
-  }
-  else
-  {
-    $NewStep->Type("single");
-  }
+  $NewStep->Type("single");
   $NewStep->DebugLevel($self->GetParam("DebugLevel"));
   $NewStep->ReportSuccessfulTests(defined($self->GetParam("ReportSuccessfulTests")));
   
@@ -869,8 +862,7 @@ sub OnSubmit
     {
       my $Task = $Tasks->Add();
       $Task->VM($VM);
-      $Task->Timeout($NewStep->Type eq "suite" ?
-                     $SuiteTimeout : $SingleTimeout);
+      $Task->Timeout($SingleTimeout);
       $Task->CmdLineArg($self->GetParam("CmdLineArg"));
     }
   }
