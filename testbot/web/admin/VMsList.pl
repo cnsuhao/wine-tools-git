@@ -54,6 +54,21 @@ sub SortKeys
   return $self->{Collection}->SortKeysBySortOrder($Keys);
 }
 
+sub OnItemAction
+{
+  my $self = shift;
+  my ($CollectionBlock, $Item, $Action) = @_;
+
+  if ($Action eq "Delete")
+  {
+    $Item->Role("deleted");
+    my ($ErrKey, $ErrProperty, $ErrMessage) = $self->{Collection}->Save();
+    return ! defined($ErrMessage);
+  }
+
+  return $self->SUPER::OnItemAction(@_);
+}
+
 package main;
 
 my $Request = shift;

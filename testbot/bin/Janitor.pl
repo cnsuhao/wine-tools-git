@@ -34,10 +34,13 @@ use WineTestBot::Jobs;
 use WineTestBot::Log;
 use WineTestBot::Patches;
 use WineTestBot::PendingPatchSets;
+use WineTestBot::VMs;
+
 
 $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
 
+# Delete obsolete Jobs
 if ($WineTestBot::Config::JobPurgeDays != 0)
 {
   my $DeleteBefore = time() - $WineTestBot::Config::JobPurgeDays * 86400;
@@ -59,6 +62,7 @@ if ($WineTestBot::Config::JobPurgeDays != 0)
   $Jobs = undef;
 }
 
+# Delete PatchSets that are more than a day old
 my $DeleteBefore = time() - 1 * 86400;
 my $Sets = WineTestBot::PendingPatchSets::CreatePendingPatchSets();
 foreach my $SetKey (@{$Sets->GetKeys()})
@@ -85,6 +89,7 @@ foreach my $SetKey (@{$Sets->GetKeys()})
   }
 }
 
+# Delete obsolete Patches now that no Job references them
 if ($WineTestBot::Config::JobPurgeDays != 0)
 {
   $DeleteBefore = time() - $WineTestBot::Config::JobPurgeDays * 86400;
@@ -111,6 +116,7 @@ if ($WineTestBot::Config::JobPurgeDays != 0)
   $Patches = undef;
 }
 
+# Archive old Jobs, that is remove all their associated files
 if ($WineTestBot::Config::JobArchiveDays != 0)
 {
   my $ArchiveBefore = time() - $WineTestBot::Config::JobArchiveDays * 86400;
@@ -136,4 +142,43 @@ if ($WineTestBot::Config::JobArchiveDays != 0)
     }
   }
   $Jobs = undef;
+}
+
+# Purge deleted VMs if they are not referenced anymore
+my $VMs = CreateVMs();
+$VMs->AddFilter("Role", ["deleted"]);
+my %DeleteList;
+map { $DeleteList{$_} = 1 } @{$VMs->GetKeys()};
+
+if (%DeleteList)
+{
+  my $Jobs = CreateJobs();
+  foreach my $JobKey (@{$Jobs->GetKeys()})
+  {
+    my $Job = $Jobs->GetItem($JobKey);
+    my $Steps = $Job->Steps;
+    foreach my $StepKey (@{$Steps->GetKeys()})
+    {
+      my $Step = $Steps->GetItem($StepKey);
+      my $Tasks = $Step->Tasks;
+      foreach my $TaskKey (@{$Tasks->GetKeys()})
+      {
+        my $Task = $Tasks->GetItem($TaskKey);
+        if (exists $DeleteList{$Task->VM->Name})
+        {
+          LogMsg "Janitor: keeping the ", $Task->VM->Name, " VM for task (", join(":", $JobKey, $StepKey, $TaskKey), ")\n";
+          delete $DeleteList{$Task->VM->Name};
+        }
+      }
+    }
+  }
+  foreach my $VMKey (keys %DeleteList)
+  {
+    my $VM = $VMs->GetItem($VMKey);
+    my $ErrMessage = $VMs->DeleteItem($VM);
+    if (!defined $ErrMessage)
+    {
+      LogMsg "Janitor: deleted the ", $VM->Name, " VM\n";
+    }
+  }
 }

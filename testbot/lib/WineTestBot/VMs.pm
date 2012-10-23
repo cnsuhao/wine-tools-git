@@ -532,7 +532,7 @@ BEGIN
     CreateBasicPropertyDescriptor("Name", "VM name", 1, 1, "A", 20),
     CreateBasicPropertyDescriptor("SortOrder", "Display order", !1, 1, "N", 3),
     CreateEnumPropertyDescriptor("Type", "Type of VM", !1, 1, ['win32', 'win64', 'build']),
-    CreateEnumPropertyDescriptor("Role", "VM Role", !1, 1, ['extra', 'base', 'winetest', 'retired']),
+    CreateEnumPropertyDescriptor("Role", "VM Role", !1, 1, ['extra', 'base', 'winetest', 'retired', 'deleted']),
     CreateEnumPropertyDescriptor("Status", "Current status", !1, 1, ['dirty', 'reverting', 'sleeping', 'idle', 'running', 'offline']),
     CreateBasicPropertyDescriptor("VirtURI", "LibVirt URI of the VM", !1, 1, "A", 64),
     CreateBasicPropertyDescriptor("VirtDomain", "LibVirt Domain for the VM", !1, 1, "A", 32),
@@ -609,10 +609,18 @@ sub SortKeysBySortOrder
   my %SortOrder;
   foreach my $Key (@$Keys)
   {
-    $SortOrder{$Key} = $self->GetItem($Key)->SortOrder;
+    my $Item = $self->GetItem($Key);
+    $SortOrder{$Key} = [$Item->Role, $Item->SortOrder];
   }
 
-  my @SortedKeys = sort { $SortOrder{$a} <=> $SortOrder{$b} } @$Keys;
+  my @SortedKeys = sort {
+    my ($soa, $sob) = ($SortOrder{$a}, $SortOrder{$b});
+    # Sort deleted VMs last
+    return 1 if (@$soa[0] eq "deleted");
+    return -1 if (@$sob[0] eq "deleted");
+    # Otherwise follow the SortOrder key
+    return @$soa[1] <=> @$sob[1];
+  } @$Keys;
   return \@SortedKeys;
 }
 

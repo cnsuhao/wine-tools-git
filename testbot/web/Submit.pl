@@ -242,7 +242,7 @@ sub GenerateFields
       $VMs->AddFilter("Status", ["reverting", "sleeping", "idle", "running", "dirty"]);
       if ($self->{ShowAll})
       {
-        # All but the retired ones
+        # All but the retired and deleted ones
         $VMs->AddFilter("Role", ["base", "winetest", "extra"]);
       }
       else
