@@ -538,7 +538,6 @@ BEGIN
     CreateBasicPropertyDescriptor("VirtDomain", "LibVirt Domain for the VM", !1, 1, "A", 32),
     CreateBasicPropertyDescriptor("IdleSnapshot", "Name of idle snapshot", !1, 1, "A", 32),
     CreateBasicPropertyDescriptor("Hostname", "The VM hostname", !1, 1, "A", 64),
-    CreateBasicPropertyDescriptor("Interactive", "Needs interactive flag", !1, 1, "B", 1),
     CreateBasicPropertyDescriptor("Description", "Description", !1, !1, "A", 40),
   );
 }

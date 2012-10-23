@@ -53,7 +53,6 @@ CREATE TABLE VMs
   VirtDomain   VARCHAR(32)      NOT NULL,
   IdleSnapshot VARCHAR(32)      NOT NULL,
   Hostname     VARCHAR(64)      NOT NULL,
-  Interactive  ENUM('Y', 'N')   NOT NULL,
   Description  VARCHAR(40)      NULL,
   PRIMARY KEY (Name)
 )
