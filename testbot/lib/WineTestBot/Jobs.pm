@@ -412,7 +412,7 @@ on the host.
 =item *
 
 FIXME: The actual limit on the number of powered on VMs is blurred by the
-$MaxExtraPoweredOnVms setting and the last loop in ScheduleOnHost().
+$MaxNonBasePoweredOnVms setting and the last loop in ScheduleOnHost().
 
 =item *
 
@@ -423,7 +423,8 @@ when reverting too many VMs at once.
 =item *
 
 No Task is started while there are VMs that are being reverted. This is so that
-the tests are not disrupted by the disk or CPU activity caused reverting a VM.
+the tests are not disrupted by the disk or CPU activity caused by reverting a
+VM.
 
 =cut
 
@@ -438,7 +439,7 @@ sub ScheduleOnHost
   my $HostVMs = CreateVMs();
   $HostVMs->FilterHypervisor($Hypervisors);
   my ($RevertingVMs, $RunningVMs) = $HostVMs->CountRevertingRunningVMs();
-  my $PoweredOnExtraVMs = $HostVMs->CountPoweredOnExtraVMs();
+  my $PoweredOnNonBaseVMs = $HostVMs->CountPoweredOnNonBaseVMs();
   my %DirtyVMsBlockingJobs;
 
   $self->AddFilter("Status", ["queued", "running"]);
@@ -498,40 +499,41 @@ sub ScheduleOnHost
 
   if ($RunningVMs != 0)
   {
+    # We don't revert VMs while jobs are running so we're done
     return undef;
   }
 
-  # Sort the VMs by decreasing order of priority of their Jobs
+  # Sort the VMs by decreasing order of priority of the jobs they block
   my @DirtyVMsByIndex = sort { $DirtyVMsBlockingJobs{$a} <=> $DirtyVMsBlockingJobs{$b} } keys %DirtyVMsBlockingJobs;
   my $VMKey;
   foreach $VMKey (@DirtyVMsByIndex)
   {
+    last if ($RevertingVMs >= $MaxRevertingVMs);
+
     my $VM = $HostVMs->GetItem($VMKey);
-    if ($RevertingVMs < $MaxRevertingVMs)
+    if ($VM->Role ne "base")
     {
-      if ($VM->Type eq "extra" || $VM->Type eq "retired")
-      {
-        if ($PoweredOnExtraVMs < $MaxExtraPoweredOnVms)
-        {
-          $VM->RunRevert();
-          $PoweredOnExtraVMs++;
-          $RevertingVMs++;
-        }
-      }
-      else
+      if ($PoweredOnNonBaseVMs < $MaxNonBasePoweredOnVms)
       {
         $VM->RunRevert();
+        $PoweredOnNonBaseVMs++;
         $RevertingVMs++;
       }
     }
+    else
+    {
+      $VM->RunRevert();
+      $RevertingVMs++;
+    }
   }
+
+  # Again for the VMs that don't block any job
   foreach $VMKey (@{$HostVMs->GetKeys()})
   {
     my $VM = $HostVMs->GetItem($VMKey);
     if (! defined($DirtyVMsBlockingJobs{$VMKey}) &&
         $RevertingVMs < $MaxRevertingVMs &&
-        $VM->Status eq 'dirty' && $VM->Type ne "extra" &&
-        $VM->Type ne "retired")
+        $VM->Status eq 'dirty' && $VM->Role eq "base")
     {
       $VM->RunRevert();
       $RevertingVMs++;

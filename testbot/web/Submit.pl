@@ -211,11 +211,13 @@ sub GenerateFields
       if ($self->GetParam("Page") == 3)
       {
         my $VMs = CreateVMs();
+        # VMs that are only visible with ShowAll
+        $VMs->AddFilter("Role", ["winetest", "extra"]);
         foreach my $VMKey (@{$VMs->GetKeys()})
         {
           my $VM = $VMs->GetItem($VMKey);
           my $FieldName = "vm_" . $self->CGI->escapeHTML($VMKey);
-          if (defined($self->GetParam($FieldName)) && $VM->Type ne "base")
+          if (defined $self->GetParam($FieldName))
           {
             $self->{ShowAll} = 1;
             last;
@@ -228,38 +230,42 @@ sub GenerateFields
       }
   
       my $VMs = CreateVMs();
+      if ($self->{FileType} eq "exe64" || $self->{FileType} eq "dll64")
+      {
+          $VMs->AddFilter("Type", ["win64"]);
+      }
+      else
+      {
+          $VMs->AddFilter("Type", ["win32", "win64"]);
+      }
       # Don't even show the 'offline' ones
       $VMs->AddFilter("Status", ["reverting", "sleeping", "idle", "running", "dirty"]);
       if ($self->{ShowAll})
       {
-        $VMs->AddFilter("Type", ["base", "extra", "retired"]);
+        # All but the retired ones
+        $VMs->AddFilter("Role", ["base", "winetest", "extra"]);
       }
       else
       {
-        $VMs->AddFilter("Type", ["base"]);
+        $VMs->AddFilter("Role", ["base"]);
       }
       my $SortedKeys = $VMs->SortKeysBySortOrder($VMs->GetKeys());
       foreach my $VMKey (@$SortedKeys)
       {
         my $VM = $VMs->GetItem($VMKey);
-        if ($VM->Bits == 64 || $self->{FileType} eq "exe32" ||
-            $self->{FileType} eq "patchdlls" ||
-            $self->{FileType} eq "patchprograms")
+        my $FieldName = "vm_" . $self->CGI->escapeHTML($VM->GetKey());
+        print "<div class='ItemProperty'><label>",
+              $self->CGI->escapeHTML($VM->Name);
+        if ($VM->Description)
         {
-          my $FieldName = "vm_" . $self->CGI->escapeHTML($VM->GetKey());
-          print "<div class='ItemProperty'><label>",
-                $self->CGI->escapeHTML($VM->Name);
-          if ($VM->Description)
-          {
-            print " (", $self->CGI->escapeHTML($VM->Description), ")";
-          }
-          print "</label><div class='ItemValue'><input type='checkbox' name='$FieldName'";
-          if ($self->GetParam("Page") == 1 || $self->GetParam($FieldName))
-          {
-            print " checked='checked'";
-          }
-          print "/></div></div>\n";
+          print " (", $self->CGI->escapeHTML($VM->Description), ")";
         }
+        print "</label><div class='ItemValue'><input type='checkbox' name='$FieldName'";
+        if ($self->GetParam("Page") == 1 || $self->GetParam($FieldName))
+        {
+          print " checked='checked'";
+        }
+        print "/></div></div>\n";
       }
     }
     else
@@ -368,11 +374,12 @@ sub DisplayProperty
       {
         my $Show64 = !1;
         my $VMs = CreateVMs();
+        $VMs->AddFilter("Type", ["win64"]);
         foreach my $VMKey (@{$VMs->GetKeys()})
         {
           my $VM = $VMs->GetItem($VMKey);
           my $FieldName = "vm_" . $self->CGI->escapeHTML($VM->GetKey());
-          if ($self->GetParam($FieldName) && $VM->Bits == 64)
+          if ($self->GetParam($FieldName))
           {
             $Show64 = 1;
             last;
@@ -798,6 +805,8 @@ sub OnSubmit
     $FileNameRandomPart = $self->GetCurrentSession()->Id;
   }
 
+  # See also Patches::Submit() in lib/WineTestBot/Patches.pm
+
   # First create a new job
   my $Jobs = CreateJobs();
   my $NewJob = $Jobs->Add();
@@ -816,86 +825,79 @@ sub OnSubmit
   {
     $NewJob->Branch($Branch);
   }
-  
-  # Add a step to the job
   my $Steps = $NewJob->Steps;
-  my $NewStep = $Steps->Add();
-  $NewStep->FileName($FileNameRandomPart . " " . $self->GetParam("FileName"));
+
   my $FileType = $self->GetParam("FileType");
-  $NewStep->FileType($FileType);
-  $NewStep->InStaging(1);
   if ($FileType eq "patchdlls" || $FileType eq "patchprograms")
   {
-    $NewStep->Type("build");
-    $NewStep->DebugLevel(0);
+    # This is a patch so add a build step...
+    my $BuildStep = $Steps->Add();
+    $BuildStep->FileName($FileNameRandomPart . " " . $self->GetParam("FileName"));
+    $BuildStep->FileType($FileType);
+    $BuildStep->InStaging(1);
+    $BuildStep->Type("build");
+    $BuildStep->DebugLevel(0);
 
-    # Add build task
-    my $Tasks = $NewStep->Tasks;
+    # ...with a build task
+    my $Tasks = $BuildStep->Tasks;
     my $VMs = CreateVMs();
     $VMs->AddFilter("Type", ["build"]);
+    $VMs->AddFilter("Role", ["base"]);
     my $BuildKey = ${$VMs->GetKeys()}[0];
     my $VM = $VMs->GetItem($BuildKey);
     my $Task = $Tasks->Add();
     $Task->VM($VM);
     $Task->Timeout($BuildTimeout);
-
-    # Add test run step
-    $NewStep = $Steps->Add();
-    $NewStep->FileName($self->GetParam("TestExecutable"));
-    $NewStep->FileType("exe32");
-    $NewStep->InStaging(!1);
   }
 
-  $NewStep->Type("single");
-  $NewStep->DebugLevel($self->GetParam("DebugLevel"));
-  $NewStep->ReportSuccessfulTests(defined($self->GetParam("ReportSuccessfulTests")));
-  
-  # Add a task for each selected VM
-  my $Tasks = $NewStep->Tasks;
-  my $VMs = CreateVMs();
-  my $SortedKeys = $VMs->SortKeysBySortOrder($VMs->GetKeys());
-  foreach my $VMKey (@$SortedKeys)
+  # Add steps and tasks for the 32 and 64-bit tests
+  foreach my $Bits ("32", "64")
   {
-    my $VM = $VMs->GetItem($VMKey);
-    my $FieldName = "vm_" . $self->CGI->escapeHTML($VM->GetKey());
-    if ($self->GetParam($FieldName))
-    {
-      my $Task = $Tasks->Add();
-      $Task->VM($VM);
-      $Task->Timeout($SingleTimeout);
-      $Task->CmdLineArg($self->GetParam("CmdLineArg"));
-    }
-  }
+    next if ($Bits eq "32" && $FileType eq "exe64");
+    next if ($Bits eq "64" && $FileType eq "exe32");
+    next if ($Bits eq "64" && $FileType =~ /^patch/ && !defined($self->GetParam("Run64")));
+    my $Tasks;
 
-  if (($FileType eq "patchdlls" || $FileType eq "patchprograms") &&
-      defined($self->GetParam("Run64")))
-  {
-    # Add step and tasks for 64-bit exe
-    $NewStep = $Steps->Add();
-    my $FileName64 = $self->GetParam("TestExecutable");
-    $FileName64 =~ s/^([a-zA-Z0-9_.]+)_test\.exe/\1_test64.exe/;
-    $NewStep->FileName($FileName64);
-    $NewStep->FileType("exe64");
-    $NewStep->InStaging(!1);
-    $NewStep->Type("single");
-    $NewStep->DebugLevel($self->GetParam("DebugLevel"));
-    $NewStep->ReportSuccessfulTests(defined($self->GetParam("ReportSuccessfulTests")));
-  
-    # Add a task for each selected 64-bit VM
-    my $Tasks = $NewStep->Tasks;
     my $VMs = CreateVMs();
+    $VMs->AddFilter("Type", $Bits eq "32" ? ["win32", "win64"] : ["win64"]);
     my $SortedKeys = $VMs->SortKeysBySortOrder($VMs->GetKeys());
     foreach my $VMKey (@$SortedKeys)
     {
       my $VM = $VMs->GetItem($VMKey);
       my $FieldName = "vm_" . $self->CGI->escapeHTML($VM->GetKey());
-      if ($VM->Bits == 64 && $self->GetParam($FieldName))
+      next if (!$self->GetParam($FieldName)); # skip unselected VMs
+
+      if (!$Tasks)
       {
-        my $Task = $Tasks->Add();
-        $Task->VM($VM);
-        $Task->Timeout($SingleTimeout);
-        $Task->CmdLineArg($self->GetParam("CmdLineArg"));
+        # First create the test step
+        my $TestStep = $Steps->Add();
+        if ($FileType eq "patchdlls" || $FileType eq "patchprograms")
+        {
+          my $FileName=$self->GetParam("TestExecutable");
+          if ($Bits eq "64")
+          {
+            $FileName =~ s/^([a-zA-Z0-9_.]+)_test\.exe/\1_test64.exe/;
+          }
+          $TestStep->FileName($FileName);
+          $TestStep->InStaging(!1);
+        }
+        else
+        {
+          $TestStep->FileName($FileNameRandomPart . " " . $self->GetParam("FileName"));
+          $TestStep->InStaging(1);
+        }
+        $TestStep->FileType("exe$Bits");
+        $TestStep->Type("single");
+        $TestStep->DebugLevel($self->GetParam("DebugLevel"));
+        $TestStep->ReportSuccessfulTests(defined($self->GetParam("ReportSuccessfulTests")));
+        $Tasks = $TestStep->Tasks;
       }
+
+      # Then add a task for this VM
+      my $Task = $Tasks->Add();
+      $Task->VM($VM);
+      $Task->Timeout($SingleTimeout);
+      $Task->CmdLineArg($self->GetParam("CmdLineArg"));
     }
   }
 

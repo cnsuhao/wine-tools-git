@@ -128,7 +128,7 @@ sub DisplayProperty
 
   my $PropertyName = $PropertyDescriptor->GetName();
   return $PropertyName eq "Name" || $PropertyName eq "Type" ||
-         $PropertyName eq "Bits" || $PropertyName eq "Status" ||
+         $PropertyName eq "Role" || $PropertyName eq "Status" ||
          $PropertyName eq "Description";
 }
 

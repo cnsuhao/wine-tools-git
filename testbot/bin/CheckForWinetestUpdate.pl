@@ -70,28 +70,30 @@ sub AddJob
   my $Tasks = $NewStep->Tasks;
   my $HasTasks = !1;
   my $VMs = CreateVMs();
+  if ($Bits == 64)
+  {
+      $VMs->AddFilter("Type", ["win64"]);
+      $VMs->AddFilter("Role", ["base", "winetest"]);
+  }
+  elsif ($BaseJob)
+  {
+      $VMs->AddFilter("Type", ["win32", "win64"]);
+      $VMs->AddFilter("Role", ["base"]);
+  }
+  else
+  {
+      $VMs->AddFilter("Type", ["win32", "win64"]);
+      $VMs->AddFilter("Role", ["winetest"]);
+  }
   # Don't schedule the 'offline' ones
   $VMs->AddFilter("Status", ["reverting", "sleeping", "idle", "running", "dirty"]);
   foreach my $VMKey (@{$VMs->SortKeysBySortOrder($VMs->GetKeys())})
   {
     my $VM = $VMs->GetItem($VMKey);
-    my $AddThisVM;
-    if ($Bits == 32)
-    {
-      $AddThisVM = ($BaseJob && $VM->Type eq "base") ||
-                   (! $BaseJob && $VM->Type eq "extra");
-    }
-    else
-    {
-      $AddThisVM = ($VM->Bits == 64 && $VM->Type ne "build");
-    }
-    if ($AddThisVM)
-    {
-      my $Task = $Tasks->Add();
-      $Task->VM($VM);
-      $Task->Timeout($SuiteTimeout);
-      $HasTasks = 1;
-    }
+    my $Task = $Tasks->Add();
+    $Task->VM($VM);
+    $Task->Timeout($SuiteTimeout);
+    $HasTasks = 1;
   }
 
   # Now save the whole thing
@@ -127,22 +129,17 @@ sub AddReconfigJob
 
   # Add a task for the build VM
   my $Tasks = $NewStep->Tasks;
-  my $HasTasks = !1;
   my $VMs = CreateVMs();
-  foreach my $VMKey (@{$VMs->SortKeysBySortOrder($VMs->GetKeys())})
-  {
-    my $VM = $VMs->GetItem($VMKey);
-    if ($VM->Type eq "build")
-    {
-      my $Task = $Tasks->Add();
-      $Task->VM($VM);
-      $Task->Timeout($ReconfigTimeout);
-      last;
-    }
-  }
+  $VMs->AddFilter("Type", ["build"]);
+  $VMs->AddFilter("Role", ["base"]);
+  my $BuildKey = ${$VMs->GetKeys()}[0];
+  my $VM = $VMs->GetItem($BuildKey);
+  my $Task = $Tasks->Add();
+  $Task->VM($VM);
+  $Task->Timeout($ReconfigTimeout);
 
   # Now save the whole thing
-  (my $ErrKey, my $ErrProperty, my $ErrMessage) = $Jobs->Save();
+  my ($ErrKey, $ErrProperty, $ErrMessage) = $Jobs->Save();
   if (defined($ErrMessage))
   {
     LogMsg "CheckForWinetestUpdate: Failed to save reconfig job: $ErrMessage\n";

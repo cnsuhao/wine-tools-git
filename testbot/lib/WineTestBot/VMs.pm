@@ -98,27 +98,50 @@ commands in it. This part is used to start the tasks in the VM but is
 implemented independently from the VM's hypervisor since most do not provide
 this functionality.
 
-There are four types of VMs:
+The VM type defines what the it can do:
 
 =over 12
 
-=item base
-
-This defines the set of Windows VMs that the Wine tests are run on by default,
-especially Wine commits and wine-patches emails.
-
-=item extra
-
-This is a set of extra Windows VMs that users can manually chose to run their
-tests on.
-
 =item build
 
-This is a Unix VM used to build the Wine test binaries.
+This is a Unix VM that can build the 32-bit and 64-bit Windows test binaries.
+
+=item win32
+
+This is a 32-bit Windows VM that can run the 32-bit tests.
+
+=item win64
+
+This is a 64-bit Windows VM that can run both the 32-bit and 64-bit tests.
+
+=back
+
+
+The VM role defines what we use it for:
+
+=over 12
 
 =item retired
 
-These VMs are no longer used.
+A retired VM is no longer used at all. No new jobs can be scheduled to run on
+them.
+
+=item base
+
+A base VM is used for every suitable task. This is the only role that build VMs
+can play besides retired. For Windows VMs, this means that it will run the
+WineTest jobs, the wine-patches jobs, and also the manually submitted jobs
+unless the submitter decided otherwise.
+
+=item winetest
+
+This is only valid for Windows VMs. By default these VMs only run the WineTest
+jobs. They can also be selected for manually submitted jobs.
+
+=item extra
+
+This is only valid for Windows VMs. They are only used if selected for a
+manually submitted job.
 
 =back
 
@@ -155,8 +178,10 @@ next step will be to revert it to the idle snapshot so it can be used again.
 
 =item offline
 
-This VM should not be used. This is typically the case of Retired VMs but it
-can also happen if an error happens while manipulating the VM.
+This VM should not be used. The WineTestBot automatically puts VMs into this
+state if errors happen when manipulating them, such as if they fail to revert,
+etc. The main web status page has a warning indicator on when some VMs are
+offline.
 
 =back
 
@@ -417,6 +442,18 @@ sub Status
   return $NewStatus;
 }
 
+sub Validate
+{
+  my $self = shift;
+
+  if ($self->Type ne "win32" && $self->Type ne "win64" &&
+      ($self->Role eq "winetest" || $self->Role eq "extra"))
+  {
+      return ("Role", "Only win32 and win64 VMs can have a role of '" . $self->Role . "'");
+  }
+  return $self->SUPER::Validate(@_);
+}
+
 sub OnSaved
 {
   my $self = shift;
@@ -466,8 +503,8 @@ WineTestBot::VMs - A VM collection
 
 =head1 DESCRIPTION
 
-This is the collection of VMs the testbot knows about, including the build VM
-and retired (no longer used) VMs.
+This is the collection of VMs the testbot knows about, no matter their type,
+role or status.
 
 =cut
 
@@ -493,9 +530,9 @@ BEGIN
 {
   @PropertyDescriptors = (
     CreateBasicPropertyDescriptor("Name", "VM name", 1, 1, "A", 20),
-    CreateEnumPropertyDescriptor("Type", "Type of VM", !1, 1, ['extra', 'base', 'build', 'retired']),
     CreateBasicPropertyDescriptor("SortOrder", "Display order", !1, 1, "N", 3),
-    CreateEnumPropertyDescriptor("Bits", "32 or 64 bits", !1, 1, ['32', '64']),
+    CreateEnumPropertyDescriptor("Type", "Type of VM", !1, 1, ['win32', 'win64', 'build']),
+    CreateEnumPropertyDescriptor("Role", "VM Role", !1, 1, ['extra', 'base', 'winetest', 'retired']),
     CreateEnumPropertyDescriptor("Status", "Current status", !1, 1, ['dirty', 'reverting', 'sleeping', 'idle', 'running', 'offline']),
     CreateBasicPropertyDescriptor("VirtURI", "LibVirt URI of the VM", !1, 1, "A", 64),
     CreateBasicPropertyDescriptor("VirtDomain", "LibVirt Domain for the VM", !1, 1, "A", 32),
@@ -542,7 +579,7 @@ sub CountRevertingRunningVMs
   return ($RevertingVMs, $RunningVMs);
 }
 
-sub CountPoweredOnExtraVMs
+sub CountPoweredOnNonBaseVMs
 {
   my $self = shift;
 
@@ -552,8 +589,7 @@ sub CountPoweredOnExtraVMs
     my $VM = $self->GetItem($VMKey);
     my $VMStatus = $VM->Status;
 
-    if (($VM->Type eq "extra" ||
-         $VM->Type eq "retired") &&
+    if ($VM->Role ne "base" &&
         ($VMStatus eq "reverting" ||
          $VMStatus eq "sleeping" ||
          $VMStatus eq "idle" ||

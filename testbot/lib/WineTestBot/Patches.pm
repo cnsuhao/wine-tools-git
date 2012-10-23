@@ -124,6 +124,7 @@ sub Submit
   my $self = shift;
   my ($PatchFileName, $IsSet) = @_;
 
+  # See also OnSubmit() in web/Submit.pl
   my %Targets;
   if (open(BODY, "<$DataDir/patches/" . $self->Id))
   {
@@ -222,6 +223,7 @@ sub Submit
     my $Tasks = $NewStep->Tasks;
     my $VMs = CreateVMs();
     $VMs->AddFilter("Type", ["build"]);
+    $VMs->AddFilter("Role", ["base"]);
     my $BuildKey = ${$VMs->GetKeys()}[0];
     my $VM = $VMs->GetItem($BuildKey);
     my $Task = $Tasks->Add();
@@ -230,53 +232,32 @@ sub Submit
   
     foreach my $TestSet (keys %{$Targets{$BaseName}})
     {
-      # Add 32-bit test run
-      $NewStep = $Steps->Add();
-      my $TestExecutablePart = $BaseName;
-      if ($Targets{$BaseName}{$TestSet} eq "patchprograms")
+      # Add 32 and 64-bit tasks
+      foreach my $Bits ("32", "64")
       {
-        $TestExecutablePart .= ".exe";
-      }
-      $NewStep->FileName("${TestExecutablePart}_test.exe");
-      $NewStep->FileType("exe32");
-      $NewStep->InStaging(!1);
-    
-      # Add 32-bit tasks
-      $Tasks = $NewStep->Tasks;
-      $VMs = CreateVMs();
-      $VMs->AddFilter("Type", ["base"]);
-      # Don't schedule the 'offline' ones
-      $VMs->AddFilter("Status", ["reverting", "sleeping", "idle", "running", "dirty"]);
-      my $Have64VMs = !1;
-      my $SortedKeys = $VMs->SortKeysBySortOrder($VMs->GetKeys());
-      foreach my $VMKey (@$SortedKeys)
-      {
-        my $VM = $VMs->GetItem($VMKey);
-        my $Task = $Tasks->Add();
-        $Task->VM($VM);
-        $Task->Timeout($SingleTimeout);
-        $Task->CmdLineArg($TestSet);
-        if ($VM->Bits == 64)
+        $VMs = CreateVMs();
+        $VMs->AddFilter("Type", $Bits eq "32" ? ["win32", "win64"] : ["win64"]);
+        $VMs->AddFilter("Role", ["base"]);
+        # Don't schedule the 'offline' ones
+        $VMs->AddFilter("Status", ["reverting", "sleeping", "idle", "running", "dirty"]);
+        if (@{$VMs->GetKeys()})
         {
-          $Have64VMs = 1;
-        }
-      }
-    
-      if ($Have64VMs)
-      {
-        # Add 64-bit test run
-        $NewStep = $Steps->Add();
-        $NewStep->FileName("${TestExecutablePart}_test64.exe");
-        $NewStep->FileType("exe64");
-        $NewStep->InStaging(!1);
-      
-        # Add 64-bit tasks
-        $Tasks = $NewStep->Tasks;
-        foreach my $VMKey (@$SortedKeys)
-        {
-          my $VM = $VMs->GetItem($VMKey);
-          if ($VM->Bits == 64)
+          # Create the corresponding Step
+          $NewStep = $Steps->Add();
+          my $FileName = $BaseName;
+          $FileName .= ".exe" if ($Targets{$BaseName}{$TestSet} eq "patchprograms");
+          $FileName .= "_test";
+          $FileName .= "64" if ($Bits eq "64");
+          $NewStep->FileName("$FileName.exe");
+          $NewStep->FileType("exe$Bits");
+          $NewStep->InStaging(!1);
+          $Tasks = $NewStep->Tasks;
+
+          # And a task for each VM
+          my $SortedKeys = $VMs->SortKeysBySortOrder($VMs->GetKeys());
+          foreach my $VMKey (@$SortedKeys)
           {
+            my $VM = $VMs->GetItem($VMKey);
             my $Task = $Tasks->Add();
             $Task->VM($VM);
             $Task->Timeout($SingleTimeout);

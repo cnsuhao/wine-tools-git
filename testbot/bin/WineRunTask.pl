@@ -52,7 +52,7 @@ sub FatalError
     $Task->Save();
     $Job->UpdateStatus();
 
-    if ($Task->VM->Type eq "extra" || $Task->VM->Type eq "retired")
+    if ($Task->VM->Role ne "base")
     {
       $Task->VM->PowerOff();
     }
@@ -74,8 +74,7 @@ sub FatalError
     if ($Task && $Step->Type eq "suite")
     {
       my $LatestName = "$DataDir/latest/" . $Task->VM->Name . "_" .
-                       ($Task->VM->Bits == 64 &&
-                        $Step->FileType eq "exe64" ? "64" : "32") . ".err";
+                       ($Step->FileType eq "exe64" ? "64" : "32") . ".err";
       unlink($LatestName);
       link($RptFileName, $LatestName);
     }
@@ -151,8 +150,7 @@ sub RetrieveLogFile
   }
 
   my $LatestNameBase = "$DataDir/latest/" . $VM->Name . "_" .
-                       ($VM->Bits == 64 &&
-                        $Step->FileType eq "exe64" ? "64" : "32");
+                       ($Step->FileType eq "exe64" ? "64" : "32");
   unlink("${LatestNameBase}.log");
   unlink("${LatestNameBase}.err");
   link("$DataDir/jobs/" . $Job->Id . "/" . $Step->No . "/" . $Task->No . "/log",
@@ -300,7 +298,7 @@ elsif ($Step->Type eq "suite")
   $Script .= "$FileName ";
   my $Tag = lc($TagPrefix) . "-" . lc($VM->Name);
   $Tag =~ s/[^a-zA-Z0-9]/-/g;
-  if ($VM->Bits == 64)
+  if ($VM->Type eq "win64")
   {
     $Tag .= "-" . ($FileType eq "exe64" ? "64" : "32");
   }
@@ -353,7 +351,7 @@ else
 }
 $Task->Save();
 $Job->UpdateStatus();
-if ($Task->VM->Type eq "extra" || $Task->VM->Type eq "retired")
+if ($Task->VM->Role ne "base")
 {
   $Task->VM->PowerOff();
 }

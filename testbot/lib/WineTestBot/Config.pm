@@ -26,7 +26,7 @@ WineTestBot::Config - Site-independent configuration settings
 
 use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
              $DbDataSource $DbUsername $DbPassword $MaxRevertingVMs
-             $MaxRunningVMs $MaxExtraPoweredOnVms $SleepAfterRevert
+             $MaxRunningVMs $MaxNonBasePoweredOnVms $SleepAfterRevert
              $WaitForToolsInVM $AdminEMail $RobotEMail $WinePatchToOverride
              $WinePatchCc $SuiteTimeout $SingleTimeout
              $BuildTimeout $ReconfigTimeout $OverheadTimeout $TagPrefix
@@ -38,7 +38,7 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw($UseSSL $LogDir $DataDir $BinDir
-             $MaxRevertingVMs $MaxRunningVMs $MaxExtraPoweredOnVms
+             $MaxRevertingVMs $MaxRunningVMs $MaxNonBasePoweredOnVms
              $SleepAfterRevert $WaitForToolsInVM $AdminEMail $RobotEMail
              $WinePatchToOverride $WinePatchCc $SuiteTimeout
              $SingleTimeout $BuildTimeout $ReconfigTimeout $OverheadTimeout
@@ -54,7 +54,7 @@ $BinDir = "/home/winehq/tools/testbot/bin";
 
 $MaxRevertingVMs = 1;
 $MaxRunningVMs = 2;
-$MaxExtraPoweredOnVms = 2;
+$MaxNonBasePoweredOnVms = 2;
 $SleepAfterRevert = 30;
 $WaitForToolsInVM = 30;
 
