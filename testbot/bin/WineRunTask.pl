@@ -335,11 +335,7 @@ $Task->Status("completed");
 $Task->ChildPid(undef);
 $Task->Ended(time);
 my $TestFailures = CountFailures($FullLogFileName);
-if (defined($TestFailures))
-{
-  $Task->TestFailures($TestFailures);
-}
-else
+if (!defined $TestFailures)
 {
   my $OldUMask = umask(002);
   if (open ERRFILE, ">>$FullErrFileName")
@@ -348,7 +344,9 @@ else
     close ERRFILE;
   }
   umask($OldUMask);
+  $TestFailures = 1;
 }
+$Task->TestFailures($TestFailures);
 $Task->Save();
 $Job->UpdateStatus();
 if ($Task->VM->Role ne "base")
