@@ -41,7 +41,7 @@ sub FatalError
 
   my $JobKey = defined($Job) ? $Job->GetKey() : "0";
 
-  LogMsg "WineSendLog: $JobKey $ErrMessage";
+  LogMsg "$JobKey $ErrMessage";
 
   exit 1;
 }
@@ -125,7 +125,7 @@ sub ReadLog
   }
   else
   {
-    LogMsg "WineSendLog: Unable to open log $LogName\n";
+    LogMsg "Unable to open log $LogName\n";
   }
 
   return \@Messages;
@@ -401,7 +401,7 @@ EOF
       }
       else
       {
-        LogMsg "WineSendLog: BotFailure found in ${LatestName}.err\n";
+        LogMsg "BotFailure found in ${LatestName}.err\n";
       }
       if ($MessagesFromErr || $MessagesFromLog)
       {
@@ -411,7 +411,7 @@ EOF
     }
     elsif ($BotFailure)
     {
-      LogMsg "WineSendLog: BotFailure found in $TaskDir/err\n";
+      LogMsg "BotFailure found in $TaskDir/err\n";
     }
   }
 
@@ -532,6 +532,6 @@ if (! defined($Job))
 
 SendLog($Job);
 
-LogMsg "WineSendLog: log for job $JobId sent\n";
+LogMsg "Log for job $JobId sent\n";
 
 exit;

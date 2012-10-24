@@ -41,7 +41,7 @@ sub FatalError
 
   my $VMKey = defined($VM) ? $VM->GetKey() : "";
 
-  LogMsg "RevertVM: $VMKey $ErrMessage\n";
+  LogMsg $ErrMessage, "\n";
 
   if ($VM)
   {
@@ -71,7 +71,7 @@ if (! $VMKey)
   die "Usage: RevertVM.pl VMName";
 }
 
-LogMsg "RevertVM: revert of $VMKey started\n";
+LogMsg "Revert of $VMKey started\n";
 
 my $VMs = CreateVMs();
 my $VM = $VMs->GetItem($VMKey);
@@ -111,7 +111,7 @@ foreach my $WaitCount (1..3)
 }
 if (defined($ErrMessage))
 {
-  LogMsg "RevertVM: $VMKey Error while waiting for tools: $ErrMessage\n";
+  LogMsg "$VMKey Error while waiting for tools: $ErrMessage\n";
 }
 
 if ($SleepAfterRevert != 0)
@@ -126,6 +126,6 @@ if (defined($ErrMessage))
   FatalError "Can't change status for VM $VMKey: $ErrMessage", $VM;
 }
 
-LogMsg "RevertVM: revert of $VMKey completed\n";
+LogMsg "Revert of $VMKey completed\n";
 
 exit;

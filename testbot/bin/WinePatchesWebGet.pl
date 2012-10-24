@@ -76,8 +76,7 @@ foreach my $WebPatchId ($StartWebPatchId..$EndWebPatchId)
   my $Response = $UA->request($Request);
   if ($Response->code != RC_OK)
   {
-    LogMsg "WinePatchesWebGet: Unexpected HTTP response code ",
-           $Response->code, "\n";
+    LogMsg "Unexpected HTTP response code ", $Response->code, "\n";
     exit 1;
   }
   my $FileNameRandomPart = GenerateRandomString(32);
@@ -88,7 +87,7 @@ foreach my $WebPatchId ($StartWebPatchId..$EndWebPatchId)
   my $StagingFileName = "$DataDir/staging/${FileNameRandomPart}_patch_$WebPatchId";
   if (! open STAGINGFILE, ">$StagingFileName")
   {
-    LogMsg "WinePatchesWebGet: can't create staging file $StagingFileName: $!\n";
+    LogMsg "Can't create staging file $StagingFileName: $!\n";
     exit 1;
   }
   print STAGINGFILE $Response->decoded_content();
@@ -96,7 +95,7 @@ foreach my $WebPatchId ($StartWebPatchId..$EndWebPatchId)
 
   WinePatchWebSubmission("${FileNameRandomPart}_patch_$WebPatchId", $WebPatchId);
 
-  LogMsg "WinePatchesWebGet: retrieved patch $WebPatchId\n";
+  LogMsg "Retrieved patch $WebPatchId\n";
 }
 
 exit;

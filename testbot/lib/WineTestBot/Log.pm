@@ -33,15 +33,18 @@ require Exporter;
 @EXPORT = qw(&LogMsg);
 
 my $logfile;
+my $logprefix;
 sub LogMsg(@)
 {
   if (!defined $logfile)
   {
+    require File::Basename;
+    $logprefix = File::Basename::basename($0);
+    $logprefix =~ s/\.[^.]*$//;
     my $oldumask = umask(002);
     if (!open($logfile, ">>", "$LogDir/log"))
     {
-      require File::Basename;
-      print STDERR File::Basename::basename($0), ":warning: could not open '$LogDir/log' for writing: $!\n";
+      print STDERR "$logprefix:warning: could not open '$LogDir/log' for writing: $!\n";
       open($logfile, ">>&=", 2);
     }
     umask($oldumask);
@@ -51,7 +54,7 @@ sub LogMsg(@)
     $| = 1;
     select($tmp);
   }
-  print $logfile scalar localtime, " ", @_ if ($logfile);
+  print $logfile scalar localtime, " ", $logprefix, ": ", @_ if ($logfile);
 }
 
 1;

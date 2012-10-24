@@ -45,8 +45,8 @@ use WineTestBot::VMs;
 
 sub FatalError
 {
-  LogMsg "Engine: ", @_;
-  LogMsg "Engine: WineTestBot Engine shutdown caused by a fatal error\n";
+  LogMsg @_;
+  LogMsg "Shutdown following a fatal error\n";
 
   exit 1;
 }
@@ -64,7 +64,7 @@ sub HandleJobSubmit
   my $Job = $Jobs->GetItem($JobKey);
   if (! $Job)
   {
-    LogMsg "Engine: JobSubmit for nonexistent job $JobKey\n";
+    LogMsg "JobSubmit for nonexistent job $JobKey\n";
     return "0Job $JobKey not found";
   }
   # We've already determined that JobKey is valid, untaint it
@@ -79,14 +79,14 @@ sub HandleJobSubmit
     $ErrMessage = $Step->HandleStaging($JobKey);
     if (defined($ErrMessage))
     {
-      LogMsg "Engine: staging problem: $ErrMessage\n";
+      LogMsg "Staging problem: $ErrMessage\n";
     }
   }
 
   $ErrMessage = $Jobs->Schedule();
   if (defined($ErrMessage))
   {
-    LogMsg "Engine: schedule problem: $ErrMessage\n";
+    LogMsg "Scheduling problem in HandleJobSubmit: $ErrMessage\n";
   }
 
   return "1OK";
@@ -98,7 +98,7 @@ sub HandleJobStatusChange
 
   if (! defined($OldStatus) || ! defined($NewStatus))
   {
-    LogMsg "Engine: invalid status in jobstatuschange message\n";
+    LogMsg "Invalid status in jobstatuschange message\n";
     return "0Invalid status";
   }
 
@@ -109,7 +109,7 @@ sub HandleJobStatusChange
   }
   else
   {
-    LogMsg "Engine: Invalid JobKey $JobKey in jobstatuschange message\n";
+    LogMsg "Invalid JobKey $JobKey in jobstatuschange message\n";
   }
 
   if ($OldStatus eq "running" && $NewStatus ne "running")
@@ -122,12 +122,12 @@ sub HandleJobStatusChange
     }
     if (defined($Pid) && ! $Pid)
     {
-      LogMsg "Engine: Unable to exec ${ProjectName}SendLog.pl : $!\n";
+      LogMsg "Unable to exec ${ProjectName}SendLog.pl : $!\n";
       exit;
     }
     if (! defined($Pid))
     {
-      LogMsg "Engine: Unable to fork for ${ProjectName}SendLog.pl : $!\n";
+      LogMsg "Unable to fork for ${ProjectName}SendLog.pl : $!\n";
     }
   }
 
@@ -141,7 +141,7 @@ sub HandleJobCancel
   my $Job = CreateJobs()->GetItem($JobKey);
   if (! $Job)
   {
-    LogMsg "Engine: JobCancel for nonexistent job $JobKey\n";
+    LogMsg "JobCancel for nonexistent job $JobKey\n";
     return "0Job $JobKey not found";
   }
   # We've already determined that JobKey is valid, untaint it
@@ -151,7 +151,7 @@ sub HandleJobCancel
   my $ErrMessage = $Job->Cancel();
   if (defined($ErrMessage))
   {
-    LogMsg "Engine: cancel problem: $ErrMessage\n";
+    LogMsg "Cancel problem: $ErrMessage\n";
     return "0$ErrMessage";
   }
 
@@ -163,7 +163,7 @@ sub HandleTaskComplete
   my $ErrMessage = CreateJobs()->Schedule();
   if (defined($ErrMessage))
   {
-    LogMsg "Engine: schedule problem in HandleTaskComplete: $ErrMessage\n";
+    LogMsg "Scheduling problem in HandleTaskComplete: $ErrMessage\n";
   }
 
   return "1OK";
@@ -175,7 +175,7 @@ sub HandleVMStatusChange
 
   if (! defined($OldStatus) || ! defined($NewStatus))
   {
-    LogMsg "Engine: invalid status in vmstatuschange message\n";
+    LogMsg "Invalid status in vmstatuschange message\n";
     return "0Invalid status";
   }
 
@@ -185,7 +185,7 @@ sub HandleVMStatusChange
     my $ErrMessage = CreateJobs()->Schedule();
     if (defined($ErrMessage))
     {
-      LogMsg "Engine: schedule problem in HandleVMStatusChange: $ErrMessage\n";
+      LogMsg "Scheduling problem in HandleVMStatusChange: $ErrMessage\n";
       return "0$ErrMessage";
     }
   }
@@ -205,12 +205,12 @@ sub CheckForWinetestUpdate
   }
   if (defined($Pid) && ! $Pid)
   {
-    LogMsg "Engine: Unable to exec CheckForWinetestUpdate.pl : $!\n";
+    LogMsg "Unable to exec CheckForWinetestUpdate.pl : $!\n";
     exit;
   }
   if (! defined($Pid))
   {
-    LogMsg "Engine: Unable to fork for CheckForWinetestUpdate.pl : $!\n";
+    LogMsg "Unable to fork for CheckForWinetestUpdate.pl : $!\n";
   }
 }
 
@@ -228,7 +228,7 @@ sub GiveUpOnWinetestUpdate
 {
   DeleteEvent("CheckForWinetestUpdate32");
   DeleteEvent("CheckForWinetestUpdate64");
-  LogMsg "Engine: Giving up on winetest.exe update\n";
+  LogMsg "Giving up on winetest.exe update\n";
 }
 
 sub HandleExpectWinetestUpdate
@@ -257,7 +257,7 @@ sub HandleFoundWinetestUpdate
   }
   else
   {
-    LogMsg "Engine: invalid number of bits in foundwinetestupdate message\n";
+    LogMsg "Invalid number of bits in foundwinetestupdate message\n";
     return "0Invalid number of bits";
   }
 
@@ -271,7 +271,7 @@ sub HandleFoundWinetestUpdate
   my $ErrMessage = CreateJobs()->Schedule();
   if (defined($ErrMessage))
   {
-    LogMsg "Engine: schedule problem in HandleFoundWinetestUpdate: $ErrMessage\n";
+    LogMsg "Scheduling problem in HandleFoundWinetestUpdate: $ErrMessage\n";
   }
 
   return "1OK";
@@ -358,12 +358,12 @@ sub HandleWinePatchWebNotification
     }
     if (defined($Pid) && ! $Pid)
     {
-      LogMsg "Engine: Unable to exec WinePatchesWebGet.pl : $!\n";
+      LogMsg "Unable to exec WinePatchesWebGet.pl : $!\n";
       exit;
     }
     if (! defined($Pid))
     {
-      LogMsg "Engine: Unable to fork for WinePatchesWebGet.pl : $!\n";
+      LogMsg "Unable to fork for WinePatchesWebGet.pl : $!\n";
     }
   }
 
@@ -387,7 +387,7 @@ sub HandleWinePatchWebSubmission
   $Patches->AddFilter("WebPatchId", [$WebPatchId]);
   if (@{$Patches->GetKeys()})
   {
-    LogMsg "Engine: patch $WebPatchId already exists\n";
+    LogMsg "Patch $WebPatchId already exists\n";
     return "1OK";
   }
 
@@ -417,7 +417,7 @@ sub HandleGetScreenshot
   # Validate VM name
   if ($_[0] !~ m/^(\w+)$/)
   {
-    LogMsg "Engine: GetScreenshot: invalid VM name\n";
+    LogMsg "Invalid VM name for screenshot\n";
     return "0Invalid VM name";
   }
   my $VMName = $1;
@@ -426,14 +426,14 @@ sub HandleGetScreenshot
   my $VM = $VMs->GetItem($VMName);
   if (! defined($VM))
   {
-    LogMsg "Engine: GetScreenshot: unknown VM $VMName\n";
+    LogMsg "Unknown VM $VMName for screenshot\n";
     return "0Unknown VM $VMName";
   }
 
   my ($ErrMessage, $ImageSize, $ImageBytes) = $VM->CaptureScreenImage();
   if (defined($ErrMessage))
   {
-    LogMsg "Engine: GetScreenshot: $ErrMessage\n";
+    LogMsg "Screenshot failed: $ErrMessage\n";
     return "0$ErrMessage";
   }
 
@@ -492,7 +492,7 @@ sub HandleClientCmd
     return HandleGetScreenshot(@_);
   }
 
-  LogMsg "Engine: Unknown command $Cmd\n";
+  LogMsg "Unknown command $Cmd\n";
   return "0Unknown command $Cmd\n";
 }
 
@@ -575,7 +575,7 @@ sub SafetyNet
   my $ErrMessage = $Set->CheckForCompleteSet();
   if (defined($ErrMessage))
   {
-    LogMsg "Engine: while checking completeness of patch series: $ErrMessage\n";
+    LogMsg "Failed to check completeness of patch series: $ErrMessage\n";
   }
 }
 
@@ -639,7 +639,7 @@ sub main
   $SIG{CHLD} = \&REAPER;
 
   $WineTestBot::Engine::Notify::RunningInEngine = 1;
-  LogMsg "Engine: Starting the WineTestBot Engine\n";
+  LogMsg "Starting the WineTestBot Engine\n";
 
   InitVMs();
 
@@ -706,7 +706,7 @@ sub main
       }
       elsif ($! != EAGAIN)
       {
-        LogMsg "Engine: socket accept failed: $!\n";
+        LogMsg "Socket accept failed: $!\n";
       }
     }
 
@@ -732,7 +732,7 @@ sub main
                   length($Client->{OutBuf}));
         if (! defined($Len))
         {
-          LogMsg "Engine: Error writing reply to client: $!\n";
+          LogMsg "Error writing reply to client: $!\n";
           $NeedClose = 1;
         }
         else
@@ -761,7 +761,7 @@ sub main
     }
   }
 
-  LogMsg "Engine: Normal WineTestBot Engine shutdown\n";
+  LogMsg "Normal WineTestBot Engine shutdown\n";
   return 0;
 }
 

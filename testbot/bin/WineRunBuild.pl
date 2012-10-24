@@ -43,7 +43,7 @@ sub FatalError
   my $StepKey = defined($Step) ? $Step->GetKey() : "0";
   my $TaskKey = defined($Task) ? $Task->GetKey() : "0";
 
-  LogMsg "WineRunBuild: $JobKey/$StepKey/$TaskKey $ErrMessage";
+  LogMsg "$JobKey/$StepKey/$TaskKey $ErrMessage";
 
   if ($Task)
   {
@@ -179,7 +179,7 @@ mkdir "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
 
 my $VM = $Task->VM;
 
-LogMsg "WineRunBuild: task $JobId/$StepNo/$TaskNo started\n";
+LogMsg "Task $JobId/$StepNo/$TaskNo started\n";
 
 my $RptFileName = $VM->Name . ".rpt";
 my $StepDir = "$DataDir/jobs/$JobId/$StepNo";
@@ -316,6 +316,6 @@ $Jobs = undef;
 
 TaskComplete($JobId, $StepNo, $TaskNo);
 
-LogMsg "WineRunBuild: task $JobId/$StepNo/$TaskNo completed\n";
+LogMsg "Task $JobId/$StepNo/$TaskNo completed\n";
 
 exit;

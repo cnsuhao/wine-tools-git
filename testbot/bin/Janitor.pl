@@ -50,12 +50,12 @@ if ($WineTestBot::Config::JobPurgeDays != 0)
     my $Job = $Jobs->GetItem($JobKey);
     if (defined($Job->Ended) && $Job->Ended < $DeleteBefore)
     {
-      LogMsg "Janitor: deleting job ", $Job->Id, "\n";
+      LogMsg "Deleting job ", $Job->Id, "\n";
       system "rm", "-rf", "$DataDir/jobs/" . $Job->Id;
       my $ErrMessage = $Jobs->DeleteItem($Job);
       if (defined($ErrMessage))
       {
-        LogMsg "Janitor: ", $ErrMessage, "\n";
+        LogMsg $ErrMessage, "\n";
       }
     }
   }
@@ -82,7 +82,7 @@ foreach my $SetKey (@{$Sets->GetKeys()})
   if (! defined($MostRecentPatch) ||
       $MostRecentPatch->Received < $DeleteBefore)
   {
-    LogMsg "Janitor: deleting pending series for ", $Set->EMail, "\n";
+    LogMsg "Deleting pending series for ", $Set->EMail, "\n";
     $Sets->DeleteItem($Set);
     $MostRecentPatch->Disposition("Incomplete series, discarded");
     $MostRecentPatch->Save();
@@ -103,12 +103,12 @@ if ($WineTestBot::Config::JobPurgeDays != 0)
       $Jobs->AddFilter("Patch", [$Patch]);
       if ($Jobs->IsEmpty())
       {
-        LogMsg "Janitor: deleting patch ", $Patch->Id, "\n";
+        LogMsg "Deleting patch ", $Patch->Id, "\n";
         unlink("$DataDir/patches/" . $Patch->Id);
         my $ErrMessage = $Patches->DeleteItem($Patch);
         if (defined($ErrMessage))
         {
-          LogMsg "Janitor: ", $ErrMessage, "\n";
+          LogMsg $ErrMessage, "\n";
         }
       }
     }
@@ -127,7 +127,7 @@ if ($WineTestBot::Config::JobArchiveDays != 0)
     my $Job = $Jobs->GetItem($JobKey);
     if (defined($Job->Ended) && $Job->Ended < $ArchiveBefore)
     {
-      LogMsg "Janitor: archiving job ", $Job->Id, "\n";
+      LogMsg "Archiving job ", $Job->Id, "\n";
 
       my $Steps = $Job->Steps;
       foreach my $StepKey (@{$Steps->GetKeys()})
@@ -166,7 +166,7 @@ if (%DeleteList)
         my $Task = $Tasks->GetItem($TaskKey);
         if (exists $DeleteList{$Task->VM->Name})
         {
-          LogMsg "Janitor: keeping the ", $Task->VM->Name, " VM for task (", join(":", $JobKey, $StepKey, $TaskKey), ")\n";
+          LogMsg "Keeping the ", $Task->VM->Name, " VM for task (", join(":", $JobKey, $StepKey, $TaskKey), ")\n";
           delete $DeleteList{$Task->VM->Name};
         }
       }
@@ -178,7 +178,7 @@ if (%DeleteList)
     my $ErrMessage = $VMs->DeleteItem($VM);
     if (!defined $ErrMessage)
     {
-      LogMsg "Janitor: deleted the ", $VM->Name, " VM\n";
+      LogMsg "Deleted the ", $VM->Name, " VM\n";
     }
   }
 }

@@ -43,7 +43,7 @@ sub FatalError
   my $StepKey = defined($Step) ? $Step->GetKey() : "0";
   my $TaskKey = defined($Task) ? $Task->GetKey() : "0";
 
-  LogMsg "WineRunReconfig: $JobKey/$StepKey/$TaskKey $ErrMessage";
+  LogMsg "$JobKey/$StepKey/$TaskKey $ErrMessage";
 
   if ($Task)
   {
@@ -179,7 +179,7 @@ mkdir "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
 
 my $VM = $Task->VM;
 
-LogMsg "WineRunReconfig: task $JobId/$StepNo/$TaskNo started\n";
+LogMsg "Task $JobId/$StepNo/$TaskNo started\n";
 
 my $StepDir = "$DataDir/jobs/$JobId/$StepNo";
 my $TaskDir = "$StepDir/$TaskNo";
@@ -253,6 +253,6 @@ $Jobs = undef;
 
 TaskComplete($JobId, $StepNo, $TaskNo);
 
-LogMsg "WineRunReconfig: task $JobId/$StepNo/$TaskNo completed\n";
+LogMsg "Task $JobId/$StepNo/$TaskNo completed\n";
 
 exit;

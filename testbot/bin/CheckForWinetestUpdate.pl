@@ -102,7 +102,7 @@ sub AddJob
     (my $ErrKey, my $ErrProperty, my $ErrMessage) = $Jobs->Save();
     if (defined($ErrMessage))
     {
-      LogMsg "CheckForWinetestUpdate: Failed to save job: $ErrMessage\n";
+      LogMsg "Failed to save job: $ErrMessage\n";
       exit 1;
     }
 
@@ -142,7 +142,7 @@ sub AddReconfigJob
   my ($ErrKey, $ErrProperty, $ErrMessage) = $Jobs->Save();
   if (defined($ErrMessage))
   {
-    LogMsg "CheckForWinetestUpdate: Failed to save reconfig job: $ErrMessage\n";
+    LogMsg "Failed to save reconfig job: $ErrMessage\n";
     exit 1;
   }
 }
@@ -194,8 +194,7 @@ if ($Response->code != RC_OK)
 {
   if ($Response->code != RC_NOT_MODIFIED)
   {
-    LogMsg "CheckForWinetestUpdate: Unexpected HTTP response code ", 
-           $Response->code, "\n";
+    LogMsg "Unexpected HTTP response code ", $Response->code, "\n";
     exit 1;
   }
   exit;
@@ -204,7 +203,7 @@ if ($Response->code != RC_OK)
 my $NewFile = 1;
 if (! open STAGINGFILE, ">$StagingFileName")
 {
-  LogMsg "CheckForWinetestUpdate: can't create staging file $StagingFileName: $!\n";
+  LogMsg "Can't create staging file $StagingFileName: $!\n";
   exit 1;
 }
 print STAGINGFILE $Response->decoded_content();
@@ -220,7 +219,7 @@ if (! $NewFile)
 }
 if (! copy($StagingFileName, $LatestFileName))
 {
-  LogMsg "CheckForWinetestUpdate: Can't copy $StagingFileName to $LatestFileName: $!\n";
+  LogMsg "Can't copy $StagingFileName to $LatestFileName: $!\n";
 }
 utime time, $Response->last_modified, $LatestFileName;
 
@@ -237,7 +236,7 @@ if ($Bits == 32)
   $StagingFileName = "$DataDir/staging/${FileNameRandomPart}_winetest-latest.exe";
   if (! copy($LatestFileName, $StagingFileName))
   {
-    LogMsg "CheckForWinetestUpdate: Can't copy $LatestFileName to $StagingFileName: $!\n";
+    LogMsg "Can't copy $LatestFileName to $StagingFileName: $!\n";
   }
   else
   {
@@ -251,6 +250,6 @@ else
 
 FoundWinetestUpdate($Bits);
 
-LogMsg "CheckForWinetestUpdate: submitted jobs\n";
+LogMsg "Submitted jobs\n";
 
 exit;
