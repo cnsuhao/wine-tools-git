@@ -39,25 +39,29 @@ sub FatalError
 {
   my ($ErrMessage, $VM) = @_;
 
-  my $VMKey = defined($VM) ? $VM->GetKey() : "";
-
   LogMsg $ErrMessage, "\n";
 
   if ($VM)
   {
     $VM->Status("offline");
     $VM->Save();
-  }
 
-  open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
-  print SENDMAIL <<"EOF";
+    my $VMKey = $VM->GetKey();
+    my $VMSnapshot = $VM->IdleSnapshot;
+    open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
+    print SENDMAIL <<"EOF";
 From: <$RobotEMail> (Marvin)
 To: $AdminEMail
 Subject: VM $VMKey offline
 
-Reverting $VMKey resulted in error "$ErrMessage". The VM has been put offline.
+Reverting $VMKey to $VMSnapshot failed:
+
+$ErrMessage
+
+The VM has been put offline.
 EOF
-  close(SENDMAIL);
+    close(SENDMAIL);
+  }
 
   exit 1;
 }
