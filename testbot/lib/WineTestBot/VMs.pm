@@ -344,11 +344,10 @@ sub PowerOff
   return $self->UpdateStatus($Domain);
 }
 
-sub WaitForToolsInGuest($;$)
+sub WaitForToolsInGuest($$)
 {
   my ($self, $Timeout) = @_;
 
-  $Timeout ||= $WaitForToolsInVM;
   my ($Status, $Err) = TestAgent::GetStatus($self->Hostname, $Timeout);
   # In fact we don't care about the status
   return $Err;
