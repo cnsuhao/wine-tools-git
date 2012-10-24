@@ -71,8 +71,6 @@ if (! $VMKey)
   die "Usage: RevertVM.pl VMName";
 }
 
-LogMsg "Revert of $VMKey started\n";
-
 my $VMs = CreateVMs();
 my $VM = $VMs->GetItem($VMKey);
 if (! defined($VM))
@@ -80,6 +78,7 @@ if (! defined($VM))
   FatalError "VM $VMKey doesn't exist";
 }
 
+LogMsg "Reverting $VMKey to ", $VM->IdleSnapshot, "\n";
 $VM->Status("reverting");
 my ($ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
@@ -103,7 +102,8 @@ if (defined($ErrMessage))
 
 foreach my $WaitCount (1..3)
 {
-  $ErrMessage = $VM->WaitForToolsInGuest();
+  LogMsg "Waiting for ", $VM->Name, " (up to ${WaitForToolsInVM}s)\n";
+  $ErrMessage = $VM->WaitForToolsInGuest($WaitForToolsInVM);
   if (! defined($ErrMessage))
   {
     last;
@@ -116,6 +116,7 @@ if (defined($ErrMessage))
 
 if ($SleepAfterRevert != 0)
 {
+  LogMsg "Letting ", $VM->Name, " settle for ${SleepAfterRevert}s\n";
   sleep($SleepAfterRevert);
 }
 

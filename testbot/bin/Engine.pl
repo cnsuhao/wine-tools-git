@@ -433,7 +433,7 @@ sub HandleGetScreenshot
   my ($ErrMessage, $ImageSize, $ImageBytes) = $VM->CaptureScreenImage();
   if (defined($ErrMessage))
   {
-    LogMsg "Screenshot failed: $ErrMessage\n";
+    LogMsg "Failed to take screenshot of $VMName: $ErrMessage\n";
     return "0$ErrMessage";
   }
 

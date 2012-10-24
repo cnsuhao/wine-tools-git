@@ -195,7 +195,6 @@ use WineTestBot::Config;
 use WineTestBot::Engine::Notify;
 use WineTestBot::TestAgent;
 use WineTestBot::WineTestBotObjects;
-use WineTestBot::Log;
 
 use vars qw (@ISA @EXPORT);
 
@@ -284,7 +283,6 @@ sub _GetSnapshot($$)
 sub RevertToSnapshot($$)
 {
   my ($self, $SnapshotName) = @_;
-  LogMsg("Reverting ", $self->VirtDomain, " to $SnapshotName\n");
 
   my ($ErrMessage, $Domain, $Snapshot) = $self->_GetSnapshot($SnapshotName);
   return $ErrMessage if (defined $ErrMessage);
@@ -351,7 +349,6 @@ sub WaitForToolsInGuest($;$)
   my ($self, $Timeout) = @_;
 
   $Timeout ||= $WaitForToolsInVM;
-  LogMsg("Waiting for ", $self->Name, " (up to ${Timeout}s)\n");
   my ($Status, $Err) = TestAgent::GetStatus($self->Hostname, $Timeout);
   # In fact we don't care about the status
   return $Err;
@@ -389,7 +386,6 @@ sub _Stream2Image($$$)
 sub CaptureScreenImage($)
 {
   my ($self) = @_;
-  LogMsg("CaptureScreenImage ", $self->Name, "\n");
 
   my ($ErrMessage, $Domain) = $self->_GetDomain();
   return ($ErrMessage, undef, undef) if (defined $ErrMessage);
