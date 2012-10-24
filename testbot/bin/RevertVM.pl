@@ -104,14 +104,11 @@ foreach my $WaitCount (1..3)
 {
   LogMsg "Waiting for ", $VM->Name, " (up to ${WaitForToolsInVM}s)\n";
   $ErrMessage = $VM->WaitForToolsInGuest($WaitForToolsInVM);
-  if (! defined($ErrMessage))
-  {
-    last;
-  }
+  last if (!defined $ErrMessage);
 }
-if (defined($ErrMessage))
+if (defined $ErrMessage)
 {
-  LogMsg "$VMKey Error while waiting for tools: $ErrMessage\n";
+  FatalError "Tools in $VMKey not responding: $ErrMessage", $VM;
 }
 
 if ($SleepAfterRevert != 0)
