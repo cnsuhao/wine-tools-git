@@ -440,57 +440,27 @@ sub HandleGetScreenshot
   return "1" . $ImageBytes;
 }
 
+my %Handlers=(
+    "expectwinetestupdate"     => \&HandleExpectWinetestUpdate,
+    "foundwinetestupdate"      => \&HandleFoundWinetestUpdate,
+    "getscreenshot"            => \&HandleGetScreenshot,
+    "jobcancel"                => \&HandleJobCancel,
+    "jobstatuschange"          => \&HandleJobStatusChange,
+    "jobsubmit"                => \&HandleJobSubmit,
+    "ping"                     => \&HandlePing,
+    "taskcomplete"             => \&HandleTaskComplete,
+    "vmstatuschange"           => \&HandleVMStatusChange,
+    "winepatchmlsubmission"    => \&HandleWinePatchMLSubmission,
+    "winepatchwebnotification" => \&HandleWinePatchWebNotification,
+    "winepatchwebsubmission"   => \&HandleWinePatchWebSubmission,
+    );
+
 sub HandleClientCmd
 {
   my $Cmd = shift;
-  if ($Cmd eq "ping")
-  {
-    return HandlePing(@_);
-  }
-  if ($Cmd eq "jobsubmit")
-  {
-    return HandleJobSubmit(@_);
-  }
-  if ($Cmd eq "jobstatuschange")
-  {
-    return HandleJobStatusChange(@_);
-  }
-  if ($Cmd eq "jobcancel")
-  {
-    return HandleJobCancel(@_);
-  }
-  if ($Cmd eq "taskcomplete")
-  {
-    return HandleTaskComplete(@_);
-  }
-  if ($Cmd eq "vmstatuschange")
-  {
-    return HandleVMStatusChange(@_);
-  }
-  if ($Cmd eq "expectwinetestupdate")
-  {
-    return HandleExpectWinetestUpdate(@_);
-  }
-  if ($Cmd eq "foundwinetestupdate")
-  {
-    return HandleFoundWinetestUpdate(@_);
-  }
-  if ($Cmd eq "winepatchmlsubmission")
-  {
-    return HandleWinePatchMLSubmission(@_);
-  }
-  if ($Cmd eq "winepatchwebnotification")
-  {
-    return HandleWinePatchWebNotification(@_);
-  }
-  if ($Cmd eq "winepatchwebsubmission")
-  {
-    return HandleWinePatchWebSubmission(@_);
-  }
-  if ($Cmd eq "getscreenshot")
-  {
-    return HandleGetScreenshot(@_);
-  }
+
+  my $handler = $Handlers{$Cmd};
+  return &$handler(@_) if (defined $handler);
 
   LogMsg "Unknown command $Cmd\n";
   return "0Unknown command $Cmd\n";
