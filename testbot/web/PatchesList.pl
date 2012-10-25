@@ -20,6 +20,7 @@ use strict;
 
 package PatchesListPage;
 
+use URI::Escape;
 use ObjectModel::PropertyDescriptor;
 use ObjectModel::CGI::CollectionPage;
 use WineTestBot::Patches;
@@ -76,6 +77,25 @@ sub GeneratePage
   $self->{Request}->headers_out->add("Refresh", "60");
 
   $self->SUPER::GeneratePage(@_);
+}
+
+sub GenerateDataCell
+{
+  my $self = shift;
+  my ($CollectionBlock, $Item, $PropertyDescriptor, $DetailsPage) = @_;
+
+  my $PropertyName = $PropertyDescriptor->GetName();
+  if ($PropertyName eq "Disposition" and $Item->Disposition =~ /job ([0-9]+)$/)
+  {
+    my $JobId = $1;
+    my $URI = "/JobDetails.pl?Key=" . uri_escape($JobId);
+    print "<td><a href='" . $self->escapeHTML($URI) . "'>" .
+          "Job " . $self->escapeHTML($JobId) . "</a></td>\n";
+  }
+  else
+  {
+    $self->SUPER::GenerateDataCell(@_);
+  }
 }
 
 package main;
