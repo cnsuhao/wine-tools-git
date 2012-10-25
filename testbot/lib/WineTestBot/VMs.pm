@@ -601,20 +601,19 @@ sub SortKeysBySortOrder
   my $self = shift;
   my $Keys = $_[0];
 
+  # Sort retired and deleted VMs last
+  my %RoleOrders = ("retired" => 1, "deleted" => 2);
+
   my %SortOrder;
   foreach my $Key (@$Keys)
   {
     my $Item = $self->GetItem($Key);
-    $SortOrder{$Key} = [$Item->Role, $Item->SortOrder];
+    $SortOrder{$Key} = [$RoleOrders{$Item->Role} || 0, $Item->SortOrder];
   }
 
   my @SortedKeys = sort {
     my ($soa, $sob) = ($SortOrder{$a}, $SortOrder{$b});
-    # Sort deleted VMs last
-    return 1 if (@$soa[0] eq "deleted");
-    return -1 if (@$sob[0] eq "deleted");
-    # Otherwise follow the SortOrder key
-    return @$soa[1] <=> @$sob[1];
+    return @$soa[0] <=> @$sob[0] || @$soa[1] <=> @$sob[1];
   } @$Keys;
   return \@SortedKeys;
 }
