@@ -21,13 +21,32 @@
 package TestAgent;
 use strict;
 
-use IO::Socket::IP;
-
 use WineTestBot::Config;
 use WineTestBot::Log;
 
 my $DONE_READING = 0;
 my $DONE_WRITING = 1;
+
+
+sub create_ip_socket(@)
+{
+  my $socket;
+  eval { $socket = IO::Socket::IP->new(@_); };
+  return $socket;
+}
+
+sub create_inet_socket(@)
+{
+  return IO::Socket::INET->new(@_);
+}
+
+my $create_socket = \&create_ip_socket;
+eval "use IO::Socket::IP";
+if ($@)
+{
+  use IO::Socket::INET;
+  $create_socket = \&create_inet_socket;
+}
 
 sub _Connect($;$)
 {
@@ -38,10 +57,8 @@ sub _Connect($;$)
   while (1)
   {
     my $ConnectTimeout = $Timeout < 30 ? $Timeout : 30;
-    my $socket = IO::Socket::IP->new(PeerHost => $Hostname,
-                                     PeerPort => $AgentPort,
-                                     Type => SOCK_STREAM,
-                                     Timeout => $ConnectTimeout);
+    my $socket = &$create_socket(PeerHost => $Hostname, PeerPort => $AgentPort,
+                                 Type => SOCK_STREAM, Timeout => $ConnectTimeout);
     return $socket if ($socket);
 
     $Timeout = $Deadline - time();

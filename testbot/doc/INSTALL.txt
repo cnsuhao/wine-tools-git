@@ -8,7 +8,7 @@ Dependencies:
 - Sendmail
 - Sys::Virt (libsys-virt-perl, see http://libvirt.org/)
 - Image::Magick (perlmagick)
-- IO::Socket::IP (libio-socket-ip-perl)
+- Optional: IO::Socket::IP (for IPv6, libio-socket-ip-perl)
 
 MySQL setup:
 - Create a new 'winetestbot' database and its tables using the
