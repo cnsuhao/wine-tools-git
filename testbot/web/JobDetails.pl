@@ -39,22 +39,32 @@ sub _initialize
   {
     $JobId = $self->GetParam("JobId");
   }
-  my $Job = CreateJobs()->GetItem($JobId);
-  if (! defined($Job))
+  $self->{Job} = CreateJobs()->GetItem($JobId);
+  if (!defined $self->{Job})
   {
     $self->Redirect("/index.pl");
   }
+  $self->{JobId} = $JobId;
 
-  $self->{JobId} = $Job->Id;
+  $self->SUPER::_initialize(@_, CreateStepsTasks($self->{Job}));
+}
 
-  $self->SUPER::_initialize(@_, CreateStepsTasks($Job));
+sub GetPageTitle()
+{
+  my $self = shift;
+
+  my $PageTitle = $self->{Job}->Remarks;
+  $PageTitle =~ s/^[[]wine-patches[]] //;
+  $PageTitle = "Job " . $self->{JobId} if ($PageTitle eq "");
+  $PageTitle .= " - ${ProjectName} Test Bot";
+  return $PageTitle;
 }
 
 sub GetTitle()
 {
   my $self = shift;
 
-  return "Job " . $self->{JobId};
+  return "Job " . $self->{JobId} . " - " . $self->{Job}->Remarks;
 }
 
 sub DisplayProperty
