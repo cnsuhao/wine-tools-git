@@ -138,7 +138,7 @@ sub _Copy($$)
 sub SendFile($$$)
 {
   my ($Hostname, $HostPathName, $GuestPathName) = @_;
-  LogMsg("SendFile $HostPathName -> $Hostname $GuestPathName\n");
+  LogMsg "SendFile $HostPathName -> $Hostname $GuestPathName\n";
 
   my $fh;
   if (!open($fh, "<", $HostPathName))
@@ -171,7 +171,7 @@ sub SendFile($$$)
 sub GetFile($$$)
 {
   my ($Hostname, $GuestPathName, $HostPathName) = @_;
-  LogMsg("GetFile $Hostname $GuestPathName -> $HostPathName\n");
+  LogMsg "GetFile $Hostname $GuestPathName -> $HostPathName\n";
 
   my $fh;
   if (!open($fh, ">", $HostPathName))
@@ -227,7 +227,7 @@ sub GetFile($$$)
 sub RunScript($$$)
 {
   my ($Hostname, $ScriptText, $Timeout) = @_;
-  LogMsg("RunScript $Hostname ", ($Timeout || 0), " [$ScriptText]\n");
+  LogMsg "RunScript $Hostname ", ($Timeout || 0), " [$ScriptText]\n";
 
   my $Err;
   my $nc = _Connect($Hostname);
