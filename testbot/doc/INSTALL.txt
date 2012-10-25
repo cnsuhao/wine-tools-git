@@ -45,10 +45,6 @@ General setup for the web site:
     mkdir jobs latest patches socket staging
     sudo chown WWWRUN:winehq staging
     chmod g+w *
-- If the installation path is different from the default, then some paths
-  in the following files will need to be modified:
-    testbot/lib/startup.pl
-    testbot/scripts/CheckWineTestBot.pl
 - Install scripts/initd in /etc/init.d/winetestbot and adjust the paths and
   user name if necessary. Then activate it.
   (typically "chkconfig winetestbot on" or "service winetestbot start")
