@@ -195,16 +195,28 @@ sub SetCookies
   }
 }
 
+sub GetPageTitle
+{
+  my $self = shift;
+  my $Page = $_[0];
+
+  my $Title = $Page->GetTitle() || "";
+  $Title .= " - " if ($Title ne "");
+  $Title .= "${ProjectName} Test Bot";
+  return $Title;
+}
+
 sub GenerateHeader
 {
   my $self = shift;
   my $Page = $_[0];
 
+  my $Title = $Page->CGI->escapeHTML($Page->GetPageTitle());
   print <<EOF;
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-  <title>${ProjectName} Test Bot</title>
+  <title>$Title</title>
   <link rel='icon' href='/${ProjectName}FavIcon.png' type='image/png'>
   <link rel='shortcut icon' href='/${ProjectName}FavIcon.png' type='image/png'>
   <link rel='stylesheet' href='/${ProjectName}TestBot.css' type='text/css' media='screen'>

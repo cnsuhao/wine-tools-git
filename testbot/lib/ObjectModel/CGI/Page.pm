@@ -102,6 +102,20 @@ sub SetCookies
   $self->{PageBase}->SetCookies($self);
 }
 
+sub GetPageTitle
+{
+  my $self = shift;
+
+  return $self->{PageBase}->GetPageTitle($self);
+}
+
+sub GetTitle
+{
+  my $self = shift;
+
+  return undef;
+}
+
 sub GenerateHeader
 {
   my $self = shift;
