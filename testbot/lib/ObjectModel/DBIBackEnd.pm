@@ -43,7 +43,13 @@ sub GetDb
 {
   my $self = shift;
 
-  if (! defined($self->{Db}))
+  if (defined $self->{Db} && !$self->{Db}->ping())
+  {
+    # This connection no longer works, probably due to the database idle timeout
+    $self->{Db}->disconnect();
+    $self->{Db} = undef;
+  }
+  if (!defined $self->{Db})
   {
     $self->{Db} = DBI->connect(@{$self->{ConnectArgs}});
   }
