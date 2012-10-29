@@ -108,16 +108,16 @@ then
             if $PING -q
             then
                 log_success_msg "The WineTestBot server is running"
-                return 0
+                exit 0
             fi
             log_failure_msg "The WineTestBot server is running but not responding"
-            return 1
+            exit 1
         elif [ "$status" = 4 ]; then
             log_failure_msg "could not access PID file for the WineTestBot server"
-            return $status
+            exit $status
         else
             log_failure_msg "The WineTestBot server is not running"
-            return $status
+            exit $status
         fi
         ;;
 
