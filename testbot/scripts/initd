@@ -112,7 +112,7 @@ then
         ;;
 
     *)
-        echo "Usage: $0 {start|stop|status|try-restart|restart|force-reload|reload}"
+        echo "Usage: $0 {start|stop|status|try-restart|restart|force-reload|reload}" >&2
         exit 1
         ;;
     esac
@@ -179,7 +179,7 @@ then
             ## Note: try-restart is now part of LSB (as of 1.9).
             ## RH has a similar command named condrestart.
             if test "$1" = "condrestart"; then
-                    echo "${attn} Use try-restart ${done}(LSB)${attn} rather than condrestart ${warn}(RH)${norm}"
+                echo "${attn} Use try-restart ${done}(LSB)${attn} rather than condrestart ${warn}(RH)${norm}"
             fi
             $0 status
             if test $? = 0; then
@@ -210,7 +210,7 @@ then
             ;;
     status)
         status_of_proc $DAEMON
-echo -n "Checking for service WineTestBot "
+        echo -n "Checking for service WineTestBot "
         ## Check status with checkproc(8), if process is running
         ## checkproc will return with exit status 0.
 
@@ -230,7 +230,7 @@ echo -n "Checking for service WineTestBot "
         rc_status -v
         ;;
     *)
-        echo "Usage: $0 {start|stop|status|try-restart|restart|force-reload|reload}"
+        echo "Usage: $0 {start|stop|status|try-restart|restart|force-reload|reload}" >&2
         exit 1
         ;;
     esac
@@ -238,6 +238,6 @@ echo -n "Checking for service WineTestBot "
 
 
 else
-    echo "WineTestBot does not know how to start on this system"
+    echo "WineTestBot does not know how to start on this system" >&2
     exit 1
 fi
