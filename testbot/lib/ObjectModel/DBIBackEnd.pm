@@ -434,16 +434,17 @@ sub SaveCollection
   my $self = shift;
   my $Collection = shift;
 
+  my $Db = $self->GetDb();
   my ($MasterColNames, $MasterColValues) = $Collection->GetMasterCols();
   my $UpdateQuery = $self->BuildUpdateStatement($Collection->GetTableName(),
                                                 $Collection->GetPropertyDescriptors(),
                                                 $MasterColNames);
-  my $UpdateStatement = $self->GetDb()->prepare($UpdateQuery);
+  my $UpdateStatement = $Db->prepare($UpdateQuery);
 
   my $InsertQuery = $self->BuildInsertStatement($Collection->GetTableName(),
                                                 $Collection->GetPropertyDescriptors(),
                                                 $MasterColNames);
-  my $InsertStatement = $self->GetDb()->prepare($InsertQuery);
+  my $InsertStatement = $Db->prepare($InsertQuery);
 
   foreach my $Key (@{$Collection->GetKeysNoLoad()})
   {
@@ -465,7 +466,7 @@ sub SaveCollection
             die "Sequence property spans multiple columns";
           }
 
-          $Item->PutColValue(@{$ColNames}[0], $self->GetDb()->{'mysql_insertid'});
+          $Item->PutColValue(@{$ColNames}[0], $Db->{'mysql_insertid'});
           $Collection->KeyChanged($Key, $Item->GetKey());
         }
       }
