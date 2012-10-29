@@ -33,8 +33,18 @@
 # Description:       Start winetestbot to start job processing
 ### END INIT INFO
 
-USER="winehq"
-WTB_ROOT="/home/winehq/tools/testbot"
+USER=
+WTB_ROOT=
+if [ \( -z "$USER" -o -z "$WTB_ROOT" \) -a -f "/etc/default/winetestbot" ]
+then
+    . /etc/default/winetestbot
+fi
+if [ -z "$USER" -o -z "$WTB_ROOT" ]
+then
+    echo "Set the username and WineTestBot root in the init.d script or in /etc/default/winetestbot" >&2
+    exit 1
+fi
+
 DAEMON="$WTB_ROOT/bin/Engine.pl"
 PING="$WTB_ROOT/bin/PingEngine.pl"
 PIDFILE="/var/run/winetestbot.pid"
