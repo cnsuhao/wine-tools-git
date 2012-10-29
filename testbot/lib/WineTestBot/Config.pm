@@ -48,9 +48,9 @@ require Exporter;
              $JobPurgeDays $JobArchiveDays $WebHostName);
 @EXPORT_OK = qw($DbDataSource $DbUsername $DbPassword);
 
-$LogDir = "/home/winehq/tools/testbot/var";
-$DataDir = "/home/winehq/tools/testbot/var";
-$BinDir = "/home/winehq/tools/testbot/bin";
+$LogDir = "$::RootDir/var";
+$DataDir = "$::RootDir/var";
+$BinDir = "$::RootDir/bin";
 
 $MaxRevertingVMs = 1;
 $MaxRunningVMs = 2;
@@ -77,9 +77,9 @@ $LDAPEMailAttribute = undef;
 $JobPurgeDays = 7;
 $JobArchiveDays = 0;
 
-if (!$main::BuildEnv)
+if (!$::BuildEnv)
 {
-  $main::BuildEnv = 0;
+  $::BuildEnv = 0;
   eval 'require "WineTestBot/ConfigLocal.pl";';
   if ($@)
   {

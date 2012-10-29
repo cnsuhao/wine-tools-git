@@ -22,13 +22,14 @@
 
 use strict;
 
-my $Dir;
 sub BEGIN
 {
-  $0 =~ m=^(.*)/[^/]*$=;
-  $Dir = $1;
+  if ($0 =~ m=^(.*)/[^/]+/[^/]+$=)
+  {
+    $::RootDir = $1;
+    unshift @INC, "$::RootDir/lib";
+  }
 }
-use lib "$Dir/../lib";
 
 use Fcntl;
 use File::Compare;

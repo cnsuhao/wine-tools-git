@@ -18,19 +18,20 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+
 use strict;
+
+sub BEGIN
+{
+  if ($0 =~ m=^(.*)/[^/]+/[^/]+$=)
+  {
+    $::RootDir = $1;
+    unshift @INC, "$::RootDir/lib";
+  }
+}
 
 my $name0=$0;
 $name0 =~ s+^.*/++;
-
-
-my $Dir;
-sub BEGIN
-{
-  $0 =~ m=^(.*)/[^/]*$=;
-  $Dir = $1;
-}
-use lib "$Dir/../lib";
 
 use WineTestBot::Config;
 use WineTestBot::TestAgent;

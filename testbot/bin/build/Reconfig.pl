@@ -22,14 +22,15 @@
 
 use strict;
 
-my $Dir;
 sub BEGIN
 {
-  $main::BuildEnv = 1;
-  $0 =~ m=^(.*)/[^/]*$=;
-  $Dir = $1;
-}
-use lib "$Dir/../../lib";
+  if ($0 =~ m=^(.*)/[^/]+/[^/]+/[^/]+$=)
+  {
+    $::RootDir = $1;
+    unshift @INC, "$::RootDir/lib";
+  }
+  $::BuildEnv = 1;
+ }
 
 use WineTestBot::Config;
 
