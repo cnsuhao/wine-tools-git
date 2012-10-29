@@ -564,7 +564,7 @@ sub CountRevertingRunningVMs
     {
       $RevertingVMs++;
     }
-    if ($VMStatus eq "running")
+    elsif ($VMStatus eq "running")
     {
       $RunningVMs++;
     }
