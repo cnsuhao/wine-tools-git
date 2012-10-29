@@ -357,24 +357,12 @@ sub CreateJobs
 
 sub CompareJobPriority
 {
-  my $Compare = $a->Priority <=> $b->Priority;
-  if ($Compare == 0)
-  {
-    $Compare = $a->Id <=> $b->Id;
-  }
-
-  return $Compare;
+  return $a->Priority <=> $b->Priority || $a->Id <=> $b->Id;
 }
 
 sub CompareTaskStatus
 {
-  my $Compare = $b->Status cmp $a->Status;
-  if ($Compare == 0)
-  {
-    $Compare = $a->No <=> $b->No;
-  }
-
-  return $Compare;
+  return $b->Status cmp $a->Status || $a->No <=> $b->No;
 }
 
 =pod
