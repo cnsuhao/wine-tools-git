@@ -159,7 +159,7 @@ then
             echo -n "Starting WineTestBot "
             ## Start daemon with startproc(8). If this fails
             ## the return value is set appropriately by startproc.
-            /sbin/startproc -u winetest -g winetest $DAEMON
+            /sbin/startproc -u $USER $DAEMON
 
             # Remember status and be verbose
             rc_status -v
