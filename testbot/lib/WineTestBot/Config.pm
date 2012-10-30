@@ -80,11 +80,11 @@ $JobArchiveDays = 0;
 if (!$::BuildEnv)
 {
   $::BuildEnv = 0;
-  eval 'require "WineTestBot/ConfigLocal.pl";';
+  eval 'require "$::RootDir/ConfigLocal.pl";';
   if ($@)
   {
-    print STDERR "Please create a valid lib/WineTestBot/ConfigLocal.pl, " .
-        "use lib/WineTestBot/ConfigLocalTemplate.pl as template\n";
+    print STDERR "Please create a valid $::RootDir/ConfigLocal.pl, " .
+        "use $::RootDir/lib/WineTestBot/ConfigLocalTemplate.pl as template\n";
     exit;
   }
 
