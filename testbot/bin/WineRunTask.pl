@@ -228,16 +228,7 @@ my $FullLogFileName = "$TaskDir/log";
 my $FullErrFileName = "$TaskDir/err";
 my $FullScreenshotFileName = "$TaskDir/screenshot.png";
 
-sub TermHandler
-{
-  RetrieveLogFile $Job, $Step, $Task, "C:\\winetest\\$RptFileName",
-                  $FullLogFileName;
-  TakeScreenshot $VM, $FullScreenshotFileName;
-  FatalError "Cancelled\n", $FullErrFileName, $Job, $Step, $Task;
-}
-
 $VM->Status('running');
-$SIG{TERM} = \&TermHandler;
 my ($ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
 {
