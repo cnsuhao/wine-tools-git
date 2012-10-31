@@ -194,8 +194,7 @@ else
   FatalError "Invalid TaskNo $TaskNo\n";
 }
 
-my $Jobs = CreateJobs();
-my $Job = $Jobs->GetItem($JobId);
+my $Job = CreateJobs()->GetItem($JobId);
 if (! defined($Job))
 {
   FatalError "Job $JobId doesn't exist\n";
@@ -350,7 +349,6 @@ $VM->Save();
 $Task = undef;
 $Step = undef;
 $Job = undef;
-$Jobs = undef;
 
 TaskComplete($JobId, $StepNo, $TaskNo);
 

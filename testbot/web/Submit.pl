@@ -155,7 +155,7 @@ sub GenerateFields
       {
         my $Branch = $Branches->GetItem($Key);
         print "<option value='", $self->CGI->escapeHTML($Key), "'";
-        if ($Branch->GetKey() eq $SelectedBranchKey)
+        if ($Key eq $SelectedBranchKey)
         {
           print " selected";
         }
@@ -215,7 +215,6 @@ sub GenerateFields
         $VMs->AddFilter("Role", ["winetest", "extra"]);
         foreach my $VMKey (@{$VMs->GetKeys()})
         {
-          my $VM = $VMs->GetItem($VMKey);
           my $FieldName = "vm_" . $self->CGI->escapeHTML($VMKey);
           if (defined $self->GetParam($FieldName))
           {
@@ -253,7 +252,7 @@ sub GenerateFields
       foreach my $VMKey (@$SortedKeys)
       {
         my $VM = $VMs->GetItem($VMKey);
-        my $FieldName = "vm_" . $self->CGI->escapeHTML($VM->GetKey());
+        my $FieldName = "vm_" . $self->CGI->escapeHTML($VMKey);
         print "<div class='ItemProperty'><label>",
               $self->CGI->escapeHTML($VM->Name);
         if ($VM->Description)
@@ -278,8 +277,7 @@ sub GenerateFields
       my $VMs = CreateVMs();
       foreach my $VMKey (@{$VMs->GetKeys()})
       {
-        my $VM = $VMs->GetItem($VMKey);
-        my $FieldName = "vm_" . $self->CGI->escapeHTML($VM->GetKey());
+        my $FieldName = "vm_" . $self->CGI->escapeHTML($VMKey);
         if ($self->GetParam($FieldName))
         {
           print "<div><input type='hidden' name='$FieldName' value='on'>",
@@ -377,8 +375,7 @@ sub DisplayProperty
         $VMs->AddFilter("Type", ["win64"]);
         foreach my $VMKey (@{$VMs->GetKeys()})
         {
-          my $VM = $VMs->GetItem($VMKey);
-          my $FieldName = "vm_" . $self->CGI->escapeHTML($VM->GetKey());
+          my $FieldName = "vm_" . $self->CGI->escapeHTML($VMKey);
           if ($self->GetParam($FieldName))
           {
             $Show64 = 1;
@@ -447,8 +444,7 @@ sub Validate
     my $VMs = CreateVMs();
     foreach my $VMKey (@{$VMs->GetKeys()})
     {
-      my $VM = $VMs->GetItem($VMKey);
-      my $FieldName = "vm_" . $self->CGI->escapeHTML($VM->GetKey());
+      my $FieldName = "vm_" . $self->CGI->escapeHTML($VMKey);
       if ($self->GetParam($FieldName))
       {
         $VMSelected = 1;
@@ -839,14 +835,12 @@ sub OnSubmit
     $BuildStep->DebugLevel(0);
 
     # ...with a build task
-    my $Tasks = $BuildStep->Tasks;
     my $VMs = CreateVMs();
     $VMs->AddFilter("Type", ["build"]);
     $VMs->AddFilter("Role", ["base"]);
-    my $BuildKey = ${$VMs->GetKeys()}[0];
-    my $VM = $VMs->GetItem($BuildKey);
-    my $Task = $Tasks->Add();
-    $Task->VM($VM);
+    my $BuildVM = ${$VMs->GetItems()}[0];
+    my $Task = $BuildStep->Tasks->Add();
+    $Task->VM($BuildVM);
     $Task->Timeout($BuildTimeout);
   }
 
@@ -864,7 +858,7 @@ sub OnSubmit
     foreach my $VMKey (@$SortedKeys)
     {
       my $VM = $VMs->GetItem($VMKey);
-      my $FieldName = "vm_" . $self->CGI->escapeHTML($VM->GetKey());
+      my $FieldName = "vm_" . $self->CGI->escapeHTML($VMKey);
       next if (!$self->GetParam($FieldName)); # skip unselected VMs
 
       if (!$Tasks)

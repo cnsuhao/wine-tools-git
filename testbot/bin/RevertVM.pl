@@ -76,8 +76,7 @@ if (! $VMKey)
   die "Usage: RevertVM.pl VMName";
 }
 
-my $VMs = CreateVMs();
-my $VM = $VMs->GetItem($VMKey);
+my $VM = CreateVMs()->GetItem($VMKey);
 if (! defined($VM))
 {
   FatalError "VM $VMKey doesn't exist";

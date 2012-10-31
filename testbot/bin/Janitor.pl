@@ -46,9 +46,8 @@ if ($JobPurgeDays != 0)
 {
   my $DeleteBefore = time() - $JobPurgeDays * 86400;
   my $Jobs = CreateJobs();
-  foreach my $JobKey (@{$Jobs->GetKeys()})
+  foreach my $Job (@{$Jobs->GetItems()})
   {
-    my $Job = $Jobs->GetItem($JobKey);
     if (defined($Job->Ended) && $Job->Ended < $DeleteBefore)
     {
       LogMsg "Deleting job ", $Job->Id, "\n";
@@ -65,15 +64,13 @@ if ($JobPurgeDays != 0)
 
 # Delete PatchSets that are more than a day old
 my $DeleteBefore = time() - 1 * 86400;
-my $Sets = WineTestBot::PendingPatchSets::CreatePendingPatchSets();
-foreach my $SetKey (@{$Sets->GetKeys()})
+my $Sets = CreatePendingPatchSets();
+foreach my $Set (@{$Sets->GetItems()})
 {
-  my $Set = $Sets->GetItem($SetKey);
-  my $Parts = $Set->Parts;
   my $MostRecentPatch;
-  foreach my $PartKey (@{$Parts->GetKeys()})
+  foreach my $Part (@{$Set->Parts->GetItems()})
   {
-    my $Patch = $Parts->GetItem($PartKey)->Patch;
+    my $Patch = $Part->Patch;
     if (! defined($MostRecentPatch) ||
         $MostRecentPatch->Received < $Patch->Received)
     {
@@ -95,9 +92,8 @@ if ($JobPurgeDays != 0)
 {
   $DeleteBefore = time() - $JobPurgeDays * 86400;
   my $Patches = CreatePatches();
-  foreach my $PatchKey (@{$Patches->GetKeys()})
+  foreach my $Patch (@{$Patches->GetItems()})
   {
-    my $Patch = $Patches->GetItem($PatchKey);
     if ($Patch->Received < $DeleteBefore)
     {
       my $Jobs = CreateJobs();
@@ -123,17 +119,13 @@ if ($JobArchiveDays != 0)
   my $ArchiveBefore = time() - $JobArchiveDays * 86400;
   my $Jobs = CreateJobs();
   $Jobs->FilterNotArchived();
-  foreach my $JobKey (@{$Jobs->GetKeys()})
+  foreach my $Job (@{$Jobs->GetItems()})
   {
-    my $Job = $Jobs->GetItem($JobKey);
     if (defined($Job->Ended) && $Job->Ended < $ArchiveBefore)
     {
       LogMsg "Archiving job ", $Job->Id, "\n";
-
-      my $Steps = $Job->Steps;
-      foreach my $StepKey (@{$Steps->GetKeys()})
+      foreach my $Step (@{$Job->Steps->GetItems()})
       {
-        my $Step = $Steps->GetItem($StepKey);
         unlink "$DataDir/jobs/" . $Job->Id . "/" . $Step->No . "/" .
                $Step->FileName;
       }
@@ -153,21 +145,15 @@ map { $DeleteList{$_} = 1 } @{$VMs->GetKeys()};
 
 if (%DeleteList)
 {
-  my $Jobs = CreateJobs();
-  foreach my $JobKey (@{$Jobs->GetKeys()})
+  foreach my $Job (@{CreateJobs()->GetItems()})
   {
-    my $Job = $Jobs->GetItem($JobKey);
-    my $Steps = $Job->Steps;
-    foreach my $StepKey (@{$Steps->GetKeys()})
+    foreach my $Step (@{$Job->Steps->GetItems()})
     {
-      my $Step = $Steps->GetItem($StepKey);
-      my $Tasks = $Step->Tasks;
-      foreach my $TaskKey (@{$Tasks->GetKeys()})
+      foreach my $Task (@{$Step->Tasks->GetItems()})
       {
-        my $Task = $Tasks->GetItem($TaskKey);
         if (exists $DeleteList{$Task->VM->Name})
         {
-          LogMsg "Keeping the ", $Task->VM->Name, " VM for task (", join(":", $JobKey, $StepKey, $TaskKey), ")\n";
+          LogMsg "Keeping the ", $Task->VM->Name, " VM for task ", join("/", @{$Task->GetMasterKey()}), "\n";
           delete $DeleteList{$Task->VM->Name};
         }
       }

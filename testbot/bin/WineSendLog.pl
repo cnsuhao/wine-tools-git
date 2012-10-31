@@ -524,8 +524,7 @@ else
   FatalError "Invalid JobId $JobId\n";
 }
 
-my $Jobs = CreateJobs();
-my $Job = $Jobs->GetItem($JobId);
+my $Job = CreateJobs()->GetItem($JobId);
 if (! defined($Job))
 {
   FatalError "Job $JobId doesn't exist\n";

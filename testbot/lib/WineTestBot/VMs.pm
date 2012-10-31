@@ -556,10 +556,9 @@ sub CountRevertingRunningVMs
   my $RevertingVMs = 0;
   my $RunningVMs = 0;
 
-  foreach my $VMKey (@{$self->GetKeys()})
+  foreach my $VM (@{$self->GetItems()})
   {
-    my $VMStatus = $self->GetItem($VMKey)->Status;
-
+    my $VMStatus = $VM->Status;
     if ($VMStatus eq "reverting")
     {
       $RevertingVMs++;
@@ -578,11 +577,9 @@ sub CountPoweredOnNonBaseVMs
   my $self = shift;
 
   my $PowerdOnVMs = 0;
-  foreach my $VMKey (@{$self->GetKeys()})
+  foreach my $VM (@{$self->GetItems()})
   {
-    my $VM = $self->GetItem($VMKey);
     my $VMStatus = $VM->Status;
-
     if ($VM->Role ne "base" &&
         ($VMStatus eq "reverting" ||
          $VMStatus eq "sleeping" ||

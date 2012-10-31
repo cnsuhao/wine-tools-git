@@ -175,7 +175,7 @@ sub Submit
     $Users->AddFilter("EMail", [$self->FromEMail]);
     if (! $Users->IsEmpty())
     {
-      $User = $Users->GetItem(@{$Users->GetKeys()}[0]);
+      $User = @{$Users->GetItems()}[0];
     }
   }
   if (! defined($User))
@@ -220,14 +220,12 @@ sub Submit
     $NewStep->DebugLevel(0);
   
     # Add build task
-    my $Tasks = $NewStep->Tasks;
     my $VMs = CreateVMs();
     $VMs->AddFilter("Type", ["build"]);
     $VMs->AddFilter("Role", ["base"]);
-    my $BuildKey = ${$VMs->GetKeys()}[0];
-    my $VM = $VMs->GetItem($BuildKey);
-    my $Task = $Tasks->Add();
-    $Task->VM($VM);
+    my $BuildVM = ${$VMs->GetItems()}[0];
+    my $Task = $NewStep->Tasks->Add();
+    $Task->VM($BuildVM);
     $Task->Timeout($BuildTimeout);
   
     foreach my $TestSet (keys %{$Targets{$BaseName}})
@@ -250,9 +248,9 @@ sub Submit
           $NewStep->FileName("$FileName.exe");
           $NewStep->FileType("exe$Bits");
           $NewStep->InStaging(!1);
-          $Tasks = $NewStep->Tasks;
 
           # And a task for each VM
+          my $Tasks = $NewStep->Tasks;
           my $SortedKeys = $VMs->SortKeysBySortOrder($VMs->GetKeys());
           foreach my $VMKey (@$SortedKeys)
           {

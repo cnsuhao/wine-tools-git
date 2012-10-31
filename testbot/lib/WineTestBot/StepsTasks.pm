@@ -122,14 +122,10 @@ sub _initialize
 
   $self->SUPER::_initialize(@_);
 
-  my $Steps = $Job->Steps;
-  foreach my $StepKey (@{$Steps->GetKeys()})
+  foreach my $Step (@{$Job->Steps->GetItems()})
   {
-    my $Step = $Steps->GetItem($StepKey);
-    my $Tasks = $Step->Tasks;
-    foreach my $TaskKey (@{$Tasks->GetKeys()})
+    foreach my $Task (@{$Step->Tasks->GetItems()})
     {
-      my $Task = $Tasks->GetItem($TaskKey);
       my $StepTask = $self->CreateItem();
       $StepTask->Id(100 * $Step->No + $Task->No);
       $StepTask->StepNo($Step->No);

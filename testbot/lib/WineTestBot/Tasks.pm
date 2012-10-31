@@ -82,8 +82,7 @@ sub Run
   my $Pid = fork;
   if (defined($Pid) && ! $Pid)
   {
-    my $Jobs = WineTestBot::Jobs::CreateJobs();
-    my $Job = $Jobs->GetItem($JobId);
+    my $Job = WineTestBot::Jobs::CreateJobs()->GetItem($JobId);
     my $Step = $Job->Steps->GetItem($StepNo);
     my $RunScript;
     if ($Step->Type eq "build")
@@ -100,7 +99,6 @@ sub Run
     }
     $Step = undef;
     $Job = undef;
-    $Jobs = undef;
     $ENV{PATH} = "/usr/bin:/bin";
     delete $ENV{ENV};
     exec($RunScript, $JobId, $StepNo, $self->No);

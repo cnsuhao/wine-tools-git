@@ -169,10 +169,9 @@ sub GeneratePage
 {
   my $self = shift;
 
-  foreach my $Key (@{$self->{Collection}->GetKeys()})
+  foreach my $Job (@{$self->{Collection}->GetItems()})
   {
-    my $Item = $self->{Collection}->GetItem($Key);
-    if ($Item->Status eq "queued" || $Item->Status eq "running")
+    if ($Job->Status eq "queued" || $Job->Status eq "running")
     {
       $self->{Request}->headers_out->add("Refresh", "30");
       last;

@@ -316,9 +316,8 @@ sub CheckForCompleteSet
   my $self = shift;
 
   my $ErrMessage;
-  foreach my $SetKey (@{$self->GetKeys()})
+  foreach my $Set (@{$self->GetItems()})
   {
-    my $Set = $self->GetItem($SetKey);
     if ($Set->CheckComplete())
     {
       my $Patch = $Set->Parts->GetItem($Set->TotalParts)->Patch;

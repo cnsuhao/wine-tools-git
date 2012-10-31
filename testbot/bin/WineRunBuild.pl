@@ -154,8 +154,7 @@ else
   FatalError "Invalid TaskNo $TaskNo\n";
 }
 
-my $Jobs = CreateJobs();
-my $Job = $Jobs->GetItem($JobId);
+my $Job = CreateJobs()->GetItem($JobId);
 if (! defined($Job))
 {
   FatalError "Job $JobId doesn't exist\n";
@@ -189,9 +188,8 @@ my $FullErrFileName = "$TaskDir/err";
 
 my $BaseName;
 my $Run64 = !1;
-foreach my $StepKey (@{$Job->Steps->GetKeys()})
+foreach my $OtherStep (@{$Job->Steps->GetItems()})
 {
-  my $OtherStep = $Job->Steps->GetItem($StepKey);
   if ($OtherStep->No != $StepNo)
   {
     my $OtherFileName = $OtherStep->FileName;
@@ -267,9 +265,8 @@ if (defined($ErrMessage))
 my $NewStatus = ProcessRawlog($FullRawlogFileName, $FullLogFileName,
                               $FullErrFileName) ? "completed" : "failed";
 
-foreach my $StepKey (@{$Job->Steps->GetKeys()})
+foreach my $OtherStep (@{$Job->Steps->GetItems()})
 {
-  my $OtherStep = $Job->Steps->GetItem($StepKey);
   if ($OtherStep->No != $StepNo)
   {
     my $OtherFileName = $OtherStep->FileName;
@@ -311,7 +308,6 @@ $VM->Save();
 $Task = undef;
 $Step = undef;
 $Job = undef;
-$Jobs = undef;
 
 TaskComplete($JobId, $StepNo, $TaskNo);
 

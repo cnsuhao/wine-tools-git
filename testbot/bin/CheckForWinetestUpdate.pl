@@ -89,9 +89,8 @@ sub AddJob
   $VMs->FilterNotOffline();
   foreach my $VMKey (@{$VMs->SortKeysBySortOrder($VMs->GetKeys())})
   {
-    my $VM = $VMs->GetItem($VMKey);
     my $Task = $Tasks->Add();
-    $Task->VM($VM);
+    $Task->VM($VMs->GetItem($VMKey));
     $Task->Timeout($SuiteTimeout);
     $HasTasks = 1;
   }
@@ -128,14 +127,12 @@ sub AddReconfigJob
   $NewStep->InStaging(!1);
 
   # Add a task for the build VM
-  my $Tasks = $NewStep->Tasks;
   my $VMs = CreateVMs();
   $VMs->AddFilter("Type", ["build"]);
   $VMs->AddFilter("Role", ["base"]);
-  my $BuildKey = ${$VMs->GetKeys()}[0];
-  my $VM = $VMs->GetItem($BuildKey);
-  my $Task = $Tasks->Add();
-  $Task->VM($VM);
+  my $BuildVM = ${$VMs->GetItems()}[0];
+  my $Task = $NewStep->Tasks->Add();
+  $Task->VM($BuildVM);
   $Task->Timeout($ReconfigTimeout);
 
   # Now save the whole thing

@@ -61,8 +61,7 @@ sub HandleJobSubmit
 {
   my $JobKey = $_[0];
 
-  my $Jobs = CreateJobs();
-  my $Job = $Jobs->GetItem($JobKey);
+  my $Job = CreateJobs()->GetItem($JobKey);
   if (! $Job)
   {
     LogMsg "JobSubmit for nonexistent job $JobKey\n";
@@ -73,10 +72,8 @@ sub HandleJobSubmit
   $JobKey = $1;
 
   my $ErrMessage;
-  my $Steps = $Job->Steps;
-  foreach my $StepKey (@{$Steps->GetKeys()})
+  foreach my $Step (@{$Job->Steps->GetItems()})
   {
-    my $Step = $Steps->GetItem($StepKey);
     $ErrMessage = $Step->HandleStaging($JobKey);
     if (defined($ErrMessage))
     {
@@ -339,12 +336,11 @@ sub HandleWinePatchWebNotification
   }
 
   my $MaxExistingWebPatchId = 0;
-  my $Patches = CreatePatches();
-  foreach my $PatchKey (@{$Patches->GetKeys()})
+  foreach my $Patch (@{CreatePatches()->GetItems()})
   {
-    if ($MaxExistingWebPatchId < $Patches->GetItem($PatchKey)->WebPatchId)
+    if ($MaxExistingWebPatchId < $Patch->WebPatchId)
     {
-      $MaxExistingWebPatchId = $Patches->GetItem($PatchKey)->WebPatchId;
+      $MaxExistingWebPatchId = $Patch->WebPatchId;
     }
   }
 
@@ -423,8 +419,7 @@ sub HandleGetScreenshot
   }
   my $VMName = $1;
 
-  my $VMs = CreateVMs();
-  my $VM = $VMs->GetItem($VMName);
+  my $VM = CreateVMs()->GetItem($VMName);
   if (! defined($VM))
   {
     LogMsg "Unknown VM $VMName for screenshot\n";

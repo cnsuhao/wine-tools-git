@@ -62,13 +62,9 @@ sub GetDefaultBranch
 {
   my $self = shift;
 
-  foreach my $Key (@{$self->GetKeys()})
+  foreach my $Branch (@{$self->GetItems()})
   {
-    my $Branch = $self->GetItem($Key);
-    if ($Branch->IsDefault)
-    {
-      return $Branch;
-    }
+    return $Branch if ($Branch->IsDefault);
   }
 
   return undef;

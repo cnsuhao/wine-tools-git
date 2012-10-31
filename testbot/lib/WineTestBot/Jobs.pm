@@ -120,25 +120,22 @@ sub UpdateStatus
 {
   my $self = shift;
 
-  my $Steps = $self->Steps;
   my $HasQueuedStep = !1;
   my $HasRunningStep = !1;
   my $HasCompletedStep = !1;
   my $HasFailedStep = !1;
-  my @SortedSteps = sort { $a->No <=> $b->No } @{$Steps->GetItems()};
+  my @SortedSteps = sort { $a->No <=> $b->No } @{$self->Steps->GetItems()};
   foreach my $Step (@SortedSteps)
   {
     my $Status = $Step->Status;
     if ($Status eq "queued" || $Status eq "running")
     {
-      my $Tasks = $Step->Tasks;
       my $HasQueuedTask = !1;
       my $HasRunningTask = !1;
       my $HasCompletedTask = !1;
       my $HasFailedTask = !1;
-      foreach my $TaskKey (@{$Tasks->GetKeys()})
+      foreach my $Task (@{$Step->Tasks->GetItems()})
       {
-        my $Task = $Tasks->GetItem($TaskKey);
         $Status = $Task->Status;
         if ($HasFailedStep && $Status eq "queued")
         {
@@ -216,17 +213,13 @@ sub Cancel
 {
   my $self = shift;
 
-  my $Steps = $self->Steps;
-  foreach my $StepKey (@{$Steps->GetKeys()})
+  foreach my $Step (@{$self->Steps->GetItems()})
   {
-    my $Step = $Steps->GetItem($StepKey);
     my $Status = $Step->Status;
     if ($Status eq "queued" || $Status eq "running")
     {
-      my $Tasks = $Step->Tasks;
-      foreach my $TaskKey (@{$Tasks->GetKeys()})
+      foreach my $Task (@{$Step->Tasks->GetItems()})
       {
-        my $Task = $Tasks->GetItem($TaskKey);
         if ($Task->Status eq "queued")
         {
           $Task->Status("skipped");
@@ -236,16 +229,13 @@ sub Cancel
     }
   }
 
-  foreach my $StepKey (@{$Steps->GetKeys()})
+  foreach my $Step (@{$self->Steps->GetItems()})
   {
-    my $Step = $Steps->GetItem($StepKey);
     my $Status = $Step->Status;
     if ($Status eq "queued" || $Status eq "running")
     {
-      my $Tasks = $Step->Tasks;
-      foreach my $TaskKey (@{$Tasks->GetKeys()})
+      foreach my $Task (@{$Step->Tasks->GetItems()})
       {
-        my $Task = $Tasks->GetItem($TaskKey);
         if ($Task->Status eq "running")
         {
           if (defined($Task->ChildPid))
@@ -546,11 +536,9 @@ sub Schedule
 {
   my $self = shift;
 
-  my $VMs = CreateVMs();
   my %Hosts;
-  foreach my $VMKey (@{$VMs->GetKeys()})
+  foreach my $VM (@{CreateVMs()->GetItems()})
   {
-    my $VM = $VMs->GetItem($VMKey);
     my $Host = $VM->GetHost();
     $Hosts{$Host}->{$VM->VirtURI} = 1;
   }
@@ -588,15 +576,13 @@ sub Check
   my $self = shift;
 
   $self->AddFilter("Status", ["queued", "running"]);
-  foreach my $JobKey (@{$self->GetKeys()})
+  foreach my $Job (@{$self->GetItems()})
   {
-    my $Job = $self->GetItem($JobKey);
-    my $Steps = $Job->Steps;
     my $HasQueuedStep = !1;
     my $HasRunningStep = !1;
     my $HasCompletedStep = !1;
     my $HasFailedStep = !1;
-    my @SortedSteps = sort { $a->No <=> $b->No } @{$Steps->GetItems()};
+    my @SortedSteps = sort { $a->No <=> $b->No } @{$Job->Steps->GetItems()};
     foreach my $Step (@SortedSteps)
     {
       my $Status = $Step->Status;
@@ -607,9 +593,8 @@ sub Check
         my $HasRunningTask = !1;
         my $HasCompletedTask = !1;
         my $HasFailedTask = !1;
-        foreach my $TaskKey (@{$Tasks->GetKeys()})
+        foreach my $Task (@{$Tasks->GetItems()})
         {
-          my $Task = $Tasks->GetItem($TaskKey);
           my $Dead = !1;
           if (defined($Task->ChildPid) && ! kill 0 => $Task->ChildPid)
           {

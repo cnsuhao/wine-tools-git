@@ -82,11 +82,7 @@ sub DeleteNonPermanentSessions
 
   $self->AddFilter("User", [$User]);
   $self->AddFilter("Permanent", [!1]);
-
-  foreach my $Key (@{$self->GetKeys()})
-  {
-    $self->DeleteItem($self->GetItem($Key));
-  }
+  map { $self->DeleteItem($_); } @{$self->GetItems()};
 }
 
 sub NewSession

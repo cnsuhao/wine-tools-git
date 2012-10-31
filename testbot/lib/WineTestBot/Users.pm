@@ -291,8 +291,7 @@ sub HasRole
   my $self = shift;
   my $RoleName = shift;
 
-  my $Roles = $self->Roles;
-  return defined($Roles->GetItem($RoleName));
+  return defined($self->Roles->GetItem($RoleName));
 }
 
 package WineTestBot::Users;
@@ -412,8 +411,7 @@ sub GetBatchUser
 {
   my $class = shift;
 
-  my $Users = $class->CreateUsers();
-  return $Users->GetItem("batch");
+  return $class->CreateUsers()->GetItem("batch");
 }
 
 sub SetCurrentUser
