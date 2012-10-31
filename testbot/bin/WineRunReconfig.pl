@@ -45,18 +45,6 @@ sub FatalError
   my $TaskKey = defined($Task) ? $Task->GetKey() : "0";
 
   LogMsg "$JobKey/$StepKey/$TaskKey $ErrMessage";
-
-  if ($Task)
-  {
-    $Task->Status("failed");
-    $Task->Ended(time);
-    $Task->Save();
-    $Job->UpdateStatus();
-
-    $Task->VM->Status('dirty');
-    $Task->VM->Save();
-  }
-
   if ($RptFileName)
   {
     my $RPTFILE;
@@ -67,7 +55,18 @@ sub FatalError
     }
   }
 
-  TaskComplete($JobKey, $StepKey, $TaskKey);
+  if ($Task)
+  {
+    $Task->Status("failed");
+    $Task->Ended(time);
+    $Task->Save();
+    $Job->UpdateStatus();
+
+    $Task->VM->Status('dirty');
+    $Task->VM->Save();
+
+    TaskComplete($JobKey, $StepKey, $TaskKey);
+  }
 
   exit 1;
 }
