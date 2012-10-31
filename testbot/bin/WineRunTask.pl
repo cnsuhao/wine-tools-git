@@ -33,7 +33,6 @@ use POSIX qw(:fcntl_h);
 use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::Log;
-use WineTestBot::StepsTasks;
 use WineTestBot::Engine::Notify;
 
 sub FatalError
