@@ -86,8 +86,7 @@ sub AddJob
       $VMs->AddFilter("Type", ["win32", "win64"]);
       $VMs->AddFilter("Role", ["winetest"]);
   }
-  # Don't schedule the 'offline' ones
-  $VMs->AddFilter("Status", ["reverting", "sleeping", "idle", "running", "dirty"]);
+  $VMs->FilterNotOffline();
   foreach my $VMKey (@{$VMs->SortKeysBySortOrder($VMs->GetKeys())})
   {
     my $VM = $VMs->GetItem($VMKey);

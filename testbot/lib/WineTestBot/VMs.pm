@@ -618,6 +618,13 @@ sub SortKeysBySortOrder
   return \@SortedKeys;
 }
 
+sub FilterNotOffline($)
+{
+  my ($self) = @_;
+  # All but the offline ones
+  $self->AddFilter("Status", ["dirty", "reverting", "sleeping", "idle", "running"]);
+}
+
 sub FilterHypervisor
 {
   my $self = shift;

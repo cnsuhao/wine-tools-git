@@ -238,8 +238,7 @@ sub Submit
         $VMs = CreateVMs();
         $VMs->AddFilter("Type", $Bits eq "32" ? ["win32", "win64"] : ["win64"]);
         $VMs->AddFilter("Role", ["base"]);
-        # Don't schedule the 'offline' ones
-        $VMs->AddFilter("Status", ["reverting", "sleeping", "idle", "running", "dirty"]);
+        $VMs->FilterNotOffline();
         if (@{$VMs->GetKeys()})
         {
           # Create the corresponding Step

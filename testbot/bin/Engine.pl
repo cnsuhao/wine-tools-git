@@ -490,14 +490,11 @@ sub InitVMs()
   # On startup we don't know what state the VMs are in. So consider them all
   # to be dirty.
   my $VMs = CreateVMs();
-  foreach my $VMKey (@{$VMs->GetKeys()})
+  $VMs->FilterNotOffline();
+  foreach my $VM (@{$VMs->GetItems()})
   {
-    my $VM = $VMs->GetItem($VMKey);
-    if ($VM->Status ne "offline")
-    {
-        $VM->Status("dirty");
-        $VM->Save();
-    }
+    $VM->Status('dirty');
+    $VM->Save();
   }
 }
 

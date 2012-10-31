@@ -238,8 +238,8 @@ sub GenerateFields
       {
           $VMs->AddFilter("Type", ["win32", "win64"]);
       }
-      # Don't even show the 'offline' ones
-      $VMs->AddFilter("Status", ["reverting", "sleeping", "idle", "running", "dirty"]);
+      # Scheduling jobs on offline VMs is not allowed
+      $VMs->FilterNotOffline();
       if ($self->{ShowAll})
       {
         # All but the retired and deleted ones
