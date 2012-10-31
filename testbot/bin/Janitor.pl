@@ -42,9 +42,9 @@ $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
 
 # Delete obsolete Jobs
-if ($WineTestBot::Config::JobPurgeDays != 0)
+if ($JobPurgeDays != 0)
 {
-  my $DeleteBefore = time() - $WineTestBot::Config::JobPurgeDays * 86400;
+  my $DeleteBefore = time() - $JobPurgeDays * 86400;
   my $Jobs = CreateJobs();
   foreach my $JobKey (@{$Jobs->GetKeys()})
   {
@@ -91,9 +91,9 @@ foreach my $SetKey (@{$Sets->GetKeys()})
 }
 
 # Delete obsolete Patches now that no Job references them
-if ($WineTestBot::Config::JobPurgeDays != 0)
+if ($JobPurgeDays != 0)
 {
-  $DeleteBefore = time() - $WineTestBot::Config::JobPurgeDays * 86400;
+  $DeleteBefore = time() - $JobPurgeDays * 86400;
   my $Patches = CreatePatches();
   foreach my $PatchKey (@{$Patches->GetKeys()})
   {
@@ -118,9 +118,9 @@ if ($WineTestBot::Config::JobPurgeDays != 0)
 }
 
 # Archive old Jobs, that is remove all their associated files
-if ($WineTestBot::Config::JobArchiveDays != 0)
+if ($JobArchiveDays != 0)
 {
-  my $ArchiveBefore = time() - $WineTestBot::Config::JobArchiveDays * 86400;
+  my $ArchiveBefore = time() - $JobArchiveDays * 86400;
   my $Jobs = CreateJobs();
   $Jobs->FilterNotArchived();
   foreach my $JobKey (@{$Jobs->GetKeys()})
