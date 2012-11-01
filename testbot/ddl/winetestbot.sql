@@ -110,7 +110,7 @@ CREATE TABLE Jobs
   UserName   VARCHAR(40) NOT NULL,
   Priority   INT(1)      NOT NULL,
   Status     ENUM('queued', 'running', 'completed', 'failed') NOT NULL,
-  Remarks    VARCHAR(50) NULL,
+  Remarks    VARCHAR(128) NULL,
   Submitted  DATETIME    NULL,
   Ended      DATETIME    NULL,
   PatchId    INT(7)      NULL,

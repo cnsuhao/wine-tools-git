@@ -42,7 +42,7 @@ sub _initialize
   $self->{Page} = $self->GetParam("Page") || 1;
 
   my @PropertyDescriptors1 = (
-    CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "A", 50),
+    CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "A", 128),
   );
   $self->{PropertyDescriptors1} = \@PropertyDescriptors1;
 

@@ -325,7 +325,7 @@ BEGIN
     CreateItemrefPropertyDescriptor("User", "Author", !1, 1, \&WineTestBot::Users::CreateUsers, ["UserName"]),
     CreateBasicPropertyDescriptor("Priority", "Priority", !1, 1, "N", 1),
     CreateEnumPropertyDescriptor("Status", "Status", !1, 1, ['queued', 'running', 'completed', 'failed']),
-    CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "A", 50),
+    CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "A", 128),
     CreateBasicPropertyDescriptor("Submitted", "Submitted", !1, !1, "DT", 19),
     CreateBasicPropertyDescriptor("Ended", "Ended", !1, !1, "DT", 19),
     CreateItemrefPropertyDescriptor("Patch", "Submitted from patch", !1, !1, \&WineTestBot::Patches::CreatePatches, ["PatchId"]),
