@@ -81,7 +81,7 @@ sub HandleJobSubmit
     }
   }
 
-  $ErrMessage = $Jobs->Schedule();
+  $ErrMessage = ScheduleJobs();
   if (defined($ErrMessage))
   {
     LogMsg "Scheduling problem in HandleJobSubmit: $ErrMessage\n";
@@ -158,7 +158,7 @@ sub HandleJobCancel
 
 sub HandleTaskComplete
 {
-  my $ErrMessage = CreateJobs()->Schedule();
+  my $ErrMessage = ScheduleJobs();
   if (defined($ErrMessage))
   {
     LogMsg "Scheduling problem in HandleTaskComplete: $ErrMessage\n";
@@ -180,7 +180,7 @@ sub HandleVMStatusChange
   if ($OldStatus eq "reverting" || $OldStatus eq "running" ||
       $NewStatus eq "idle" || $NewStatus eq "dirty")
   {
-    my $ErrMessage = CreateJobs()->Schedule();
+    my $ErrMessage = ScheduleJobs();
     if (defined($ErrMessage))
     {
       LogMsg "Scheduling problem in HandleVMStatusChange: $ErrMessage\n";
@@ -266,7 +266,7 @@ sub HandleFoundWinetestUpdate
     DeleteEvent("GiveUpOnWinetestUpdate");
   }
 
-  my $ErrMessage = CreateJobs()->Schedule();
+  my $ErrMessage = ScheduleJobs();
   if (defined($ErrMessage))
   {
     LogMsg "Scheduling problem in HandleFoundWinetestUpdate: $ErrMessage\n";
@@ -511,11 +511,8 @@ checks whether any pending patchsets are now complete and thus can be scheduled.
 
 sub SafetyNet
 {
-  my $Jobs = CreateJobs();
-  $Jobs->Check();
-  $Jobs = undef;
-  $Jobs = CreateJobs();
-  $Jobs->Schedule();
+  CheckJobs();
+  ScheduleJobs();
 
   if (opendir STAGING, "$DataDir/staging")
   {

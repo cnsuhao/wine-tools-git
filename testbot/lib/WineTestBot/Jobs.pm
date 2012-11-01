@@ -277,7 +277,7 @@ use vars qw(@ISA @EXPORT @PropertyDescriptors);
 
 require Exporter;
 @ISA = qw(WineTestBot::WineTestBotCollection Exporter);
-@EXPORT = qw(&CreateJobs);
+@EXPORT = qw(&CreateJobs &ScheduleJobs &CheckJobs);
 
 my @PropertyDescriptors;
 
@@ -374,10 +374,9 @@ VM.
 =back
 =cut
 
-sub ScheduleOnHost
+sub ScheduleOnHost($$)
 {
-  my $self = shift;
-  my $Hypervisors = $_[0];
+  my ($SortedJobs, $Hypervisors) = @_;
 
   my $HostVMs = CreateVMs();
   $HostVMs->FilterHypervisor($Hypervisors);
@@ -385,11 +384,8 @@ sub ScheduleOnHost
   my $PoweredOnNonBaseVMs = $HostVMs->CountPoweredOnNonBaseVMs();
   my %DirtyVMsBlockingJobs;
 
-  $self->AddFilter("Status", ["queued", "running"]);
-  my @SortedJobs = sort CompareJobPriority @{$self->GetItems()};
-
   my $DirtyIndex = 0;
-  foreach my $Job (@SortedJobs)
+  foreach my $Job (@$SortedJobs)
   {
     my $Steps = $Job->Steps;
     $Steps->AddFilter("Status", ["queued", "running"]);
@@ -489,7 +485,7 @@ sub ScheduleOnHost
 =pod
 =over 12
 
-=item C<Schedule()>
+=item C<ScheduleJobs()>
 
 Goes through the WineTestBot hosts and schedules the Job tasks on each of
 them using WineTestBot::Jobs::ScheduleOnHost().
@@ -497,9 +493,13 @@ them using WineTestBot::Jobs::ScheduleOnHost().
 =back
 =cut
 
-sub Schedule
+sub ScheduleJobs()
 {
-  my $self = shift;
+  my $Jobs = CreateJobs();
+  $Jobs->AddFilter("Status", ["queued", "running"]);
+  my @SortedJobs = sort CompareJobPriority @{$Jobs->GetItems()};
+  # Note that even if there are no jobs to schedule
+  # we should check if there are VMs to revert
 
   my %Hosts;
   foreach my $VM (@{CreateVMs()->GetItems()})
@@ -507,24 +507,21 @@ sub Schedule
     my $Host = $VM->GetHost();
     $Hosts{$Host}->{$VM->VirtURI} = 1;
   }
-  my $ErrMessage;
+
+  my @ErrMessages;
   foreach my $Host (keys %Hosts)
   {
     my @HostHypervisors = keys %{$Hosts{$Host}};
-    my $HostErrMessage = $self->ScheduleOnHost(\@HostHypervisors);
-    if (! defined($ErrMessage))
-    {
-      $ErrMessage = $HostErrMessage;
-    }
+    my $HostErrMessage = ScheduleOnHost(\@SortedJobs, \@HostHypervisors);
+    push @ErrMessages, $HostErrMessage if (defined $HostErrMessage);
   }
-
-  return $ErrMessage;
+  return @ErrMessages ? join("\n", @ErrMessages) : undef;
 }
 
 =pod
 =over 12
 
-=item C<Check()>
+=item C<CheckJobs()>
 
 Goes through the list of Jobs and updates their status. As a side-effect this
 detects failed builds, dead child processes, etc.
@@ -532,12 +529,11 @@ detects failed builds, dead child processes, etc.
 =back
 =cut
 
-sub Check
+sub CheckJobs()
 {
-  my $self = shift;
-
-  $self->AddFilter("Status", ["queued", "running"]);
-  map { $_->UpdateStatus(); } @{$self->GetItems()};
+  my $Jobs = CreateJobs();
+  $Jobs->AddFilter("Status", ["queued", "running"]);
+  map { $_->UpdateStatus(); } @{$Jobs->GetItems()};
 
   return undef;
 }

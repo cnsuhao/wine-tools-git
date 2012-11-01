@@ -110,7 +110,7 @@ Analyzes the current patch to determine which Wine tests are impacted. Then for
 each impacted test it creates a high priority WineTestBot::Job to run that test.
 This also creates the WineTestBot::Step objects for that Job, as well as the
 WineTestBot::Task objects to run the test on each 'base' VM. Finally it calls
-C<WineTestBot::Jobs::Schedule()> to run the new Jobs.
+C<WineTestBot::Jobs::ScheduleJobs()> to run the new Jobs.
 
 Note that the path to the file containing the actual patch is passed as a
 parameter. This is used to apply a combined patch for patch series. See
@@ -187,7 +187,7 @@ sub Submit
   my $First = 1;
   foreach my $BaseName (keys %Targets)
   {
-    my $Jobs = WineTestBot::Jobs::CreateJobs();
+    my $Jobs = CreateJobs();
 
     # Create a new job for this patch
     my $NewJob = $Jobs->Add();
@@ -283,7 +283,7 @@ sub Submit
   }
   $self->Disposition($Disposition);
 
-  WineTestBot::Jobs::CreateJobs()->Schedule();
+  ScheduleJobs();
 
   return undef;
 }
