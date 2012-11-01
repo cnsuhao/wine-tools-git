@@ -179,39 +179,28 @@ sub Cancel
 {
   my $self = shift;
 
-  foreach my $Step (@{$self->Steps->GetItems()})
+  my $Steps = $self->Steps;
+  $Steps->AddFilter("Status", ["queued", "running"]);
+  foreach my $Step (@{$Steps->GetItems()})
   {
-    my $Status = $Step->Status;
-    if ($Status eq "queued" || $Status eq "running")
+    my $Tasks = $Step->Tasks;
+    $Tasks->AddFilter("Status", ["queued", "running"]);
+    foreach my $Task (@{$Tasks->GetItems()})
     {
-      foreach my $Task (@{$Step->Tasks->GetItems()})
+      if ($Task->Status eq "queued")
       {
-        if ($Task->Status eq "queued")
-        {
-          $Task->Status("skipped");
-          $Task->Save();
-        }
+        $Task->Status("skipped");
+        $Task->Save();
+      }
+      elsif (defined $Task->ChildPid)
+      {
+        # We don't unset ChildPid so Task::UpdateStatus()
+        # will add a trace in the log
+        kill("TERM", $Task->ChildPid);
       }
     }
   }
-
-  foreach my $Step (@{$self->Steps->GetItems()})
-  {
-    my $Status = $Step->Status;
-    if ($Status eq "queued" || $Status eq "running")
-    {
-      foreach my $Task (@{$Step->Tasks->GetItems()})
-      {
-        if ($Task->Status eq "running")
-        {
-          if (defined($Task->ChildPid))
-          {
-            kill "TERM", $Task->ChildPid;
-          }
-        }
-      }
-    }
-  }
+  # Let the higher layers handle updating the overall job status
 
   return undef;
 }
