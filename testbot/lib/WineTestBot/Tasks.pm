@@ -32,11 +32,13 @@ virtual machine that the test must be performed in.
 
 =cut
 
+use POSIX qw(:errno_h);
 use ObjectModel::BackEnd;
 use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::Steps;
 use WineTestBot::WineTestBotObjects;
+use WineTestBot::Log;
 
 use vars qw(@ISA @EXPORT);
 
@@ -115,6 +117,47 @@ sub Run
 
   return $ErrMessage;
 }
+
+sub UpdateStatus
+{
+  my ($self, $Skip) = @_;
+
+  my $Status = $self->Status;
+
+  if (defined $self->ChildPid && !kill(0, $self->ChildPid) && $! == ESRCH)
+  {
+    $self->ChildPid(undef);
+    if ($Status eq "queued" || $Status eq "running")
+    {
+      my ($JobId, $StepNo, $TaskNo) = @{$self->GetMasterKey()};
+      my $OldUMask = umask(002);
+      my $TaskDir = "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
+      mkdir $TaskDir;
+      if (open TASKLOG, ">>$TaskDir/err")
+      {
+        print TASKLOG "Child process died unexpectedly\n";
+        close TASKLOG;
+      }
+      umask($OldUMask);
+      LogMsg "Child process for task $JobId/$StepNo/$TaskNo died unexpectedly\n";
+      $self->Status("failed");
+      $Status = "failed";
+
+      my $VM = $self->VM;
+      $VM->Status('dirty');
+      $VM->Save();
+    }
+    $self->Save();
+  }
+  elsif ($Skip && $Status eq "queued")
+  {
+    $Status = "skipped";
+    $self->Status("skipped");
+    $self->Save();
+  }
+  return $Status;
+}
+
 
 package WineTestBot::Tasks;
 

@@ -90,6 +90,42 @@ sub HandleStaging
   return $ErrMessage;
 }
 
+sub UpdateStatus($$)
+{
+  my ($self, $Skip) = @_;
+
+  my $Status = $self->Status;
+  return $Status if ($Status ne "queued" && $Status ne "running");
+
+  my %Has;
+  my $Tasks = $self->Tasks;
+  foreach my $TaskKey (@{$Tasks->GetKeys()})
+  {
+    my $Task = $Tasks->GetItem($TaskKey);
+    $Has{$Task->UpdateStatus($Skip)} = 1;
+  }
+
+  # Inherit the tasks most significant status with some caveats:
+  # - if one of the tasks is still queued then this step is still running
+  # - if all the tasks are still queued, then this step's original status,
+  #   'queued', is still valid
+  # - if we tagged some tasks as skipped, then the step status will no longer
+  #   be 'queued', which means we will save the step and hence its tasks
+  foreach my $TaskStatus ("running", "failed", "skipped", "completed")
+  {
+    if ($Has{$TaskStatus})
+    {
+      $Status = $Has{"queued"} ? "running" : $TaskStatus;
+      $self->Status($Status);
+      $self->Save();
+      last;
+    }
+  }
+
+  return $Status;
+}
+
+
 package WineTestBot::Steps;
 
 =head1 NAME

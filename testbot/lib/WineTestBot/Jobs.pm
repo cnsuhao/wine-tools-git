@@ -116,97 +116,63 @@ sub OnSaved
   }
 }
 
-sub UpdateStatus
+=pod
+=over 12
+
+=item C<UpdateStatus()>
+
+Updates the status of this job and of its steps and tasks. Part of this means
+checking for failed builds and skipping the subsequent tasks, or detecting
+dead child processes.
+
+=back
+=cut
+
+sub UpdateStatus($)
 {
   my $self = shift;
 
-  my $HasQueuedStep = !1;
-  my $HasRunningStep = !1;
-  my $HasCompletedStep = !1;
-  my $HasFailedStep = !1;
+  my $Status = $self->Status;
+  return $Status if ($Status ne "queued" && $Status ne "running");
+
+  my (%Has, $Skip);
   my @SortedSteps = sort { $a->No <=> $b->No } @{$self->Steps->GetItems()};
   foreach my $Step (@SortedSteps)
   {
-    my $Status = $Step->Status;
-    if ($Status eq "queued" || $Status eq "running")
-    {
-      my $HasQueuedTask = !1;
-      my $HasRunningTask = !1;
-      my $HasCompletedTask = !1;
-      my $HasFailedTask = !1;
-      foreach my $Task (@{$Step->Tasks->GetItems()})
-      {
-        $Status = $Task->Status;
-        if ($HasFailedStep && $Status eq "queued")
-        {
-          $Status = "skipped";
-          $Task->Status("skipped");
-        }
-        $HasQueuedTask = $HasQueuedTask || $Status eq "queued";
-        $HasRunningTask = $HasRunningTask || $Status eq "running";
-        $HasCompletedTask = $HasCompletedTask || $Status eq "completed";
-        $HasFailedTask = $HasFailedTask || $Status eq "failed";
-      }
-      if ($HasFailedStep)
-      {
-        $Step->Status("skipped");
-      }
-      elsif ($HasRunningTask || ($HasQueuedTask && ($HasCompletedTask ||
-                                                    $HasFailedTask)))
-      {
-        $Step->Status("running");
-      }
-      elsif ($HasFailedTask)
-      {
-        $Step->Status("failed");
-      }
-      elsif ($HasCompletedTask || ! $HasQueuedTask)
-      {
-        $Step->Status("completed");
-      }
-      else
-      {
-        $Step->Status("queued");
-      }
-      $Step->Save();
-    }
+    my $StepStatus = $Step->UpdateStatus($Skip);
+    $Has{$StepStatus} = 1;
 
-    $Status = $Step->Status;
-    $HasQueuedStep = $HasQueuedStep || $Status eq "queued";
-    $HasRunningStep = $HasRunningStep || $Status eq "running";
-    $HasCompletedStep = $HasCompletedStep || $Status eq "completed";
     my $Type = $Step->Type;
-    $HasFailedStep = $HasFailedStep ||
-                     ($Status eq "failed" &&
-                      ($Type eq "build" || $Type eq "reconfig"));
+    if ($StepStatus eq "failed" && ($Type eq "build" || $Type eq "reconfig"))
+    {
+      # The following steps need binaries that this one was supposed to
+      # produce. So skip them.
+      $Skip = 1;
+    }
   }
 
-  if ($HasRunningStep || ($HasQueuedStep && ($HasCompletedStep ||
-                                             $HasFailedStep)))
+  # Inherit the steps most significant status with some caveats:
+  # - if one of the steps is still queued then this job is still running
+  # - if a step is skipped it's either because a previous step failed or because
+  #   the user cancelled the job. In both cases mark the job as failed
+  # - if all the steps are still queued, then this job's original status,
+  #   'queued', is still valid
+  foreach my $StepStatus ("running", "failed", "skipped", "completed")
   {
-    $self->Status("running");
-  }
-  elsif ($HasFailedStep)
-  {
-    if (! defined($self->Ended))
+    if ($Has{$StepStatus})
     {
-      $self->Ended(time);
+      $Status = $Has{"queued"} ? "running" : $StepStatus eq "skipped" ? "failed" : $StepStatus;
+      $self->Status($Status);
+      if ($Status ne "running" && $Status ne "queued" && !defined $self->Ended)
+      {
+        $self->Ended(time);
+      }
+      $self->Save();
+      last;
     }
-    $self->Status("failed");
   }
-  elsif ($HasCompletedStep || ! $HasQueuedStep)
-  {
-    if (! defined($self->Ended))
-    {
-      $self->Ended(time);
-    }
-    $self->Status("completed");
-  }
-  else
-  {
-    $self->Status("queued");
-  }
-  $self->Save();
+
+  return $Status;
 }
 
 sub Cancel
@@ -293,12 +259,12 @@ those that are yet to be run.
 
 =cut
 
-use POSIX qw(:errno_h);
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::EnumPropertyDescriptor;
 use ObjectModel::DetailrefPropertyDescriptor;
 use ObjectModel::ItemrefPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
+use WineTestBot::WineTestBotObjects;
 use WineTestBot::Branches;
 use WineTestBot::Config;
 use WineTestBot::Log;
@@ -306,7 +272,6 @@ use WineTestBot::Patches;
 use WineTestBot::Steps;
 use WineTestBot::Users;
 use WineTestBot::VMs;
-use WineTestBot::WineTestBotObjects;
 
 use vars qw(@ISA @EXPORT @PropertyDescriptors);
 
@@ -561,12 +526,8 @@ sub Schedule
 
 =item C<Check()>
 
-Goes through the list of Jobs, and for each of them updates their status by
-checking whether they still have running Steps / Tasks, and whether those
-have succeeded or failed.
-
-As a side effect this also updates the status of the WineTestBot::Step and
-WineTestBot::Task objects.
+Goes through the list of Jobs and updates their status. As a side-effect this
+detects failed builds, dead child processes, etc.
 
 =back
 =cut
@@ -576,129 +537,7 @@ sub Check
   my $self = shift;
 
   $self->AddFilter("Status", ["queued", "running"]);
-  foreach my $Job (@{$self->GetItems()})
-  {
-    my $HasQueuedStep = !1;
-    my $HasRunningStep = !1;
-    my $HasCompletedStep = !1;
-    my $HasFailedStep = !1;
-    my @SortedSteps = sort { $a->No <=> $b->No } @{$Job->Steps->GetItems()};
-    foreach my $Step (@SortedSteps)
-    {
-      my $Status = $Step->Status;
-      if ($Status eq "queued" || $Status eq "running")
-      {
-        my $Tasks = $Step->Tasks;
-        my $HasQueuedTask = !1;
-        my $HasRunningTask = !1;
-        my $HasCompletedTask = !1;
-        my $HasFailedTask = !1;
-        foreach my $Task (@{$Tasks->GetItems()})
-        {
-          my $Dead = !1;
-          if (defined($Task->ChildPid) && ! kill 0 => $Task->ChildPid)
-          {
-            $Dead = ($! == ESRCH);
-          }
-          if ($Dead)
-          {
-            $Task->ChildPid(undef);
-            my $Status = $Task->Status;
-            if ($Status eq "queued" || $Status eq "running")
-            {
-              my $OldUMask = umask(002);
-              my $TaskDir = "$DataDir/jobs/" . $Job->Id . "/" .  $Step->No . "/" .
-                            $Task->No;
-              mkdir $TaskDir;
-              my $TASKLOG;
-              if (open TASKLOG, ">>$TaskDir/log")
-              {
-                print TASKLOG "Child process died unexpectedly\n";
-                close TASKLOG;
-              }
-              umask($OldUMask);
-              LogMsg "Child process for task ", $Job->Id, "/", $Step->No, "/",
-                     $Task->No, " died unexpectedly\n";
-              $Task->Status("failed");
-  
-              my $VM = $Task->VM;
-              $VM->Status('dirty');
-              $VM->Save();
-            }
-            $Task->Save();
-          }
-          $Status = $Task->Status;
-          if ($HasFailedStep && $Status eq "queued")
-          {
-            $Status = "skipped";
-            $Task->Status("skipped");
-          }
-          $HasQueuedTask = $HasQueuedTask || $Status eq "queued";
-          $HasRunningTask = $HasRunningTask || $Status eq "running";
-          $HasCompletedTask = $HasCompletedTask || $Status eq "completed";
-          $HasFailedTask = $HasFailedTask || $Status eq "failed";
-        }
-        if ($HasFailedStep)
-        {
-          $Step->Status("skipped");
-        }
-        elsif ($HasRunningTask || ($HasQueuedTask && ($HasCompletedTask ||
-                                                      $HasFailedTask)))
-        {
-          $Step->Status("running");
-        }
-        elsif ($HasFailedTask)
-        {
-          $Step->Status("failed");
-        }
-        elsif ($HasCompletedTask || ! $HasQueuedTask)
-        {
-          $Step->Status("completed");
-        }
-        else
-        {
-          $Step->Status("queued");
-        }
-        $Step->Save();
-      }
-
-      $Status = $Step->Status;
-      $HasQueuedStep = $HasQueuedStep || $Status eq "queued";
-      $HasRunningStep = $HasRunningStep || $Status eq "running";
-      $HasCompletedStep = $HasCompletedStep || $Status eq "completed";
-      my $Type = $Step->Type;
-      $HasFailedStep = $HasFailedStep ||
-                       ($Status eq "failed" &&
-                        ($Type eq "build" || $Type eq "reconfig"));
-    }
-
-    if ($HasRunningStep || ($HasQueuedStep && ($HasCompletedStep ||
-                                               $HasFailedStep)))
-    {
-      $Job->Status("running");
-    }
-    elsif ($HasFailedStep)
-    {
-      if (! defined($Job->Ended))
-      {
-        $Job->Ended(time);
-      }
-      $Job->Status("failed");
-    }
-    elsif ($HasCompletedStep || ! $HasQueuedStep)
-    {
-      if (! defined($Job->Ended))
-      {
-        $Job->Ended(time);
-      }
-      $Job->Status("completed");
-    }
-    else
-    {
-      $Job->Status("queued");
-    }
-    $Job->Save();
-  }
+  map { $_->UpdateStatus(); } @{$self->GetItems()};
 
   return undef;
 }
