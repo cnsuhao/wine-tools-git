@@ -24,6 +24,8 @@ TestAgentd.exe: testagentd.obj platform_windows.obj
 .c.obj:
 	$(CROSSCC32) -Wall -c -o $@ $<
 
+C_SRCS = testagentd.c platform_unix.c platform_windows.c
+$(C_SRCS:.c=.o) $(C_SRCS:.c=.obj): platform.h
 
 iso: windows
 	mkdir winetest
