@@ -30,7 +30,7 @@ sub BEGIN
   }
 }
 
-my $name0=$0;
+my $name0 = $0;
 $name0 =~ s+^.*/++;
 
 use WineTestBot::Config;
@@ -49,17 +49,17 @@ my $Usage;
 
 sub check_opt_val($$)
 {
-    my ($option, $val)=@_;
+    my ($option, $val) = @_;
 
     if (defined $val)
     {
         error("$option can only be specified once\n");
-        $Usage=2; # but continue processing this option
+        $Usage = 2; # but continue processing this option
     }
     if (!@ARGV)
     {
         error("missing value for $option\n");
-        $Usage=2;
+        $Usage = 2;
         return undef;
     }
     return shift @ARGV;
@@ -67,18 +67,18 @@ sub check_opt_val($$)
 
 while (@ARGV)
 {
-    my $arg=shift @ARGV;
+    my $arg = shift @ARGV;
     if ($arg eq "--help")
     {
-        $Usage=0;
+        $Usage = 0;
     }
     elsif ($arg eq "--port")
     {
-        $Port=check_opt_val($arg, $Port);
+        $Port = check_opt_val($arg, $Port);
     }
     elsif ($arg eq "--timeout")
     {
-        $ScriptTimeout=check_opt_val($arg, $ScriptTimeout);
+        $ScriptTimeout = check_opt_val($arg, $ScriptTimeout);
     }
     elsif (!defined $Hostname)
     {
@@ -86,19 +86,19 @@ while (@ARGV)
     }
     elsif ($arg eq "send")
     {
-        $HostPathName=check_opt_val($arg, $HostPathName);
-        $GuestPathName=check_opt_val($arg, $GuestPathName) if (!$Usage);
+        $HostPathName = check_opt_val($arg, $HostPathName);
+        $GuestPathName = check_opt_val($arg, $GuestPathName) if (!$Usage);
         $Cmd = $arg;
     }
     elsif ($arg eq "get")
     {
-        $GuestPathName=check_opt_val($arg, $GuestPathName);
-        $HostPathName=check_opt_val($arg, $HostPathName) if (!$Usage);
+        $GuestPathName = check_opt_val($arg, $GuestPathName);
+        $HostPathName = check_opt_val($arg, $HostPathName) if (!$Usage);
         $Cmd = $arg;
     }
     elsif ($arg eq "runscript")
     {
-        $Script=check_opt_val($arg, $Script);
+        $Script = check_opt_val($arg, $Script);
         $Cmd = $arg;
     }
     elsif ($arg eq "status")
