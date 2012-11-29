@@ -137,20 +137,20 @@ sub _Copy($$)
 
 sub SendFile($$$)
 {
-  my ($Hostname, $HostPathName, $GuestPathName) = @_;
-  LogMsg "SendFile $HostPathName -> $Hostname $GuestPathName\n";
+  my ($Hostname, $LocalPathName, $ServerPathName) = @_;
+  LogMsg "SendFile $LocalPathName -> $Hostname $ServerPathName\n";
 
   my $fh;
-  if (!open($fh, "<", $HostPathName))
+  if (!open($fh, "<", $LocalPathName))
   {
-    return "unable to open '$HostPathName' for reading: $!";
+    return "unable to open '$LocalPathName' for reading: $!";
   }
 
   my $Err;
   my $nc = _Connect($Hostname);
   if ($nc)
   {
-    $nc->send("write\n$GuestPathName\n", 0);
+    $nc->send("write\n$ServerPathName\n", 0);
     $Err = $! if (!_Copy($fh, $nc));
     $nc->shutdown($DONE_WRITING);
 
@@ -170,20 +170,20 @@ sub SendFile($$$)
 
 sub GetFile($$$)
 {
-  my ($Hostname, $GuestPathName, $HostPathName) = @_;
-  LogMsg "GetFile $Hostname $GuestPathName -> $HostPathName\n";
+  my ($Hostname, $ServerPathName, $LocalPathName) = @_;
+  LogMsg "GetFile $Hostname $ServerPathName -> $LocalPathName\n";
 
   my $fh;
-  if (!open($fh, ">", $HostPathName))
+  if (!open($fh, ">", $LocalPathName))
   {
-    return "unable to open '$HostPathName' for writing: $!";
+    return "unable to open '$LocalPathName' for writing: $!";
   }
 
-  my ($Err, $GuestSize);
+  my ($Err, $ServerSize);
   my $nc = _Connect($Hostname);
   if ($nc)
   {
-    $nc->send("read\n$GuestPathName\n", 0);
+    $nc->send("read\n$ServerPathName\n", 0);
     # The status of the open operation is returned first so it does not
     # get mixed up with the file data. However we must not mix buffered
     # (<> or read()) and unbuffered (File:Copy::copy()) read operations on
@@ -194,7 +194,7 @@ sub GetFile($$$)
     }
     elsif ($Err =~ s/^ok: size=(-?[0-9]+)\n//)
     {
-      $GuestSize=$1;
+      $ServerSize = $1;
       if ($Err ne "" and syswrite($fh, $Err, length($Err)) < 0)
       {
         $Err = $!;
@@ -211,8 +211,8 @@ sub GetFile($$$)
     $Err = $@;
   }
   close($fh);
-  my $HostSize=-s $HostPathName;
-  if (!defined $Err and $HostSize != $GuestSize)
+  my $LocalSize = -s $LocalPathName;
+  if (!defined $Err and $LocalSize != $ServerSize)
   {
     # Something still went wrong during the transfer. Get the last operation
     # status
@@ -220,7 +220,7 @@ sub GetFile($$$)
     ($Err, $StatusErr) = GetStatus($Hostname);
     $Err = $StatusErr if (!defined $StatusErr);
   }
-  unlink $HostPathName if ($Err);
+  unlink $LocalPathName if ($Err);
   return $Err;
 }
 

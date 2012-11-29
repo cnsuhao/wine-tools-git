@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 #
 # This is a testagentd client. It can be used to exchange files or run
-# commands on VMs, mostly for testing purposes.
+# commands on the testagentd server, mostly for testing purposes.
 #
 # Copyright 2012 Francois Gouget
 #
@@ -42,7 +42,7 @@ sub error(@)
     print STDERR "$name0:error: ", @_;
 }
 
-my ($Cmd, $Hostname, $HostPathName, $GuestPathName, $Script, $ScriptTimeout);
+my ($Cmd, $Hostname, $LocalPathName, $ServerPathName, $Script, $ScriptTimeout);
 my $Port;
 my $Timeout;
 my $Usage;
@@ -86,14 +86,14 @@ while (@ARGV)
     }
     elsif ($arg eq "send")
     {
-        $HostPathName = check_opt_val($arg, $HostPathName);
-        $GuestPathName = check_opt_val($arg, $GuestPathName) if (!$Usage);
+        $LocalPathName = check_opt_val($arg, $LocalPathName);
+        $ServerPathName = check_opt_val($arg, $ServerPathName) if (!$Usage);
         $Cmd = $arg;
     }
     elsif ($arg eq "get")
     {
-        $GuestPathName = check_opt_val($arg, $GuestPathName);
-        $HostPathName = check_opt_val($arg, $HostPathName) if (!$Usage);
+        $ServerPathName = check_opt_val($arg, $ServerPathName);
+        $LocalPathName = check_opt_val($arg, $LocalPathName) if (!$Usage);
         $Cmd = $arg;
     }
     elsif ($arg eq "runscript")
@@ -128,25 +128,25 @@ if (defined $Usage)
         error("try '$name0 --help' for more information\n");
         exit $Usage;
     }
-    print "Usage: $name0 [options] <hostname> send <hostpath> <guestpath>\n";
-    print "or     $name0 [options] <hostname> get <guestpath> <hostpath>\n";
+    print "Usage: $name0 [options] <hostname> send <localpath> <serverpath>\n";
+    print "or     $name0 [options] <hostname> get <serverpath> <localpath>\n";
     print "or     $name0 [options] <hostname> runscript <command>\n";
     print "or     $name0 [options] <hostname> status\n";
     print "\n";
-    print "This is a testagentd client. It can be used to send/receive files and to run scripts on the specified guest host.\n";
+    print "This is a testagentd client. It can be used to send/receive files and to run scripts on the specified server.\n";
     print "\n";
     print "Where:\n";
-    print "  send          Sends the <hostpath> file and saves it as <guestpath> on the\n";
-    print "                 guest.\n";
-    print "  get           Retrieves the <guestpath> file from the guest and saves it as\n";
-    print "                 <hostpath>.\n";
-    print "  runscript     Runs the specified <command> on the guest.\n";
+    print "  send          Sends the <localpath> file and saves it as <serverpath> on the\n";
+    print "                server.\n";
+    print "  get           Retrieves the <serverpath> file from the server and saves it as\n";
+    print "                <localpath>.\n";
+    print "  runscript     Runs the specified <command> on the server.\n";
     print "  status        Retrieves the status of the last command that was run on the\n";
-    print "                 guest.\n";
-    print "  <hostname>    Is the hostname of the guest.\n";
+    print "                server.\n";
+    print "  <hostname>    Is the hostname of the TestAgent server.\n";
     print "  --port <port> Use the specified port number instead of the default one.\n";
     print "  --timeout <timeout> Use the specified timeout (in seconds) instead of the\n";
-    print "                 default one.\n";
+    print "                default one.\n";
     print "  --help        Shows this usage message.\n";
     exit 0;
 }
@@ -154,11 +154,11 @@ if (defined $Usage)
 my $Err;
 if ($Cmd eq "send")
 {
-    $Err = TestAgent::SendFile($Hostname, $HostPathName, $GuestPathName);
+    $Err = TestAgent::SendFile($Hostname, $LocalPathName, $ServerPathName);
 }
 elsif ($Cmd eq "get")
 {
-    $Err = TestAgent::GetFile($Hostname, $GuestPathName, $HostPathName);
+    $Err = TestAgent::GetFile($Hostname, $ServerPathName, $LocalPathName);
 }
 elsif ($Cmd eq "runscript")
 {
