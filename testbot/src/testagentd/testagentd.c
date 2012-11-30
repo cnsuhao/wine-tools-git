@@ -190,12 +190,15 @@ static void vset_status(const char* format, va_list valist)
 {
     int len;
     va_list args;
-    len = 1;
+    len = 0;
     do
     {
         if (len >= status_size)
         {
-            status_size = (len +0xf) & ~0xf;
+            /* len does not count the trailing '\0'. So add 1 and round up
+             * to the next 16 bytes multiple.
+             */
+            status_size = (len + 1 + 0xf) & ~0xf;
             status = realloc(status, status_size);
         }
         va_copy(args, valist);
