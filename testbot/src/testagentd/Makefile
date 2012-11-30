@@ -27,7 +27,10 @@ TestAgentd.exe: testagentd.obj platform_windows.obj
 C_SRCS = testagentd.c platform_unix.c platform_windows.c
 $(C_SRCS:.c=.o) $(C_SRCS:.c=.obj): platform.h
 
-iso: windows
+iso: winetestbot.iso
+
+winetestbot.iso: TestAgentd.exe
+	rm -rf winetest
 	mkdir winetest
 	cp TestAgentd.exe winetest
 	mkisofs="mkisofs"; \
