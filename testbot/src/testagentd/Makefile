@@ -40,6 +40,6 @@ winetestbot.iso: TestAgentd.exe
 
 
 clean:
-	rm *.obj *.o
-	rm TestAgentd.exe
-	rm winetestbot.iso
+	rm -f *.obj *.o
+	rm -f TestAgentd.exe
+	rm -f winetestbot.iso
