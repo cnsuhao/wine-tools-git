@@ -109,8 +109,9 @@ sub ApplyPatch
   }
 
   InfoMsg "Applying patch\n";
-  system("git apply --verbose --directory=$DataDir/wine-git $PatchFile " .
-         ">> $LogDir/Build.log 2>&1");
+  system("( cd $DataDir/wine-git && set -x && " .
+         "  git apply --verbose $PatchFile " .
+         ") >> $LogDir/Build.log 2>&1");
   if ($? != 0)
   {
     LogMsg "Patch failed to apply\n";
