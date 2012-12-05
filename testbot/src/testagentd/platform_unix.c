@@ -23,111 +23,148 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <signal.h>
+
 #include "platform.h"
+#include "list.h"
 
-# define WINEBOTDIR  "/home/winehq/tools/testbot/var/staging"
 
-
-char* get_script_path(void)
+struct child_t
 {
-    struct stat st;
-    char *dir, *script;
+    struct list entry;
+    uint64_t pid;
+    int reaped;
+    uint32_t status;
+};
 
-    if (stat(WINEBOTDIR, &st) == 0 && S_ISDIR(st.st_mode) &&
-        access(WINEBOTDIR, W_OK) == 0)
-        dir = WINEBOTDIR;
-    else if (getenv("TMPDIR"))
-        dir = getenv("TMPDIR");
-    else
-        dir = "/tmp";
-    script = malloc(strlen(dir)+7+1);
-    sprintf(script, "%s/script", dir);
-    return script;
-}
+static struct list children = LIST_INIT(children);
 
-static pid_t child = 0;
-static char* child_path;
-static pid_t reaped = 0;
-static int reaped_status;
-void cleanup_child(void)
-{
-    if (child_path)
-    {
-        unlink(child_path);
-        free(child_path);
-        child_path = NULL;
-    }
-    child = 0;
-}
 
 void reaper(int signum)
 {
+    struct child_t* child;
     pid_t pid;
     int status;
 
     pid = wait(&status);
-    debug("process %u returned %d\n", (unsigned)pid, status);
-    if (pid == child)
+    debug("process %u returned %u\n", pid, status);
+
+    LIST_FOR_EACH_ENTRY(child, &children, struct child_t, entry)
     {
-        cleanup_child();
-        reaped_status = status;
-        reaped = pid;
+        if (child->pid == pid)
+        {
+            child->status = status;
+            child->reaped = 1;
+            break;
+        }
     }
 }
 
-void start_child(SOCKET client, char* path)
+uint64_t platform_run(char** argv, uint32_t flags, char** redirects)
 {
     pid_t pid;
+    int fds[3] = {-1, -1, -1};
+    int i;
 
-    chmod(path, 0700);
-    child_path = path;
-    child = pid = fork();
+    for (i = 0; i < 3; i++)
+    {
+        if (redirects[i][0] == '\0')
+            continue;
+        fds[i] = open(redirects[i], (i ? O_WRONLY : O_RDONLY) | O_CREAT | O_TRUNC);
+        if (fds[i] < 0)
+        {
+            set_status(ST_ERROR, "unable to open '%s' for %s: %s", redirects[i], i ? "writing" : "reading", strerror(errno));
+            while (i > 0)
+            {
+                if (fds[i] != -1)
+                    close(fds[i]);
+                i--;
+            }
+            return 0;
+        }
+    }
+
+    pid = fork();
     if (pid == 0)
     {
-        char* argv[2];
-        argv[0] = path;
-        argv[1] = NULL;
-        execve(path, argv, NULL);
-        error("could not run '%s': %s\n", strerror(errno));
+        for (i = 0; i < 3; i++)
+        {
+            if (fds[i] != -1)
+            {
+                dup2(fds[i], i);
+                close(fds[i]);
+            }
+        }
+        execvp(argv[0], argv);
+        error("could not run '%s': %s\n", argv[0], strerror(errno));
         exit(1);
     }
     if (pid < 0)
     {
-        cleanup_child();
-        report_status(client, "error: could not fork: %s\n", strerror(errno));
-        return;
+        set_status(ST_ERROR, "could not fork: %s", strerror(errno));
+        pid = 0;
     }
-    report_status(client, "ok: started process %d\n", pid);
+    else
+    {
+        if (!(flags & RUN_DNT))
+        {
+            struct child_t* child;
+            child = malloc(sizeof(*child));
+            child->pid = pid;
+            child->reaped = 0;
+            list_add_head(&children, &child->entry);
+        }
+    }
+    for (i = 0; i < 3; i++)
+        if (fds[i] != -1)
+            close(fds[i]);
+    return pid;
 }
 
-void wait_for_child(SOCKET client)
+int platform_wait(SOCKET client, uint64_t pid, uint32_t *childstatus)
 {
-    while (child)
+    struct child_t* child;
+
+    LIST_FOR_EACH_ENTRY(child, &children, struct child_t, entry)
+    {
+        if (child->pid == pid)
+            break;
+    }
+    if (!child || child->pid != pid)
+    {
+        set_status(ST_ERROR, "the " U64FMT " process does not exist or is not a child process", pid);
+        return 0;
+    }
+
+    while (!child->reaped)
     {
         fd_set rfds;
-        char buf;
+        char buffer;
 
         /* select() blocks until either the client disconnects or until, or
          * the SIGCHLD signal indicates the child has exited. The recv() call
          * tells us if it is the former.
          */
+        debug("Waiting for " U64FMT "\n", pid);
         FD_ZERO(&rfds);
         FD_SET(client, &rfds);
         if (select(client+1, &rfds, NULL, NULL, NULL) == 1 &&
             FD_ISSET(client, &rfds) &&
-            recv(client, &buf, 1, MSG_PEEK | MSG_DONTWAIT) <= 0)
+            recv(client, &buffer, 1, MSG_PEEK | MSG_DONTWAIT) <= 0)
         {
-            report_status(client, "error: connection closed\n");
-            return;
+            set_status(ST_FATAL, "connection closed");
+            return 0;
         }
     }
-    if (reaped)
-        report_status(client, "ok: process %d returned status %d\n", reaped, reaped_status);
-    else
-        report_status(client, "error: no process to wait for\n");
+    debug("process " U64FMT " returned status %u\n", pid, child->status);
+    *childstatus = child->status;
+    list_remove(&child->entry);
+    free(child);
+    return 1;
 }
 
 int sockeintr(void)
@@ -188,7 +225,7 @@ void ta_freeaddrinfo(struct addrinfo *addresses)
     return freeaddrinfo(addresses);
 }
 
-int init_platform(void)
+int platform_init(void)
 {
     struct sigaction sa, osa;
     sa.sa_handler = reaper;

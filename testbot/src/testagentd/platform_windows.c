@@ -19,97 +19,189 @@
  */
 
 #include <stdio.h>
+
 #include "platform.h"
+#include "list.h"
 
-char* get_script_path(void)
+struct child_t
 {
-    static char path[MAX_PATH+11];
-    if (!GetTempPathA(sizeof(path), path))
-    {
-        error("unable to retrieve the temporary directory path\n");
-        exit(1);
-    }
-    strcat(path, "\\script.bat");
-    return path;
-}
+    struct list entry;
+    DWORD pid;
+    HANDLE handle;
+};
 
-static HANDLE child = NULL;
-static DWORD child_pid;
-static char* child_path;
-void cleanup_child(void)
+static struct list children = LIST_INIT(children);
+
+
+uint64_t platform_run(char** argv, uint32_t flags, char** redirects)
 {
-    if (child)
-    {
-        DeleteFile(child_path);
-        free(child_path);
-        child_path = NULL;
-
-        CloseHandle(child);
-        child = NULL;
-        child_pid = 0;
-    }
-}
-
-void start_child(SOCKET client, char* path)
-{
+    DWORD stdhandles[3] = {STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE};
+    HANDLE fhs[3] = {INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE};
+    SECURITY_ATTRIBUTES sa;
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
+    int has_redirects, i, cmdsize;
+    char *cmdline, *d, **arg;
 
-    child_path = path;
-    memset(&si, 0, sizeof(si));
-    si.cb = sizeof(si);
-    if (CreateProcess(path, NULL, NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS,
-                       NULL, NULL, &si, &pi))
+    sa.nLength = sizeof(sa);
+    sa.lpSecurityDescriptor = NULL;
+    sa.bInheritHandle = TRUE;
+
+    /* Build the windows command line */
+    cmdsize = 0;
+    for (arg = argv; *arg; arg++)
     {
-        report_status(client, "ok: started process %u\n", pi.dwProcessId);
-        child = pi.hProcess;
-        child_pid = pi.dwProcessId;
-        CloseHandle(pi.hThread);
+        char* s = *arg;
+        while (*s)
+            cmdsize += (*s++ == '"' ? 2 : 1);
+        cmdsize += 3; /* 2 quotes and either a space or trailing '\0' */
     }
-    else
+    cmdline = malloc(cmdsize);
+    if (!cmdline)
     {
-        report_status(client, "error: could not run '%s': %u\n", path, GetLastError());
+        set_status(ST_ERROR, "malloc() failed: %s", strerror(errno));
+        return 0;
     }
-}
-
-void wait_for_child(SOCKET client)
-{
-    HANDLE handles[2];
-    DWORD r;
-
-    handles[0] = WSACreateEvent();
-    WSAEventSelect(client, handles[0], FD_CLOSE);
-    handles[1] = child;
-    while (child)
+    d = cmdline;
+    for (arg = argv; *arg; arg++)
     {
-        r = WaitForMultipleObjects(2, handles, FALSE, INFINITE);
-        switch (r)
+        char* s = *arg;
+        *d++ = '"';
+        while (*s)
         {
-        case WAIT_OBJECT_0:
-            report_status(client, "error: connection closed\n");
-            CloseHandle(handles[0]);
-            return;
-        case WAIT_OBJECT_0 + 1:
-            if (GetExitCodeProcess(child, &r))
+            if (*s == '"')
+                *d++ = '\\';
+            *d++ = *s++;
+        }
+        *d++ = '"';
+        *d++ = ' ';
+    }
+    *(d-1) = '\0';
+
+    /* Prepare the redirections */
+    has_redirects = 0;
+    for (i = 0; i < 3; i++)
+    {
+        if (redirects[i][0] == '\0')
+        {
+            fhs[i] = GetStdHandle(stdhandles[i]);
+            continue;
+        }
+        has_redirects = 1;
+        fhs[i] = CreateFile(redirects[i], (i ? GENERIC_WRITE : GENERIC_READ), 0, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (fhs[i] == INVALID_HANDLE_VALUE)
+        {
+            set_status(ST_ERROR, "unable to open '%s' for %s: %lu", redirects[i], i ? "writing" : "reading", GetLastError());
+            free(cmdline);
+            while (i > 0)
             {
-                report_status(client, "ok: process %u returned status %u\n", child_pid, r << 8);
-                CloseHandle(handles[0]);
-                cleanup_child();
-                return;
+                if (fhs[i] != INVALID_HANDLE_VALUE)
+                    CloseHandle(fhs[i]);
+                i--;
             }
-            break;
-        default:
-            debug("WaitForMultipleObjects() returned %u! Retrying...\n", r);
-            break;
+            return 0;
         }
     }
-    CloseHandle(handles[0]);
-    report_status(client, "error: no process to wait for\n");
+
+    memset(&si, 0, sizeof(si));
+    si.cb = sizeof(si);
+    si.dwFlags = has_redirects ? STARTF_USESTDHANDLES : 0;
+    si.hStdInput = fhs[0];
+    si.hStdOutput = fhs[1];
+    si.hStdError = fhs[2];
+    if (!CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS,
+                        NULL, NULL, &si, &pi))
+    {
+        set_status(ST_ERROR, "could not run '%s': %lu", cmdline, GetLastError());
+        return 0;
+    }
+    CloseHandle(pi.hThread);
+
+    if (flags & RUN_DNT)
+        CloseHandle(pi.hProcess);
+    else
+    {
+        struct child_t* child;
+        child = malloc(sizeof(*child));
+        child->pid = pi.dwProcessId;
+        child->handle = pi.hProcess;
+        list_add_head(&children, &child->entry);
+    }
+
+    free(cmdline);
+    for (i = 0; i < 3; i++)
+        if (redirects[i][0])
+            CloseHandle(fhs[i]);
+
+    return pi.dwProcessId;
 }
 
-int sockeintr(void)
+int platform_wait(SOCKET client, uint64_t pid, uint32_t *childstatus)
 {
-    return WSAGetLastError() == WSAEINTR;
+    struct child_t *child;
+    HANDLE handles[2];
+    u_long nbio;
+    DWORD r, success;
+
+    LIST_FOR_EACH_ENTRY(child, &children, struct child_t, entry)
+    {
+        if (child->pid == pid)
+            break;
+    }
+    if (!child || child->pid != pid)
+    {
+        set_status(ST_ERROR, "the " U64FMT " process does not exist or is not a child process", pid);
+        return 0;
+    }
+
+    /* Wait for either the socket to be closed, indicating a client-side
+     * timeout, or for the child process to exit.
+     */
+    handles[0] = WSACreateEvent();
+    WSAEventSelect(client, handles[0], FD_CLOSE);
+    handles[1] = child->handle;
+    r = WaitForMultipleObjects(2, handles, FALSE, INFINITE);
+
+    success = 0;
+    switch (r)
+    {
+    case WAIT_OBJECT_0:
+        set_status(ST_ERROR, "connection closed");
+        break;
+
+    case WAIT_OBJECT_0 + 1:
+        if (GetExitCodeProcess(child->handle, &r))
+        {
+            debug("  process %lu returned status %lu\n", child->pid, r);
+            *childstatus = r;
+            success = 1;
+        }
+        else
+            debug("GetExitCodeProcess() failed (%lu). Giving up!\n", GetLastError());
+        break;
+    default:
+        debug("WaitForMultipleObjects() returned %lu (le=%lu). Giving up!\n", r, GetLastError());
+        break;
+    }
+    CloseHandle(child->handle);
+    list_remove(&child->entry);
+    free(child);
+
+    /* We must reset WSAEventSelect before we can make
+     * the socket blocking again.
+     */
+    WSAEventSelect(client, handles[0], 0);
+    CloseHandle(handles[0]);
+    nbio = 0;
+    if (WSAIoctl(client, FIONBIO, &nbio, sizeof(nbio), &nbio, sizeof(nbio), &r, NULL, NULL) == SOCKET_ERROR)
+        debug("WSAIoctl(FIONBIO) failed: %s\n", sockerror());
+
+    return success;
+}
+
+int sockretry(void)
+{
+    return (WSAGetLastError() == WSAEINTR);
 }
 
 const char* sockerror(void)
@@ -130,7 +222,7 @@ char* sockaddr_to_string(struct sockaddr* sa, socklen_t len)
     static char name[256+6];
     DWORD size = sizeof(name);
     /* This also appends the port number */
-    if (WSAAddressToString(sa,len, NULL, name, &size))
+    if (WSAAddressToString(sa, len, NULL, name, &size))
         sprintf(name, "unknown host (family %d)", sa->sa_family);
     return name;
 }
@@ -245,7 +337,7 @@ void ta_freeaddrinfo(struct addrinfo *addresses)
     }
 }
 
-int init_platform(void)
+int platform_init(void)
 {
     HMODULE hdll;
     WORD wVersionRequested;

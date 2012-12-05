@@ -21,12 +21,681 @@
 package TestAgent;
 use strict;
 
-use WineTestBot::Config;
-use WineTestBot::Log;
+use vars qw (@ISA @EXPORT_OK $SENDFILE_EXE $RUN_DNT);
 
-my $DONE_READING = 0;
-my $DONE_WRITING = 1;
+require Exporter;
+@ISA = qw(Exporter);
+@EXPORT_OK = qw(new);
 
+my $BLOCK_SIZE = 4096;
+
+my $RPC_PING = 0;
+my $RPC_GETFILE = 1;
+my $RPC_SENDFILE = 2;
+my $RPC_RUN = 3;
+my $RPC_WAIT = 4;
+my $RPC_RM = 5;
+
+my %RpcNames=(
+    $RPC_PING => 'ping',
+    $RPC_GETFILE => 'getfile',
+    $RPC_SENDFILE => 'sendfile',
+    $RPC_RUN => 'run',
+    $RPC_WAIT => 'wait',
+    $RPC_RM => 'rm',
+);
+
+my $Debug = 1;
+sub debug(@)
+{
+    print STDERR @_ if ($Debug);
+}
+
+sub new($$$)
+{
+  my ($class, $Hostname, $Port) = @_;
+
+  my $self = {
+    agenthost  => $Hostname,
+    agentport  => $Port,
+    connection => "$Hostname:$Port",
+    ctimeout   => 30,
+    timeout    => 0,
+    fd         => undef,
+    deadline   => undef,
+    err        => undef};
+
+  $self = bless $self, $class;
+  return $self;
+}
+
+sub Disconnect($)
+{
+  my ($self) = @_;
+
+  if ($self->{fd})
+  {
+      close($self->{fd});
+      $self->{fd} = undef;
+  }
+  $self->{agentversion} = undef;
+}
+
+sub SetConnectTimeout($$)
+{
+  my ($self, $Timeout) = @_;
+  my $OldTimeout = $self->{ctimeout};
+  $self->{ctimeout} = $Timeout;
+  return $OldTimeout;
+}
+
+sub SetTimeout($$)
+{
+  my ($self, $Timeout) = @_;
+  my $OldTimeout = $self->{timeout};
+  $self->{timeout} = $Timeout;
+  return $OldTimeout;
+}
+
+sub _SetAlarm($)
+{
+  my ($self) = @_;
+  if ($self->{deadline})
+  {
+    my $Timeout = $self->{deadline} - time();
+    die "timeout" if ($Timeout <= 0);
+    alarm($Timeout);
+  }
+}
+
+
+#
+# Error handling
+#
+
+my $ERROR = 0;
+my $FATAL = 1;
+
+sub _SetError($$$)
+{
+  my ($self, $Level, $Msg) = @_;
+
+  # Only overwrite non-fatal errors
+  if ($self->{fd})
+  {
+    # Cleanup errors coming from the server
+    $self->{err} = $Msg;
+
+    # And disconnect on fatal errors since the connection is unusable anyway
+    $self->Disconnect() if ($Level == $FATAL);
+  }
+  elsif (!$self->{err})
+  {
+    # We did not even manage to connect but record the error anyway
+    $self->{err} = $Msg;
+  }
+  debug($RpcNames{$self->{rpcid}} || $self->{rpcid}, ": $self->{err}\n");
+}
+
+sub GetLastError($)
+{
+  my ($self) = @_;
+  return $self->{err};
+}
+
+
+#
+# Low-level functions to receive raw data
+#
+
+sub _RecvRawData($$)
+{
+  my ($self, $Size) = @_;
+  return undef if (!defined $self->{fd});
+
+  my $Result;
+  eval
+  {
+    local $SIG{ALRM} = sub { die "timeout" };
+    $self->_SetAlarm();
+
+    my $Data = "";
+    while ($Size)
+    {
+      my $Buffer;
+      my $r = $self->{fd}->read($Buffer, $Size);
+      if (!defined $r)
+      {
+        alarm(0);
+        $self->_SetError($FATAL, "network read error: $!");
+        return;
+      }
+      if ($r == 0)
+      {
+        alarm(0);
+        $self->_SetError($FATAL, "got a premature network EOF");
+        return;
+      }
+      $Data .= $Buffer;
+      $Size -= $r;
+    }
+    alarm(0);
+    $Result = $Data;
+  };
+  if ($@)
+  {
+    $@ = "network read timed out" if ($@ =~ /^timeout /);
+    $self->_SetError($FATAL, $@);
+  }
+  return $Result;
+}
+
+sub _SkipRawData($$)
+{
+  my ($self, $Size) = @_;
+  return undef if (!defined $self->{fd});
+
+  my $Success;
+  eval
+  {
+    local $SIG{ALRM} = sub { die "timeout" };
+    $self->_SetAlarm();
+
+    while ($Size)
+    {
+      my $Buffer;
+      my $s = $Size < $BLOCK_SIZE ? $Size : $BLOCK_SIZE;
+      my $n = $self->{fd}->read($Buffer, $s);
+      if (!defined $n)
+      {
+        alarm(0);
+        $self->_SetError($FATAL, "network skip failed: $!");
+        return;
+      }
+      if ($n == 0)
+      {
+        alarm(0);
+        $self->_SetError($FATAL, "got a premature network EOF");
+        return;
+      }
+      $Size -= $n;
+    }
+    alarm(0);
+    $Success = 1;
+  };
+  if ($@)
+  {
+    $@ = "network skip timed out" if ($@ =~ /^timeout /);
+    $self->_SetError($FATAL, $@);
+  }
+  return $Success;
+}
+
+sub _RecvRawUInt32($)
+{
+  my ($self) = @_;
+
+  my $Data = $self->_RecvRawData(4);
+  return undef if (!defined $Data);
+  return unpack('N', $Data);
+}
+
+sub _RecvRawUInt64($)
+{
+  my ($self) = @_;
+
+  my $Data = $self->_RecvRawData(8);
+  return undef if (!defined $Data);
+  my ($High, $Low) = unpack('NN', $Data);
+  return $High << 32 | $Low;
+}
+
+
+#
+# Low-level functions to result lists
+#
+
+sub _RecvEntryHeader($)
+{
+  my ($self) = @_;
+
+  my $Data = $self->_RecvRawData(9);
+  return (undef, undef) if (!defined $Data);
+  my ($Type, $High, $Low) = unpack('cNN', $Data);
+  $Type = chr($Type);
+  return ($Type, $High << 32 | $Low);
+}
+
+sub _ExpectEntryHeader($$$)
+{
+  my ($self, $Type, $Size) = @_;
+
+  my ($HType, $HSize) = $self->_RecvEntryHeader();
+  return undef if (!defined $HType);
+  if ($HType ne $Type)
+  {
+    $self->_SetError($ERROR, "Expected a $Type entry but got $HType instead");
+  }
+  elsif (defined $Size and $HSize != $Size)
+  {
+    $self->_SetError($ERROR, "Expected an entry of size $Size but got $HSize instead");
+  }
+  else
+  {
+    return $HSize;
+  }
+  if ($HType eq 'e')
+  {
+    # The expected data was replaced with an error message
+    my $Message = $self->_RecvRawData($HSize);
+    return undef if (!defined $Message);
+    $self->_SetError($ERROR, $Message);
+  }
+  else
+  {
+    $self->_SkipRawData($HSize);
+  }
+  return undef;
+}
+
+sub _ExpectEntry($$$)
+{
+  my ($self, $Type, $Size) = @_;
+
+  $Size = $self->_ExpectEntryHeader($Type, $Size);
+  return undef if (!defined $Size);
+  return $self->_RecvRawData($Size);
+}
+
+sub _RecvUInt32($)
+{
+  my ($self) = @_;
+
+  return undef if (!defined $self->_ExpectEntryHeader('I', 4));
+  my $Value = $self->_RecvRawUInt32();
+  debug("  RecvUInt32() -> $Value\n") if (defined $Value);
+  return $Value;
+}
+
+sub _RecvUInt64($)
+{
+  my ($self) = @_;
+
+  return undef if (!defined $self->_ExpectEntryHeader('Q', 8));
+  my $Value = $self->_RecvRawUInt64();
+  debug("  RecvUInt64() -> $Value\n") if (defined $Value);
+  return $Value;
+}
+
+sub _RecvString($;$)
+{
+  my ($self, $EType) = @_;
+
+  my $Str = $self->_ExpectEntry($EType || 's');
+  if (defined $Str)
+  {
+    # Remove the trailing '\0'
+    chop $Str;
+    debug("  RecvString() -> '$Str'\n");
+  }
+  return $Str;
+}
+
+sub _RecvFile($$$)
+{
+  my ($self, $Dst, $Filename) = @_;
+  return undef if (!defined $self->{fd});
+  debug("  RecvFile($Filename)\n");
+
+  my $Size = $self->_RecvEntryHeader('d');
+  return undef if (!defined $Size);
+
+  my $Success;
+  eval
+  {
+    local $SIG{ALRM} = sub { die "timeout" };
+    $self->_SetAlarm();
+
+    while ($Size)
+    {
+      my $Buffer;
+      my $s = $Size < $BLOCK_SIZE ? $Size : $BLOCK_SIZE;
+      my $r = $self->{fd}->read($Buffer, $s);
+      if (!defined $r)
+      {
+        alarm(0);
+        $self->_SetError($FATAL, "got a network error while receiving '$Filename': $!");
+        return;
+      }
+      if ($r == 0)
+      {
+        alarm(0);
+        $self->_SetError($FATAL, "got a premature EOF while receiving '$Filename'");
+        return;
+      }
+      $Size -= $r;
+      my $w = syswrite($Dst, $Buffer, $r, 0);
+      if (!defined $w or $w != $r)
+      {
+        alarm(0);
+        $self->_SetError($ERROR, "an error occurred while writing to '$Filename': $!");
+        $self->_SkipRawData($Size);
+        return;
+      }
+    }
+    alarm(0);
+    $Success = 1;
+  };
+  if ($@)
+  {
+    $@ = "timed out while receiving '$Filename'" if ($@ =~ /^timeout /);
+    $self->_SetError($FATAL, $@);
+  }
+  return $Success;
+}
+
+sub _SkipEntries($$)
+{
+  my ($self, $Count) = @_;
+  debug("  SkipEntries($Count)\n");
+
+  while ($Count)
+  {
+    my ($Type, $Size) = $self->_RecvEntryHeader();
+    return undef if (!defined $Type);
+    if ($Type eq 'e')
+    {
+      # The expected data was replaced with an error message
+      my $Message = $self->_RecvRawData($Size);
+      return undef if (!defined $Message);
+      $self->_SetError($ERROR, $Message);
+    }
+    elsif (!$self->_SkipRawData($Size))
+    {
+      return undef;
+    }
+    $Count--;
+  }
+  return 1;
+}
+
+sub _RecvListSize($)
+{
+  my ($self) = @_;
+
+  my $Value = $self->_RecvRawUInt32();
+  debug("  RecvListSize() -> $Value\n") if (defined $Value);
+  return $Value;
+}
+
+sub _RecvList($$)
+{
+  my ($self, $ETypes) = @_;
+
+  debug("  RecvList($ETypes)\n");
+  my $HCount = $self->_RecvListSize();
+  return undef if (!defined $HCount);
+
+  my $Count = length($ETypes);
+  if ($HCount != $Count)
+  {
+    $self->_SetError($ERROR, "Expected $Count results but got $HCount instead");
+    $self->_SkipEntries($HCount);
+    return undef;
+  }
+
+  my @List;
+  foreach my $EType (split //, $ETypes)
+  {
+    # '.' is a placeholder for data handled by the caller so let it handle
+    # the rest
+    last if ($EType eq '.');
+
+    my $Data;
+    if ($EType eq 'I')
+    {
+      $Data = $self->_RecvUInt32();
+      $Count--;
+    }
+    elsif ($EType eq 'Q')
+    {
+      $Data = $self->_RecvUInt64();
+      $Count--;
+    }
+    elsif ($EType eq 's')
+    {
+      $Data = $self->_RecvString();
+      $Count--;
+    }
+    else
+    {
+      $self->_SetError($ERROR, "_RecvList() cannot receive a result of type $EType");
+    }
+    if (!defined $Data)
+    {
+      $self->_SkipEntries($Count);
+      return undef;
+    }
+    push @List, $Data;
+  }
+  return 1 if (!@List);
+  return $List[0] if (@List == 1);
+  return @List;
+}
+
+sub _RecvErrorList($)
+{
+  my ($self) = @_;
+
+  my $Count = $self->_RecvListSize();
+  return $self->GetLastError() if (!defined $Count);
+  return undef if (!$Count);
+
+  my $Errors = [];
+  while ($Count--)
+  {
+    my ($Type, $Size) = $self->_RecvEntryHeader();
+    if ($Type eq 'u')
+    {
+      debug("  RecvUndef()\n");
+      push @$Errors, undef;
+    }
+    elsif ($Type eq 's')
+    {
+      my $Status = $self->_RecvRawData($Size);
+      return $self->GetLastError() if (!defined $Status);
+      debug("  RecvStatus() -> '$Status'\n");
+      push @$Errors, $Status;
+    }
+    elsif ($Type eq 'e')
+    {
+      # The expected data was replaced with an error message
+      my $Message = $self->_RecvRawData($Size);
+      if (defined $Message)
+      {
+        debug("  RecvError() -> '$Message'\n");
+        $self->_SetError($ERROR, $Message);
+      }
+      $self->_SkipEntries($Count);
+      return $self->GetLastError();
+    }
+    else
+    {
+      $self->_SetError($ERROR, "Expected an s, u or e entry but got $Type instead");
+      $self->_SkipRawData($Size);
+      $self->_SkipEntries($Count);
+      return $self->GetLastError();
+    }
+  }
+  return $Errors;
+}
+
+
+#
+# Low-level functions to send raw data
+#
+
+sub _SendRawData($$)
+{
+  my ($self, $Data) = @_;
+  return undef if (!defined $self->{fd});
+
+  my $Success;
+  eval
+  {
+    local $SIG{ALRM} = sub { die "timeout" };
+    $self->_SetAlarm();
+
+    my $Size = length($Data);
+    my $Pos = 0;
+    while ($Size)
+    {
+      my $n = syswrite($self->{fd}, $Data, $Size, $Pos);
+      if (!defined $n)
+      {
+        alarm(0);
+        $self->_SetError($FATAL, "network write error: $!");
+        return;
+      }
+      if ($n == 0)
+      {
+        alarm(0);
+        $self->_SetError($FATAL, "unable to send more data");
+        return;
+      }
+      $Pos += $n;
+      $Size -= $n;
+    }
+    alarm(0);
+    $Success = 1;
+  };
+  if ($@)
+  {
+    $@ = "network write timed out" if ($@ =~ /^timeout /);
+    $self->_SetError($FATAL, $@);
+  }
+  return $Success;
+}
+
+sub _SendRawUInt32($$)
+{
+  my ($self, $Value) = @_;
+
+  return $self->_SendRawData(pack('N', $Value));
+}
+
+sub _SendRawUInt64($$)
+{
+  my ($self, $Value) = @_;
+
+  my ($High, $Low) = ($Value >> 32, $Value & 0xffffffff);
+  return $self->_SendRawData(pack('NN', $High, $Low));
+}
+
+
+#
+# Functions to send parameter lists
+#
+
+sub _SendListSize($$)
+{
+  my ($self, $Size) = @_;
+
+  debug("  SendListSize($Size)\n");
+  return $self->_SendRawUInt32($Size);
+}
+
+sub _SendEntryHeader($$$)
+{
+  my ($self, $Type, $Size) = @_;
+
+  my ($High, $Low) = ($Size >> 32, $Size & 0xffffffff);
+  return $self->_SendRawData(pack('cNN', ord($Type), $High, $Low));
+}
+
+sub _SendUInt32($$)
+{
+  my ($self, $Value) = @_;
+
+  debug("  SendUInt32($Value)\n");
+  return $self->_SendEntryHeader('I', 4) &&
+         $self->_SendRawUInt32($Value);
+}
+
+sub _SendUInt64($$)
+{
+  my ($self, $Value) = @_;
+
+  debug("  SendUInt64($Value)\n");
+  return $self->_SendEntryHeader('Q', 8) &&
+         $self->_SendRawUInt64($Value);
+}
+
+sub _SendString($$;$)
+{
+  my ($self, $Str, $Type) = @_;
+
+  debug("  SendString('$Str')\n");
+  $Str .= "\0";
+  return $self->_SendEntryHeader($Type || 's', length($Str)) &&
+         $self->_SendRawData($Str);
+}
+
+sub _SendFile($$$)
+{
+  my ($self, $Src, $Filename) = @_;
+  return undef if (!defined $self->{fd});
+  debug("  SendFile($Filename)\n");
+
+  my $Success;
+  eval
+  {
+    local $SIG{ALRM} = sub { die "timeout" };
+    $self->_SetAlarm();
+
+    my $Size = -s $Filename;
+    return if (!$self->_SendEntryHeader('d', $Size));
+    while ($Size)
+    {
+      my $Buffer;
+      my $s = $Size < $BLOCK_SIZE ? $Size : $BLOCK_SIZE;
+      my $r = sysread($Src, $Buffer, $s);
+      if (!defined $r)
+      {
+        alarm(0);
+        $self->_SetError($FATAL, "an error occurred while reading from '$Filename': $!");
+        return;
+      }
+      if ($r == 0)
+      {
+        alarm(0);
+        $self->_SetError($FATAL, "got a premature EOF while reading from '$Filename'");
+        return;
+      }
+      $Size -= $r;
+      my $w = syswrite($self->{fd}, $Buffer, $r, 0);
+      if (!defined $w or $w != $r)
+      {
+        alarm(0);
+        $self->_SetError($FATAL, "got a network error while sending '$Filename': $!");
+        return;
+      }
+    }
+    alarm(0);
+    $Success = 1;
+  };
+  if ($@)
+  {
+    $@ = "timed out while sending '$Filename'" if ($@ =~ /^timeout /);
+    $self->_SetError($FATAL, $@);
+  }
+  return $Success;
+}
+
+
+#
+# Connection management functions
+#
 
 sub create_ip_socket(@)
 {
@@ -48,220 +717,249 @@ if ($@)
   $create_socket = \&create_inet_socket;
 }
 
-sub _Connect($;$)
+sub _Connect($)
 {
-  my ($Hostname, $Timeout) = @_;
+  my ($self) = @_;
 
-  $Timeout ||= 10;
-  my $Deadline = time() + $Timeout;
-  while (1)
-  {
-    my $ConnectTimeout = $Timeout < 30 ? $Timeout : 30;
-    my $socket = &$create_socket(PeerHost => $Hostname, PeerPort => $AgentPort,
-                                 Type => SOCK_STREAM, Timeout => $ConnectTimeout);
-    return $socket if ($socket);
-
-    $Timeout = $Deadline - time();
-    last if ($Timeout <= 0);
-    # We ignore the upcoming delay in our timeout calculation
-
-    sleep(1);
-    # We will retry just in case this is a temporary network failure
-  }
-  $@ = "Unable to connect to $Hostname:$AgentPort: $@";
-  return undef;
-}
-
-sub _ReadStatus($$)
-{
-  my ($fh, $Timeout) = @_;
-  my ($Status, $Err) = ("", undef);
+  my $Err;
   eval
   {
-    local $SIG{ALRM} = sub { die "read status timed out\n" }; # NB: \n required
-    alarm($Timeout || 10);
-    while ($Status !~ /\n/)
-    {
-      # Note that the status is the last thing we read from the file descriptor
-      # so we don't worry about reading too much
-      my $Buffer;
-      my $n = sysread($fh, $Buffer, 1024);
-      if (!defined $n)
-      {
-        $Err = $!;
-        last;
-      }
-      last if ($n == 0);
-      $Status .= $Buffer;
-    }
-    alarm(0);
-  };
-  return (undef, $Err) if ($Err);
-  return (undef, $@) if ($@);
-  return ($Status, undef);
-}
-
-sub GetStatus($;$)
-{
-  my ($Hostname, $Timeout) = @_;
-
-  my $nc = _Connect($Hostname, $Timeout);
-  return (undef, $@) if (!$nc);
-  $nc->send("status\n", 0);
-  $nc->shutdown($DONE_WRITING);
-  my ($Status, $Err) = _ReadStatus($nc, $Timeout);
-  close($nc);
-  return ($Status, $Err);
-}
-
-# This is a workaround for bug #8611 which affects File::Copy::copy(),
-# causing the script to die instantly if we cannot write to the destination
-# file descriptor.
-# http://www.nntp.perl.org/group/perl.perl5.porters/2002/02/msg52726.html
-sub _Copy($$)
-{
-    my ($src, $dst) = @_;
+    local $SIG{ALRM} = sub { die "timeout" };
+    $self->{deadline} = $self->{ctimeout} ? time() + $self->{ctimeout} : undef;
+    $self->_SetAlarm();
 
     while (1)
     {
-        my $buf;
-        my $r = sysread($src, $buf, 4096);
-        return 0 if (!defined $r);
-        last if ($r == 0);
-        my $w = syswrite($dst, $buf, $r);
-        return 0 if (!defined $w);
-        return 0 if ($w != $r);
+      $self->{fd} = &$create_socket(PeerHost => $self->{agenthost},
+                                    PeerPort => $self->{agentport},
+                                    Type => SOCK_STREAM);
+      last if ($self->{fd});
+      $Err = $!;
+      # Ideally we should probably not retry on errors that are likely
+      # permanent, like a hostname that does not resolve. Instead we just
+      # rate-limit our connection attempts.
+      sleep(1);
     }
-    return 1;
+    alarm(0);
+  };
+  if (!$self->{fd})
+  {
+    $Err ||= $@;
+    $Err = "connection timed out" if ($Err =~ /^timeout /);
+    $self->_SetError($FATAL, "Unable to connect to $self->{connection}: $Err");
+    return undef;
+  }
+
+  # Get the protocol version supported by the server.
+  # This also lets us verify that the connection really works.
+  $self->{agentversion} = $self->_RecvString();
+  if (!defined $self->{agentversion})
+  {
+    # We have already been disconnected at this point
+    $self->{err} = "Unable to get the protocol version spoken by the server: $self->{err}";
+    return undef;
+  }
+
+  return 1;
 }
 
-sub SendFile($$$)
+sub _Ping($)
 {
-  my ($Hostname, $LocalPathName, $ServerPathName) = @_;
-  LogMsg "SendFile $LocalPathName -> $Hostname $ServerPathName\n";
+  my ($self) = @_;
 
-  my $fh;
-  if (!open($fh, "<", $LocalPathName))
-  {
-    return "unable to open '$LocalPathName' for reading: $!";
-  }
+  # Send the RPC and get the reply
+  return $self->_SendRawUInt32($RPC_PING) &&
+         $self->_SendListSize(0) &&
+         $self->_RecvList('');
+}
 
-  my $Err;
-  my $nc = _Connect($Hostname);
-  if ($nc)
-  {
-    $nc->send("write\n$ServerPathName\n", 0);
-    $Err = $! if (!_Copy($fh, $nc));
-    $nc->shutdown($DONE_WRITING);
+sub _StartRPC($$)
+{
+  my ($self, $RpcId) = @_;
 
-    # Now get the status
-    my $Status;
-    ($Status, $Err) = _ReadStatus($nc, 10);
-    $Err = !$Status ? $! : ($Status =~ /^ok:/ ? undef : $Status);
-    close($nc);
-  }
-  else
+  # Set up the new RPC
+  $self->{rpcid} = $RpcId;
+  $self->{err} = undef;
+
+  # First assume all is well and that we already have a working connection
+  $self->{deadline} = $self->{timeout} ? time() + $self->{timeout} : undef;
+  if (!$self->_SendRawUInt32($RpcId))
   {
-    $Err = $@;
+    # No dice, clean up whatever was left of the old connection
+    $self->Disconnect();
+
+    # And reconnect
+    return undef if (!$self->_Connect());
+    debug("Using protocol '$self->{agentversion}'\n");
+
+    # Reconnecting reset the operation deadline
+    $self->{deadline} = $self->{timeout} ? time() + $self->{timeout} : undef;
+    return $self->_SendRawUInt32($RpcId);
   }
-  close($fh);
-  return $Err;
+  return 1;
+}
+
+
+#
+# Implement the high-level RPCs
+#
+
+sub Ping($)
+{
+  my ($self) = @_;
+  return $self->_StartRPC($RPC_PING);
+}
+
+sub GetVersion($)
+{
+  my ($self) = @_;
+
+  if (!$self->{agentversion})
+  {
+    # Force a connection
+    $self->Ping();
+  }
+  # And return the version we got.
+  # If the connection failed it will be undef as expected.
+  return $self->{agentversion};
+}
+
+$SENDFILE_EXE = 1;
+
+sub _SendStringOrFile($$$$$$)
+{
+  my ($self, $Data, $fh, $LocalPathName, $ServerPathName, $Flags) = @_;
+
+  # Send the RPC and get the reply
+  return $self->_StartRPC($RPC_SENDFILE) &&
+         $self->_SendListSize(3) &&
+         $self->_SendString($ServerPathName) &&
+         $self->_SendUInt32($Flags || 0) &&
+         ($fh ? $self->_SendFile($fh, $LocalPathName) :
+                $self->_SendString($Data, 'd')) &&
+         $self->_RecvList('');
+}
+
+sub SendFile($$$;$)
+{
+  my ($self, $LocalPathName, $ServerPathName, $Flags) = @_;
+  debug("SendFile $LocalPathName -> $self->{agenthost} $ServerPathName\n");
+
+  if (open(my $fh, "<", $LocalPathName))
+  {
+    my $Success = $self->_SendStringOrFile(undef, $fh, $LocalPathName,
+                                           $ServerPathName, $Flags);
+    close($fh);
+    return $Success;
+  }
+  $self->_SetError($ERROR, "Unable to open '$LocalPathName' for reading: $!");
+  return undef;
+}
+
+sub SendFileFromString($$$;$)
+{
+  my ($self, $Data, $ServerPathName, $Flags) = @_;
+  debug("SendFile String -> $self->{agenthost} $ServerPathName\n");
+  return $self->_SendStringOrFile($Data, undef, undef, $ServerPathName, $Flags);
+}
+
+sub _GetFileOrString($$$)
+{
+  my ($self, $ServerPathName, $LocalPathName, $fh) = @_;
+
+  # Send the RPC and get the reply
+  my $Success = $self->_StartRPC($RPC_GETFILE) &&
+                $self->_SendListSize(1) &&
+                $self->_SendString($ServerPathName) &&
+                $self->_RecvList('.');
+  return undef if (!$Success);
+  return $self->_RecvFile($fh, $LocalPathName) if ($fh);
+  return $self->_RecvString('d');
 }
 
 sub GetFile($$$)
 {
-  my ($Hostname, $ServerPathName, $LocalPathName) = @_;
-  LogMsg "GetFile $Hostname $ServerPathName -> $LocalPathName\n";
+  my ($self, $ServerPathName, $LocalPathName) = @_;
+  debug("GetFile $self->{agenthost} $ServerPathName -> $LocalPathName\n");
 
-  my $fh;
-  if (!open($fh, ">", $LocalPathName))
+  if (open(my $fh, ">", $LocalPathName))
   {
-    return "unable to open '$LocalPathName' for writing: $!";
+    my $Success = $self->_GetFileOrString($ServerPathName, $LocalPathName, $fh);
+    close($fh);
+    return $Success;
   }
-
-  my ($Err, $ServerSize);
-  my $nc = _Connect($Hostname);
-  if ($nc)
-  {
-    $nc->send("read\n$ServerPathName\n", 0);
-    # The status of the open operation is returned first so it does not
-    # get mixed up with the file data. However we must not mix buffered
-    # (<> or read()) and unbuffered (File:Copy::copy()) read operations on
-    # the socket.
-    if (sysread($nc, $Err, 1024) <= 0)
-    {
-      $Err = $!;
-    }
-    elsif ($Err =~ s/^ok: size=(-?[0-9]+)\n//)
-    {
-      $ServerSize = $1;
-      if ($Err ne "" and syswrite($fh, $Err, length($Err)) < 0)
-      {
-        $Err = $!;
-      }
-      else
-      {
-        $Err = _Copy($nc, $fh) ? undef : $!;
-      }
-    }
-    close($nc);
-  }
-  else
-  {
-    $Err = $@;
-  }
-  close($fh);
-  my $LocalSize = -s $LocalPathName;
-  if (!defined $Err and $LocalSize != $ServerSize)
-  {
-    # Something still went wrong during the transfer. Get the last operation
-    # status
-    my $StatusErr;
-    ($Err, $StatusErr) = GetStatus($Hostname);
-    $Err = $StatusErr if (!defined $StatusErr);
-  }
-  unlink $LocalPathName if ($Err);
-  return $Err;
+  $self->_SetError($ERROR, "Unable to open '$LocalPathName' for writing: $!");
+  return undef;
 }
 
-sub RunScript($$$)
+sub GetFileToString($$)
 {
-  my ($Hostname, $ScriptText, $Timeout) = @_;
-  LogMsg "RunScript $Hostname ", ($Timeout || 0), " [$ScriptText]\n";
+  my ($self, $ServerPathName) = @_;
+  debug("GetFile $self->{agenthost} $ServerPathName -> String\n");
 
-  my $Err;
-  my $nc = _Connect($Hostname);
-  if ($nc)
+  return $self->_GetFileOrString($ServerPathName, undef, undef);
+}
+
+$RUN_DNT = 1;
+
+sub Run($$$;$$$)
+{
+  my ($self, $Argv, $Flags, $ServerInPath, $ServerOutPath, $ServerErrPath) = @_;
+  debug("Run $self->{agenthost} '", join("' '", @$Argv), "'\n");
+
+  if (!$self->_StartRPC($RPC_RUN) or
+      !$self->_SendListSize(4 + @$Argv) or
+      !$self->_SendUInt32($Flags) or
+      !$self->_SendString($ServerInPath || "") or
+      !$self->_SendString($ServerOutPath || "") or
+      !$self->_SendString($ServerErrPath || ""))
   {
-    $nc->send("runscript\n$ScriptText", 0);
-    $nc->shutdown($DONE_WRITING);
-    my $Status;
-    ($Status, $Err) = _ReadStatus($nc, $Timeout);
-    $Err = $Status if (defined $Status and $Status !~ /^ok:/);
-    close($nc);
-    if (!$Err)
-    {
-      $nc = _Connect($Hostname);
-      if ($nc)
-      {
-        $nc->send("waitchild\n", 0);
-        my $Status;
-        ($Status, $Err) = _ReadStatus($nc, $Timeout);
-        $nc->shutdown($DONE_WRITING);
-        $Err = $Status if (defined $Status and $Status !~ /^ok:/);
-        close($nc);
-      }
-      else
-      {
-        $Err = $@;
-      }
-    }
+    return undef;
   }
-  else
+  foreach my $Arg (@$Argv)
   {
-    $Err = $@;
+      return undef if (!$self->_SendString($Arg));
   }
-  return $Err;
+
+  # Get the reply
+  return $self->_RecvList('Q');
+}
+
+sub Wait($$)
+{
+  my ($self, $Pid) = @_;
+  debug("Wait $Pid\n");
+
+  # Send the command
+  if (!$self->_StartRPC($RPC_WAIT) or
+      !$self->_SendListSize(1) or
+      !$self->_SendUInt64($Pid))
+  {
+    return undef;
+  }
+
+  # Get the reply
+  return $self->_RecvList('I');
+}
+
+sub Rm($@)
+{
+  my $self = shift @_;
+  debug("Rm\n");
+
+  # Send the command
+  if (!$self->_StartRPC($RPC_RM) or
+      !$self->_SendListSize(scalar(@_)))
+  {
+    return $self->GetLastError();
+  }
+  foreach my $Filename (@_)
+  {
+    return $self->GetLastError() if (!$self->_SendString($Filename));
+  }
+
+  # Get the reply
+  return $self->_RecvErrorList();
 }
 
 1;

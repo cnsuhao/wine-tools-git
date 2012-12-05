@@ -348,27 +348,46 @@ sub WaitForToolsInGuest($$)
 {
   my ($self, $Timeout) = @_;
 
-  my ($Status, $Err) = TestAgent::GetStatus($self->Hostname, $Timeout);
-  # In fact we don't care about the status
-  return $Err;
+  my $TA = TestAgent->new($self->Hostname, $AgentPort);
+  $TA->SetConnectTimeout($Timeout);
+  my $Success = $TA->Ping();
+  $TA->Disconnect();
+  return $Success ? undef : $TA->GetLastError();
 }
 
 sub CopyFileFromHostToGuest($$$)
 {
   my ($self, $HostPathName, $GuestPathName) = @_;
-  return TestAgent::SendFile($self->Hostname,  $HostPathName, $GuestPathName);
+  my $TA = TestAgent->new($self->Hostname, $AgentPort);
+  my $Success = $TA->SendFile($HostPathName, $GuestPathName);
+  $TA->Disconnect();
+  return $Success ? undef : $TA->GetLastError();
 }
 
 sub CopyFileFromGuestToHost($$$)
 {
   my ($self, $GuestPathName, $HostPathName) = @_;
-  return TestAgent::GetFile($self->Hostname,  $GuestPathName, $HostPathName);
+  my $TA = TestAgent->new($self->Hostname, $AgentPort);
+  my $Err = $TA->GetFile($GuestPathName, $HostPathName);
+  $TA->Disconnect();
+  return $Success ? undef : $TA->GetLastError();
 }
 
 sub RunScriptInGuestTimeout($$$)
 {
   my ($self, $ScriptText, $Timeout) = @_;
-  return TestAgent::RunScript($self->Hostname, $ScriptText, $Timeout);
+  my $TA = TestAgent->new($self->Hostname, $AgentPort);
+  $TA->SetTimeout($Timeout);
+
+  my $Success;
+  if ($TA->SendFileFromString($ScriptText, "./script.bat", $TestAgent::SENDFILE_EXE))
+  {
+    my $Pid = $TA->Run(["./script.bat"], 0);
+    $Success = 1 if ($Pid and defined $TA->Wait($Pid));
+    $TA->Rm("./script.bat");
+  }
+  $TA->Disconnect();
+  return $Success ? undef : $TA->GetLastError();
 }
 
 my %StreamData;

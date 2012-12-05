@@ -42,9 +42,11 @@ sub error(@)
     print STDERR "$name0:error: ", @_;
 }
 
-my ($Cmd, $Hostname, $LocalPathName, $ServerPathName, $Script, $ScriptTimeout);
-my $Port;
-my $Timeout;
+my ($Cmd, $Hostname, $LocalFilename, $ServerFilename, @Rm);
+my (@Run, $RunIn, $RunOut, $RunErr);
+my $SendFlags = 0;
+my $RunFlags = 0;
+my ($Port, $ConnectTimeout, $Timeout);
 my $Usage;
 
 sub check_opt_val($$)
@@ -76,32 +78,67 @@ while (@ARGV)
     {
         $Port = check_opt_val($arg, $Port);
     }
+    elsif ($arg eq "--connect-timeout")
+    {
+        $ConnectTimeout = check_opt_val($arg, $ConnectTimeout);
+    }
     elsif ($arg eq "--timeout")
     {
-        $ScriptTimeout = check_opt_val($arg, $ScriptTimeout);
+        $Timeout = check_opt_val($arg, $Timeout);
+    }
+    elsif ($arg eq "--sendfile-exe")
+    {
+        $SendFlags |= $TestAgent::SENDFILE_EXE;
+    }
+    elsif ($arg eq "--run-no-wait")
+    {
+        $RunFlags |= $TestAgent::RUN_DNT;
+    }
+    elsif ($arg eq "--run-in")
+    {
+        $RunIn = check_opt_val($arg, $RunIn);
+    }
+    elsif ($arg eq "--run-out")
+    {
+        $RunOut = check_opt_val($arg, $RunOut);
+    }
+    elsif ($arg eq "--run-err")
+    {
+        $RunErr = check_opt_val($arg, $RunErr);
     }
     elsif (!defined $Hostname)
     {
         $Hostname = $arg;
     }
-    elsif ($arg eq "send")
+    elsif ($arg eq "sendfile")
     {
-        $LocalPathName = check_opt_val($arg, $LocalPathName);
-        $ServerPathName = check_opt_val($arg, $ServerPathName) if (!$Usage);
+        $Cmd = $arg;
+        $LocalFilename = check_opt_val($arg, $LocalFilename);
+        $ServerFilename = check_opt_val($arg, $ServerFilename) if (!$Usage);
+    }
+    elsif ($arg eq "getfile")
+    {
+        $Cmd = $arg;
+        $ServerFilename = check_opt_val($arg, $ServerFilename);
+        $LocalFilename = check_opt_val($arg, $LocalFilename) if (!$Usage);
+    }
+    elsif ($arg eq "run")
+    {
+        @Run = @ARGV;
+        $Cmd = $arg;
+        last;
+    }
+    elsif ($arg eq "rm")
+    {
+        $Cmd = $arg;
+        @Rm = @ARGV;
+        last;
+    }
+    elsif ($arg eq "getversion")
+    {
         $Cmd = $arg;
     }
-    elsif ($arg eq "get")
-    {
-        $ServerPathName = check_opt_val($arg, $ServerPathName);
-        $LocalPathName = check_opt_val($arg, $LocalPathName) if (!$Usage);
-        $Cmd = $arg;
-    }
-    elsif ($arg eq "runscript")
-    {
-        $Script = check_opt_val($arg, $Script);
-        $Cmd = $arg;
-    }
-    elsif ($arg eq "status")
+    elsif ($arg eq "ping")
     {
         $Cmd = $arg;
     }
@@ -116,7 +153,28 @@ if (!defined $Usage)
 {
     if (!defined $Cmd)
     {
-        error("you must specify a command to run\n");
+        error("you must specify a command\n");
+        $Usage = 2;
+    }
+    elsif ($Cmd eq "run" and !@Run)
+    {
+        error("you must specify the command to run\n");
+        $Usage = 2;
+    }
+    elsif ($Cmd eq "rm" and !@Rm)
+    {
+        error("you must specify the server files to delete\n");
+        $Usage = 2;
+    }
+    if ($Cmd ne "run" and ($RunFlags or defined $RunIn or defined $RunOut or
+                           defined $RunErr))
+    {
+        error("the --run-xxx options can only be used with the run command\n");
+        $Usage = 2;
+    }
+    elsif ($Cmd ne "sendfile" and $SendFlags)
+    {
+        error("the --sendfile-xxx options can only be used with the sendfile command\n");
         $Usage = 2;
     }
     $AgentPort = $Port if (defined $Port);
@@ -128,53 +186,105 @@ if (defined $Usage)
         error("try '$name0 --help' for more information\n");
         exit $Usage;
     }
-    print "Usage: $name0 [options] <hostname> send <localpath> <serverpath>\n";
-    print "or     $name0 [options] <hostname> get <serverpath> <localpath>\n";
-    print "or     $name0 [options] <hostname> runscript <command>\n";
-    print "or     $name0 [options] <hostname> status\n";
+    print "Usage: $name0 [options] <hostname> sendfile <localpath> <serverpath>\n";
+    print "or     $name0 [options] <hostname> getfile <serverpath> <localpath>\n";
+    print "or     $name0 [options] <hostname> run <command> <arguments>\n";
+    print "or     $name0 [options] <hostname> rm <serverfiles>\n";
+    print "or     $name0 [options] <hostname> [ping|version]\n";
     print "\n";
-    print "This is a testagentd client. It can be used to send/receive files and to run scripts on the specified server.\n";
+    print "This is a testagentd client. It can be used to send/receive files and to run commands on the server.\n";
     print "\n";
     print "Where:\n";
-    print "  send          Sends the <localpath> file and saves it as <serverpath> on the\n";
+    print "  sendfile      Sends the <localpath> file and saves it as <serverpath> on the\n";
     print "                server.\n";
-    print "  get           Retrieves the <serverpath> file from the server and saves it as\n";
-    print "                <localpath>.\n";
-    print "  runscript     Runs the specified <command> on the server.\n";
-    print "  status        Retrieves the status of the last command that was run on the\n";
-    print "                server.\n";
-    print "  <hostname>    Is the hostname of the TestAgent server.\n";
+    print "    --sendfile-exe Make the sent file executable.\n";
+    print "  getfile       Retrieves the <serverpath> file from the server and saves it\n";
+    print "                as <localpath>.\n";
+    print "  run           Runs the specified <command> on the server.\n";
+    print "    --run-no-wait Don't wait for the command.\n";
+    print "    --run-in <serverpath> Redirect the stdin or the command being run to the\n";
+    print "                  specified server file.\n";
+    print "    --run-out <serverpath> Redirect the stdout or the command being run to the\n";
+    print "                  specified server file.\n";
+    print "    --run-err <serverpath> Redirect the stderr or the command being run to the\n";
+    print "                  specified server file.\n";
+    print "  rm            Deletes the specified files on the server.\n";
+    print "  getversion    Returns the version of the server.\n";
+    print "  ping          Makes sure the server is still alive.\n";
+    print "  <hostname>    Is the hostname of the server.\n";
     print "  --port <port> Use the specified port number instead of the default one.\n";
+    print "  --connect-timeout <timeout> Use the specified timeout (in seconds) when\n";
+    print "                connecting instead of the default one.\n";
     print "  --timeout <timeout> Use the specified timeout (in seconds) instead of the\n";
-    print "                default one.\n";
+    print "                default one for the operation.\n";
     print "  --help        Shows this usage message.\n";
     exit 0;
 }
 
-my $Err;
-if ($Cmd eq "send")
+my $TA = TestAgent->new($Hostname, $AgentPort);
+$TA->SetConnectTimeout($ConnectTimeout) if (defined $ConnectTimeout);
+$TA->SetTimeout($Timeout) if (defined $Timeout);
+
+my $RC = 0;
+my $Result;
+if ($Cmd eq "sendfile")
 {
-    $Err = TestAgent::SendFile($Hostname, $LocalPathName, $ServerPathName);
+    $Result = $TA->SendFile($LocalFilename, $ServerFilename, $SendFlags);
 }
-elsif ($Cmd eq "get")
+elsif ($Cmd eq "getfile")
 {
-    $Err = TestAgent::GetFile($Hostname, $ServerPathName, $LocalPathName);
+    $Result = $TA->GetFile($ServerFilename, $LocalFilename);
 }
-elsif ($Cmd eq "runscript")
+elsif ($Cmd eq "run")
 {
-    $Err = TestAgent::RunScript($Hostname, $Script, $ScriptTimeout);
+    my $Pid = $TA->Run(\@Run, $RunFlags, $RunIn, $RunOut, $RunErr);
+    if ($Pid)
+    {
+        print "Started process $Pid\n";
+        if (!($RunFlags & $TestAgent::RUN_DNT))
+        {
+            $Result = $TA->Wait($Pid);
+            print "Child exit status: $Result\n" if (defined $Result);
+        }
+    }
 }
-elsif ($Cmd eq "status")
+elsif ($Cmd eq "rm")
 {
-    my $Status;
-    ($Status, $Err) = TestAgent::GetStatus($Hostname);
-    print "Status=$Status";
+    $Result = $TA->Rm(@Rm);
+    if (ref($Result) eq "ARRAY")
+    {
+        foreach my $Error (@$Result)
+        {
+            error("$Error\n") if (defined $Error);
+        }
+        $RC = 1;
+    }
+    elsif (defined $Result)
+    {
+        error("$Result\n");
+        $RC = 1;
+    }
+    else
+    {
+        $Result = 1;
+    }
+}
+elsif ($Cmd eq "getversion")
+{
+    $Result = $TA->GetVersion();
+    print "Version=$Result\n" if (defined $Result);
+}
+elsif ($Cmd eq "ping")
+{
+    $Result = $TA->Ping();
+    print "The server is alive\n" if ($Result);
+}
+$TA->Disconnect();
+
+if (!defined $Result)
+{
+    error($TA->GetLastError() . "\n");
+    $RC = 1;
 }
 
-if ($Err)
-{
-    error("$Err\n");
-    exit 1;
-}
-
-exit 0;
+exit $RC;
