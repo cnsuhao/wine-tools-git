@@ -9,6 +9,7 @@ Dependencies:
 - Sys::Virt (libsys-virt-perl, see http://libvirt.org/)
 - Image::Magick (perlmagick)
 - Optional: IO::Socket::IP (for IPv6, libio-socket-ip-perl)
+- Optional: Net::SSH2 (for SSH tunneling, libnet-ssh2-perl)
 
 MySQL setup:
 - Create a new 'winetestbot' database and its tables using the

@@ -51,19 +51,28 @@ sub debug(@)
     print STDERR @_ if ($Debug);
 }
 
-sub new($$$)
+sub new($$$;$)
 {
-  my ($class, $Hostname, $Port) = @_;
+  my ($class, $Hostname, $Port, $Tunnel) = @_;
 
   my $self = {
     agenthost  => $Hostname,
+    host       => $Hostname,
     agentport  => $Port,
+    port       => $Port,
     connection => "$Hostname:$Port",
     ctimeout   => 30,
     timeout    => 0,
     fd         => undef,
     deadline   => undef,
     err        => undef};
+  if ($Tunnel)
+  {
+    $self->{host} = $Tunnel->{sshhost} || $Hostname;
+    $self->{port} = $Tunnel->{sshport} || 22;
+    $self->{connection} = "$self->{host}:$self->{port}:$self->{connection}";
+    $self->{tunnel} = $Tunnel;
+  }
 
   $self = bless $self, $class;
   return $self;
@@ -73,6 +82,18 @@ sub Disconnect($)
 {
   my ($self) = @_;
 
+  if ($self->{ssh})
+  {
+    # This may close the SSH channel ($self->{fd}) as a side-effect,
+    # which will avoid undue delays.
+    $self->{ssh}->disconnect();
+    $self->{ssh} = undef;
+  }
+  if ($self->{sshfd})
+  {
+    close($self->{sshfd});
+    $self->{sshfd} = undef;
+  }
   if ($self->{fd})
   {
       close($self->{fd});
@@ -717,6 +738,13 @@ if ($@)
   $create_socket = \&create_inet_socket;
 }
 
+sub _ssherror($)
+{
+  my ($self) = @_;
+  my @List = $self->{ssh}->error();
+  return $List[2];
+}
+
 sub _Connect($)
 {
   my ($self) = @_;
@@ -730,8 +758,8 @@ sub _Connect($)
 
     while (1)
     {
-      $self->{fd} = &$create_socket(PeerHost => $self->{agenthost},
-                                    PeerPort => $self->{agentport},
+      $self->{fd} = &$create_socket(PeerHost => $self->{host},
+                                    PeerPort => $self->{port},
                                     Type => SOCK_STREAM);
       last if ($self->{fd});
       $Err = $!;
@@ -748,6 +776,63 @@ sub _Connect($)
     $Err = "connection timed out" if ($Err =~ /^timeout /);
     $self->_SetError($FATAL, "Unable to connect to $self->{connection}: $Err");
     return undef;
+  }
+
+  if ($self->{tunnel})
+  {
+    # We are in fact connected to the SSH server.
+    # Now forward that connection to the TestAgent server.
+    $self->{sshfd} = $self->{fd};
+    $self->{fd} = undef;
+
+    require Net::SSH2;
+    $self->{ssh} = Net::SSH2->new();
+    $self->{ssh}->debug(1) if ($Debug > 2);
+    if (!$self->{ssh}->connect($self->{sshfd}))
+    {
+      $self->_SetError($FATAL, "Unable to connect to the SSH server: " . $self->_ssherror());
+      return undef;
+    }
+
+    # Authenticate ourselves
+    my $Tunnel = $self->{tunnel};
+    my %AuthOptions=(username => $Tunnel->{username} || $ENV{USER});
+    foreach my $Key ("username", "password", "publickey", "privatekey",
+                     "hostname", "local_username", "interact")
+    {
+      $AuthOptions{$Key} = $Tunnel->{$Key} if (exists $Tunnel->{$Key});
+    }
+    # Interactive authentication makes no sense with automatic reconnects
+    $AuthOptions{interact} = 0;
+    if (!$self->{ssh}->auth(%AuthOptions))
+    {
+      # auth() returns no error of any sort :-(
+      $self->_SetError($FATAL, "Unable to authenticate to the SSH server");
+      return undef;
+    }
+
+    $self->{fd} = $self->{ssh}->channel();
+    if (!$self->{fd})
+    {
+      $self->_SetError($FATAL, "Unable to create the SSH channel: " . $self->_ssherror());
+      return undef;
+    }
+
+    # Check that the agent hostname and port won't mess with quoting.
+    if ($self->{agenthost} !~ /^[-a-zA-Z0-9.]*$/ or
+        $self->{agentport} !~ /^[a-zA-Z0-9]*$/)
+    {
+      $self->_SetError($FATAL, "The agent hostname or port is invalid");
+      return undef;
+    }
+
+    # Use netcat to forward the connection from the SSH server to the TestAgent
+    # server. Note that we won't know about netcat errors at this point.
+    if (!$self->{fd}->exec("nc '$self->{agenthost}' '$self->{agentport}'"))
+    {
+      $self->_SetError($FATAL, "Unable to start netcat: " . $self->_ssherror());
+      return undef;
+    }
   }
 
   # Get the protocol version supported by the server.

@@ -37,6 +37,8 @@ This class caches these  objects so only one is created per URI.
 
 =cut
 
+use URI;
+
 use WineTestBot::Config;
 
 use vars qw (@ISA @EXPORT_OK);
@@ -344,11 +346,31 @@ sub PowerOff
   return $self->UpdateStatus($Domain);
 }
 
+sub _GetTunnel($)
+{
+  my ($self) = @_;
+
+  # Auto-detect the SSH settings based on the libvirt URI
+  my $VirtURI = $self->VirtURI;
+  if ($VirtURI =~ s/^[a-z]+\+(?:ssh|libssh2):/ssh:/)
+  {
+    my $URI = URI->new($VirtURI);
+    my $TunnelInfo = {
+        sshhost  => $URI->host,
+        sshport  => $URI->port,
+        username => $URI->userinfo,
+    };
+    return $TunnelInfo;
+  }
+
+  return undef;
+}
+
 sub WaitForToolsInGuest($$)
 {
   my ($self, $Timeout) = @_;
 
-  my $TA = TestAgent->new($self->Hostname, $AgentPort);
+  my $TA = TestAgent->new($self->Hostname, $AgentPort, $self->_GetTunnel());
   $TA->SetConnectTimeout($Timeout);
   my $Success = $TA->Ping();
   $TA->Disconnect();
@@ -358,7 +380,7 @@ sub WaitForToolsInGuest($$)
 sub CopyFileFromHostToGuest($$$)
 {
   my ($self, $HostPathName, $GuestPathName) = @_;
-  my $TA = TestAgent->new($self->Hostname, $AgentPort);
+  my $TA = TestAgent->new($self->Hostname, $AgentPort, $self->_GetTunnel());
   my $Success = $TA->SendFile($HostPathName, $GuestPathName);
   $TA->Disconnect();
   return $Success ? undef : $TA->GetLastError();
@@ -367,8 +389,8 @@ sub CopyFileFromHostToGuest($$$)
 sub CopyFileFromGuestToHost($$$)
 {
   my ($self, $GuestPathName, $HostPathName) = @_;
-  my $TA = TestAgent->new($self->Hostname, $AgentPort);
-  my $Err = $TA->GetFile($GuestPathName, $HostPathName);
+  my $TA = TestAgent->new($self->Hostname, $AgentPort, $self->_GetTunnel());
+  my $Success = $TA->GetFile($GuestPathName, $HostPathName);
   $TA->Disconnect();
   return $Success ? undef : $TA->GetLastError();
 }
@@ -376,7 +398,7 @@ sub CopyFileFromGuestToHost($$$)
 sub RunScriptInGuestTimeout($$$)
 {
   my ($self, $ScriptText, $Timeout) = @_;
-  my $TA = TestAgent->new($self->Hostname, $AgentPort);
+  my $TA = TestAgent->new($self->Hostname, $AgentPort, $self->_GetTunnel());
   $TA->SetTimeout($Timeout);
 
   my $Success;

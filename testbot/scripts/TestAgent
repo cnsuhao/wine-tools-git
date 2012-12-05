@@ -33,6 +33,7 @@ sub BEGIN
 my $name0 = $0;
 $name0 =~ s+^.*/++;
 
+use URI;
 use WineTestBot::Config;
 use WineTestBot::TestAgent;
 use WineTestBot::Log;
@@ -46,7 +47,7 @@ my ($Cmd, $Hostname, $LocalFilename, $ServerFilename, @Rm);
 my (@Run, $RunIn, $RunOut, $RunErr);
 my $SendFlags = 0;
 my $RunFlags = 0;
-my ($Port, $ConnectTimeout, $Timeout);
+my ($Port, $ConnectTimeout, $Timeout, $Tunnel);
 my $Usage;
 
 sub check_opt_val($$)
@@ -85,6 +86,10 @@ while (@ARGV)
     elsif ($arg eq "--timeout")
     {
         $Timeout = check_opt_val($arg, $Timeout);
+    }
+    elsif ($arg eq "--tunnel")
+    {
+        $Tunnel = check_opt_val($arg, $Tunnel);
     }
     elsif ($arg eq "--sendfile-exe")
     {
@@ -178,6 +183,11 @@ if (!defined $Usage)
         $Usage = 2;
     }
     $AgentPort = $Port if (defined $Port);
+    if (defined $Tunnel and $Tunnel !~ /^ssh:/)
+    {
+        error("only SSH proxies are supported\n");
+        $Usage = 2;
+    }
 }
 if (defined $Usage)
 {
@@ -217,11 +227,22 @@ if (defined $Usage)
     print "                connecting instead of the default one.\n";
     print "  --timeout <timeout> Use the specified timeout (in seconds) instead of the\n";
     print "                default one for the operation.\n";
+    print "  --tunnel <uri> Tunnel the connection through ssh. The SSH connection is\n";
+    print "                specified in the form of an ssh:// URI.\n";
     print "  --help        Shows this usage message.\n";
     exit 0;
 }
 
-my $TA = TestAgent->new($Hostname, $AgentPort);
+my $TunnelInfo;
+if (defined $Tunnel)
+{
+    my $URI = URI->new($Tunnel);
+    $TunnelInfo = {sshhost  => $URI->host,
+                   sshport  => $URI->port,
+                   username => $URI->userinfo};
+}
+
+my $TA = TestAgent->new($Hostname, $AgentPort, $TunnelInfo);
 $TA->SetConnectTimeout($ConnectTimeout) if (defined $ConnectTimeout);
 $TA->SetTimeout($Timeout) if (defined $Timeout);
 
