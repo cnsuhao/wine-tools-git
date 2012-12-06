@@ -215,9 +215,6 @@ static int recv_raw_data(SOCKET client, void* data, uint64_t size)
 
 static int recv_raw_uint32(SOCKET client, uint32_t *u32)
 {
-    if (broken)
-        return 0;
-
     if (!recv_raw_data(client, u32, sizeof(*u32)))
         return 0;
     *u32 = ntohl(*u32);
@@ -227,9 +224,6 @@ static int recv_raw_uint32(SOCKET client, uint32_t *u32)
 static int recv_raw_uint64(SOCKET client, uint64_t *u64)
 {
     uint32_t high, low;
-
-    if (broken)
-        return 0;
 
     if (!recv_raw_uint32(client, &high) || !recv_raw_uint32(client, &low))
         return 0;
@@ -244,9 +238,6 @@ static int recv_raw_uint64(SOCKET client, uint64_t *u64)
 
 static int recv_entry_header(SOCKET client, char *type, uint64_t *size)
 {
-    if (broken)
-        return 0;
-
     return recv_raw_data(client, type, sizeof(*type)) &&
            recv_raw_uint64(client, size);
 }
@@ -258,9 +249,6 @@ static int expect_entry_header(SOCKET client, char type, uint64_t *size)
     char htype;
     uint64_t hsize;
     int success;
-
-    if (broken)
-        return 0;
 
     if (!recv_entry_header(client, &htype, &hsize))
         return 0;
