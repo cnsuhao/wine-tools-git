@@ -542,12 +542,12 @@ static int send_file(SOCKET client, int fd, const char* filename)
     debug("  send_file(%s)\n", filename);
     if (fstat(fd, &st))
     {
-        set_status(ST_ERROR, "unable to compute the size of '%s': %s", filename, strerror(errno));
-        send_error(client);
+        set_status(ST_ERROR, "unable to get the size of '%s': %s", filename, strerror(errno));
         return 0;
     }
     size = st.st_size;
-    send_entry_header(client, 'd', size);
+    if (!send_entry_header(client, 'd', size))
+        return 0;
 
     while (size)
     {
@@ -612,12 +612,18 @@ static void do_getfile(SOCKET client)
     }
     else
     {
-        send_list_size(client, 1);
-        send_file(client, fd, filename);
+        if (!send_list_size(client, 1) ||
+            !send_file(client, fd, filename))
+        {
+            /* If the file is not accessible then send_file() will fail and we
+             * can still salvage the connection by sending the error message
+             * in place of the file content. In all the other cases the
+             * connection is broken anyway which send_error() will deal with
+             * just fine.
+             */
+            send_error(client);
+        }
         close(fd);
-        /* Trying to report the status now would be pointless: either
-         * the client got all the data fine or the connection is busted.
-         */
     }
     free(filename);
 }
