@@ -862,6 +862,7 @@ static void do_unknown(SOCKET client, uint32_t id)
     if (recv_list_size(client, &argc))
         skip_entries(client, argc);
 
+    set_status(ST_ERROR, "unknown RPC %s", rpc_name(id));
     send_error(client);
 }
 
