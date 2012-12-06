@@ -277,7 +277,18 @@ sub _GetSnapshot($$)
   return $ErrMessage if (defined $ErrMessage);
 
   my $Snapshot;
-  eval { $Snapshot = $Domain->get_snapshot_by_name($SnapshotName) };
+  eval {
+    # Work around the lack of get_snapshot_by_name() in older libvirt versions.
+    foreach my $Snap ($Domain->list_snapshots())
+    {
+      if ($Snap->get_name() eq $SnapshotName)
+      {
+        $Snapshot = $Snap;
+        last;
+      }
+    }
+    $@ = "Snapshot '$SnapshotName' not found" if (!$Snapshot);
+  };
   return ($@->message(), undef, undef) if ($@);
   return (undef, $Domain, $Snapshot);
 }
