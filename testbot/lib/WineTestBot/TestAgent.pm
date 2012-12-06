@@ -848,16 +848,6 @@ sub _Connect($)
   return 1;
 }
 
-sub _Ping($)
-{
-  my ($self) = @_;
-
-  # Send the RPC and get the reply
-  return $self->_SendRawUInt32($RPC_PING) &&
-         $self->_SendListSize(0) &&
-         $self->_RecvList('');
-}
-
 sub _StartRPC($$)
 {
   my ($self, $RpcId) = @_;
@@ -892,7 +882,11 @@ sub _StartRPC($$)
 sub Ping($)
 {
   my ($self) = @_;
-  return $self->_StartRPC($RPC_PING);
+
+  # Send the RPC and get the reply
+  return $self->_StartRPC($RPC_PING) &&
+         $self->_SendListSize(0) &&
+         $self->_RecvList('');
 }
 
 sub GetVersion($)
