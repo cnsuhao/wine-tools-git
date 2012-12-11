@@ -167,25 +167,25 @@ if (!defined $Usage)
         error("you must specify a command\n");
         $Usage = 2;
     }
+    elsif ($Cmd ne "sendfile" and $SendFlags)
+    {
+        error("the --sendfile-xxx options can only be used with the sendfile command\n");
+        $Usage = 2;
+    }
     elsif ($Cmd eq "run" and !@Run)
     {
         error("you must specify the command to run\n");
         $Usage = 2;
     }
-    elsif ($Cmd eq "rm" and !@Rm)
-    {
-        error("you must specify the server files to delete\n");
-        $Usage = 2;
-    }
-    if ($Cmd ne "run" and ($RunFlags or defined $RunIn or defined $RunOut or
+    elsif ($Cmd ne "run" and ($RunFlags or defined $RunIn or defined $RunOut or
                            defined $RunErr))
     {
         error("the --run-xxx options can only be used with the run command\n");
         $Usage = 2;
     }
-    elsif ($Cmd ne "sendfile" and $SendFlags)
+    elsif ($Cmd eq "rm" and !@Rm)
     {
-        error("the --sendfile-xxx options can only be used with the sendfile command\n");
+        error("you must specify the server files to delete\n");
         $Usage = 2;
     }
     $AgentPort = $Port if (defined $Port);
