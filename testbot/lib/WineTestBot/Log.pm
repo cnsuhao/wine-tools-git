@@ -57,4 +57,22 @@ sub LogMsg(@)
   print $logfile scalar localtime, " ", $logprefix, ": ", @_ if ($logfile);
 }
 
+sub SetupRedirects()
+{
+  if (defined $logfile)
+  {
+    if (open(STDERR, ">>&", $logfile))
+    {
+      # Make sure stderr still flushes after each print
+      my $tmp=select(STDERR);
+      $| = 1;
+      select($tmp);
+    }
+    else
+    {
+      LogMsg "unable to redirect stderr to the log file\n";
+    }
+  }
+}
+
 1;

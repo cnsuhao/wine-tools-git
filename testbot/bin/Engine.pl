@@ -120,18 +120,16 @@ sub HandleJobStatusChange
   {
     $ActiveBackEnds{'WineTestBot'}->PrepareForFork();
     my $Pid = fork;
-    if (defined($Pid) && ! $Pid)
+    if (!defined $Pid)
     {
-      exec("$BinDir/${ProjectName}SendLog.pl $JobKey");
+      LogMsg "Unable to fork for ${ProjectName}SendLog.pl: $!\n";
     }
-    if (defined($Pid) && ! $Pid)
+    elsif (!$Pid)
     {
-      LogMsg "Unable to exec ${ProjectName}SendLog.pl : $!\n";
-      exit;
-    }
-    if (! defined($Pid))
-    {
-      LogMsg "Unable to fork for ${ProjectName}SendLog.pl : $!\n";
+      WineTestBot::Log::SetupRedirects();
+      exec("$BinDir/${ProjectName}SendLog.pl $JobKey") or
+      LogMsg "Unable to exec ${ProjectName}SendLog.pl: $!\n";
+      exit(1);
     }
   }
 
@@ -214,18 +212,16 @@ sub CheckForWinetestUpdate
 
   $ActiveBackEnds{'WineTestBot'}->PrepareForFork();
   my $Pid = fork;
-  if (defined($Pid) && ! $Pid)
+  if (!defined $Pid)
   {
-    exec("$BinDir/CheckForWinetestUpdate.pl $Bits");
+    LogMsg "Unable to fork for CheckForWinetestUpdate.pl: $!\n";
   }
-  if (defined($Pid) && ! $Pid)
+  elsif (!$Pid)
   {
-    LogMsg "Unable to exec CheckForWinetestUpdate.pl : $!\n";
-    exit;
-  }
-  if (! defined($Pid))
-  {
-    LogMsg "Unable to fork for CheckForWinetestUpdate.pl : $!\n";
+    WineTestBot::Log::SetupRedirects();
+    exec("$BinDir/CheckForWinetestUpdate.pl $Bits") or
+    LogMsg "Unable to exec CheckForWinetestUpdate.pl: $!\n";
+    exit(1);
   }
 }
 
@@ -365,19 +361,17 @@ sub HandleWinePatchWebNotification
   {
     $ActiveBackEnds{'WineTestBot'}->PrepareForFork();
     my $Pid = fork;
-    if (defined($Pid) && ! $Pid)
+    if (!defined $Pid)
     {
+      LogMsg "Unable to fork for WinePatchesWebGet.pl: $!\n";
+    }
+    elsif (!$Pid)
+    {
+      WineTestBot::Log::SetupRedirects();
       exec("$BinDir/WinePatchesWebGet.pl " . ($MaxExistingWebPatchId + 1) .
-           " " . $LatestWebPatchId);
-    }
-    if (defined($Pid) && ! $Pid)
-    {
-      LogMsg "Unable to exec WinePatchesWebGet.pl : $!\n";
-      exit;
-    }
-    if (! defined($Pid))
-    {
-      LogMsg "Unable to fork for WinePatchesWebGet.pl : $!\n";
+           " " . $LatestWebPatchId) or
+      LogMsg "Unable to exec WinePatchesWebGet.pl: $!\n";
+      exit(1);
     }
   }
 

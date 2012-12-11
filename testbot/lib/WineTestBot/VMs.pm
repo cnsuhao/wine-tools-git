@@ -526,16 +526,19 @@ sub RunRevert
 
   $self->GetBackEnd()->PrepareForFork();
   my $Pid = fork;
-  if (defined($Pid) && ! $Pid)
+  if (!defined $Pid)
+  {
+    return "Unable to start child process: $!";
+  }
+  elsif (!$Pid)
   {
     $ENV{PATH} = "/usr/bin:/bin";
     delete $ENV{ENV};
-    exec("$BinDir/RevertVM.pl", $self->GetKey());
-    exit;
-  }
-  if (! defined($Pid))
-  {
-    return "Unable to start child process: $!";
+    WineTestBot::Log::SetupRedirects();
+    exec("$BinDir/RevertVM.pl", $self->GetKey()) or
+    require WineTestBot::Log;
+    WineTestBot::Log::LogMsg "Unable to exec RevertVM.pl: $!\n";
+    exit(1);
   }
 
   return undef;
