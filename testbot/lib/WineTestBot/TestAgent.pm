@@ -45,7 +45,7 @@ my %RpcNames=(
     $RPC_RM => 'rm',
 );
 
-my $Debug = 1;
+my $Debug = 0;
 sub debug(@)
 {
     print STDERR @_ if ($Debug);
@@ -787,7 +787,7 @@ sub _Connect($)
 
     require Net::SSH2;
     $self->{ssh} = Net::SSH2->new();
-    $self->{ssh}->debug(1) if ($Debug > 2);
+    $self->{ssh}->debug(1) if ($Debug > 1);
     if (!$self->{ssh}->connect($self->{sshfd}))
     {
       $self->_SetError($FATAL, "Unable to connect to the SSH server: " . $self->_ssherror());
