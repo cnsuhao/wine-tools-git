@@ -80,35 +80,53 @@ sub Run
   $self->Status("running");
   $self->Save();
 
+  my $Job = WineTestBot::Jobs::CreateJobs()->GetItem($JobId);
+  my $Step = $Job->Steps->GetItem($StepNo);
+  my $RunScript;
+  if ($Step->Type eq "build")
+  {
+    $RunScript = "RunBuild.pl";
+  }
+  elsif ($Step->Type eq "reconfig")
+  {
+    $RunScript = "RunReconfig.pl";
+  }
+  else
+  {
+    $RunScript = "RunTask.pl";
+  }
+  $Step = undef;
+  $Job = undef;
+
   $self->GetBackEnd()->PrepareForFork();
   my $Pid = fork;
-  if (defined($Pid) && ! $Pid)
+  if (!defined $Pid)
   {
-    my $Job = WineTestBot::Jobs::CreateJobs()->GetItem($JobId);
-    my $Step = $Job->Steps->GetItem($StepNo);
-    my $RunScript;
-    if ($Step->Type eq "build")
+    return "Unable to fork for ${ProjectName}$RunScript: $!";
+  }
+  elsif (!$Pid)
+  {
+    # Capture Perl errors in the task's generic error log
+    my $TaskDir = "$DataDir/jobs/$JobId/$StepNo/" . $self->No;
+    mkdir $TaskDir;
+    unlink "$TaskDir/err"; # truncate the log since this is a new run
+    if (open(STDERR, ">>", "$TaskDir/err"))
     {
-      $RunScript = "$BinDir/${ProjectName}RunBuild.pl";
-    }
-    elsif ($Step->Type eq "reconfig")
-    {
-      $RunScript = "$BinDir/${ProjectName}RunReconfig.pl";
+      # Make sure stderr still flushes after each print
+      my $tmp=select(STDERR);
+      $| = 1;
+      select($tmp);
     }
     else
     {
-      $RunScript = "$BinDir/${ProjectName}RunTask.pl";
+      LogMsg "unable to redirect stderr to '$TaskDir/err'\n";
     }
-    $Step = undef;
-    $Job = undef;
     $ENV{PATH} = "/usr/bin:/bin";
     delete $ENV{ENV};
-    exec($RunScript, $JobId, $StepNo, $self->No);
-    exit;
-  }
-  if (! defined($Pid))
-  {
-    return "Unable to start child process: $!";
+    exec("$BinDir/${ProjectName}$RunScript", $JobId, $StepNo, $self->No) or
+    require WineTestBot::Log;
+    WineTestBot::Log::LogMsg "Unable to exec ${ProjectName}$RunScript: $!\n";
+    exit(1);
   }
 
   $self->ChildPid($Pid);
