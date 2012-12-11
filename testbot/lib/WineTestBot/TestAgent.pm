@@ -798,9 +798,9 @@ sub _Connect($)
     my $Tunnel = $self->{tunnel};
     my %AuthOptions=(username => $Tunnel->{username} || $ENV{USER});
     foreach my $Key ("username", "password", "publickey", "privatekey",
-                     "hostname", "local_username", "interact")
+                     "hostname", "local_username")
     {
-      $AuthOptions{$Key} = $Tunnel->{$Key} if (exists $Tunnel->{$Key});
+      $AuthOptions{$Key} = $Tunnel->{$Key} if (defined $Tunnel->{$Key});
     }
     # Interactive authentication makes no sense with automatic reconnects
     $AuthOptions{interact} = 0;
