@@ -48,6 +48,14 @@ require Exporter;
              $JobPurgeDays $JobArchiveDays $WebHostName);
 @EXPORT_OK = qw($DbDataSource $DbUsername $DbPassword);
 
+if ($::RootDir !~ m=^/=)
+{
+    require File::Basename;
+    my $name0 = File::Basename::basename($0);
+    print STDERR "$name0:error: \$::RootDir must be set to an absolute path\n";
+    exit 1;
+}
+
 $LogDir = "$::RootDir/var";
 $DataDir = "$::RootDir/var";
 $BinDir = "$::RootDir/bin";

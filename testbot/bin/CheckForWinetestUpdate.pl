@@ -24,7 +24,13 @@ use strict;
 
 sub BEGIN
 {
-  if ($0 =~ m=^(.*)/[^/]+/[^/]+$=)
+  if ($0 !~ m=^/=)
+  {
+    # Turn $0 into an absolute path so it can safely be used in @INC
+    require Cwd;
+    $0 = Cwd::cwd() . "/$0";
+  }
+  if ($0 =~ m=^(/.*)/[^/]+/[^/]+$=)
   {
     $::RootDir = $1;
     unshift @INC, "$::RootDir/lib";
