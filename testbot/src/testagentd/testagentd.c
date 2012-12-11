@@ -155,6 +155,8 @@ void set_status(int newstatus, const char* format, ...)
         status = newstatus;
         if (newstatus == ST_FATAL)
             broken = 1;
+        else if (newstatus == ST_OK)
+            broken = 0;
         va_start(valist, format);
         vset_status_msg(format, valist);
         va_end(valist);
@@ -1145,7 +1147,9 @@ int main(int argc, char** argv)
         {
             if (is_host_allowed(client, opt_srchost, addrlen))
             {
-                broken = 0;
+                /* Reset the status so new non-fatal errors can be set */
+                set_status(ST_OK, "ok");
+
                 /* Send the version right away */
                 send_string(client, PROTOCOL_VERSION);
 
