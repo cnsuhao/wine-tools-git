@@ -802,6 +802,21 @@ sub _Connect($)
     {
       $AuthOptions{$Key} = $Tunnel->{$Key} if (defined $Tunnel->{$Key});
     }
+    # Old versions of Net::SSH2 won't automatically find DSA keys, and new ones
+    # still won't automatically find RSA ones.
+    if (defined $ENV{HOME} and !exists $AuthOptions{"privatekey"} and
+        !exists $AuthOptions{"publickey"})
+    {
+      foreach my $key ("dsa", "rsa")
+      {
+        if (-f "$ENV{HOME}/.ssh/$key" and -f "$ENV{HOME}/.ssh/$key.pub")
+        {
+          $AuthOptions{"privatekey"} = "$ENV{HOME}/.ssh/$key";
+          $AuthOptions{"publickey"} = "$ENV{HOME}/.ssh/$key.pub";
+          last;
+        }
+      }
+    }
     # Interactive authentication makes no sense with automatic reconnects
     $AuthOptions{interact} = 0;
     if (!$self->{ssh}->auth(%AuthOptions))
