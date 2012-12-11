@@ -83,4 +83,25 @@ $WineTestBot::Config::LDAPEMailAttribute = undef;
 # The port the VM agents are listening on
 $WineTestBot::Config::AgentPort = undef;
 
+# This specifies if and how to do SSH tunneling.
+# - If unset then tunneling is automatic based on the VM's VirtURI setting.
+# - If set to an SSH URI, then tunneling is performed using these parameters.
+# - Any other setting disables SSH tunneling. In particular to disable
+#   tunneling for SSH VirtURIs it is recommended to set this to 'never'.
+$Tunnel = undef;
+
+# If set this specifies the SSH tunnel parameters to be used for the
+# TestAgent connection. This is mostly useful for parameters that cannot be
+# specified through the SSH URI, like the key filenames. Listed below are
+# the supported settings. For a full reference, see the Net::SSH2::auth()
+# documentation. Note though that interactive methods are disabled.
+# - username
+# - password
+# - publickey
+# - privatekey
+# - hostname
+# - local_username
+$WineTestBot::Config::TunnelDefaults = undef;
+
+
 1;

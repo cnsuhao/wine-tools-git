@@ -53,7 +53,7 @@ my ($Cmd, $Hostname, $LocalFilename, $ServerFilename, @Rm);
 my (@Run, $RunIn, $RunOut, $RunErr);
 my $SendFlags = 0;
 my $RunFlags = 0;
-my ($Port, $ConnectTimeout, $Timeout, $Tunnel);
+my ($Port, $ConnectTimeout, $Timeout, $TunnelOpt);
 my $Usage;
 
 sub check_opt_val($$)
@@ -95,7 +95,7 @@ while (@ARGV)
     }
     elsif ($arg eq "--tunnel")
     {
-        $Tunnel = check_opt_val($arg, $Tunnel);
+        $TunnelOpt = check_opt_val($arg, $TunnelOpt);
     }
     elsif ($arg eq "--sendfile-exe")
     {
@@ -189,9 +189,9 @@ if (!defined $Usage)
         $Usage = 2;
     }
     $AgentPort = $Port if (defined $Port);
-    if (defined $Tunnel and $Tunnel !~ /^ssh:/)
+    if ($TunnelOpt and $TunnelOpt !~ /^ssh:/)
     {
-        error("only SSH proxies are supported\n");
+        error("only SSH tunnels are supported\n");
         $Usage = 2;
     }
 }
@@ -239,13 +239,15 @@ if (defined $Usage)
     exit 0;
 }
 
+$TunnelOpt = $Tunnel if (!defined $TunnelOpt);
 my $TunnelInfo;
-if (defined $Tunnel)
+if ($TunnelOpt)
 {
-    my $URI = URI->new($Tunnel);
-    $TunnelInfo = {sshhost  => $URI->host,
-                   sshport  => $URI->port,
-                   username => $URI->userinfo};
+    my $ParsedURI = URI->new($TunnelOpt);
+    %$TunnelInfo = %$TunnelDefaults;
+    $TunnelInfo->{sshhost} = $ParsedURI->host;
+    $TunnelInfo->{sshport} = $ParsedURI->port;
+    $TunnelInfo->{username} = $ParsedURI->userinfo;
 }
 
 my $TA = TestAgent->new($Hostname, $AgentPort, $TunnelInfo);

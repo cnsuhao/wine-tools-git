@@ -361,17 +361,19 @@ sub _GetTunnel($)
 {
   my ($self) = @_;
 
-  # Auto-detect the SSH settings based on the libvirt URI
-  my $VirtURI = $self->VirtURI;
-  if ($VirtURI =~ s/^[a-z]+\+(?:ssh|libssh2):/ssh:/)
+  # Use either the tunnel specified in the configuration file
+  # or autodetect the settings based on the VM's VirtURI setting.
+  my $URI = $Tunnel || $self->VirtURI;
+
+  if ($URI =~ s/^(?:[a-z]+\+)?(?:ssh|libssh2):/ssh:/)
   {
-    my $URI = URI->new($VirtURI);
-    my $TunnelInfo = {
-        sshhost  => $URI->host,
-        sshport  => $URI->port,
-        username => $URI->userinfo,
-    };
-    return $TunnelInfo;
+    my $ParsedURI = URI->new($URI);
+
+    my %TunnelInfo = %$TunnelDefaults;
+    $TunnelInfo{sshhost}  = $ParsedURI->host;
+    $TunnelInfo{sshport}  = $ParsedURI->port;
+    $TunnelInfo{username} = $ParsedURI->userinfo;
+    return \%TunnelInfo;
   }
 
   return undef;
