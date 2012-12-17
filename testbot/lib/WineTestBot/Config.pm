@@ -88,12 +88,12 @@ $JobArchiveDays = 0;
 if (!$::BuildEnv)
 {
   $::BuildEnv = 0;
-  eval 'require "$::RootDir/ConfigLocal.pl";';
+  eval 'require "$::RootDir/ConfigLocal.pl"';
   if ($@)
   {
-    print STDERR "Please create a valid $::RootDir/ConfigLocal.pl, " .
+    print STDERR "Please create a valid $::RootDir/ConfigLocal.pl file; " .
         "use $::RootDir/lib/WineTestBot/ConfigLocalTemplate.pl as template\n";
-    exit;
+    exit 1;
   }
 
   require ObjectModel::DBIBackEnd;

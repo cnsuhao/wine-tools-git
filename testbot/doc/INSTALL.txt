@@ -49,8 +49,8 @@ General setup for the web site:
 - Install scripts/initd in /etc/init.d/winetestbot and adjust the paths and
   user name if necessary. Then activate it.
   (typically "chkconfig winetestbot on" or "service winetestbot start")
-- Copy lib/WineTestBot/ConfigLocalTemplate.pl to
-  lib/WineTestBot/ConfigLocal.pl and fill in the options for your site.
+- Copy lib/WineTestBot/ConfigLocalTemplate.pl to ConfigLocal.pl in TestBot's
+  root directory and fill in the options for your site.
 - Restart Apache, you should now be able to browse to the home page.
 - Register a new account for yourself.
 - Using the mysql client, set the ResetCode in your Users entry to a
