@@ -807,7 +807,7 @@ sub _Connect($)
     if (defined $ENV{HOME} and !exists $AuthOptions{"privatekey"} and
         !exists $AuthOptions{"publickey"})
     {
-      foreach my $key ("dsa", "rsa")
+      foreach my $key ("id_dsa", "id_rsa")
       {
         if (-f "$ENV{HOME}/.ssh/$key" and -f "$ENV{HOME}/.ssh/$key.pub")
         {
