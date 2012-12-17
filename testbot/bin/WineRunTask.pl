@@ -248,8 +248,7 @@ if ($FileType ne "exe32" && $FileType ne "exe64")
              $FullErrFileName, $Job, $Step, $Task;
 }
 my $FileName = $Step->FileName;
-$ErrMessage = $VM->CopyFileFromHostToGuest("$StepDir/$FileName",
-                                           "C:\\winetest\\$FileName");
+$ErrMessage = $VM->CopyFileFromHostToGuest("$StepDir/$FileName", $FileName);
 if (defined($ErrMessage))
 {
   FatalError "Can't copy exe to VM: $ErrMessage\n",
@@ -259,20 +258,20 @@ my $TestLauncher = "TestLauncher" .
                    ($FileType eq "exe64" ? "64" : "32") .
                    ".exe";
 $ErrMessage = $VM->CopyFileFromHostToGuest("$BinDir/windows/$TestLauncher",
-                                           "C:\\winetest\\$TestLauncher");
+                                           $TestLauncher);
 if (defined($ErrMessage))
 {
   FatalError "Can't copy TestLauncher to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
 $ErrMessage = $VM->CopyFileFromHostToGuest("$BinDir/windows/GenFixEnv.exe",
-                                           "C:\\winetest\\GenFixEnv.exe");
+                                           "GenFixEnv.exe");
 if (defined($ErrMessage))
 {
   FatalError "Can't copy GenFixEnv to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
-my $Script = "\@echo off\r\ncd \\winetest\r\nset WINETEST_DEBUG=" . $Step->DebugLevel .
+my $Script = "\@echo off\r\nset WINETEST_DEBUG=" . $Step->DebugLevel .
              "\r\n";
 if ($Step->ReportSuccessfulTests)
 {
@@ -313,8 +312,7 @@ $Script .= "cls\r\n";
 
 $ErrMessage = $VM->RunScriptInGuestTimeout($Script, $Task->Timeout + 15);
 my $LogErrMessage = RetrieveLogFile $Job, $Step, $Task,
-                                    "C:\\winetest\\$RptFileName",
-                                     $FullLogFileName;
+                                    $RptFileName, $FullLogFileName;
 TakeScreenshot $VM, $FullScreenshotFileName;
 if (defined($ErrMessage))
 {
