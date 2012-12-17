@@ -307,9 +307,6 @@ elsif ($Step->Type eq "suite")
              "$FileName -q -s $RptFileName\r\n";
 }
 
-# Needed to exit the command prompt on Win9x/WinMe
-$Script .= "cls\r\n";
-
 $ErrMessage = $VM->RunScriptInGuestTimeout($Script, $Task->Timeout + 15);
 my $LogErrMessage = RetrieveLogFile $Job, $Step, $Task,
                                     $RptFileName, $FullLogFileName;
