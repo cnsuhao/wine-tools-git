@@ -244,7 +244,7 @@ my $TunnelInfo;
 if ($TunnelOpt)
 {
     my $ParsedURI = URI->new($TunnelOpt);
-    %$TunnelInfo = %$TunnelDefaults;
+    %$TunnelInfo = %$TunnelDefaults if ($TunnelDefaults);
     $TunnelInfo->{sshhost} = $ParsedURI->host;
     $TunnelInfo->{sshport} = $ParsedURI->port;
     $TunnelInfo->{username} = $ParsedURI->userinfo;

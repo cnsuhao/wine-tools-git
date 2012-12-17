@@ -369,7 +369,8 @@ sub _GetTunnel($)
   {
     my $ParsedURI = URI->new($URI);
 
-    my %TunnelInfo = %$TunnelDefaults;
+    my %TunnelInfo;
+    %TunnelInfo = %$TunnelDefaults if ($TunnelDefaults);
     $TunnelInfo{sshhost}  = $ParsedURI->host;
     $TunnelInfo{sshport}  = $ParsedURI->port;
     $TunnelInfo{username} = $ParsedURI->userinfo;
