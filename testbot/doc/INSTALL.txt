@@ -144,7 +144,8 @@ Dependencies:
 - In the winehq account, run Reconfig.pl.
   Check $HOME/tools/testbot/log/Reconfig.log to make sure it
   succeeded.
-- Start the TestAgent server: ./bin/build/testagentd PORT SRCHOST
+- Start the TestAgent server from the var directory:
+    cd $HOME/tools/testbot/var && ../bin/build/testagentd PORT SRCHOST
   Where PORT is the $AgentPort that was configured in ConfigLocal.pl
   on the WineTestBot server, and SRCHOST is either omitted or the hostname
   of the WineTestBot server.

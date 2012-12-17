@@ -237,14 +237,14 @@ if (defined($ErrMessage))
 }
 my $FileName = $Step->FileName;
 $ErrMessage = $VM->CopyFileFromHostToGuest("$StepDir/$FileName",
-                                           "$DataDir/staging/$FileName");
+                                           "staging/$FileName");
 if (defined($ErrMessage))
 {
   FatalError "Can't copy patch to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
 my $Script = "#!/bin/sh\n";
-$Script .= "$BinDir/build/Build.pl $FileName " . $Step->FileType .
+$Script .= "../bin/build/Build.pl $FileName " . $Step->FileType .
            " $BaseName 32";
 if ($Run64)
 {
@@ -254,15 +254,14 @@ $Script .= "\n";
 $ErrMessage = $VM->RunScriptInGuestTimeout($Script, $Task->Timeout);
 if (defined($ErrMessage))
 {
-  $VM->CopyFileFromGuestToHost("$LogDir/Build.log",
-                               $FullRawlogFileName);
+  $VM->CopyFileFromGuestToHost("Build.log", $FullRawlogFileName);
   ProcessRawlog($FullRawlogFileName, $FullLogFileName, $FullErrFileName);
   FatalError "Failure running script in VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
 
-$ErrMessage = $VM->CopyFileFromGuestToHost("$LogDir/Build.log",
-                                           $FullRawlogFileName);
+$ErrMessage = $VM->CopyFileFromGuestToHost("Build.log", $FullRawlogFileName);
+LogMsg "263 ErrMessage=[", $ErrMessage || "<undef>", "]\n";
 if (defined($ErrMessage))
 {
   FatalError "Can't copy log from VM: $ErrMessage\n", $FullErrFileName,
@@ -285,11 +284,11 @@ foreach my $OtherStep (@{$Job->Steps->GetItems()})
       my $TestExecutable;
       if ($Step->FileType ne "patchprograms")
       {
-        $TestExecutable = "$DataDir/build-mingw$Bits/dlls/$BaseName/tests/${BaseName}_test.exe";
+        $TestExecutable = "build-mingw$Bits/dlls/$BaseName/tests/${BaseName}_test.exe";
       }
       else
       {
-        $TestExecutable = "$DataDir/build-mingw$Bits/programs/$BaseName/tests/${BaseName}.exe_test.exe";
+        $TestExecutable = "build-mingw$Bits/programs/$BaseName/tests/${BaseName}.exe_test.exe";
       }
       $ErrMessage = $VM->CopyFileFromGuestToHost($TestExecutable,
                                                  "$OtherStepDir/$OtherFileName");

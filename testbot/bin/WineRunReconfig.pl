@@ -198,19 +198,17 @@ if (defined($ErrMessage))
   FatalError "Can't set VM status to running: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
-my $Script = "#!/bin/sh\n$BinDir/build/Reconfig.pl\n";
+my $Script = "#!/bin/sh\n../bin/build/Reconfig.pl\n";
 $ErrMessage = $VM->RunScriptInGuestTimeout($Script, $Task->Timeout);
 if (defined($ErrMessage))
 {
-  $VM->CopyFileFromGuestToHost("$LogDir/Reconfig.log",
-                               $FullRawlogFileName);
+  $VM->CopyFileFromGuestToHost("Reconfig.log", $FullRawlogFileName);
   ProcessRawlog($FullRawlogFileName, $FullLogFileName, $FullErrFileName);
   FatalError "Failure running script in VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
 
-$ErrMessage = $VM->CopyFileFromGuestToHost("$LogDir/Reconfig.log",
-                                           $FullRawlogFileName);
+$ErrMessage = $VM->CopyFileFromGuestToHost("Reconfig.log", $FullRawlogFileName);
 if (defined($ErrMessage))
 {
   FatalError "Can't copy log from VM: $ErrMessage\n", $FullErrFileName,
