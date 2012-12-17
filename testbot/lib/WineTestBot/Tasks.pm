@@ -125,7 +125,7 @@ sub Run
     delete $ENV{ENV};
     exec("$BinDir/${ProjectName}$RunScript", $JobId, $StepNo, $self->No) or
     require WineTestBot::Log;
-    WineTestBot::Log::LogMsg "Unable to exec ${ProjectName}$RunScript: $!\n";
+    WineTestBot::Log::LogMsg("Unable to exec ${ProjectName}$RunScript: $!\n");
     exit(1);
   }
 

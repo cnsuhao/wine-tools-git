@@ -539,7 +539,7 @@ sub RunRevert
     WineTestBot::Log::SetupRedirects();
     exec("$BinDir/RevertVM.pl", $self->GetKey()) or
     require WineTestBot::Log;
-    WineTestBot::Log::LogMsg "Unable to exec RevertVM.pl: $!\n";
+    WineTestBot::Log::LogMsg("Unable to exec RevertVM.pl: $!\n");
     exit(1);
   }
 
