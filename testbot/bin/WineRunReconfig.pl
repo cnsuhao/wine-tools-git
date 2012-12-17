@@ -198,7 +198,9 @@ if (defined($ErrMessage))
   FatalError "Can't set VM status to running: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
-my $Script = "#!/bin/sh\n../bin/build/Reconfig.pl\n";
+my $Script = "#!/bin/sh\n" .
+             "rm -f Reconfig.log\n" .
+             "../bin/build/Reconfig.pl >>Reconfig.log 2>&1\n";
 $ErrMessage = $VM->RunScriptInGuestTimeout($Script, $Task->Timeout);
 if (defined($ErrMessage))
 {

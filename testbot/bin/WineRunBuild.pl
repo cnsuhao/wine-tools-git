@@ -243,14 +243,12 @@ if (defined($ErrMessage))
   FatalError "Can't copy patch to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
-my $Script = "#!/bin/sh\n";
-$Script .= "../bin/build/Build.pl $FileName " . $Step->FileType .
-           " $BaseName 32";
-if ($Run64)
-{
-  $Script .= ",64";
-}
-$Script .= "\n";
+my $Script = "#!/bin/sh\n" .
+             "rm -f Build.log\n" .
+             "../bin/build/Build.pl $FileName " . $Step->FileType .
+             " $BaseName 32";
+$Script .= ",64"if ($Run64);
+$Script .= " >>Build.log 2>&1\n";
 $ErrMessage = $VM->RunScriptInGuestTimeout($Script, $Task->Timeout);
 if (defined($ErrMessage))
 {
