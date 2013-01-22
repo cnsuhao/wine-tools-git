@@ -34,6 +34,9 @@ sub BEGIN
     $::RootDir = $1;
     unshift @INC, "$::RootDir/lib";
   }
+  # We normally get $AgentPort from ConfigLocal.pl.
+  # But don't fail if it's missing.
+  $::BuildEnv = 1 if (!-f "$::RootDir/ConfigLocal.pl");
 }
 
 my $name0 = $0;
@@ -189,6 +192,11 @@ if (!defined $Usage)
         $Usage = 2;
     }
     $AgentPort = $Port if (defined $Port);
+    if (!defined $AgentPort)
+    {
+        error("you must specify the TestAgent port\n");
+        $Usage = 2;
+    }
     if ($TunnelOpt and $TunnelOpt !~ /^ssh:/)
     {
         error("only SSH tunnels are supported\n");
