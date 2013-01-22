@@ -855,11 +855,12 @@ static void do_unknown(SOCKET client, uint32_t id)
 {
     uint32_t argc;
 
-    if (recv_list_size(client, &argc))
-        skip_entries(client, argc);
-
-    set_status(ST_ERROR, "unknown RPC %s", rpc_name(id));
-    send_error(client);
+    if (recv_list_size(client, &argc) &&
+        skip_entries(client, argc))
+    {
+        set_status(ST_ERROR, "unknown RPC %s", rpc_name(id));
+        send_error(client);
+    }
 }
 
 static void process_rpc(SOCKET client)
