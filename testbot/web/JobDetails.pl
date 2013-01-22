@@ -27,6 +27,7 @@ use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::StepsTasks;
 use WineTestBot::Engine::Notify;
+use WineTestBot::Log;
 
 @JobDetailsPage::ISA = qw(ObjectModel::CGI::CollectionPage);
 
@@ -112,13 +113,40 @@ sub CanCancel
   return undef;
 }
 
+sub CanRestart
+{
+  my $self = shift;
+
+  my $Job = CreateJobs()->GetItem($self->{JobId});
+  my $Status = $Job->Status;
+  if ($Status ne "failed")
+  {
+    return "Job did not fail";
+  }
+
+  my $Session = $self->GetCurrentSession();
+  if (! defined($Session))
+  {
+    return "You are not authorized to restart this job";
+  }
+  my $CurrentUser = $Session->User;
+  if (! $CurrentUser->HasRole("admin") &&
+      $Job->User->GetKey() ne $CurrentUser->GetKey()) # FIXME: Admin only?
+  {
+    return "You are not authorized to restart this job";
+  }
+
+  return undef;
+}
+
 sub GetActions
 {
   my $self = shift;
 
-  my $ErrMessage = $self->CanCancel();
-
-  return defined($ErrMessage) ? [] : ["Cancel job"];
+  # These are mutually exclusive
+  return ["Cancel job"] if (!defined $self->CanCancel());
+  return ["Restart job"] if (!defined $self->CanRestart());
+  return [];
 }
 
 sub OnCancel
@@ -142,6 +170,27 @@ sub OnCancel
   return 1;
 }
 
+sub OnRestart
+{
+  my $self = shift;
+
+  my $ErrMessage = $self->CanRestart();
+  if (defined($ErrMessage))
+  {
+    $self->{ErrMessage} = $ErrMessage;
+    return !1;
+  }
+
+  $ErrMessage = JobRestart($self->{JobId});
+  if (defined($ErrMessage))
+  {
+    $self->{ErrMessage} = $ErrMessage;
+    return !1;
+  }
+
+  return 1;
+}
+
 sub OnAction
 {
   my $self = shift;
@@ -150,6 +199,10 @@ sub OnAction
   if ($Action eq "Cancel job")
   {
     return $self->OnCancel();
+  }
+  elsif ($Action eq "Restart job")
+  {
+    return $self->OnRestart();
   }
 
   return $self->SUPER::OnAction(@_);
@@ -189,7 +242,19 @@ sub GenerateBody
   {
     print "<h1>" . $self->GetTitle() . "</h1>\n";
     print "<div class='Content'>\n";
-    print "<p>Job will be cancelled.</p>\n";
+    my $Action = $self->GetParam("Action");
+    if ($Action eq "Cancel job")
+    {
+      print "<p>Job will be cancelled.</p>\n";
+    }
+    elsif ($Action eq "Restart job")
+    {
+      print "<p>Job will be restarted.</p>\n";
+    }
+    else
+    {
+      print "<p>Unknown action $Action.</p>\n";
+    }
     print "</div>\n";
     return;
   }

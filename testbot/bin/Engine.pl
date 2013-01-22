@@ -171,6 +171,36 @@ sub HandleJobCancel
   return "1OK";
 }
 
+sub HandleJobRestart
+{
+  my $JobKey = $_[0];
+
+  my $Job = CreateJobs()->GetItem($JobKey);
+  if (! $Job)
+  {
+    LogMsg "JobRestart for nonexistent job $JobKey\n";
+    return "0Job $JobKey not found";
+  }
+  # We've already determined that JobKey is valid, untaint it
+  $JobKey =~ m/^(.*)$/;
+  $JobKey = $1;
+
+  my $ErrMessage = $Job->Restart();
+  if (defined($ErrMessage))
+  {
+    LogMsg "Restart problem: $ErrMessage\n";
+    return "0$ErrMessage";
+  }
+
+  $ErrMessage = ScheduleJobs();
+  if (defined($ErrMessage))
+  {
+    LogMsg "Scheduling problem in HandleJobRestart: $ErrMessage\n";
+  }
+
+  return "1OK";
+}
+
 sub HandleTaskComplete
 {
   my $ErrMessage = ScheduleJobs();
@@ -452,6 +482,7 @@ my %Handlers=(
     "foundwinetestupdate"      => \&HandleFoundWinetestUpdate,
     "getscreenshot"            => \&HandleGetScreenshot,
     "jobcancel"                => \&HandleJobCancel,
+    "jobrestart"               => \&HandleJobRestart,
     "jobstatuschange"          => \&HandleJobStatusChange,
     "jobsubmit"                => \&HandleJobSubmit,
     "ping"                     => \&HandlePing,
