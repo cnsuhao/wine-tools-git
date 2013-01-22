@@ -388,16 +388,16 @@ sub ScheduleOnHost($$)
       my @SortedTasks = sort CompareTaskStatus @{$Tasks->GetItems()};
       foreach my $Task (@SortedTasks)
       {
-        if ($Task->Status eq "queued" &&
-            $HostVMs->ItemExists($Task->VM->GetKey()))
+        my $VM = $Task->VM;
+        my $VMKey = $VM->GetKey();
+        if ($Task->Status eq "queued" && $HostVMs->ItemExists($VMKey))
         {
-          my $VM = $HostVMs->GetItem($Task->VM->GetKey());
           if ($VM->Status eq "idle" &&
               $RunningVMs < $MaxRunningVMs &&
               $RevertingVMs == 0)
           {
             $VM->Status("running");
-            my ($ErrProperty, $ErrMessage) = $HostVMs->Save();
+            my ($ErrProperty, $ErrMessage) = $VM->Save();
             if (defined($ErrMessage))
             {
               return $ErrMessage;
@@ -407,12 +407,11 @@ sub ScheduleOnHost($$)
             {
               return $ErrMessage;
             }
-            $Job->UpdateStatus;
+            $Job->UpdateStatus();
             $RunningVMs++;
           }
           elsif ($VM->Status eq "dirty")
           {
-            my $VMKey = $VM->GetKey();
             if (! defined($DirtyVMsBlockingJobs{$VMKey}) ||
                 $Job->Priority < $DirtyVMsBlockingJobs{$VMKey})
             {
