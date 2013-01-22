@@ -320,3 +320,9 @@ pre
    margin-bottom: 2em;
    background-color: red;
 }
+
+.queued    { color: black; }
+.running   { color: blue; }
+.success   { color: green; }
+.testfail  { color: red; }
+.botfail   { color: #e55600; }

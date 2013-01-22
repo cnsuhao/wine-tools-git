@@ -20,6 +20,7 @@ use strict;
 
 package JobStatusBlock;
 
+use URI::Escape;
 use ObjectModel::CGI::CollectionBlock;
 use WineTestBot::Branches;
 
@@ -76,23 +77,64 @@ sub GetDisplayValue
     return $Item->Patch->FromName;
   }
 
-  if ($PropertyDescriptor->GetName() eq "Status" &&
-      $Item->Status eq "completed")
+  return $self->SUPER::GetDisplayValue(@_);
+}
+
+sub GenerateDataCell
+{
+  my $self = shift;
+  my ($Item, $PropertyDescriptor, $DetailsPage) = @_;
+
+  my $PropertyName = $PropertyDescriptor->GetName();
+  if ($PropertyName eq "Status")
   {
-    my $Failures = 0;
-    my $Steps = $Item->Steps;
-    foreach my $StepKey (@{$Steps->GetKeys()})
+    print "<td><a href='/JobDetails.pl?Key=", uri_escape($Item->GetKey()), "'>";
+
+    my %HTMLChunks = ("queued" => "<span class='queued'>queued</span>",
+                      "running" => "<span class='running'>running</span>",
+                      "completed" => "<span class='success'>completed</span>",
+                      "failed" => "<span class='botfail'>failed</span>");
+    my $Status = $Item->Status;
+    my $HTMLStatus = $HTMLChunks{$Status} || $Status;
+    if ($Status eq "completed" || $Status eq "failed")
     {
-      my $Tasks = $Steps->GetItem($StepKey)->Tasks;
-      foreach my $TaskKey (@{$Tasks->GetKeys()})
+      my $Failures = 0;
+      my $HasTestResult;
+      my $Steps = $Item->Steps;
+      foreach my $StepKey (@{$Steps->GetKeys()})
       {
-        $Failures += $Tasks->GetItem($TaskKey)->TestFailures;
+        my $Tasks = $Steps->GetItem($StepKey)->Tasks;
+        foreach my $TaskKey (@{$Tasks->GetKeys()})
+        {
+          my $TaskFailures = $Tasks->GetItem($TaskKey)->TestFailures;
+          if ($TaskFailures ne "")
+          {
+            $HasTestResult = 1;
+            $Failures += $TaskFailures;
+          }
+        }
+      }
+      if (!$HasTestResult)
+      {
+        print $HTMLStatus;
+      }
+      else
+      {
+        $HTMLStatus = $Item->Status eq "completed" ? "" : "$HTMLStatus - ";
+        my $class = $Failures ? "testfail" : "success";
+        print "$HTMLStatus<span class='$class'>$Failures test failures</span>";
       }
     }
-    return $Item->Status . " - " . $Failures . " failures";
+    else
+    {
+      print $HTMLStatus;
+    }
+    print "</a></td>\n";
   }
-
-  return $self->SUPER::GetDisplayValue(@_);
+  else
+  {
+    $self->SUPER::GenerateDataCell(@_);
+  }
 }
 
 package VMStatusBlock;
