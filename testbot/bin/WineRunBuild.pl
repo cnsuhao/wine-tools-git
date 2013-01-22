@@ -182,6 +182,7 @@ mkdir "$DataDir/jobs/$JobId/$StepNo";
 mkdir "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
 
 my $VM = $Task->VM;
+my $TA = $VM->GetAgent();
 
 LogMsg "Task $JobId/$StepNo/$TaskNo started\n";
 
@@ -236,10 +237,9 @@ if (defined($ErrMessage))
              $FullErrFileName, $Job, $Step, $Task;
 }
 my $FileName = $Step->FileName;
-$ErrMessage = $VM->CopyFileFromHostToGuest("$StepDir/$FileName",
-                                           "staging/$FileName");
-if (defined($ErrMessage))
+if (!$TA->SendFile("$StepDir/$FileName", "staging/$FileName", 0))
 {
+  $ErrMessage = $TA->GetLastError();
   FatalError "Can't copy patch to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
@@ -249,19 +249,31 @@ my $Script = "#!/bin/sh\n" .
              " $BaseName 32";
 $Script .= ",64"if ($Run64);
 $Script .= " >>Build.log 2>&1\n";
-$ErrMessage = $VM->RunScriptInGuestTimeout($Script, $Task->Timeout);
+if (!$TA->SendFileFromString($Script, "task", $TestAgent::SENDFILE_EXE))
+{
+  $ErrMessage = $TA->GetLastError();
+  FatalError "Can't send the script to VM: $ErrMessage\n",
+             $FullErrFileName, $Job, $Step, $Task;
+}
+my $Pid = $TA->Run(["./task"], 0);
+my $OldTimeout = $TA->SetTimeout($Task->Timeout);
+if (!$Pid or !defined $TA->Wait($Pid))
+{
+  $ErrMessage = $TA->GetLastError();
+}
+$TA->SetTimeout($OldTimeout);
+
 if (defined($ErrMessage))
 {
-  $VM->CopyFileFromGuestToHost("Build.log", $FullRawlogFileName);
+  $TA->GetFile("Build.log", $FullRawlogFileName);
   ProcessRawlog($FullRawlogFileName, $FullLogFileName, $FullErrFileName);
   FatalError "Failure running script in VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
 
-$ErrMessage = $VM->CopyFileFromGuestToHost("Build.log", $FullRawlogFileName);
-LogMsg "263 ErrMessage=[", $ErrMessage || "<undef>", "]\n";
-if (defined($ErrMessage))
+if (!$TA->GetFile("Build.log", $FullRawlogFileName))
 {
+  $ErrMessage = $TA->GetLastError();
   FatalError "Can't copy log from VM: $ErrMessage\n", $FullErrFileName,
              $Job, $Step, $Task;
 }
@@ -288,10 +300,9 @@ foreach my $OtherStep (@{$Job->Steps->GetItems()})
       {
         $TestExecutable = "build-mingw$Bits/programs/$BaseName/tests/${BaseName}.exe_test.exe";
       }
-      $ErrMessage = $VM->CopyFileFromGuestToHost($TestExecutable,
-                                                 "$OtherStepDir/$OtherFileName");
-      if (defined($ErrMessage))
+      if (!$TA->GetFile($TestExecutable, "$OtherStepDir/$OtherFileName"))
       {
+        $ErrMessage = $TA->GetLastError();
         FatalError "Can't copy generated executable from VM: $ErrMessage\n",
                    $FullErrFileName, $Job, $Step, $Task;
       }
@@ -299,6 +310,7 @@ foreach my $OtherStep (@{$Job->Steps->GetItems()})
     }
   }
 }
+$TA->Disconnect();
 
 $Task->Status($NewStatus);
 $Task->ChildPid(undef);

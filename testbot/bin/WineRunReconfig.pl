@@ -182,6 +182,7 @@ mkdir "$DataDir/jobs/$JobId/$StepNo";
 mkdir "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
 
 my $VM = $Task->VM;
+my $TA = $VM->GetAgent();
 
 LogMsg "Task $JobId/$StepNo/$TaskNo started\n";
 
@@ -201,24 +202,38 @@ if (defined($ErrMessage))
 my $Script = "#!/bin/sh\n" .
              "rm -f Reconfig.log\n" .
              "../bin/build/Reconfig.pl >>Reconfig.log 2>&1\n";
-$ErrMessage = $VM->RunScriptInGuestTimeout($Script, $Task->Timeout);
+if (!$TA->SendFileFromString($Script, "task", $TestAgent::SENDFILE_EXE))
+{
+  $ErrMessage = $TA->GetLastError();
+  FatalError "Can't send the script to VM: $ErrMessage\n",
+             $FullErrFileName, $Job, $Step, $Task;
+}
+my $Pid = $TA->Run(["./task"], 0);
+my $OldTimeout = $TA->SetTimeout($Task->Timeout);
+if (!$Pid or !defined $TA->Wait($Pid))
+{
+  $ErrMessage = $TA->GetLastError();
+}
+$TA->SetTimeout($OldTimeout);
+
 if (defined($ErrMessage))
 {
-  $VM->CopyFileFromGuestToHost("Reconfig.log", $FullRawlogFileName);
+  $TA->GetFile("Reconfig.log", $FullRawlogFileName);
   ProcessRawlog($FullRawlogFileName, $FullLogFileName, $FullErrFileName);
   FatalError "Failure running script in VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
 
-$ErrMessage = $VM->CopyFileFromGuestToHost("Reconfig.log", $FullRawlogFileName);
-if (defined($ErrMessage))
+if (!$TA->GetFile("Reconfig.log", $FullRawlogFileName))
 {
+  $ErrMessage = $TA->GetLastError();
   FatalError "Can't copy log from VM: $ErrMessage\n", $FullErrFileName,
              $Job, $Step, $Task;
 }
+$TA->Disconnect();
+
 my $Success = ProcessRawlog($FullRawlogFileName, $FullLogFileName,
                               $FullErrFileName);
-
 if ($Success)
 {
   $ErrMessage = $VM->RemoveSnapshot($VM->IdleSnapshot);

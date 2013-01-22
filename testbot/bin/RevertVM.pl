@@ -110,14 +110,19 @@ if (defined($ErrMessage))
   FatalError "Can't change status for VM $VMKey: $ErrMessage", $VM;
 }
 
+my $Success;
+my $TA = $VM->GetAgent();
+$TA->SetConnectTimeout($WaitForToolsInVM);
 foreach my $WaitCount (1..3)
 {
   LogMsg "Waiting for ", $VM->Name, " (up to ${WaitForToolsInVM}s)\n";
-  $ErrMessage = $VM->WaitForToolsInGuest($WaitForToolsInVM);
-  last if (!defined $ErrMessage);
+  $Success = $TA->Ping();
+  last if ($Success);
 }
-if (defined $ErrMessage)
+$TA->Disconnect();
+if (!$Success)
 {
+  $ErrMessage = $TA->GetLastError();
   FatalError "Tools in $VMKey not responding: $ErrMessage", $VM;
 }
 

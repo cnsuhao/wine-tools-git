@@ -357,7 +357,7 @@ sub PowerOff
   return $self->UpdateStatus($Domain);
 }
 
-sub _GetTunnel($)
+sub GetAgent($)
 {
   my ($self) = @_;
 
@@ -365,65 +365,16 @@ sub _GetTunnel($)
   # or autodetect the settings based on the VM's VirtURI setting.
   my $URI = $Tunnel || $self->VirtURI;
 
+  my $TunnelInfo;
   if ($URI =~ s/^(?:[a-z]+\+)?(?:ssh|libssh2):/ssh:/)
   {
     my $ParsedURI = URI->new($URI);
-
-    my %TunnelInfo;
-    %TunnelInfo = %$TunnelDefaults if ($TunnelDefaults);
-    $TunnelInfo{sshhost}  = $ParsedURI->host;
-    $TunnelInfo{sshport}  = $ParsedURI->port;
-    $TunnelInfo{username} = $ParsedURI->userinfo;
-    return \%TunnelInfo;
+    %$TunnelInfo = %$TunnelDefaults if ($TunnelDefaults);
+    $TunnelInfo->{sshhost}  = $ParsedURI->host;
+    $TunnelInfo->{sshport}  = $ParsedURI->port;
+    $TunnelInfo->{username} = $ParsedURI->userinfo;
   }
-
-  return undef;
-}
-
-sub WaitForToolsInGuest($$)
-{
-  my ($self, $Timeout) = @_;
-
-  my $TA = TestAgent->new($self->Hostname, $AgentPort, $self->_GetTunnel());
-  $TA->SetConnectTimeout($Timeout);
-  my $Success = $TA->Ping();
-  $TA->Disconnect();
-  return $Success ? undef : $TA->GetLastError();
-}
-
-sub CopyFileFromHostToGuest($$$)
-{
-  my ($self, $HostPathName, $GuestPathName) = @_;
-  my $TA = TestAgent->new($self->Hostname, $AgentPort, $self->_GetTunnel());
-  my $Success = $TA->SendFile($HostPathName, $GuestPathName);
-  $TA->Disconnect();
-  return $Success ? undef : $TA->GetLastError();
-}
-
-sub CopyFileFromGuestToHost($$$)
-{
-  my ($self, $GuestPathName, $HostPathName) = @_;
-  my $TA = TestAgent->new($self->Hostname, $AgentPort, $self->_GetTunnel());
-  my $Success = $TA->GetFile($GuestPathName, $HostPathName);
-  $TA->Disconnect();
-  return $Success ? undef : $TA->GetLastError();
-}
-
-sub RunScriptInGuestTimeout($$$)
-{
-  my ($self, $ScriptText, $Timeout) = @_;
-  my $TA = TestAgent->new($self->Hostname, $AgentPort, $self->_GetTunnel());
-  $TA->SetTimeout($Timeout);
-
-  my $Success;
-  if ($TA->SendFileFromString($ScriptText, "./script.bat", $TestAgent::SENDFILE_EXE))
-  {
-    my $Pid = $TA->Run(["./script.bat"], 0);
-    $Success = 1 if ($Pid and defined $TA->Wait($Pid));
-    $TA->Rm("./script.bat");
-  }
-  $TA->Disconnect();
-  return $Success ? undef : $TA->GetLastError();
+  return TestAgent->new($self->Hostname, $AgentPort, $TunnelInfo);
 }
 
 my %StreamData;

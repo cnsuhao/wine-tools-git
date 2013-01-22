@@ -142,29 +142,6 @@ sub CountFailures
   return $Failures;
 }
 
-sub RetrieveLogFile
-{
-  my ($Job, $Step, $Task, $GuestLogFileName, $HostLogFileName) = @_;
-
-  my $VM = $Task->VM;
-  my $ErrMessage = $VM->CopyFileFromGuestToHost($GuestLogFileName,
-                                                $HostLogFileName);
-  chmod 0664, $HostLogFileName;
-  if (defined($ErrMessage) || $Step->Type ne "suite")
-  {
-    return $ErrMessage;
-  }
-
-  my $LatestNameBase = "$DataDir/latest/" . $VM->Name . "_" .
-                       ($Step->FileType eq "exe64" ? "64" : "32");
-  unlink("${LatestNameBase}.log");
-  unlink("${LatestNameBase}.err");
-  link("$DataDir/jobs/" . $Job->Id . "/" . $Step->No . "/" . $Task->No . "/log",
-       "${LatestNameBase}.log");
-
-  return undef;
-}
-
 $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
 
@@ -223,6 +200,7 @@ mkdir "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
 umask($oldumask);
 
 my $VM = $Task->VM;
+my $TA = $VM->GetAgent();
 
 LogMsg "Task $JobId/$StepNo/$TaskNo (" . $VM->Name . ") started\n";
 
@@ -248,26 +226,24 @@ if ($FileType ne "exe32" && $FileType ne "exe64")
              $FullErrFileName, $Job, $Step, $Task;
 }
 my $FileName = $Step->FileName;
-$ErrMessage = $VM->CopyFileFromHostToGuest("$StepDir/$FileName", $FileName);
-if (defined($ErrMessage))
+if (!$TA->SendFile("$StepDir/$FileName", $FileName, 0))
 {
+  $ErrMessage = $TA->GetLastError();
   FatalError "Can't copy exe to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
 my $TestLauncher = "TestLauncher" . 
                    ($FileType eq "exe64" ? "64" : "32") .
                    ".exe";
-$ErrMessage = $VM->CopyFileFromHostToGuest("$BinDir/windows/$TestLauncher",
-                                           $TestLauncher);
-if (defined($ErrMessage))
+if (!$TA->SendFile("$BinDir/windows/$TestLauncher", $TestLauncher, 0))
 {
+  $ErrMessage = $TA->GetLastError();
   FatalError "Can't copy TestLauncher to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
-$ErrMessage = $VM->CopyFileFromHostToGuest("$BinDir/windows/GenFixEnv.exe",
-                                           "GenFixEnv.exe");
-if (defined($ErrMessage))
+if (!$TA->SendFile("$BinDir/windows/GenFixEnv.exe", "GenFixEnv.exe", 0))
 {
+  $ErrMessage = $TA->GetLastError();
   FatalError "Can't copy GenFixEnv to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
@@ -316,10 +292,41 @@ elsif ($Step->Type eq "suite")
   $Script .= "-q -o $RptFileName -t $Tag -m $AdminEMail -i \"$Info\"\r\n" .
              "$FileName -q -s $RptFileName\r\n";
 }
+if (!$TA->SendFileFromString($Script, "script.bat", $TestAgent::SENDFILE_EXE))
+{
+  $ErrMessage = $TA->GetLastError();
+  FatalError "Can't send the script to VM: $ErrMessage\n",
+             $FullErrFileName, $Job, $Step, $Task;
+}
 
-$ErrMessage = $VM->RunScriptInGuestTimeout($Script, $Task->Timeout + 15);
-my $LogErrMessage = RetrieveLogFile $Job, $Step, $Task,
-                                    $RptFileName, $FullLogFileName;
+my $Pid = $TA->Run(["./script.bat"], 0);
+my $OldTimeout = $TA->SetTimeout($Task->Timeout);
+if (!$Pid or !defined $TA->Wait($Pid))
+{
+  $ErrMessage = $TA->GetLastError();
+}
+$TA->SetTimeout($OldTimeout);
+
+my $LogErrMessage;
+if (!$TA->GetFile($RptFileName, $FullLogFileName))
+{
+  $LogErrMessage = $TA->GetLastError();
+}
+elsif ($Step->Type eq "suite")
+{
+  chmod 0664, $FullLogFileName;
+}
+else
+{
+  chmod 0664, $FullLogFileName;
+  my $LatestNameBase = "$DataDir/latest/" . $VM->Name . "_" .
+                       ($Step->FileType eq "exe64" ? "64" : "32");
+  unlink("${LatestNameBase}.log");
+  unlink("${LatestNameBase}.err");
+  link("$DataDir/jobs/" . $Job->Id . "/" . $Step->No . "/" . $Task->No . "/log",
+       "${LatestNameBase}.log");
+}
+
 TakeScreenshot $VM, $FullScreenshotFileName;
 if (defined($ErrMessage))
 {
@@ -331,6 +338,7 @@ if (defined($LogErrMessage))
   FatalError "Can't copy log from VM: $LogErrMessage\n", $FullErrFileName,
              $Job, $Step, $Task;
 }
+$TA->Disconnect();
 
 $Task->Status("completed");
 $Task->ChildPid(undef);
