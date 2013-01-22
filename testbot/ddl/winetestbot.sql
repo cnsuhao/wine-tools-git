@@ -54,6 +54,7 @@ CREATE TABLE VMs
   IdleSnapshot VARCHAR(32)      NOT NULL,
   Hostname     VARCHAR(64)      NOT NULL,
   Description  VARCHAR(40)      NULL,
+  Details      VARCHAR(512)     NULL,
   PRIMARY KEY (Name)
 )
 ENGINE=InnoDB DEFAULT CHARSET=utf8;

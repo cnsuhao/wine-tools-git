@@ -304,6 +304,11 @@ elsif ($Step->Type eq "suite")
                $JobId . "&scrshot_" . $StepTask . "=1#k" . $StepTask . '" ';
   }
   my $Info = $VM->Description ? $VM->Description : "";
+  if ($VM->Details)
+  {
+      $Info .= ": " if ($Info ne "");
+      $Info .=  $VM->Details;
+  }
   # Escape the info argument for cmd's command interpreter
   $Info =~ s/\\/\\\\/g;
   $Info =~ s/"/\\"/g;

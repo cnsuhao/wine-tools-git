@@ -592,6 +592,7 @@ BEGIN
     CreateBasicPropertyDescriptor("IdleSnapshot", "Name of idle snapshot", !1, 1, "A", 32),
     CreateBasicPropertyDescriptor("Hostname", "The VM hostname", !1, 1, "A", 64),
     CreateBasicPropertyDescriptor("Description", "Description", !1, !1, "A", 40),
+    CreateBasicPropertyDescriptor("Details", "VM configuration details", !1, !1, "A", 512),
   );
 }
 
