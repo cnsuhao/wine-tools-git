@@ -556,6 +556,32 @@ sub _RecvErrorList($)
 # Low-level functions to send raw data
 #
 
+sub _Write($$)
+{
+  my ($self, $Data) = @_;
+  return undef if (!defined $self->{fd});
+
+  my $Size = length($Data);
+  my $Sent = 0;
+  while ($Size)
+  {
+    my $w = syswrite($self->{fd}, $Data, $Size, $Sent);
+    if (!defined $w)
+    {
+      $self->_SetError($FATAL, "network write error: $!");
+      return undef;
+    }
+    if ($w == 0)
+    {
+      $self->_SetError($FATAL, "unable to send more data");
+      return $Sent;
+    }
+    $Sent += $w;
+    $Size -= $w;
+  }
+  return $Sent;
+}
+
 sub _SendRawData($$)
 {
   my ($self, $Data) = @_;
@@ -566,29 +592,11 @@ sub _SendRawData($$)
   {
     local $SIG{ALRM} = sub { die "timeout" };
     $self->_SetAlarm();
-
-    my $Size = length($Data);
-    my $Pos = 0;
-    while ($Size)
-    {
-      my $n = syswrite($self->{fd}, $Data, $Size, $Pos);
-      if (!defined $n)
-      {
-        alarm(0);
-        $self->_SetError($FATAL, "network write error: $!");
-        return;
-      }
-      if ($n == 0)
-      {
-        alarm(0);
-        $self->_SetError($FATAL, "unable to send more data");
-        return;
-      }
-      $Pos += $n;
-      $Size -= $n;
-    }
+    $self->_Write($Data);
     alarm(0);
-    $Success = 1;
+
+    # _Write() errors are fatal and break the connection
+    $Success = 1 if (defined $self->{fd});
   };
   if ($@)
   {
@@ -694,7 +702,7 @@ sub _SendFile($$$)
         return;
       }
       $Size -= $r;
-      my $w = syswrite($self->{fd}, $Buffer, $r, 0);
+      my $w = $self->_Write($Buffer);
       if (!defined $w or $w != $r)
       {
         alarm(0);
