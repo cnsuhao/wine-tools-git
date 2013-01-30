@@ -178,8 +178,8 @@ EOF
         printf OUT "  <tr><td class=\"build\"><a href=\"../%s\" title=\"%s\">%s</a></td>\n",
                    $build->{name}, $build->{name}, substr($build->{name},0,12);
         my @date = gmtime($build->{date});
-        printf OUT "  <td class=\"date\">%02d-%s-%04d %02d:%02d</td>",
-                   $date[3], $months[$date[4]], $date[5] + 1900, $date[2], $date[1], $date[0];
+        printf OUT "  <td class=\"date\">%02d&nbsp;%s&nbsp;%04d</td>",
+                   $date[3], $months[$date[4]], $date[5] + 1900, $date[2];
         foreach my $group (@groups)
         {
             next unless defined $used_group{$group->{name}};
@@ -228,7 +228,7 @@ foreach my $build (@builds)
 {
     printf OUT "  <tr><td class=\"build\"><a href=\"%s\" title=\"%s\">%s</a></td>\n", $build->{name}, $build->{name}, substr($build->{name},0,12);
     my @date = gmtime($build->{date});
-    printf OUT "  <td class=\"date\">%02d-%s-%04d&nbsp;%02d:%02d</td>", $date[3], $months[$date[4]], $date[5] + 1900, $date[2], $date[1], $date[0];
+    printf OUT "  <td class=\"date\">%02d&nbsp;%s&nbsp;%04d</td>", $date[3], $months[$date[4]], $date[5] + 1900, $date[2];
     my ($total_runs, $total_tests, $total_errors, $total_todos);
     foreach my $ver (@groups)
     {
