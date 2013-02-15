@@ -288,7 +288,7 @@ while (<IN>) {
         if ($failed) { $class .= " failed"; }
         elsif ($todo) { $class .= " todo"; }
         $testbox->{data} .= sprintf "<div class=\"%s\">%s</div>\n", $class, escapeHTML($_);
-    } elsif (/$dll:$unit done \((-?\d+)\)\r?$/) {
+    } elsif (/$dll:$unit done \((-?\d+)\)(?:\r?$| in)/) {
         chomp;                  # current test ended
         if ($lines==0 || $1 < 0) {
             $result = "failed $1 - -";
