@@ -228,6 +228,8 @@ void ta_freeaddrinfo(struct addrinfo *addresses)
 int platform_init(void)
 {
     struct sigaction sa, osa;
+
+    /* Catch SIGCHLD so we can keep track of child processes */
     sa.sa_handler = reaper;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
@@ -236,5 +238,18 @@ int platform_init(void)
         error("could not set up the SIGCHLD handler: %s\n", strerror(errno));
         return 0;
     }
+
+    /* Catch SIGPIPE so we don't die if the client disconnects at an
+     * inconvenient time
+     */
+    sa.sa_handler = SIG_IGN;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    if (sigaction(SIGPIPE, &sa, &osa) < 0)
+    {
+        error("could not set up the SIGPIPE handler: %s\n", strerror(errno));
+        return 0;
+    }
+
     return 1;
 }
