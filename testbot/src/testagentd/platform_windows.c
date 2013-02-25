@@ -88,7 +88,7 @@ uint64_t platform_run(char** argv, uint32_t flags, char** redirects)
             continue;
         }
         has_redirects = 1;
-        fhs[i] = CreateFile(redirects[i], (i ? GENERIC_WRITE : GENERIC_READ), 0, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        fhs[i] = CreateFile(redirects[i], (i ? GENERIC_WRITE : GENERIC_READ), FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
         if (fhs[i] == INVALID_HANDLE_VALUE)
         {
             set_status(ST_ERROR, "unable to open '%s' for %s: %lu", redirects[i], i ? "writing" : "reading", GetLastError());
