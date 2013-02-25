@@ -29,7 +29,13 @@
 
 #include "platform.h"
 
-#define PROTOCOL_VERSION "testagentd 1.0"
+/* Increase the major version number when making backward-incompatible changes.
+ * Otherwise increase the minor version number:
+ * 1.0:  Initial release.
+ * 1.1:  Added the wait2 RPC.
+ */
+#define PROTOCOL_VERSION "testagentd 1.1"
+
 #define BLOCK_SIZE       4096
 
 const char *name0;
@@ -73,6 +79,7 @@ enum rpc_ids_t
     RPCID_RUN,
     RPCID_WAIT,
     RPCID_RM,
+    RPCID_WAIT2,
 };
 
 /* This is the RPC currently being processed */
@@ -89,6 +96,7 @@ static const char* rpc_name(uint32_t id)
         "run",
         "wait",
         "rm",
+        "wait2",
     };
 
     if (id < sizeof(names) / sizeof(*names))
@@ -761,7 +769,30 @@ static void do_wait(SOCKET client)
         return;
     }
 
-    if (platform_wait(client, pid, &childstatus))
+    if (platform_wait(client, pid, 0, &childstatus))
+    {
+        send_list_size(client, 1);
+        send_uint32(client, childstatus);
+    }
+    else
+        send_error(client);
+}
+
+static void do_wait2(SOCKET client)
+{
+    uint64_t pid;
+    uint32_t timeout;
+    uint32_t childstatus;
+
+    if (!expect_list_size(client, 2) ||
+        !recv_uint64(client, &pid) ||
+        !recv_uint32(client, &timeout))
+    {
+        send_error(client);
+        return;
+    }
+
+    if (platform_wait(client, pid, timeout, &childstatus))
     {
         send_list_size(client, 1);
         send_uint32(client, childstatus);
@@ -905,6 +936,9 @@ static void process_rpc(SOCKET client)
         break;
     case RPCID_WAIT:
         do_wait(client);
+        break;
+    case RPCID_WAIT2:
+        do_wait2(client);
         break;
     case RPCID_RM:
         do_rm(client);

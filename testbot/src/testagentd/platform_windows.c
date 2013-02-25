@@ -136,7 +136,7 @@ uint64_t platform_run(char** argv, uint32_t flags, char** redirects)
     return pi.dwProcessId;
 }
 
-int platform_wait(SOCKET client, uint64_t pid, uint32_t *childstatus)
+int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *childstatus)
 {
     struct child_t *child;
     HANDLE handles[2];
@@ -160,7 +160,7 @@ int platform_wait(SOCKET client, uint64_t pid, uint32_t *childstatus)
     handles[0] = WSACreateEvent();
     WSAEventSelect(client, handles[0], FD_CLOSE);
     handles[1] = child->handle;
-    r = WaitForMultipleObjects(2, handles, FALSE, INFINITE);
+    r = WaitForMultipleObjects(2, handles, FALSE, timeout * 1000);
 
     success = 0;
     switch (r)
@@ -179,6 +179,9 @@ int platform_wait(SOCKET client, uint64_t pid, uint32_t *childstatus)
         else
             debug("GetExitCodeProcess() failed (%lu). Giving up!\n", GetLastError());
         break;
+    case WAIT_TIMEOUT:
+        set_status(ST_ERROR, "timed out waiting for the child process");
+        return 0;
     default:
         debug("WaitForMultipleObjects() returned %lu (le=%lu). Giving up!\n", r, GetLastError());
         break;

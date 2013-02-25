@@ -28,6 +28,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <time.h>
 
 #include "platform.h"
 #include "list.h"
@@ -125,9 +126,10 @@ uint64_t platform_run(char** argv, uint32_t flags, char** redirects)
     return pid;
 }
 
-int platform_wait(SOCKET client, uint64_t pid, uint32_t *childstatus)
+int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *childstatus)
 {
     struct child_t* child;
+    time_t deadline;
 
     LIST_FOR_EACH_ENTRY(child, &children, struct child_t, entry)
     {
@@ -140,10 +142,14 @@ int platform_wait(SOCKET client, uint64_t pid, uint32_t *childstatus)
         return 0;
     }
 
+    if (timeout)
+        deadline = time(NULL) + timeout;
     while (!child->reaped)
     {
         fd_set rfds;
         char buffer;
+        struct timeval tv;
+        int ready;
 
         /* select() blocks until either the client disconnects or until, or
          * the SIGCHLD signal indicates the child has exited. The recv() call
@@ -152,8 +158,21 @@ int platform_wait(SOCKET client, uint64_t pid, uint32_t *childstatus)
         debug("Waiting for " U64FMT "\n", pid);
         FD_ZERO(&rfds);
         FD_SET(client, &rfds);
-        if (select(client+1, &rfds, NULL, NULL, NULL) == 1 &&
-            FD_ISSET(client, &rfds) &&
+        if (timeout)
+        {
+            tv.tv_sec = deadline - time(NULL);
+            if (tv.tv_sec < 0)
+                tv.tv_sec = 0;
+            tv.tv_usec = 0;
+        }
+        ready = select(client+1, &rfds, NULL, NULL, timeout ? &tv : NULL);
+        if (ready == 0)
+        {
+            /* This is the timeout */
+            set_status(ST_ERROR, "timed out waiting for the child process");
+            return 0;
+        }
+        if (ready == 1 && FD_ISSET(client, &rfds) &&
             recv(client, &buffer, 1, MSG_PEEK | MSG_DONTWAIT) <= 0)
         {
             set_status(ST_FATAL, "connection closed");

@@ -68,12 +68,12 @@ enum run_flags_t {
 uint64_t platform_run(char** argv, uint32_t flags, char** redirects);
 
 /* If a command was started in the background, waits until either that command
- * terminates or the client disconnects (typically because it got tired of
- * waiting).
+ * terminates, the specified timeout (in seconds) expires, or the client
+ * disconnects (typically because it got tired of waiting).
  * If no command was started in the background, then reports an error
  * immediately.
  */
-int platform_wait(SOCKET client, uint64_t pid, uint32_t *childstatus);
+int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *childstatus);
 
 /* Returns a string describing the last socket-related error */
 int sockeintr(void);
