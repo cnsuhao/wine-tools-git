@@ -88,6 +88,7 @@ sub Disconnect($)
     # which will avoid undue delays.
     $self->{ssh}->disconnect();
     $self->{ssh} = undef;
+    $self->{nc} = undef;
   }
   if ($self->{sshfd})
   {
@@ -148,7 +149,29 @@ sub _SetError($$$)
     $self->{err} = $Msg;
 
     # And disconnect on fatal errors since the connection is unusable anyway
-    $self->Disconnect() if ($Level == $FATAL);
+    if ($Level == $FATAL)
+    {
+      if ($self->{ssh})
+      {
+        # Try to capture the netcat exit code and error message as
+        # they may provide important clues as to what went wrong
+        my $rc = $self->{fd}->exit_status();
+        if ($rc)
+        {
+          my $ncerr;
+          eval
+          {
+            alarm(2);
+            $self->{fd}->read($ncerr, 1024, 1);
+            alarm(0);
+          };
+          $ncerr = $rc if (!$ncerr);
+          $ncerr = "the \"$self->{nc}\" command returned $ncerr";
+          $self->{err} = $self->{agentversion} ? "$self->{err}\n$ncerr" : $ncerr;
+        }
+      }
+      $self->Disconnect();
+    }
   }
   elsif (!$self->{err})
   {
@@ -851,7 +874,9 @@ sub _Connect($)
 
     # Use netcat to forward the connection from the SSH server to the TestAgent
     # server. Note that we won't know about netcat errors at this point.
-    if (!$self->{fd}->exec("nc -q0 '$self->{agenthost}' '$self->{agentport}'"))
+    $self->{nc} = "nc -q0 '$self->{agenthost}' '$self->{agentport}'";
+    debug("Tunneling command: $self->{nc}\n");
+    if (!$self->{fd}->exec($self->{nc}))
     {
       $self->_SetError($FATAL, "Unable to start netcat: " . $self->_ssherror());
       return undef;
@@ -864,7 +889,7 @@ sub _Connect($)
   if (!defined $self->{agentversion})
   {
     # We have already been disconnected at this point
-    $self->{err} = "Unable to get the protocol version spoken by the server: $self->{err}";
+    debug("could not get the protocol version spoken by the server\n");
     return undef;
   }
 
