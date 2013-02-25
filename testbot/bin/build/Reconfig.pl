@@ -60,7 +60,7 @@ sub FatalError
 
 sub GitPull
 {
-  system("cd $DataDir/wine-git && git pull >> $LogDir/Reconfig.log 2>&1");
+  system("cd $DataDir/wine && git pull >> $LogDir/Reconfig.log 2>&1");
   if ($? != 0)
   {
     LogMsg "Git pull failed\n";
@@ -115,7 +115,7 @@ sub BuildNative
   mkdir "$DataDir/build-native" if (! -d "$DataDir/build-native");
   system("( cd $DataDir/build-native && set -x && " .
          "  rm -rf * && " .
-         "  time ../wine-git/configure --enable-win64 --without-x --without-freetype && " .
+         "  time ../wine/configure --enable-win64 --without-x --without-freetype && " .
          "  time make -j$ncpus depend && " .
          "  time make -j$ncpus __tooldeps__ " .
          ") >>$LogDir/Reconfig.log 2>&1");
@@ -137,7 +137,7 @@ sub BuildCross
   mkdir "$DataDir/build-mingw$Bits" if (! -d "$DataDir/build-mingw$Bits");
   system("( cd $DataDir/build-mingw$Bits && set -x && " .
          "  rm -rf * && " .
-         "  time ../wine-git/configure --host=$Host --with-wine-tools=../build-native --without-x --without-freetype && " .
+         "  time ../wine/configure --host=$Host --with-wine-tools=../build-native --without-x --without-freetype && " .
          "  time make -j$ncpus depend  && " .
          "  time make -j$ncpus programs/winetest " .
          ") >>$LogDir/Reconfig.log 2>&1");

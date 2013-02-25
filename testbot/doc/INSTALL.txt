@@ -139,10 +139,10 @@ Dependencies:
   should be available as $HOME/tools/testbot/doc/INSTALL.txt).
     git clone git://source.winehq.org/git/tools.git
 - Create the $HOME/tools/testbot/var directory and clone the Wine git
-  repository to wine-git:
+  repository to wine:
     mkdir $HOME/tools/testbot/var
     cd $HOME/tools/testbot/var
-    git clone git://source.winehq.org/git/wine.git wine-git
+    git clone git://source.winehq.org/git/wine.git wine
 - Run $HOME/tools/testbot/bin/build/Reconfig.pl.
 - Check $HOME/tools/testbot/var/Reconfig.log to make sure it succeeded. Fix
   issues until it works.

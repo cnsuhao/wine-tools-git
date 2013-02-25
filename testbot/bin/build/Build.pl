@@ -115,7 +115,7 @@ sub ApplyPatch
   }
 
   InfoMsg "Applying patch\n";
-  system("( cd $DataDir/wine-git && set -x && " .
+  system("( cd $DataDir/wine && set -x && " .
          "  git apply --verbose $PatchFile " .
          ") >> $LogDir/Build.log 2>&1");
   if ($? != 0)
@@ -127,7 +127,7 @@ sub ApplyPatch
   if ($NeedAutoconf && ! $NeedConfigure)
   {
     InfoMsg "Running autoconf\n";
-    system("( cd $DataDir/wine-git && set -x && " .
+    system("( cd $DataDir/wine && set -x && " .
            "  autoconf --output configure configure.ac " .
            ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
@@ -141,7 +141,7 @@ sub ApplyPatch
 
   if ($NeedImplib)
   {
-    if (open (FH, "<$DataDir/wine-git/$PatchType/$BaseName/Makefile.in"))
+    if (open (FH, "<$DataDir/wine/$PatchType/$BaseName/Makefile.in"))
     {
       $NeedImplib = !1;
       my $Line;
@@ -179,7 +179,7 @@ sub BuildTestExecutable
     InfoMsg "Reconfigure $Bits-bit crossbuild\n";
     my $Host = ($Bits == 64 ? "x86_64-w64-mingw32" : "i686-pc-mingw32");
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
-           "  ../wine-git/configure --host=$Host --with-wine-tools=../build-native --without-x --without-freetype " .
+           "  ../wine/configure --host=$Host --with-wine-tools=../build-native --without-x --without-freetype " .
            ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
