@@ -132,18 +132,20 @@ Dependencies:
   with MinGW. For instance on Debian you should install autoconf,
   bison, flex, gcc, gcc-mingw-w64, git and make. If you are going to
   have 64bit VMs then make sure MinGW can generate 64bit PE executables.
-- Create a new system group 'winehq' and a system user 'winehq',
-  make sure to make user winehq a member of group winehq.
+- You may also want to install ccache.
+- You will also need genisoimage.
+- Create a new user, 'testbot' for instance, and log in as that user.
 - Clone Wine's tools repository to $HOME/tools (so this document
   should be available as $HOME/tools/testbot/doc/INSTALL.txt).
-- Create the $HOME/tools/testbot/var directory and make it writable to
-  group winehq.
+    git clone git://source.winehq.org/git/tools.git
+- Create the $HOME/tools/testbot/var directory and clone the Wine git
+  repository to wine-git:
     mkdir $HOME/tools/testbot/var
-    chmod g+w $HOME/tools/testbot/var
-- Clone the Wine git repository to $HOME/tools/testbot/var/wine-git.
-- In the winehq account, run Reconfig.pl.
-  Check $HOME/tools/testbot/log/Reconfig.log to make sure it
-  succeeded.
+    cd $HOME/tools/testbot/var
+    git clone git://source.winehq.org/git/wine.git wine-git
+- Run $HOME/tools/testbot/bin/build/Reconfig.pl.
+- Check $HOME/tools/testbot/var/Reconfig.log to make sure it succeeded. Fix
+  issues until it works.
 - Start the TestAgent server from the var directory:
     cd $HOME/tools/testbot/var && ../bin/build/testagentd PORT SRCHOST
   Where PORT is the $AgentPort that was configured in ConfigLocal.pl
