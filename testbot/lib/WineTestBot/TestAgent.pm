@@ -851,7 +851,7 @@ sub _Connect($)
 
     # Use netcat to forward the connection from the SSH server to the TestAgent
     # server. Note that we won't know about netcat errors at this point.
-    if (!$self->{fd}->exec("nc '$self->{agenthost}' '$self->{agentport}'"))
+    if (!$self->{fd}->exec("nc -q0 '$self->{agenthost}' '$self->{agentport}'"))
     {
       $self->_SetError($FATAL, "Unable to start netcat: " . $self->_ssherror());
       return undef;
