@@ -299,6 +299,7 @@ elsif ($Cmd eq "run")
     my $Pid = $TA->Run(\@Run, $RunFlags, $RunIn, $RunOut, $RunErr);
     if ($Pid)
     {
+        $Result = 1;
         print "Started process $Pid\n";
         if (!($RunFlags & $TestAgent::RUN_DNT))
         {
