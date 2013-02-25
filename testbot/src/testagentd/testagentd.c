@@ -33,8 +33,9 @@
  * Otherwise increase the minor version number:
  * 1.0:  Initial release.
  * 1.1:  Added the wait2 RPC.
+ * 1.2:  Add more redirection options to the run RPC.
  */
-#define PROTOCOL_VERSION "testagentd 1.1"
+#define PROTOCOL_VERSION "testagentd 1.2"
 
 #define BLOCK_SIZE       4096
 
@@ -730,10 +731,10 @@ static void do_run(SOCKET client)
         debug("  run '%s", argv[0]);
         for (i = 1; i < argc; i++)
             debug("' '%s", argv[i]);
-        debug("' %s%s%s%s%s%s\n",
-              redirects[0][0] ? " <" : "", redirects[0],
-              redirects[1][0] ? " >" : "", redirects[1],
-              redirects[2][0] ? " 2>" : "", redirects[2]);
+        debug("'%s%s%s%s%s%s\n",
+              !redirects[0][0] ? "" : " <", redirects[0],
+              !redirects[1][0] ? "" : (flags & RUN_DNTRUNC_OUT) ? " >>" : " >", redirects[1],
+              !redirects[2][0] ? "" : (flags & RUN_DNTRUNC_ERR) ? " 2>>" : " 2>", redirects[2]);
 
         pid = platform_run(argv, flags, redirects);
         if (!pid)

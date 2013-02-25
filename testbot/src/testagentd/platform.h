@@ -60,6 +60,8 @@ int platform_init(void);
 
 enum run_flags_t {
     RUN_DNT = 1,
+    RUN_DNTRUNC_OUT = 2,
+    RUN_DNTRUNC_ERR = 4,
 };
 
 /* Starts the specified command in the background and reports the status to

@@ -120,6 +120,14 @@ while (@ARGV)
     {
         $RunErr = check_opt_val($arg, $RunErr);
     }
+    elsif ($arg eq "--run-dntrunc-out")
+    {
+        $RunFlags |= $TestAgent::RUN_DNTRUNC_OUT;
+    }
+    elsif ($arg eq "--run-dntrunc-err")
+    {
+        $RunFlags |= $TestAgent::RUN_DNTRUNC_ERR;
+    }
     elsif (!defined $Hostname)
     {
         $Hostname = $arg;
@@ -252,8 +260,10 @@ if (defined $Usage)
     print "                  specified server file.\n";
     print "    --run-out <serverpath> Redirect the stdout or the command being run to the\n";
     print "                  specified server file.\n";
+    print "    --run-dntrunc-out Do not truncate the file stdout is redirected to.\n";
     print "    --run-err <serverpath> Redirect the stderr or the command being run to the\n";
     print "                  specified server file.\n";
+    print "    --run-dntrunc-err Do not truncate the file stderr is redirected to.\n";
     print "  rm            Deletes the specified files on the server.\n";
     print "  getversion    Returns the version of the server.\n";
     print "  ping          Makes sure the server is still alive.\n";

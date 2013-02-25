@@ -82,13 +82,30 @@ uint64_t platform_run(char** argv, uint32_t flags, char** redirects)
     has_redirects = 0;
     for (i = 0; i < 3; i++)
     {
+        DWORD access, creation;
         if (redirects[i][0] == '\0')
         {
             fhs[i] = GetStdHandle(stdhandles[i]);
             continue;
         }
         has_redirects = 1;
-        fhs[i] = CreateFile(redirects[i], (i ? GENERIC_WRITE : GENERIC_READ), FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        switch (i)
+        {
+        case 0:
+            access = GENERIC_READ;
+            creation = OPEN_EXISTING;
+            break;
+        case 1:
+            access = FILE_APPEND_DATA;
+            creation = (flags & RUN_DNTRUNC_OUT ? OPEN_ALWAYS : CREATE_ALWAYS);
+            break;
+        case 2:
+            access = FILE_APPEND_DATA;
+            creation = (flags & RUN_DNTRUNC_ERR ? OPEN_ALWAYS : CREATE_ALWAYS);
+            break;
+        }
+        fhs[i] = CreateFile(redirects[i], access, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, creation, FILE_ATTRIBUTE_NORMAL, NULL);
+        debug("  %d redirected -> %p\n", i, fhs[i]);
         if (fhs[i] == INVALID_HANDLE_VALUE)
         {
             set_status(ST_ERROR, "unable to open '%s' for %s: %lu", redirects[i], i ? "writing" : "reading", GetLastError());

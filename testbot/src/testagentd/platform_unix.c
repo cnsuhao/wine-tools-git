@@ -69,13 +69,25 @@ uint64_t platform_run(char** argv, uint32_t flags, char** redirects)
 {
     pid_t pid;
     int fds[3] = {-1, -1, -1};
-    int i;
+    int ofl, i;
 
     for (i = 0; i < 3; i++)
     {
         if (redirects[i][0] == '\0')
             continue;
-        fds[i] = open(redirects[i], (i ? O_WRONLY : O_RDONLY) | O_CREAT | O_TRUNC);
+        switch (i)
+        {
+        case 0:
+            ofl = O_RDONLY;
+            break;
+        case 1:
+            ofl = O_APPEND | O_CREAT | (flags & RUN_DNTRUNC_OUT ? 0 : O_TRUNC);
+            break;
+        case 2:
+            ofl = O_APPEND | O_CREAT | (flags & RUN_DNTRUNC_ERR ? 0 : O_TRUNC);
+            break;
+        }
+        fds[i] = open(redirects[i], ofl, 0666);
         if (fds[i] < 0)
         {
             set_status(ST_ERROR, "unable to open '%s' for %s: %s", redirects[i], i ? "writing" : "reading", strerror(errno));

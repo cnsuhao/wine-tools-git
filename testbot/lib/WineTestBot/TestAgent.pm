@@ -21,7 +21,7 @@
 package TestAgent;
 use strict;
 
-use vars qw (@ISA @EXPORT_OK $SENDFILE_EXE $RUN_DNT);
+use vars qw (@ISA @EXPORT_OK $SENDFILE_EXE $RUN_DNT $RUN_DNTRUNC_OUT $RUN_DNTRUNC_ERR $RUN_DNTRUNC);
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -1031,6 +1031,9 @@ sub GetFileToString($$)
 }
 
 $RUN_DNT = 1;
+$RUN_DNTRUNC_OUT = 2;
+$RUN_DNTRUNC_ERR = 4;
+$RUN_DNTRUNC = $RUN_DNTRUNC_OUT | $RUN_DNTRUNC_ERR;
 
 sub Run($$$;$$$)
 {
