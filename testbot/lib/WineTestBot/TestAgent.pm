@@ -287,7 +287,7 @@ sub _RecvEntryHeader($)
   return ($Type, $High << 32 | $Low);
 }
 
-sub _ExpectEntryHeader($$$)
+sub _ExpectEntryHeader($$;$)
 {
   my ($self, $Type, $Size) = @_;
 
@@ -368,7 +368,7 @@ sub _RecvFile($$$)
   return undef if (!defined $self->{fd});
   debug("  RecvFile($Filename)\n");
 
-  my $Size = $self->_RecvEntryHeader('d');
+  my $Size = $self->_ExpectEntryHeader('d');
   return undef if (!defined $Size);
 
   my $Success;
@@ -988,6 +988,7 @@ sub GetFile($$$)
   {
     my $Success = $self->_GetFileOrString($ServerPathName, $LocalPathName, $fh);
     close($fh);
+    unlink $LocalPathName if (!$Success);
     return $Success;
   }
   $self->_SetError($ERROR, "Unable to open '$LocalPathName' for writing: $!");
