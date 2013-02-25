@@ -128,13 +128,35 @@ while (@ARGV)
     {
         $Cmd = $arg;
         $LocalFilename = check_opt_val($arg, $LocalFilename);
-        $ServerFilename = check_opt_val($arg, $ServerFilename) if (!$Usage);
+        if (!$Usage)
+        {
+            if (@ARGV)
+            {
+                $ServerFilename = check_opt_val($arg, $ServerFilename);
+            }
+            else
+            {
+                $ServerFilename = $LocalFilename;
+                $ServerFilename =~ s%^.*/%%;
+            }
+        }
     }
     elsif ($arg eq "getfile")
     {
         $Cmd = $arg;
         $ServerFilename = check_opt_val($arg, $ServerFilename);
-        $LocalFilename = check_opt_val($arg, $LocalFilename) if (!$Usage);
+        if (!$Usage)
+        {
+            if (@ARGV)
+            {
+                $LocalFilename = check_opt_val($arg, $LocalFilename);
+            }
+            else
+            {
+                $LocalFilename = $ServerFilename;
+                $LocalFilename =~ s%^.*[/\\]%%;
+            }
+        }
     }
     elsif ($arg eq "run")
     {
