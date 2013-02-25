@@ -271,7 +271,7 @@ if (defined $Usage)
 
 $TunnelOpt = $Tunnel if (!defined $TunnelOpt);
 my $TunnelInfo;
-if ($TunnelOpt)
+if ($TunnelOpt and $TunnelOpt =~ /^ssh:/)
 {
     my $ParsedURI = URI->new($TunnelOpt);
     %$TunnelInfo = %$TunnelDefaults if ($TunnelDefaults);
