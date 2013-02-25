@@ -300,12 +300,10 @@ if (!$TA->SendFileFromString($Script, "script.bat", $TestAgent::SENDFILE_EXE))
 }
 
 my $Pid = $TA->Run(["./script.bat"], 0);
-my $OldTimeout = $TA->SetTimeout($Task->Timeout);
-if (!$Pid or !defined $TA->Wait($Pid))
+if (!$Pid or !defined $TA->Wait($Pid, $Task->Timeout))
 {
   $ErrMessage = $TA->GetLastError();
 }
-$TA->SetTimeout($OldTimeout);
 
 my $LogErrMessage;
 if (!$TA->GetFile($RptFileName, $FullLogFileName))

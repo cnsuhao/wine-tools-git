@@ -256,12 +256,10 @@ if (!$TA->SendFileFromString($Script, "task", $TestAgent::SENDFILE_EXE))
              $FullErrFileName, $Job, $Step, $Task;
 }
 my $Pid = $TA->Run(["./task"], 0);
-my $OldTimeout = $TA->SetTimeout($Task->Timeout);
-if (!$Pid or !defined $TA->Wait($Pid))
+if (!$Pid or !defined $TA->Wait($Pid, $Task->Timeout))
 {
   $ErrMessage = $TA->GetLastError();
 }
-$TA->SetTimeout($OldTimeout);
 
 if (defined($ErrMessage))
 {

@@ -35,6 +35,7 @@ my $RPC_SENDFILE = 2;
 my $RPC_RUN = 3;
 my $RPC_WAIT = 4;
 my $RPC_RM = 5;
+my $RPC_WAIT2 = 6;
 
 my %RpcNames=(
     $RPC_PING => 'ping',
@@ -43,6 +44,7 @@ my %RpcNames=(
     $RPC_RUN => 'run',
     $RPC_WAIT => 'wait',
     $RPC_RM => 'rm',
+    $RPC_WAIT2 => 'wait2',
 );
 
 my $Debug = 0;
@@ -1053,21 +1055,38 @@ sub Run($$$;$$$)
   return $self->_RecvList('Q');
 }
 
-sub Wait($$)
+sub Wait($$$)
 {
-  my ($self, $Pid) = @_;
-  debug("Wait $Pid\n");
+  my ($self, $Pid, $Timeout) = @_;
+  debug("Wait $Pid, ", defined $Timeout ? $Timeout : "<undef>", "\n");
+  # Add 1 second for the reply to come back
+  my $OldTimeout = $self->SetTimeout($Timeout + 1) if ($Timeout);
 
   # Send the command
-  if (!$self->_StartRPC($RPC_WAIT) or
-      !$self->_SendListSize(1) or
-      !$self->_SendUInt64($Pid))
+  if ($self->{agentversion} =~ / 1\.0$/)
   {
-    return undef;
+      if (!$self->_StartRPC($RPC_WAIT) or
+          !$self->_SendListSize(1) or
+          !$self->_SendUInt64($Pid))
+      {
+          return undef;
+      }
+  }
+  else
+  {
+      if (!$self->_StartRPC($RPC_WAIT2) or
+          !$self->_SendListSize(2) or
+          !$self->_SendUInt64($Pid) or
+          !$self->_SendUInt32($Timeout))
+      {
+          return undef;
+      }
   }
 
   # Get the reply
-  return $self->_RecvList('I');
+  my $Result = $self->_RecvList('I');
+  $self->SetTimeout($OldTimeout) if ($Timeout);
+  return $Result;
 }
 
 sub Rm($@)

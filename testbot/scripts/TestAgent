@@ -303,7 +303,7 @@ elsif ($Cmd eq "run")
         print "Started process $Pid\n";
         if (!($RunFlags & $TestAgent::RUN_DNT))
         {
-            $Result = $TA->Wait($Pid);
+            $Result = $TA->Wait($Pid, $Timeout);
             print "Child exit status: $Result\n" if (defined $Result);
         }
     }
