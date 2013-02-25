@@ -1139,6 +1139,7 @@ int main(int argc, char** argv)
         error("listen() failed: %s\n", sockerror());
         exit(1);
     }
+    printf("Starting %s\n", PROTOCOL_VERSION);
     while (1)
     {
         SOCKET client;
