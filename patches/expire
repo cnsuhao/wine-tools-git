@@ -100,7 +100,7 @@ sub get_patch_state($)
 
 # expire current patches
 
-opendir DIR, $dir;
+opendir DIR, $dir or die "cannot open '$dir': $!\n";
 foreach my $file (sort readdir DIR)
 {
     next unless $file =~ /^[0-9]+$/;
@@ -140,7 +140,7 @@ closedir DIR;
 
 # expire old patches whose status has changed
 
-opendir DIR, "$dir/OLD";
+opendir DIR, "$dir/OLD" or die "cannot open '$dir/OLD': $!\n";
 foreach my $file (sort readdir DIR)
 {
     next unless $file =~ /^[0-9]+$/;
