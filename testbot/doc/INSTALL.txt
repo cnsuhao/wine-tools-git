@@ -66,10 +66,10 @@ General setup for the web site:
 Janitorial tasks:
 - Run the Janitor.pl script once per day to perform the janitorial
   tasks. For instance:
-  17 30 * * * /home/winehq/tools/testbot/bin/Janitor.pl
+    0 0 * * * $HOME/tools/testbot/bin/Janitor.pl
 - Run the CheckWineTestBot.pl script periodically to get notified in
   case the WineTestBot server dies. For instance:
-  * 5 * * * /home/winehq/tools/testbot/scripts/CheckWineTestBot.pl
+    */20 * * * * $HOME/tools/testbot/scripts/CheckWineTestBot.pl
 
 Setup for Wine's patches site:
 - See http://source.winehq.org/patches/ for reference.
@@ -96,8 +96,8 @@ Setup for Wine's patches site:
 Setup for Winetest updates:
 - Use a cron job to run CheckForWinetestUpdate.pl periodically. For
   instance:
-  * 0 * * * /home/winehq/tools/testbot/bin/CheckForWinetestUpdate.pl 32
-  * 0 * * * /home/winehq/tools/testbot/bin/CheckForWinetestUpdate.pl 64
+    */10 * * * * $HOME/tools/testbot/bin/CheckForWinetestUpdate.pl 32
+    */10 * * * * $HOME/tools/testbot/bin/CheckForWinetestUpdate.pl 64
 
 Setup for wine-patches:
 - A proper WineTestBot system should integrate with Wine's patches site.
@@ -142,7 +142,7 @@ Dependencies:
   repository to wine:
     mkdir $HOME/tools/testbot/var
     cd $HOME/tools/testbot/var
-    git clone git://source.winehq.org/git/wine.git wine
+    git clone git://source.winehq.org/git/wine.git
 - Run $HOME/tools/testbot/bin/build/Reconfig.pl.
 - Check $HOME/tools/testbot/var/Reconfig.log to make sure it succeeded. Fix
   issues until it works.
