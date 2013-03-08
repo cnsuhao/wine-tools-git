@@ -1,0 +1,77 @@
+1. Dependencies
+---------------
+
+- Text::CSV::Encoded (libtext-csv-encoded-perl)
+- Email::MIME (libemail-mime-perl)
+
+
+2. General setup
+----------------
+
+- Create a new user 'winehq'.
+- Clone Wine's tools repository to $HOME/tools (so this document
+  should be available as $HOME/tools/patches/README).
+- Create directory $HOME/opt/source/git. Run:
+    mkdir -p $HOME/opt/source/git
+- Clone the Wine repository to a new bare repository (it can be read-only).
+    cd $HOME/opt/source/git
+    git clone --bare git://source.winehq.org/git/wine.git
+- Arrange for the Wine source to be updated regularly. For instance:
+    0 * * * * cd $HOME/opt/source/git/wine.git && git fetch
+
+Apache setup:
+- Create the $HOME/opt/source directory. This is the root of the source website:
+    mkdir -p $HOME/opt/source
+- Create a new virtual host, use vhost_source.conf as a template.
+
+
+3. Setup for the LXR source site
+--------------------------------
+
+- FIXME: Document how to set up LXR in $HOME/opt/source.
+
+
+4. Setup for the patches site
+-----------------------------
+
+- Create the $HOME/opt/source/patches directory and copy patches.css there:
+    mkdir $HOME/opt/source/patches
+    cp patches.css $HOME/opt/source/patches
+- Create the $HOME/patches and $HOME/patches/OLD directories where the patch
+  data will live:
+    mkdir -p $HOME/patches/OLD
+- Arrange for the filter script to be fed the wine-patches emails. One way to
+  do so would be to subscribe the winehq user to the wine-patches mailing list
+  and to then add the following lines to the .procmailrc file:
+    :0
+    * ^List-Id: Wine Patch Submissions
+    {
+      :0 hbfw
+      | $HOME/tools/patches/filter
+      :0:
+      $HOME/patches/.
+    }
+- If you have a set of patch emails in the mbox format you can test with:
+  formail -ds procmail <mbox-file
+- Run update regularly to update the website:
+    */5 * * * * $HOME/tools/patches/update
+- Run expire regularly to delete old patches:
+    0 0 * * * $HOME/tools/patches/expire -v $HOME/patches
+
+To integrate with the WineTestBot also do the following:
+- Run the notify-bot script regularly to notify the WineTestBot when there are
+  new patches to test.
+    */5 * * * * $HOME/tools/patches/notify-bot <winetestbot-email-address>
+- Arrange for the filter-testbot script to be fed the WineTestBot emails. One
+  way to do so is to add the following lines to the .procmailrc file:
+    :0 bfw
+    * ^X-TestBot-Results:
+    | $HOME/tools/patches/filter-testbot
+
+
+
+5. Setup for the regressions site
+---------------------------------
+
+- Run update-regressions regularly. For instance:
+    0 * * * * $HOME/tools/patches/update-regressions

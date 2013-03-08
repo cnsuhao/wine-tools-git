@@ -1,5 +1,8 @@
 #!/usr/bin/perl -w
 #
+# Grabs Bugzilla's data about known regressions and rebuilds the regressions
+# website index.
+#
 # Copyright 2011 Henri Verbeet
 # Copyright 2011 Alexandre Julliard
 #

@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 #
-# Filter a testbot result report.
+# Process a testbot result email and generate the .testfail and .testbot
+# result files that the patches site uses / links to.
 #
 # Copyright 2010 Alexandre Julliard
 #

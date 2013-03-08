@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Notify winetestbot of the arrival of new patches
+# Send an email to the WineTestBot to let it know of new patches.
 #
 # Copyright 2010 Alexandre Julliard
 #

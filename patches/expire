@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 #
-# Patches expiration script
+# Deletes or archives 'old' patches. Note that the exact definition of 'old'
+# depends on the patch's status.
 #
 # Copyright 2009 Alexandre Julliard
 #

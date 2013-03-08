@@ -1,6 +1,8 @@
 #!/usr/bin/perl -w
 #
-# Filter a wine-patches submission.
+# Reformat a wine-patches email so it can be put in a file that the patches
+# site can link to. In particular this means only keeping the relevant
+# header fields and decoding / decompressing the patch.
 #
 # Copyright 2009 Alexandre Julliard
 #

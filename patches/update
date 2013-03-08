@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 #
-# Update the patches data and index file
+# Scans the local patches and their result files to rebuild the index file and
+# update the patches website.
 #
 # Copyright 2009 Alexandre Julliard
 #
