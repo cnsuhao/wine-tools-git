@@ -58,6 +58,9 @@ General setup for the web site:
   the resetcode you just updated and a new password.
 - Make yourself admin by adding a row to UserRoles:
     mysql> insert into UserRoles values('<username>', 'admin');
+- If you want to be able to submit jobs from the same account you will likely
+  need to also give it the 'wine-devel' role:
+    mysql> insert into UserRoles values('<username>', wine-devel);
 - When you refresh the home page, you should now have an "Admin" menu
   in the sidebar.
 
