@@ -204,9 +204,16 @@ my $FullLogFileName = "$TaskDir/log";
 my $FullErrFileName = "$TaskDir/err";
 my $FullScreenshotFileName = "$TaskDir/screenshot.png";
 
+# Normally the Engine has already set the VM status to 'running'.
+# Do it anyway in case we're called manually from the command line.
+if ($VM->Status ne "idle" and $VM->Status ne "running")
+{
+  FatalError "The VM is not ready for use (" . $VM->Status . ")\n",
+             $FullErrFileName, $Job, $Step, $Task;
+}
 $VM->Status('running');
 my ($ErrProperty, $ErrMessage) = $VM->Save();
-if (defined($ErrMessage))
+if (defined $ErrMessage)
 {
   FatalError "Can't set VM status to running: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
@@ -349,10 +356,8 @@ if (!defined $TestFailures)
 $Task->TestFailures($TestFailures);
 $Task->Save();
 $Job->UpdateStatus();
-if ($Task->VM->Role ne "base")
-{
-  $Task->VM->PowerOff();
-}
+
+$VM->PowerOff() if ($VM->Role ne "base");
 $VM->Status('dirty');
 $VM->Save();
 

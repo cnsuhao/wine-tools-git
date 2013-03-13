@@ -61,8 +61,11 @@ sub FatalError($$$$)
   $Job->UpdateStatus();
 
   my $VM = $Task->VM;
-  $VM->Status('dirty');
-  $VM->Save();
+  if ($VM->Status eq 'running')
+  {
+    $VM->Status('dirty');
+    $VM->Save();
+  }
 
   TaskComplete($JobKey, $StepKey, $TaskKey);
   exit 1;
@@ -190,13 +193,21 @@ my $FullRawlogFileName = "$TaskDir/rawlog";
 my $FullLogFileName = "$TaskDir/log";
 my $FullErrFileName = "$TaskDir/err";
 
+# Normally the Engine has already set the VM status to 'running'.
+# Do it anyway in case we're called manually from the command line.
+if ($VM->Status ne "idle" and $VM->Status ne "running")
+{
+  FatalError "The VM is not ready for use (" . $VM->Status . ")\n",
+             $FullErrFileName, $Job, $Task;
+}
 $VM->Status('running');
 my ($ErrProperty, $ErrMessage) = $VM->Save();
-if (defined($ErrMessage))
+if (defined $ErrMessage)
 {
   FatalError "Can't set VM status to running: $ErrMessage\n",
              $FullErrFileName, $Job, $Task;
 }
+
 my $Script = "#!/bin/sh\n" .
              "rm -f Reconfig.log\n" .
              "../bin/build/Reconfig.pl >>Reconfig.log 2>&1\n";

@@ -61,8 +61,11 @@ sub FatalError($$$$)
   $Job->UpdateStatus();
 
   my $VM = $Task->VM;
-  $VM->Status('dirty');
-  $VM->Save();
+  if ($VM->Status eq 'running')
+  {
+    $VM->Status('dirty');
+    $VM->Save();
+  }
 
   TaskComplete($JobKey, $StepKey, $TaskKey);
   exit 1;
@@ -217,6 +220,13 @@ if (! defined($BaseName))
   FatalError "Can't determine base name\n", $FullErrFileName, $Job, $Task;
 }
 
+# Normally the Engine has already set the VM status to 'running'.
+# Do it anyway in case we're called manually from the command line.
+if ($VM->Status ne "idle" and $VM->Status ne "running")
+{
+  FatalError "The VM is not ready for use (" . $VM->Status . ")\n",
+             $FullErrFileName, $Job, $Task;
+}
 $VM->Status('running');
 my ($ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
@@ -224,6 +234,7 @@ if (defined($ErrMessage))
   FatalError "Can't set VM status to running: $ErrMessage\n",
              $FullErrFileName, $Job, $Task;
 }
+
 my $FileName = $Step->FileName;
 if (!$TA->SendFile("$StepDir/$FileName", "staging/$FileName", 0))
 {
