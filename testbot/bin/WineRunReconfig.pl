@@ -4,6 +4,7 @@
 # See the bin/build/Reconfig.pl script.
 #
 # Copyright 2009 Ge van Geldorp
+# Copyright 2013 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -41,38 +42,29 @@ use WineTestBot::Jobs;
 use WineTestBot::Log;
 use WineTestBot::Engine::Notify;
 
-sub FatalError
+sub FatalError($$$$)
 {
-  my ($ErrMessage, $RptFileName, $Job, $Step, $Task) = @_;
+  my ($ErrMessage, $FullErrFileName, $Job, $Task) = @_;
 
-  my $JobKey = defined($Job) ? $Job->GetKey() : "0";
-  my $StepKey = defined($Step) ? $Step->GetKey() : "0";
-  my $TaskKey = defined($Task) ? $Task->GetKey() : "0";
-
+  my ($JobKey, $StepKey, $TaskKey) = @{$Task->GetMasterKey()};
   LogMsg "$JobKey/$StepKey/$TaskKey $ErrMessage";
-  if ($RptFileName)
+
+  if (open(my $ErrFile, ">>", $FullErrFileName))
   {
-    my $RPTFILE;
-    if (open RPTFILE, ">>$RptFileName")
-    {
-      print RPTFILE $ErrMessage;
-      close RPTFILE;
-    }
+    print $ErrFile $ErrMessage;
+    close($ErrFile);
   }
 
-  if ($Task)
-  {
-    $Task->Status("failed");
-    $Task->Ended(time);
-    $Task->Save();
-    $Job->UpdateStatus();
+  $Task->Status("failed");
+  $Task->Ended(time);
+  $Task->Save();
+  $Job->UpdateStatus();
 
-    $Task->VM->Status('dirty');
-    $Task->VM->Save();
+  my $VM = $Task->VM;
+  $VM->Status('dirty');
+  $VM->Save();
 
-    TaskComplete($JobKey, $StepKey, $TaskKey);
-  }
-
+  TaskComplete($JobKey, $StepKey, $TaskKey);
   exit 1;
 }
 
@@ -141,7 +133,8 @@ if ($JobId =~ /^(\d+)$/)
 }
 else
 {
-  FatalError "Invalid JobId $JobId\n";
+  LogMsg "Invalid JobId $JobId\n";
+  exit 1;
 }
 if ($StepNo =~ /^(\d+)$/)
 {
@@ -149,7 +142,8 @@ if ($StepNo =~ /^(\d+)$/)
 }
 else
 {
-  FatalError "Invalid StepNo $StepNo\n";
+  LogMsg "Invalid StepNo $StepNo\n";
+  exit 1;
 }
 if ($TaskNo =~ /^(\d+)$/)
 {
@@ -157,23 +151,27 @@ if ($TaskNo =~ /^(\d+)$/)
 }
 else
 {
-  FatalError "Invalid TaskNo $TaskNo\n";
+  LogMsg "Invalid TaskNo $TaskNo\n";
+  exit 1;
 }
 
 my $Job = CreateJobs()->GetItem($JobId);
-if (! defined($Job))
+if (!defined $Job)
 {
-  FatalError "Job $JobId doesn't exist\n";
+  LogMsg "Job $JobId doesn't exist\n";
+  exit 1;
 }
 my $Step = $Job->Steps->GetItem($StepNo);
-if (! defined($Step))
+if (!defined $Step)
 {
-  FatalError "Step $StepNo of job $JobId doesn't exist\n";
+  LogMsg "Step $StepNo of job $JobId doesn't exist\n";
+  exit 1;
 }
 my $Task = $Step->Tasks->GetItem($TaskNo);
-if (! defined($Task))
+if (!defined $Task)
 {
-  FatalError "Step $StepNo task $TaskNo of job $JobId doesn't exist\n";
+  LogMsg "Step $StepNo task $TaskNo of job $JobId doesn't exist\n";
+  exit 1;
 }
 
 umask(002);
@@ -197,7 +195,7 @@ my ($ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
 {
   FatalError "Can't set VM status to running: $ErrMessage\n",
-             $FullErrFileName, $Job, $Step, $Task;
+             $FullErrFileName, $Job, $Task;
 }
 my $Script = "#!/bin/sh\n" .
              "rm -f Reconfig.log\n" .
@@ -206,7 +204,7 @@ if (!$TA->SendFileFromString($Script, "task", $TestAgent::SENDFILE_EXE))
 {
   $ErrMessage = $TA->GetLastError();
   FatalError "Can't send the script to VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Step, $Task;
+             $FullErrFileName, $Job, $Task;
 }
 my $Pid = $TA->Run(["./task"], 0);
 if (!$Pid or !defined $TA->Wait($Pid, $Task->Timeout))
@@ -219,14 +217,14 @@ if (defined($ErrMessage))
   $TA->GetFile("Reconfig.log", $FullRawlogFileName);
   ProcessRawlog($FullRawlogFileName, $FullLogFileName, $FullErrFileName);
   FatalError "Failure running script in VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Step, $Task;
+             $FullErrFileName, $Job, $Task;
 }
 
 if (!$TA->GetFile("Reconfig.log", $FullRawlogFileName))
 {
   $ErrMessage = $TA->GetLastError();
-  FatalError "Can't copy log from VM: $ErrMessage\n", $FullErrFileName,
-             $Job, $Step, $Task;
+  FatalError "Can't copy log from VM: $ErrMessage\n",
+             $FullErrFileName, $Job, $Task;
 }
 $TA->Disconnect();
 
@@ -237,15 +235,15 @@ if ($Success)
   $ErrMessage = $VM->RemoveSnapshot($VM->IdleSnapshot);
   if (defined($ErrMessage))
   {
-    FatalError "Can't remove snapshot: $ErrMessage\n", $FullErrFileName,
-               $Job, $Step, $Task;
+    FatalError "Can't remove snapshot: $ErrMessage\n",
+               $FullErrFileName, $Job, $Task;
   }
 
   $ErrMessage = $VM->CreateSnapshot($VM->IdleSnapshot);
   if (defined($ErrMessage))
   {
-    FatalError "Can't take snapshot: $ErrMessage\n", $FullErrFileName,
-               $Job, $Step, $Task;
+    FatalError "Can't take snapshot: $ErrMessage\n",
+               $FullErrFileName, $Job, $Task;
   }
 
   $VM->Status("idle");
@@ -270,5 +268,4 @@ $Job = undef;
 TaskComplete($JobId, $StepNo, $TaskNo);
 
 LogMsg "Task $JobId/$StepNo/$TaskNo completed\n";
-
-exit;
+exit 0;

@@ -41,53 +41,40 @@ use WineTestBot::Jobs;
 use WineTestBot::Log;
 use WineTestBot::Engine::Notify;
 
-sub FatalError
+sub FatalError($$$$$)
 {
-  my ($ErrMessage, $RptFileName, $Job, $Step, $Task) = @_;
+  my ($ErrMessage, $FullErrFileName, $Job, $Step, $Task) = @_;
 
-  my $JobKey = defined($Job) ? $Job->GetKey() : "0";
-  my $StepKey = defined($Step) ? $Step->GetKey() : "0";
-  my $TaskKey = defined($Task) ? $Task->GetKey() : "0";
-
+  my ($JobKey, $StepKey, $TaskKey) = @{$Task->GetMasterKey()};
   LogMsg "$JobKey/$StepKey/$TaskKey $ErrMessage";
 
-  if ($Task)
+  my $OldUMask = umask(002);
+  if (open(my $ErrFile, ">>", $FullErrFileName))
   {
-    $Task->Status("failed");
-    $Task->Ended(time);
-    $Task->Save();
-    $Job->UpdateStatus();
+    print $ErrFile $ErrMessage;
+    close($ErrFile);
+  }
+  umask($OldUMask);
 
-    if ($Task->VM->Role ne "base")
-    {
-      $Task->VM->PowerOff();
-    }
-    $Task->VM->Status('dirty');
-    $Task->VM->Save();
+  if ($Step->Type eq "suite")
+  {
+    my $LatestName = "$DataDir/latest/" . $Task->VM->Name . "_" .
+                     ($Step->FileType eq "exe64" ? "64" : "32") . ".err";
+    unlink($LatestName);
+    link($FullErrFileName, $LatestName);
   }
 
-  if ($RptFileName)
-  {
-    my $RPTFILE;
-    my $OldUMask = umask(002);
-    if (open RPTFILE, ">>$RptFileName")
-    {
-      print RPTFILE $ErrMessage;
-      close RPTFILE;
-    }
-    umask($OldUMask);
+  $Task->Status("failed");
+  $Task->Ended(time);
+  $Task->Save();
+  $Job->UpdateStatus();
 
-    if ($Task && $Step->Type eq "suite")
-    {
-      my $LatestName = "$DataDir/latest/" . $Task->VM->Name . "_" .
-                       ($Step->FileType eq "exe64" ? "64" : "32") . ".err";
-      unlink($LatestName);
-      link($RptFileName, $LatestName);
-    }
-  }
+  my $VM = $Task->VM;
+  $VM->PowerOff() if ($VM->Role ne "base");
+  $VM->Status('dirty');
+  $VM->Save();
 
   TaskComplete($JobKey, $StepKey, $TaskKey);
-
   exit 1;
 }
 
@@ -158,7 +145,8 @@ if ($JobId =~ /^(\d+)$/)
 }
 else
 {
-  FatalError "Invalid JobId $JobId\n";
+  LogMsg "Invalid JobId $JobId\n";
+  exit 1;
 }
 if ($StepNo =~ /^(\d+)$/)
 {
@@ -166,7 +154,8 @@ if ($StepNo =~ /^(\d+)$/)
 }
 else
 {
-  FatalError "Invalid StepNo $StepNo\n";
+  LogMsg "Invalid StepNo $StepNo\n";
+  exit 1;
 }
 if ($TaskNo =~ /^(\d+)$/)
 {
@@ -174,23 +163,27 @@ if ($TaskNo =~ /^(\d+)$/)
 }
 else
 {
-  FatalError "Invalid TaskNo $TaskNo\n";
+  LogMsg "Invalid TaskNo $TaskNo\n";
+  exit 1;
 }
 
 my $Job = CreateJobs()->GetItem($JobId);
-if (! defined($Job))
+if (!defined $Job)
 {
-  FatalError "Job $JobId doesn't exist\n";
+  LogMsg "Job $JobId doesn't exist\n";
+  exit 1;
 }
 my $Step = $Job->Steps->GetItem($StepNo);
-if (! defined($Step))
+if (!defined $Step)
 {
-  FatalError "Step $StepNo of job $JobId doesn't exist\n";
+  LogMsg "Step $StepNo of job $JobId doesn't exist\n";
+  exit 1;
 }
 my $Task = $Step->Tasks->GetItem($TaskNo);
-if (! defined($Task))
+if (!defined $Task)
 {
-  FatalError "Step $StepNo task $TaskNo of job $JobId doesn't exist\n";
+  LogMsg "Step $StepNo task $TaskNo of job $JobId doesn't exist\n";
+  exit 1;
 }
 
 my $oldumask = umask(002);
@@ -333,8 +326,8 @@ if (defined($ErrMessage))
 }
 if (defined($LogErrMessage))
 {
-  FatalError "Can't copy log from VM: $LogErrMessage\n", $FullErrFileName,
-             $Job, $Step, $Task;
+  FatalError "Can't copy log from VM: $LogErrMessage\n",
+             $FullErrFileName, $Job, $Step, $Task;
 }
 $TA->Disconnect();
 
@@ -370,5 +363,4 @@ $Job = undef;
 TaskComplete($JobId, $StepNo, $TaskNo);
 
 LogMsg "Task $JobId/$StepNo/$TaskNo (" . $VM->Name . ") completed\n";
-
-exit;
+exit 0;
