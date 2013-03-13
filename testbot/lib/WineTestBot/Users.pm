@@ -149,7 +149,7 @@ sub Approve
   my $Recipient = $self->GetEMailRecipient();
   open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
   print SENDMAIL <<"EOF";
-From: <$RobotEMail> (Marvin)
+From: $RobotEMail
 To: $Recipient
 Subject: winetestbot account request
 
@@ -189,7 +189,7 @@ sub SendResetCode
   my $Recipient = $self->GetEMailRecipient();
   open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
   print SENDMAIL <<"EOF";
-From: <$RobotEMail> (Marvin)
+From: $RobotEMail
 To: $Recipient
 Subject: winetestbot account request
 

@@ -190,7 +190,7 @@ sub SendLog
   my @SortedKeys = sort @{$StepsTasks->GetKeys()};
 
   open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
-  print SENDMAIL "From: Marvin <$RobotEMail>\n";
+  print SENDMAIL "From: $RobotEMail\n";
   print SENDMAIL "To: $To\n";
   my $Subject = "TestBot job " . $Job->Id . " results";
   my $Description = $Job->GetDescription();
@@ -425,7 +425,7 @@ EOF
   if ($Messages)
   {
     open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
-    print SENDMAIL "From: Marvin <$RobotEMail>\n";
+    print SENDMAIL "From: $RobotEMail\n";
     print SENDMAIL "To: $To\n";
     print SENDMAIL "Cc: $WinePatchCc\n";
     print SENDMAIL "Subject: Re: ", $Job->Patch->Subject, "\n";

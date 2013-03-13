@@ -31,10 +31,10 @@ $WineTestBot::Config::DbUsername = "winetestbot";
 # The password of the database account
 $WineTestBot::Config::DbPassword = "";
 
-# Email address of the WineTestBot administrator
+# Name and email address of the WineTestBot administrator
 $WineTestBot::Config::AdminEMail = undef;
 
-# From address of mails sent by WineTestBot to users
+# Name and address for the 'From' field of mails sent by WineTestBot
 $WineTestBot::Config::RobotEMail = undef;
 
 # If set, sends the results to the specified email address instead of the
@@ -42,8 +42,8 @@ $WineTestBot::Config::RobotEMail = undef;
 # can provide useful results to Wine developers.
 $WineTestBot::Config::WinePatchToOverride = $WineTestBot::Config::AdminEMail;
 
-# If set, CC the results to the specified email address, for instance the
-# wine-devel mailing list.
+# If set, CC the results to the specified name + email address, for instance
+# the wine-devel mailing list.
 $WineTestBot::Config::WinePatchCc = "";
 
 # Email address to send the results to for integration with the Wine Patches

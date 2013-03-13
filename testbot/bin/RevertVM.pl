@@ -57,7 +57,7 @@ sub FatalError
     my $VMSnapshot = $VM->IdleSnapshot;
     open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
     print SENDMAIL <<"EOF";
-From: <$RobotEMail> (Marvin)
+From: $RobotEMail
 To: $AdminEMail
 Subject: VM $VMKey offline
 

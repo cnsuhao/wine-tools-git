@@ -111,8 +111,8 @@ sub OnSend
 
   open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
   print SENDMAIL <<"EOF";
-From: <$RobotEMail> (Marvin)
-To: <$AdminEMail>
+From: $RobotEMail
+To: $AdminEMail
 Subject: winetestbot feedback
 
 EOF

@@ -49,7 +49,7 @@ if (! PingEngine())
   
   open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
   print SENDMAIL <<"EOF";
-From: <$RobotEMail> (Marvin)
+From: $RobotEMail
 To: $AdminEMail
 Subject: WineTestBot engine died
 
