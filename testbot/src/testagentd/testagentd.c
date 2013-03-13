@@ -37,7 +37,7 @@
  */
 #define PROTOCOL_VERSION "testagentd 1.2"
 
-#define BLOCK_SIZE       4096
+#define BLOCK_SIZE       65536
 
 const char *name0;
 int opt_debug = 0;

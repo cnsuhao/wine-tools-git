@@ -27,7 +27,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(new);
 
-my $BLOCK_SIZE = 4096;
+my $BLOCK_SIZE = 65536;
 
 my $RPC_PING = 0;
 my $RPC_GETFILE = 1;
