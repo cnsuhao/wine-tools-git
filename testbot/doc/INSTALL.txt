@@ -14,10 +14,8 @@ Dependencies:
 MySQL setup:
 - Create a new 'winetestbot' database and its tables using the
   ddl/winetestbot.sql script.
-- Set the 'winetestbot' user password
-  INSERT, UPDATE and DELETE on all tables in the database. So this is
-  something like:
-  SET PASSWORD FOR 'winetestbot'@'localhost' = PASSWORD('mypassword');
+- Make sure to change the 'winetestbot' user password. Typically:
+    SET PASSWORD FOR 'winetestbot'@'localhost' = PASSWORD('mypassword');
 
 Apache setup:
 - Create a new virtual host, use doc/vhost_winetestbot.conf as a
@@ -55,11 +53,11 @@ General setup for the web site:
 - Register a new account for yourself.
 - Using the mysql client, set the ResetCode in your Users entry to a
   known value, e.g.
-  mysql> update Users set ResetCode = 'a' where Name = '<username>';
+    mysql> update Users set ResetCode = 'a' where Name = '<username>';
 - Browse to http://server.name/ResetPassword.pl and enter your username,
   the resetcode you just updated and a new password.
 - Make yourself admin by adding a row to UserRoles:
-  mysql> insert into UserRoles values('<username>', 'admin');
+    mysql> insert into UserRoles values('<username>', 'admin');
 - When you refresh the home page, you should now have an "Admin" menu
   in the sidebar.
 
@@ -113,7 +111,7 @@ Setup for wine-patches:
     | $HOME/tools/testbot/bin/WinePatchesMLSubmit.pl
 - Or if you have a set of patches to test in the mbox format you can
   test with:
-  formail -ds $HOME/tools/testbot/bin/WinePatchesMLSubmit.pl <mbox-file
+    formail -ds $HOME/tools/testbot/bin/WinePatchesMLSubmit.pl <mbox-file
 
 
 2. VM hosts setup
