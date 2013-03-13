@@ -53,6 +53,36 @@ sub debug(@)
     print STDERR @_ if ($Debug);
 }
 
+my $time_hires;
+sub now()
+{
+    local $@;
+    $time_hires=eval { require Time::HiRes } if (!defined $time_hires);
+    return eval { Time::HiRes::time() } if ($time_hires);
+    return time();
+}
+
+sub trace_speed($$)
+{
+    if ($Debug)
+    {
+        my ($Bytes, $Elapsed) = @_;
+        my $Speed = "";
+        if ($Elapsed)
+        {
+            $Speed = $Bytes * 8 / $Elapsed / 1000;
+            $Speed = $Speed < 1000 ? sprintf(" (%.1fKb/s)", $Speed) :
+                                     sprintf(" (%.1fMb/s)", $Speed / 1000);
+        }
+        $Bytes = $Bytes < 8 * 1024 ? "$Bytes bytes" :
+                 $Bytes < 8 * 1024 * 1024 ? sprintf("%.1fKiB", $Bytes / 1024) :
+                 sprintf("%.1fMiB", $Bytes / 1024 / 1024);
+        $Elapsed = $Elapsed < 1 ? sprintf("%.1fms", $Elapsed * 1000) :
+                   sprintf("%.1fs", $Elapsed);
+        debug("Transferred $Bytes in $Elapsed$Speed\n");
+    }
+}
+
 sub new($$$;$)
 {
   my ($class, $Hostname, $Port, $Tunnel) = @_;
@@ -396,6 +426,7 @@ sub _RecvFile($$$)
   my $Size = $self->_ExpectEntryHeader('d');
   return undef if (!defined $Size);
 
+  my ($Bytes, $Start) = (0, now());
   my $Success;
   eval
   {
@@ -421,6 +452,7 @@ sub _RecvFile($$$)
       }
       $Size -= $r;
       my $w = syswrite($Dst, $Buffer, $r, 0);
+      $Bytes += $w if (defined $w);
       if (!defined $w or $w != $r)
       {
         alarm(0);
@@ -437,6 +469,8 @@ sub _RecvFile($$$)
     $@ = "timed out while receiving '$Filename'" if ($@ =~ /^timeout /);
     $self->_SetError($FATAL, $@);
   }
+
+  trace_speed($Bytes, now() - $Start);
   return $Success;
 }
 
@@ -701,6 +735,7 @@ sub _SendFile($$$)
   return undef if (!defined $self->{fd});
   debug("  SendFile($Filename)\n");
 
+  my ($Bytes, $Start) = (0, now());
   my $Success;
   eval
   {
@@ -743,6 +778,8 @@ sub _SendFile($$$)
     $@ = "timed out while sending '$Filename'" if ($@ =~ /^timeout /);
     $self->_SetError($FATAL, $@);
   }
+
+  trace_speed($Bytes, now() - $Start);
   return $Success;
 }
 
