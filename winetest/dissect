@@ -407,6 +407,7 @@ for (my $i = 0; $i <= $#boxes; $i++)
     print FILE "<div class=\"navbar\">";
     print FILE $boxes[$i]->{prev} ? "<a href=\"./$boxes[$i]->{prev}.html\">prev</a> | " : "prev | ";
     print FILE $boxes[$i]->{next} ? "<a href=\"./$boxes[$i]->{next}.html\">next</a> | " : "next | ";
+    print FILE "<a href=\"version.html\">info</a> | ";
     printf FILE "<a href=\"report.html%s\">full report</a> | ", $i ? "#$boxes[$i]->{id}" : "";
     print FILE "<a href=\"..\">summary</a> | <a href=\"../..\">index</a></div>\n";
 
