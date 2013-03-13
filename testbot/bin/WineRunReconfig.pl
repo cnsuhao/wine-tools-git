@@ -71,54 +71,60 @@ sub FatalError($$$$)
   exit 1;
 }
 
-sub ProcessRawlog
+sub ProcessLog($$)
 {
-  my ($FullRawlogFileName, $FullLogFileName, $FullErrFileName) = @_;
+  my ($FullLogFileName, $FullErrFileName) = @_;
 
-  my $FoundOk = !1;
-  if (open RAWLOG, "<$FullRawlogFileName")
+  my ($Status, $Errors);
+  if (open(my $LogFile, "<", $FullLogFileName))
   {
-    if (open LOG, ">$FullLogFileName")
+    # Collect and analyze the 'Reconfig:' status line(s)
+    $Errors = "";
+    foreach my $Line (<$LogFile>)
     {
-      if (open ERR, ">$FullErrFileName")
+      chomp($Line);
+      next if ($Line !~ /^Reconfig: (.*)$/);
+      if ($1 ne "ok")
       {
-        my $Line;
-        while (defined($Line = <RAWLOG>))
-        {
-          chomp($Line);
-          if ($Line =~ m/^Reconfig: (.*)$/)
-          {
-            if ($1 eq "ok")
-            {
-              $FoundOk = 1;
-            }
-            else
-            {
-              print ERR "$1\n";
-            }
-          }
-          else
-          {
-            print LOG "$Line\n";
-          }
-        }
-
-        close ERR;
-        if (-z $FullErrFileName)
-        {
-          unlink($FullErrFileName);
-        }
+        $Errors .= "$1\n";
+        $Status = "failed";
       }
-
-      close LOG;
+      elsif (!defined $Status)
+      {
+        $Status = "completed";
+      }
     }
+    close($LogFile);
 
-    close RAWLOG;
-    unlink($FullRawlogFileName);
+    if (!defined $Status)
+    {
+      $Status = "failed";
+      $Errors = "Missing reconfig status line\n";
+    }
+  }
+  else
+  {
+    $Status = "failed";
+    $Errors = "Unable to open the log file\n";
+    LogMsg "Unable to open '$FullLogFileName' for reading: $!\n";
   }
 
-  return $FoundOk;
+  if ($Errors)
+  {
+    if (open(my $ErrFile, ">", $FullErrFileName))
+    {
+      print $ErrFile $Errors;
+      close($ErrFile);
+    }
+    else
+    {
+      LogMsg "Unable to open '$FullErrFileName' for writing: $!\n";
+    }
+  }
+
+  return $Status;
 }
+
 
 $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
@@ -189,7 +195,6 @@ LogMsg "Task $JobId/$StepNo/$TaskNo started\n";
 
 my $StepDir = "$DataDir/jobs/$JobId/$StepNo";
 my $TaskDir = "$StepDir/$TaskNo";
-my $FullRawlogFileName = "$TaskDir/rawlog";
 my $FullLogFileName = "$TaskDir/log";
 my $FullErrFileName = "$TaskDir/err";
 
@@ -225,13 +230,13 @@ if (!$Pid or !defined $TA->Wait($Pid, $Task->Timeout))
 
 if (defined($ErrMessage))
 {
-  $TA->GetFile("Reconfig.log", $FullRawlogFileName);
-  ProcessRawlog($FullRawlogFileName, $FullLogFileName, $FullErrFileName);
+  $TA->GetFile("Reconfig.log", $FullLogFileName);
+  ProcessLog($FullLogFileName, $FullErrFileName);
   FatalError "Failure running script in VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Task;
 }
 
-if (!$TA->GetFile("Reconfig.log", $FullRawlogFileName))
+if (!$TA->GetFile("Reconfig.log", $FullLogFileName))
 {
   $ErrMessage = $TA->GetLastError();
   FatalError "Can't copy log from VM: $ErrMessage\n",
@@ -239,9 +244,8 @@ if (!$TA->GetFile("Reconfig.log", $FullRawlogFileName))
 }
 $TA->Disconnect();
 
-my $Success = ProcessRawlog($FullRawlogFileName, $FullLogFileName,
-                              $FullErrFileName);
-if ($Success)
+my $NewStatus = ProcessLog($FullLogFileName, $FullErrFileName);
+if ($NewStatus eq "completed")
 {
   $ErrMessage = $VM->RemoveSnapshot($VM->IdleSnapshot);
   if (defined($ErrMessage))
@@ -258,14 +262,13 @@ if ($Success)
   }
 
   $VM->Status("idle");
-  $Task->Status("completed");
 }
 else
 {
-  $Task->Status("failed");
   $VM->Status("dirty");
 }
 
+$Task->Status($NewStatus);
 $Task->ChildPid(undef);
 $Task->Ended(time);
 $Task->Save();
