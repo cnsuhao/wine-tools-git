@@ -186,7 +186,6 @@ my $TA = $VM->GetAgent();
 
 LogMsg "Task $JobId/$StepNo/$TaskNo started\n";
 
-my $RptFileName = $VM->Name . ".rpt";
 my $StepDir = "$DataDir/jobs/$JobId/$StepNo";
 my $TaskDir = "$StepDir/$TaskNo";
 my $FullRawlogFileName = "$TaskDir/rawlog";
