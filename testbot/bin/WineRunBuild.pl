@@ -217,15 +217,8 @@ if (! defined($BaseName))
   FatalError "Can't determine base name\n", $FullErrFileName, $Job, $Task;
 }
 
-my $ErrMessage = $Step->HandleStaging($JobId);
-if (defined($ErrMessage))
-{
-  FatalError "$ErrMessage\n", $FullErrFileName, $Job, $Task;
-}
-
 $VM->Status('running');
-my $ErrProperty;
-($ErrProperty, $ErrMessage) = $VM->Save();
+my ($ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
 {
   FatalError "Can't set VM status to running: $ErrMessage\n",
