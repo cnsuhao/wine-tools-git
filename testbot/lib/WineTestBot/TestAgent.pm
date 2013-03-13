@@ -858,6 +858,11 @@ sub _Connect($)
     require Net::SSH2;
     $self->{ssh} = Net::SSH2->new();
     $self->{ssh}->debug(1) if ($Debug > 1);
+
+    # Set up compression
+    $self->{ssh}->method('COMP_CS', 'zlib', 'none');
+    $self->{ssh}->method('COMP_SC', 'zlib', 'none');
+
     if (!$self->{ssh}->connect($self->{sshfd}))
     {
       $self->_SetError($FATAL, "Unable to connect to the SSH server: " . $self->_ssherror());
