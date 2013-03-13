@@ -198,29 +198,24 @@ my $TaskDir = "$StepDir/$TaskNo";
 my $FullLogFileName = "$TaskDir/log";
 my $FullErrFileName = "$TaskDir/err";
 
-my $BaseName;
-my $Run64 = !1;
+my ($Run64, $BaseName);
 foreach my $OtherStep (@{$Job->Steps->GetItems()})
 {
-  if ($OtherStep->No != $StepNo)
+  next if ($OtherStep->No == $StepNo);
+
+  $Run64 = 1 if ($OtherStep->FileType eq "exe64");
+  my $OtherFileName = $OtherStep->FileName;
+  if ($OtherFileName =~ m/^([\w_\-]+)(|\.exe)_test(|64)\.exe$/)
   {
-    my $OtherFileName = $OtherStep->FileName;
-    if ($OtherFileName =~ m/^([\w_\-]+)(|\.exe)_test(|64)\.exe$/)
+    if (defined $BaseName and $BaseName ne $1)
     {
-      if (defined $BaseName && $BaseName ne $1)
-      {
-        FatalError "$1 doesn't match previously found $BaseName\n",
-                   $FullErrFileName, $Job, $Task;
-      }
-      $BaseName = $1;
-      if ($OtherStep->FileType eq "exe64")
-      {
-        $Run64 = 1;
-      }
+      FatalError "$1 doesn't match previously found $BaseName\n",
+                 $FullErrFileName, $Job, $Task;
     }
+    $BaseName = $1;
   }
 }
-if (! defined($BaseName))
+if (!defined $BaseName)
 {
   FatalError "Can't determine base name\n", $FullErrFileName, $Job, $Task;
 }
@@ -234,7 +229,7 @@ if ($VM->Status ne "idle" and $VM->Status ne "running")
 }
 $VM->Status('running');
 my ($ErrProperty, $ErrMessage) = $VM->Save();
-if (defined($ErrMessage))
+if (defined $ErrMessage)
 {
   FatalError "Can't set VM status to running: $ErrMessage\n",
              $FullErrFileName, $Job, $Task;
@@ -244,7 +239,7 @@ my $FileName = $Step->FileName;
 if (!$TA->SendFile("$StepDir/$FileName", "staging/$FileName", 0))
 {
   $ErrMessage = $TA->GetLastError();
-  FatalError "Can't copy patch to VM: $ErrMessage\n",
+  FatalError "Could not copy the patch to the VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Task;
 }
 my $Script = "#!/bin/sh\n" .
@@ -256,61 +251,67 @@ $Script .= " >>Build.log 2>&1\n";
 if (!$TA->SendFileFromString($Script, "task", $TestAgent::SENDFILE_EXE))
 {
   $ErrMessage = $TA->GetLastError();
-  FatalError "Can't send the script to VM: $ErrMessage\n",
+  FatalError "Can't send the build script to the VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Task;
 }
 my $Pid = $TA->Run(["./task"], 0);
 if (!$Pid or !defined $TA->Wait($Pid, $Task->Timeout))
 {
   $ErrMessage = $TA->GetLastError();
+  # Try to grab the build log before reporting the failure
 }
-
-if (defined($ErrMessage))
+my $NewStatus;
+if ($TA->GetFile("Build.log", $FullLogFileName))
 {
-  $TA->GetFile("Build.log", $FullLogFileName);
-  ProcessLog($FullLogFileName, $FullErrFileName);
-  FatalError "Failure running script in VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Task;
+  $NewStatus = ProcessLog($FullLogFileName, $FullErrFileName);
 }
-
-if (!$TA->GetFile("Build.log", $FullLogFileName))
+elsif (!defined $ErrMessage)
 {
+  # This GetFile() error is the first one so report it
   $ErrMessage = $TA->GetLastError();
-  FatalError "Can't copy log from VM: $ErrMessage\n",
+  FatalError "Can't copy the build log from the VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Task;
 }
-my $NewStatus = ProcessLog($FullLogFileName, $FullErrFileName);
-
-foreach my $OtherStep (@{$Job->Steps->GetItems()})
+if (defined $ErrMessage)
 {
-  if ($OtherStep->No != $StepNo)
-  {
-    my $OtherFileName = $OtherStep->FileName;
-    if ($OtherFileName =~ m/^[\w_\-]+(|\.exe)_test(|64)\.exe$/)
-    {
-      my $OtherStepDir = "$DataDir/jobs/$JobId/" . $OtherStep->No;
-      mkdir $OtherStepDir;
+  # Now we can report the previous Run() / Wait() error
+  FatalError "Failure running the build script in the VM: $ErrMessage\n",
+             $FullErrFileName, $Job, $Task;
+}
 
-      my $Bits = $OtherStep->FileType eq "exe64" ? "64" : "32";
-      my $TestExecutable;
-      if ($Step->FileType ne "patchprograms")
-      {
-        $TestExecutable = "build-mingw$Bits/dlls/$BaseName/tests/${BaseName}_test.exe";
-      }
-      else
-      {
-        $TestExecutable = "build-mingw$Bits/programs/$BaseName/tests/${BaseName}.exe_test.exe";
-      }
-      if (!$TA->GetFile($TestExecutable, "$OtherStepDir/$OtherFileName"))
-      {
-        $ErrMessage = $TA->GetLastError();
-        FatalError "Can't copy generated executable from VM: $ErrMessage\n",
-                   $FullErrFileName, $Job, $Task;
-      }
-      chmod 0664, "$OtherStepDir/$OtherFileName";
+# Don't try copying the test executables if the build step failed
+if ($NewStatus eq "completed")
+{
+  foreach my $OtherStep (@{$Job->Steps->GetItems()})
+  {
+    next if ($OtherStep->No == $StepNo);
+
+    my $OtherFileName = $OtherStep->FileName;
+    next if ($OtherFileName !~ /^[\w_\-]+(?:|\.exe)_test(?:|64)\.exe$/);
+
+    my $OtherStepDir = "$DataDir/jobs/$JobId/" . $OtherStep->No;
+    mkdir $OtherStepDir;
+
+    my $Bits = $OtherStep->FileType eq "exe64" ? "64" : "32";
+    my $TestExecutable;
+    if ($Step->FileType ne "patchprograms")
+    {
+      $TestExecutable = "build-mingw$Bits/dlls/$BaseName/tests/${BaseName}_test.exe";
     }
+    else
+    {
+      $TestExecutable = "build-mingw$Bits/programs/$BaseName/tests/${BaseName}.exe_test.exe";
+    }
+    if (!$TA->GetFile($TestExecutable, "$OtherStepDir/$OtherFileName"))
+    {
+      $ErrMessage = $TA->GetLastError();
+      FatalError "Can't copy the generated executable from the VM: $ErrMessage\n",
+                 $FullErrFileName, $Job, $Task;
+    }
+    chmod 0664, "$OtherStepDir/$OtherFileName";
   }
 }
+
 $TA->Disconnect();
 
 $Task->Status($NewStatus);

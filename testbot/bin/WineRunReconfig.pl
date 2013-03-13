@@ -219,32 +219,36 @@ my $Script = "#!/bin/sh\n" .
 if (!$TA->SendFileFromString($Script, "task", $TestAgent::SENDFILE_EXE))
 {
   $ErrMessage = $TA->GetLastError();
-  FatalError "Can't send the script to VM: $ErrMessage\n",
+  FatalError "Can't send the script to the VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Task;
 }
 my $Pid = $TA->Run(["./task"], 0);
 if (!$Pid or !defined $TA->Wait($Pid, $Task->Timeout))
 {
   $ErrMessage = $TA->GetLastError();
+  # Try to grab the reconfig log before reporting the failure
 }
-
-if (defined($ErrMessage))
+my $NewStatus;
+if ($TA->GetFile("Reconfig.log", $FullLogFileName))
 {
-  $TA->GetFile("Reconfig.log", $FullLogFileName);
-  ProcessLog($FullLogFileName, $FullErrFileName);
-  FatalError "Failure running script in VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Task;
+  $NewStatus = ProcessLog($FullLogFileName, $FullErrFileName);
 }
-
-if (!$TA->GetFile("Reconfig.log", $FullLogFileName))
+elsif (!defined $ErrMessage)
 {
+  # This GetFile() error is the first one so report it
   $ErrMessage = $TA->GetLastError();
-  FatalError "Can't copy log from VM: $ErrMessage\n",
+  FatalError "Can't copy the reconfig log from the VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Task;
 }
+if (defined $ErrMessage)
+{
+  # Now we can report the previous Run() / Wait() error
+  FatalError "Could not run the reconfig script in the VM: $ErrMessage\n",
+             $FullErrFileName, $Job, $Task;
+}
+
 $TA->Disconnect();
 
-my $NewStatus = ProcessLog($FullLogFileName, $FullErrFileName);
 if ($NewStatus eq "completed")
 {
   $ErrMessage = $VM->RemoveSnapshot($VM->IdleSnapshot);
@@ -257,6 +261,9 @@ if ($NewStatus eq "completed")
   $ErrMessage = $VM->CreateSnapshot($VM->IdleSnapshot);
   if (defined($ErrMessage))
   {
+    # Without the snapshot the VM is not usable anymore but FatalError() will
+    # just mark it as 'dirty'. It's only the next time it is used that the
+    # problem will be noticed and that it will be taken offline.
     FatalError "Can't take snapshot: $ErrMessage\n",
                $FullErrFileName, $Job, $Task;
   }
