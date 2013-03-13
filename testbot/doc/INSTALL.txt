@@ -73,26 +73,15 @@ Janitorial tasks:
     */20 * * * * $HOME/tools/testbot/scripts/CheckWineTestBot.pl
 
 Setup for Wine's patches site:
-- See http://source.winehq.org/patches/ for reference.
 - Before trying to set this up make sure that you can submit patches
   using the WineTestBot web interface and that the results are sane.
   You may also want to run with $PatchFromEMailOverride set for a while
   to spot any issue under load.
-- First bootstrap things with WinePatchesWebGet.pl. Go to the patches
-  website and write down the id of the oldest and newest patches you
-  want to inject into WineTestBot. Then run:
-  ./bin/WinePatchesWebGet.pl OLD_PATCH_ID NEW_PATCH_ID
-
-- If that goes well you can then keep WineTestBot up to date by
-  following the steps below.
-- Set up an email address to receive the patches site notifications
-  and send that email address to the patches maintainer.
-- Arrange for the WinePatchesWebNotify.pl script to be fed the
-  notification emails. One way to do so would be to use procmail and
-  add the following lines to the $HOME/.procmailrc file:
-    :0c:
-    * ^Subject: New patches available at
-    | $HOME/tools/testbot/bin/WinePatchesWebNotify.pl
+- In $HOME/tools/testbot/var, set up the webpatches symbolic link to point to
+  where the patches website stores its patches and test results. Typically:
+    ln -s $HOME/patches $HOME/tools/testbot/var/webpatches
+- Use a cron job to run WinePatchesWebSubmit.pl periodically. For instance:
+    */5 * * * * $HOME/tools/testbot/bin/WinePatchesWebSubmit.pl
 
 Setup for Winetest updates:
 - Use a cron job to run CheckForWinetestUpdate.pl periodically. For

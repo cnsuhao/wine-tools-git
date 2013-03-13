@@ -348,66 +348,6 @@ sub HandleWinePatchMLSubmission
   return "1OK";
 }
 
-sub HandleWinePatchWebNotification
-{
-  # Validate file name
-  if ($_[0] !~ m/([0-9a-fA-F]{32}_patchnotification)/)
-  {
-    return "0Invalid file name";
-  }
-  my $FullMessageFileName = "$DataDir/staging/$1";
-
-  my $LatestWebPatchId;
-  if (open(NOTIFICATION, "<$FullMessageFileName"))
-  {
-    my $Line;
-    while (defined($Line = <NOTIFICATION>) && ! defined($LatestWebPatchId))
-    {
-      if ($Line =~ m/^The latest patch is (\d+)$/)
-      {
-        $LatestWebPatchId = $1;
-      }
-    }
-    close(NOTIFICATION);
-  }
-
-  unlink($FullMessageFileName);
-
-  if (! defined($LatestWebPatchId))
-  {
-    return "0No patch id found in message";
-  }
-
-  my $MaxExistingWebPatchId = 0;
-  foreach my $Patch (@{CreatePatches()->GetItems()})
-  {
-    if ($MaxExistingWebPatchId < $Patch->WebPatchId)
-    {
-      $MaxExistingWebPatchId = $Patch->WebPatchId;
-    }
-  }
-
-  if ($MaxExistingWebPatchId < $LatestWebPatchId)
-  {
-    $ActiveBackEnds{'WineTestBot'}->PrepareForFork();
-    my $Pid = fork;
-    if (!defined $Pid)
-    {
-      LogMsg "Unable to fork for WinePatchesWebGet.pl: $!\n";
-    }
-    elsif (!$Pid)
-    {
-      WineTestBot::Log::SetupRedirects();
-      exec("$BinDir/WinePatchesWebGet.pl " . ($MaxExistingWebPatchId + 1) .
-           " " . $LatestWebPatchId) or
-      LogMsg "Unable to exec WinePatchesWebGet.pl: $!\n";
-      exit(1);
-    }
-  }
-
-  return "1OK";
-}
-
 sub HandleWinePatchWebSubmission
 {
   # Validate file name
@@ -489,7 +429,6 @@ my %Handlers=(
     "taskcomplete"             => \&HandleTaskComplete,
     "vmstatuschange"           => \&HandleVMStatusChange,
     "winepatchmlsubmission"    => \&HandleWinePatchMLSubmission,
-    "winepatchwebnotification" => \&HandleWinePatchWebNotification,
     "winepatchwebsubmission"   => \&HandleWinePatchWebSubmission,
     );
 
@@ -565,10 +504,6 @@ sub SafetyNet
       if ($DirEntry =~ m/[0-9a-fA-F]{32}_wine-patches/)
       {
         HandleWinePatchMLSubmission($DirEntry);
-      }
-      elsif ($DirEntry =~ m/[0-9a-fA-F]{32}_patchnotification/)
-      {
-        HandleWinePatchWebNotification($DirEntry);
       }
     }
   }

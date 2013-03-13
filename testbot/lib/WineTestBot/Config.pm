@@ -30,7 +30,7 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
              $WaitForToolsInVM $AdminEMail $RobotEMail $WinePatchToOverride
              $WinePatchCc $SuiteTimeout $SingleTimeout
              $BuildTimeout $ReconfigTimeout $OverheadTimeout $TagPrefix
-             $ProjectName $PatchesMailingList $PatchResultsEMail $LDAPServer
+             $ProjectName $PatchesMailingList $LDAPServer
              $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter
              $LDAPRealNameAttribute $LDAPEMailAttribute $AgentPort $Tunnel
              $TunnelDefaults $JobPurgeDays $JobArchiveDays $WebHostName);
@@ -42,7 +42,7 @@ require Exporter;
              $SleepAfterRevert $WaitForToolsInVM $AdminEMail $RobotEMail
              $WinePatchToOverride $WinePatchCc $SuiteTimeout
              $SingleTimeout $BuildTimeout $ReconfigTimeout $OverheadTimeout
-             $TagPrefix $ProjectName $PatchesMailingList $PatchResultsEMail
+             $TagPrefix $ProjectName $PatchesMailingList
              $LDAPServer $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter
              $LDAPRealNameAttribute $LDAPEMailAttribute $AgentPort $Tunnel
              $TunnelDefaults $JobPurgeDays $JobArchiveDays $WebHostName);

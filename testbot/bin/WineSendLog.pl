@@ -446,68 +446,68 @@ EOF
     close SENDMAIL;
   }
 
-  if (defined($PatchResultsEMail))
+  my $Patch = $Job->Patch;
+  if (0 and defined $Patch->WebPatchId and -d "$DataDir/webpatches")
   {
-    my $Patch = $Job->Patch;
-    open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
-    print SENDMAIL "From: Marvin <$RobotEMail>\n";
-    print SENDMAIL "To: $PatchResultsEMail\n";
-    print SENDMAIL "X-TestBot-Results: ", $Patch->WebPatchId,
-          ($Messages ? " failed\n" : " passed\n");
-    print SENDMAIL "Subject: TestBot results for patch ", $Patch->WebPatchId,
-          ($Messages ? ": Failed\n" : ": Passed\n");
-    print SENDMAIL "\n";
-    print SENDMAIL "--- BEGIN GENERAL ---\n";
-    print SENDMAIL "Patch: ", $Patch->WebPatchId, "\n";
-    print SENDMAIL "Patch-Subject: ", $Patch->Subject, "\n";
-    print SENDMAIL "Test-Result: ", $Messages ? "Failed" : "Passed", "\n";
-    print SENDMAIL "--- END GENERAL ---\n";
-    print SENDMAIL "--- BEGIN NEW_ERRORS ---\n";
+    my $BaseName = "$DataDir/webpatches/" . $Patch->WebPatchId;
     if ($Messages)
     {
-      print SENDMAIL $Messages;
+      if (open(my $testfail, ">", "$BaseName.testfail"))
+      {
+        print $testfail $Messages;
+        close($testfail);
+      }
+      else
+      {
+        LogMsg "Job " . $Job->Id . ": Unable to open '$BaseName.testfail' for writing: $!";
+      }
     }
-    print SENDMAIL "--- END NEW_ERRORS ---\n";
-    print SENDMAIL "--- BEGIN FULL_LOGS ---\n";
-    foreach my $Key (@SortedKeys)
+    if (open (my $result, ">", "$BaseName.testbot"))
     {
-      my $StepTask = $StepsTasks->GetItem($Key);
-
-      print SENDMAIL "\n=== ", $StepTask->GetTitle(), " ===\n";
-
-      my $TaskDir = "$DataDir/jobs/" . $Job->Id . "/" . $StepTask->StepNo .
-                    "/" . $StepTask->TaskNo;
-
-      my $PrintSeparator = !1;
-      if (open LOGFILE, "<$TaskDir/log")
+      foreach my $Key (@SortedKeys)
       {
-        my $Line;
-        while (defined($Line = <LOGFILE>))
+        my $StepTask = $StepsTasks->GetItem($Key);
+        print $result "\n=== ", $StepTask->GetTitle(), " ===\n";
+
+        my $TaskDir = "$DataDir/jobs/" . $Job->Id . "/" . $StepTask->StepNo .
+                      "/" . $StepTask->TaskNo;
+
+        my $PrintSeparator = !1;
+        if (open(my $logfile, "<", "$TaskDir/log"))
         {
-          $Line =~ s/\s*$//;
-          print SENDMAIL "$Line\n";
-          $PrintSeparator = 1;
-        }
-        close LOGFILE;
-      }
-  
-      if (open ERRFILE, "<$TaskDir/err")
-      {
-        my $Line;
-        while (defined($Line = <ERRFILE>))
-        {
-          if ($PrintSeparator)
+          my $Line;
+          while (defined($Line = <$logfile>))
           {
-            print SENDMAIL "\n";
-            $PrintSeparator = !1;
+            $Line =~ s/\s*$//;
+            print $result "$Line\n";
+            $PrintSeparator = 1;
           }
-          $Line =~ s/\s*$//;
-          print SENDMAIL "$Line\n";
+          close($logfile);
         }
-        close ERRFILE;
+  
+        if (open(my $errfile, "<", "$TaskDir/err"))
+        {
+          my $Line;
+          while (defined($Line = <$errfile>))
+          {
+            if ($PrintSeparator)
+            {
+              print $result "\n";
+              $PrintSeparator = !1;
+            }
+            $Line =~ s/\s*$//;
+            print $result "$Line\n";
+          }
+          close($errfile);
+        }
       }
+      print $result "--- END FULL_LOGS ---\n";
+      close($result);
     }
-    print SENDMAIL "--- END FULL_LOGS ---\n";
+    else
+    {
+      LogMsg "Job " . $Job->Id . ": Unable to open '$BaseName.testbot' for writing: $!";
+    }
   }
 }
 

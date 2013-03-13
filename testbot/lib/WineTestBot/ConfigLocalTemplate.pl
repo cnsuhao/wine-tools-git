@@ -46,10 +46,6 @@ $WineTestBot::Config::WinePatchToOverride = $WineTestBot::Config::AdminEMail;
 # the wine-devel mailing list.
 $WineTestBot::Config::WinePatchCc = "";
 
-# Email address to send the results to for integration with the Wine Patches
-# web site
-$WineTestBot::Config::PatchResultsEMail = undef;
-
 # Host name of the web interface
 $WineTestBot::Config::WebHostName = undef;
 
