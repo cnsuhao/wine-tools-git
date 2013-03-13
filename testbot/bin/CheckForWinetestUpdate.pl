@@ -60,7 +60,7 @@ sub AddJob
   my $NewJob = $Jobs->Add();
   $NewJob->User(WineTestBot::Users->GetBatchUser());
   $NewJob->Priority($BaseJob && $Bits == 32 ? 6 : 7);
-  $NewJob->Remarks("http://test.winehq.org job - " .
+  $NewJob->Remarks("WineTest: " .
                    ($Bits == 32 ? ($BaseJob ? "base" : "other") : "64-bit") .
                    " VMs");
 
