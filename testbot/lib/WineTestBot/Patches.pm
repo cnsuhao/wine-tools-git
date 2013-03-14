@@ -187,7 +187,7 @@ sub Submit
   my $First = 1;
   foreach my $BaseName (keys %Targets)
   {
-    my $Jobs = CreateJobs();
+    my $Jobs = WineTestBot::Jobs::CreateJobs();
 
     # Create a new job for this patch
     my $NewJob = $Jobs->Add();
@@ -283,7 +283,7 @@ sub Submit
   }
   $self->Disposition($Disposition);
 
-  ScheduleJobs();
+  WineTestBot::Jobs::ScheduleJobs();
 
   return undef;
 }
