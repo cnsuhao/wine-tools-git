@@ -236,77 +236,14 @@ sub HandleVMStatusChange
   return "1OK";
 }
 
-sub CheckForWinetestUpdate
-{
-  my $Bits = $_[0];
-
-  $ActiveBackEnds{'WineTestBot'}->PrepareForFork();
-  my $Pid = fork;
-  if (!defined $Pid)
-  {
-    LogMsg "Unable to fork for CheckForWinetestUpdate.pl: $!\n";
-  }
-  elsif (!$Pid)
-  {
-    WineTestBot::Log::SetupRedirects();
-    exec("$BinDir/CheckForWinetestUpdate.pl $Bits") or
-    LogMsg "Unable to exec CheckForWinetestUpdate.pl: $!\n";
-    exit(1);
-  }
-}
-
-sub CheckForWinetestUpdate32
-{
-  CheckForWinetestUpdate(32);
-}
-
-sub CheckForWinetestUpdate64
-{
-  CheckForWinetestUpdate(64);
-}
-
-sub GiveUpOnWinetestUpdate
-{
-  DeleteEvent("CheckForWinetestUpdate32");
-  DeleteEvent("CheckForWinetestUpdate64");
-  LogMsg "Giving up on winetest.exe update\n";
-}
-
-sub HandleExpectWinetestUpdate
-{
-  if (EventScheduled("GiveUpOnWinetestUpdate"))
-  {
-    DeleteEvent("GiveUpOnWinetestUpdate");
-  }
-  else
-  {
-    AddEvent("CheckForWinetestUpdate32", 300, 1, \&CheckForWinetestUpdate32);
-    AddEvent("CheckForWinetestUpdate64", 300, 1, \&CheckForWinetestUpdate64);
-  }
-  AddEvent("GiveUpOnWinetestUpdate", 3660, 0, \&GiveUpOnWinetestUpdate);
-
-  return "1OK";
-}
-
 sub HandleFoundWinetestUpdate
 {
   my $Bits = $_[0];
 
-  if ($Bits =~ m/^(32|64)$/)
-  {
-    $Bits = $1;
-  }
-  else
+  if ($Bits !~ /^(?:32|64)$/)
   {
     LogMsg "Invalid number of bits in foundwinetestupdate message\n";
     return "0Invalid number of bits";
-  }
-
-  DeleteEvent("CheckForWinetestUpdate${Bits}");
-  if (! EventScheduled("CheckForWinetestUpdate32") &&
-      ! EventScheduled("CheckForWinetestUpdate64"))
-  {
-    DeleteEvent("GiveUpOnWinetestUpdate");
   }
 
   my $ErrMessage = ScheduleJobs();
@@ -418,7 +355,6 @@ sub HandleGetScreenshot
 }
 
 my %Handlers=(
-    "expectwinetestupdate"     => \&HandleExpectWinetestUpdate,
     "foundwinetestupdate"      => \&HandleFoundWinetestUpdate,
     "getscreenshot"            => \&HandleGetScreenshot,
     "jobcancel"                => \&HandleJobCancel,

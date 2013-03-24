@@ -34,8 +34,7 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $RunningInEngine);
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(&PingEngine &JobSubmit &JobStatusChange &JobCancel &JobRestart
-             &TaskComplete &VMStatusChange
-             &ExpectWinetestUpdate &FoundWinetestUpdate
+             &TaskComplete &VMStatusChange &FoundWinetestUpdate
              &WinePatchMLSubmission &WinePatchWebSubmission &GetScreenshot);
 @EXPORT_OK = qw($RunningInEngine);
 
@@ -171,21 +170,6 @@ sub VMStatusChange
   my ($VMKey, $OldStatus, $NewStatus) = @_;
 
   my $Reply = SendCmdReceiveReply("vmstatuschange $VMKey $OldStatus $NewStatus\n");
-  if (length($Reply) < 1)
-  {
-    return "Unrecognized reply received from engine";
-  }
-  if (substr($Reply, 0, 1) eq "1")
-  {
-    return undef;
-  }
- 
-  return substr($Reply, 1);
-}
-
-sub ExpectWinetestUpdate
-{
-  my $Reply = SendCmdReceiveReply("expectwinetestupdate\n");
   if (length($Reply) < 1)
   {
     return "Unrecognized reply received from engine";
