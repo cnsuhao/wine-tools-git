@@ -415,7 +415,7 @@ sub InitVMs()
 
 =item C<SafetyNet()>
 
-This is called on startup and regularly after that to catch thing that fall
+This is called on startup and regularly after that to catch things that fall
 through the cracks, possibly because of an Engine restart.
 Specifically it updates the status of all the current Jobs, Steps and
 Tasks, then schedules Tasks to be run, checks the staging directory for

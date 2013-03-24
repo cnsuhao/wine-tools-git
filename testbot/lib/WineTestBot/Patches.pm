@@ -386,7 +386,7 @@ sub IsTestPatch
 
 =item C<NewPatch()>
 
-Creates a WineTestBot::Patch object for the given message. If that the message
+Creates a WineTestBot::Patch object for the given message. If the message
 does impact Wine's tests then the Patch object disposition is set and no
 further action is performed. Otherwise if the patch is part of a series then
 it gets tied to a WineTestBot::PendingPatchSet object by

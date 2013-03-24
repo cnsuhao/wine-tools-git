@@ -245,7 +245,7 @@ sub GenerateBody
     my $Action = $self->GetParam("Action");
     if ($Action eq "Cancel job")
     {
-      print "<p>Job will be cancelled.</p>\n";
+      print "<p>Job will be canceled.</p>\n";
     }
     elsif ($Action eq "Restart job")
     {

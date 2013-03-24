@@ -155,7 +155,7 @@ sub UpdateStatus($)
   # Inherit the steps most significant status with some caveats:
   # - if one of the steps is still queued then this job is still running
   # - if a step is skipped it's either because a previous step failed or because
-  #   the user cancelled the job. In both cases mark the job as failed
+  #   the user canceled the job. In both cases mark the job as failed
   # - if all the steps are still queued, then this job's original status,
   #   'queued', is still valid
   foreach my $StepStatus ("running", "failed", "skipped", "completed")

@@ -586,7 +586,7 @@ sub CountPoweredOnNonBaseVMs
 {
   my $self = shift;
 
-  my $PowerdOnVMs = 0;
+  my $PoweredOnVMs = 0;
   foreach my $VM (@{$self->GetItems()})
   {
     my $VMStatus = $VM->Status;
@@ -596,11 +596,11 @@ sub CountPoweredOnNonBaseVMs
          $VMStatus eq "idle" ||
          $VMStatus eq "running"))
     {
-      $PowerdOnVMs++;
+      $PoweredOnVMs++;
     }
   }
 
-  return $PowerdOnVMs;
+  return $PoweredOnVMs;
 }
 
 sub SortKeysBySortOrder

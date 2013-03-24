@@ -184,7 +184,7 @@ sub AUTOLOAD
   my $self = shift;
 
   my $PropertyName = $ObjectModel::Item::AUTOLOAD;
-  # strip fully-qualfied portion
+  # strip fully-qualified portion
   $PropertyName =~ s/.*://;
   if ($PropertyName eq "DESTROY")
   {
