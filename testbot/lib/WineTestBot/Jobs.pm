@@ -294,7 +294,6 @@ use ObjectModel::PropertyDescriptor;
 use WineTestBot::WineTestBotObjects;
 use WineTestBot::Branches;
 use WineTestBot::Config;
-use WineTestBot::Log;
 use WineTestBot::Patches;
 use WineTestBot::Steps;
 use WineTestBot::Users;
