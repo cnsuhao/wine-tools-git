@@ -198,7 +198,8 @@ int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *child
         break;
     case WAIT_TIMEOUT:
         set_status(ST_ERROR, "timed out waiting for the child process");
-        return 0;
+        success = 0;
+        goto cleanup;
     default:
         debug("WaitForMultipleObjects() returned %lu (le=%lu). Giving up!\n", r, GetLastError());
         break;
@@ -207,6 +208,7 @@ int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *child
     list_remove(&child->entry);
     free(child);
 
+ cleanup:
     /* We must reset WSAEventSelect before we can make
      * the socket blocking again.
      */
