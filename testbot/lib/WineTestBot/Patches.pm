@@ -207,12 +207,12 @@ sub Submit
     my $NewStep = $Steps->Add();
     # Create a link to the patch file in the staging dir
     my $FileNameRandomPart = GenerateRandomString(32);
-    while (-e ("$DataDir/staging/${FileNameRandomPart}_patch"))
+    while (-e ("$DataDir/staging/${FileNameRandomPart}_patch.diff"))
     {
       $FileNameRandomPart = GenerateRandomString(32);
     }
-    link $PatchFileName, "$DataDir/staging/${FileNameRandomPart}_patch";
-    $NewStep->FileName($FileNameRandomPart . " patch");
+    link $PatchFileName, "$DataDir/staging/${FileNameRandomPart}_patch.diff";
+    $NewStep->FileName($FileNameRandomPart . " patch.diff");
     my @Keys = keys %{$Targets{$BaseName}};
     $NewStep->FileType($Targets{$BaseName}{$Keys[0]});
     $NewStep->InStaging(1);
