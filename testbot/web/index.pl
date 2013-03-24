@@ -100,13 +100,11 @@ sub GenerateDataCell
     {
       my $Failures = 0;
       my $HasTestResult;
-      my $Steps = $Item->Steps;
-      foreach my $StepKey (@{$Steps->GetKeys()})
+      foreach my $Step (@{$Item->Steps->GetItems()})
       {
-        my $Tasks = $Steps->GetItem($StepKey)->Tasks;
-        foreach my $TaskKey (@{$Tasks->GetKeys()})
+        foreach my $Task (@{$Step->Tasks->GetItems()})
         {
-          my $TaskFailures = $Tasks->GetItem($TaskKey)->TestFailures;
+          my $TaskFailures = $Task->TestFailures;
           if ($TaskFailures ne "")
           {
             $HasTestResult = 1;
