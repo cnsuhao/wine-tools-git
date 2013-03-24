@@ -57,8 +57,7 @@ sub IsBotFailure
 {
   my $ErrLine = $_[0];
 
-  return ($ErrLine =~ m/Cancelled/ ||
-          $ErrLine =~ m/Can't set VM status to running/ ||
+  return ($ErrLine =~ m/Can't set VM status to running/ ||
           $ErrLine =~ m/Can't copy exe to VM/ ||
           $ErrLine =~ m/Can't copy log from VM/ ||
           $ErrLine =~ m/Can't copy generated executable from VM/);
