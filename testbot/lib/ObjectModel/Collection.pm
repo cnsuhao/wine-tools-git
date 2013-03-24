@@ -289,7 +289,7 @@ sub Validate
           my $ExistingItem = $self->GetBackEnd()->LoadItem($self, $Item->GetKey());
           if (defined($ExistingItem))
           {
-            $ErrMessage = $self->GetItemName() . $ErrMessage .
+            $ErrMessage = $self->GetItemName() . " " . $ErrMessage .
                           " already exists";
             return ($Item->GetKey(), undef, $ErrMessage);
           }
