@@ -278,11 +278,15 @@ elsif ($Step->Type eq "suite")
       $Info .= ": " if ($Info ne "");
       $Info .=  $VM->Details;
   }
-  # Escape the info argument for cmd's command interpreter
-  $Info =~ s/\\/\\\\/g;
+  # Escape the arguments for cmd's command interpreter
+  my $EMail = $AdminEMail;
+  $EMail =~ s/"/\\"/g;
+  $EMail =~ s/%/%%/g;
+  $EMail =~ s/%/%%/g;
   $Info =~ s/"/\\"/g;
   $Info =~ s/%/%%/g;
-  $Script .= "-q -o $RptFileName -t $Tag -m $AdminEMail -i \"$Info\"\r\n" .
+  $Info =~ s/%/%%/g;
+  $Script .= "-q -o $RptFileName -t $Tag -m \"$EMail\" -i \"$Info\"\r\n" .
              "$FileName -q -s $RptFileName\r\n";
 }
 if (!$TA->SendFileFromString($Script, "script.bat", $TestAgent::SENDFILE_EXE))
