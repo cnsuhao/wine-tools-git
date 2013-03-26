@@ -129,6 +129,10 @@ sub Run
     exit(1);
   }
 
+  # Note that if the child process completes quickly (typically due to some
+  # error), it may set ChildPid to undef before we get here. So we may end up
+  # with non-running tasks for which ChildPid is set. That's ok because
+  # ChildPid should be ignored anyway if Status is not 'running'.
   $self->ChildPid($Pid);
   $self->Started(time);
   my ($ErrProperty, $ErrMessage) = $self->Save();
@@ -206,6 +210,7 @@ BEGIN
     CreateItemrefPropertyDescriptor("VM", "VM", !1,  1, \&CreateVMs, ["VMName"]),
     CreateBasicPropertyDescriptor("Timeout", "Timeout", !1, 1, "N", 4),
     CreateBasicPropertyDescriptor("CmdLineArg", "Command line args", !1, !1, "A", 256),
+    # Note: ChildPid is only valid when Status == 'running'.
     CreateBasicPropertyDescriptor("ChildPid", "Child process id", !1, !1, "N", 5),
     CreateBasicPropertyDescriptor("Started", "Execution started", !1, !1, "DT", 19),
     CreateBasicPropertyDescriptor("Ended", "Execution ended", !1, !1, "DT", 19),
