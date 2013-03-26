@@ -217,8 +217,8 @@ sub InitializeNew
 {
   my $self = shift;
 
-  $self->Status("Idle");
-  $self->IdleSnapshot("winetest_on");
+  $self->Status("idle");
+  $self->IdleSnapshot("wtb");
 
   $self->SUPER::InitializeNew(@_);
 }
