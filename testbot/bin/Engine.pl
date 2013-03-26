@@ -712,6 +712,11 @@ sub main
     }
     exit 0;
   }
+  if (PingEngine())
+  {
+    print STDERR "The WineTestBot Engine is running already\n";
+    exit 1;
+  }
 
   $ENV{PATH} = "/usr/bin:/bin";
   delete $ENV{ENV};
