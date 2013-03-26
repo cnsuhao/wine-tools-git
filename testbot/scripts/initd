@@ -86,18 +86,12 @@ then
         $0 start
         ;;
 
-    try-restart)
+    try-restart|reload)
         ## Do a restart only if the service was active before.
         if $0 status
         then
             $0 restart
         fi
-        ;;
-
-    reload)
-	log_daemon_msg "Reloading the WineTestBot configuration"
-        killproc -p $PIDFILE $DAEMON -HUP
-	log_end_msg $?
         ;;
 
     status)
@@ -184,7 +178,7 @@ then
             # Remember status and be verbose
             rc_status -v
             ;;
-        try-restart|condrestart)
+        try-restart|condrestart|reload)
             ## Do a restart only if the service was active before.
             ## Note: try-restart is now part of LSB (as of 1.9).
             ## RH has a similar command named condrestart.
@@ -208,15 +202,6 @@ then
 
             # Remember status and be quiet
             rc_status
-            ;;
-        reload)
-            log_daemon_msg "Reloading service WineTestBot"
-            killproc -HUP $DAEMON
-            log_end_msg $?
-
-            ## Otherwise if it does not support reload:
-            #rc_failed 3
-            #rc_status -v
             ;;
     status)
         status_of_proc $DAEMON
