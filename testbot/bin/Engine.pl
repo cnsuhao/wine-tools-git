@@ -58,6 +58,136 @@ sub FatalError
   exit 1;
 }
 
+
+=pod
+=over 12
+
+=item C<Cleanup()>
+
+The Cleanup() function gets the tasks and VMs in a consistent state on the
+Engine startup. It has to contend with two main scenarios:
+- The Engine being restarted. Any task started just before that is still
+  running should still have its process and powered on VM and should be left
+  alone so it can complete normally. If a task died unexpectedly while the
+  Engine was done it's ok to requeue it.
+- The Engine startup after a reboot. All task processes will be dead and need
+  to be requeued. But the VMs are likely to be hosted on a separate machine so
+  it is quite possible that they will still be running. Hopefully any running
+  process matching a task's ChildPid will belong to another user so we don't
+  mistake that case for the previous one.
+
+In all cases we only trust that a VM status field is still valid:
+- It is 'running' and used by a task that is still running.
+- It is 'reverting' or 'sleeping', is powered on and the revert process is
+  still running.
+- It is 'idle' and powered on.
+In all other cases the VM will be powered off and marked as dirty.
+
+=back
+=cut
+
+sub Cleanup()
+{
+  # Verify that the running tasks are still alive and requeue them if not.
+  # Ignore the Job and Step status fields because they may be a bit out of date.
+  my %BusyVMs;
+  foreach my $Job (@{CreateJobs()->GetItems()})
+  {
+    my $CallUpdateStatus;
+    foreach my $Step (@{$Job->Steps->GetItems()})
+    {
+      my $Tasks = $Step->Tasks;
+      $Tasks->AddFilter("Status", ["running"]);
+      foreach my $Task (@{$Tasks->GetItems()})
+      {
+        my $TaskKey = join("/", $Job->Id, $Step->No, $Task->No);
+
+        my $Requeue;
+        if (!defined $Task->ChildPid)
+        {
+          # That task's process died somehow.
+          $Requeue = 1;
+        }
+        elsif (!$Task->VM->IsPoweredOn())
+        {
+          # A running task should have a powered on VM.
+          $Requeue = 1;
+          # Kill the task process if it's still there.
+          kill("TERM", $Task->ChildPid);
+        }
+        elsif (!kill(0, $Task->ChildPid))
+        {
+          # The event that caused the WineTestBot server to restart probably
+          # also killed the task's child process.
+          $Requeue = 1;
+        }
+        else
+        {
+          # This task is still running!
+          LogMsg "$TaskKey is still running\n";
+          $BusyVMs{$Task->VM->GetKey()} = 1;
+          next;
+        }
+        if ($Requeue)
+        {
+          LogMsg "Requeuing $TaskKey\n";
+          system("rm", "-r", "-f", "$DataDir/jobs/$TaskKey");
+          $Task->Status("queued");
+          $Task->ChildPid(undef);
+          $Task->Started(undef);
+          $Task->Ended(undef);
+          $Task->TestFailures(undef);
+          $Task->Save();
+          $CallUpdateStatus = 1;
+        }
+      }
+    }
+    # The Job and Steps status fields will actually remain unchanged except if
+    # the task that died was in the first step. In that case they will revert
+    # from 'running' to 'queued'.
+    $Job->UpdateStatus() if ($CallUpdateStatus);
+  }
+
+  # Get the VMs in order now
+  my $VMs = CreateVMs();
+  $VMs->FilterEnabledRole();
+  $VMs->FilterEnabledStatus();
+  foreach my $VM (@{$VMs->GetItems()})
+  {
+    my $VMKey = $VM->GetKey();
+    if ($BusyVMs{$VMKey})
+    {
+      # This VM is still running a task. Let it.
+      LogMsg "$VMKey is used by a task\n";
+      next;
+    }
+
+    if ($VM->IsPoweredOn())
+    {
+      next if ($VM->Status eq "idle");
+      if (($VM->Status eq "reverting" or $VM->Status eq "sleeping") and
+          defined $VM->ChildPid and kill(0, $VM->ChildPid))
+      {
+        # This VM is still being reverted. Let that process run its course.
+        LogMsg "$VMKey is being reverted\n";
+        next;
+      }
+      LogMsg "Marking $VMKey as dirty and shutting it down\n";
+      $VM->PowerOff();
+    }
+    else
+    {
+      next if ($VM->Status eq "dirty");
+      LogMsg "Marking $VMKey as dirty\n";
+    }
+
+    $VM->Status('dirty');
+    $VM->ChildPid(undef);
+    $VM->Save();
+  }
+}
+
+
 sub HandlePing
 {
   return "1pong\n";
@@ -394,23 +524,6 @@ sub ClientRead
   return $GotSomething;
 }
 
-sub InitVMs()
-{
-  # Kill any stale RevertVM.pl process so they don't mess with our VMs
-  system('killall RevertVM.pl 2>/dev/null');
-
-  # On startup we don't know what state the VMs are in. So consider them all
-  # to be dirty.
-  my $VMs = CreateVMs();
-  $VMs->FilterEnabledRole();
-  $VMs->FilterEnabledStatus();
-  foreach my $VM (@{$VMs->GetItems()})
-  {
-    $VM->Status('dirty');
-    $VM->Save();
-  }
-}
-
 =pod
 =over 12
 
@@ -515,7 +628,7 @@ sub main
   $WineTestBot::Engine::Notify::RunningInEngine = 1;
   LogMsg "Starting the WineTestBot Engine\n";
 
-  InitVMs();
+  Cleanup();
 
   my $SockName = "$DataDir/socket/engine";
   my $uaddr = sockaddr_un($SockName);

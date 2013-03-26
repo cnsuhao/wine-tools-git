@@ -330,6 +330,15 @@ sub RemoveSnapshot($$)
   return undef;
 }
 
+sub IsPoweredOn($)
+{
+  my ($self) = @_;
+
+  my ($ErrMessage, $Domain) = $self->_GetDomain();
+  return undef if (defined $ErrMessage);
+  return $Domain->is_active();
+}
+
 sub PowerOn
 {
   my ($self) = @_;
@@ -513,6 +522,14 @@ sub RunRevert
     exit(1);
   }
 
+  # Note that if the child process completes quickly (typically due to some
+  # error), it may set ChildPid to undef before we get here. So we may end up
+  # with non-reverting VM for which ChildPid is set. That's ok because
+  # ChildPid should be ignored anyway if Status is not 'reverting' or
+  # 'sleeping'.
+  $self->ChildPid($Pid);
+  $self->Save();
+
   return undef;
 }
 
@@ -556,6 +573,8 @@ BEGIN
     CreateEnumPropertyDescriptor("Type", "Type of VM", !1, 1, ['win32', 'win64', 'build']),
     CreateEnumPropertyDescriptor("Role", "VM Role", !1, 1, ['extra', 'base', 'winetest', 'retired', 'deleted']),
     CreateEnumPropertyDescriptor("Status", "Current status", !1, 1, ['dirty', 'reverting', 'sleeping', 'idle', 'running', 'offline']),
+    # Note: ChildPid is only valid when Status == 'reverting' or 'sleeping'.
+    CreateBasicPropertyDescriptor("ChildPid", "Child process id", !1, !1, "N", 5),
     CreateBasicPropertyDescriptor("VirtURI", "LibVirt URI of the VM", !1, 1, "A", 64),
     CreateBasicPropertyDescriptor("VirtDomain", "LibVirt Domain for the VM", !1, 1, "A", 32),
     CreateBasicPropertyDescriptor("IdleSnapshot", "Name of idle snapshot", !1, 1, "A", 32),

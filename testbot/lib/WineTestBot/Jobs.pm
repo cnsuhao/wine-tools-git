@@ -152,17 +152,26 @@ sub UpdateStatus($)
     }
   }
 
-  # Inherit the steps most significant status with some caveats:
-  # - if one of the steps is still queued then this job is still running
-  # - if a step is skipped it's either because a previous step failed or because
-  #   the user canceled the job. In both cases mark the job as failed
-  # - if all the steps are still queued, then this job's original status,
-  #   'queued', is still valid
-  foreach my $StepStatus ("running", "failed", "skipped", "completed")
+  # Inherit the steps most significant status.
+  # Note that one or more tasks may have been requeued during the cleanup phase
+  # of the server startup. So this job may regress from 'running' back to
+  # 'queued'. This means all possible step status values must be considered.
+  foreach my $StepStatus ("running", "failed", "skipped", "completed", "queued")
   {
     if ($Has{$StepStatus})
     {
-      $Status = $Has{"queued"} ? "running" : $StepStatus eq "skipped" ? "failed" : $StepStatus;
+      if ($Has{"queued"})
+      {
+        # Either nothing ran so this job is still / again 'queued', or not
+        # everything has been run yet which means it's still 'running'.
+        $Status = $StepStatus eq "queued" ? "queued" : "running";
+      }
+      else
+      {
+        # If all steps are skipped it's because the user canceled the job. In
+        # that case mark the job as 'failed'.
+        $Status = $StepStatus eq "skipped" ? "failed" : $StepStatus;
+      }
       $self->Status($Status);
       if ($Status ne "running" && $Status ne "queued" && !defined $self->Ended)
       {

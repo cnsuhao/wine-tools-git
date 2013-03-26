@@ -33,6 +33,15 @@ sub _initialize
   $self->SUPER::_initialize(@_, CreateVMs());
 }
 
+sub DisplayProperty
+{
+  my $self = shift;
+  my $PropertyDescriptor = $_[0];
+
+  return "" if ($PropertyDescriptor->GetName() eq "ChildPid");
+  return $self->SUPER::DisplayProperty(@_);
+}
+
 package main;
 
 my $Request = shift;

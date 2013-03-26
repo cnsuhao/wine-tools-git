@@ -161,6 +161,8 @@ sub UpdateStatus
         close TASKLOG;
       }
       umask($OldUMask);
+      # This probably indicates a bug in the task script.
+      # Don't requeue the task to avoid an infinite loop.
       LogMsg "Child process for task $JobId/$StepNo/$TaskNo died unexpectedly\n";
       $self->Status("failed");
       $Status = "failed";

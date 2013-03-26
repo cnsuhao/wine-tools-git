@@ -105,17 +105,24 @@ sub UpdateStatus($$)
     $Has{$Task->UpdateStatus($Skip)} = 1;
   }
 
-  # Inherit the tasks most significant status with some caveats:
-  # - if one of the tasks is still queued then this step is still running
-  # - if all the tasks are still queued, then this step's original status,
-  #   'queued', is still valid
-  # - if we tagged some tasks as skipped, then the step status will no longer
-  #   be 'queued', which means we will save the step and hence its tasks
-  foreach my $TaskStatus ("running", "failed", "skipped", "completed")
+  # Inherit the tasks most significant status.
+  # Note that one or more tasks may have been requeued during the cleanup phase
+  # of the server startup. So this step may regress from 'running' back to
+  # 'queued'. This means all possible task status values must be considered.
+  foreach my $TaskStatus ("running", "failed", "skipped", "completed", "queued")
   {
     if ($Has{$TaskStatus})
     {
-      $Status = $Has{"queued"} ? "running" : $TaskStatus;
+      if ($Has{"queued"})
+      {
+        # Either nothing ran so this step is still / again 'queued', or not
+        # everything has been run yet which means it's still 'running'.
+        $Status = $TaskStatus eq "queued" ? "queued" : "running";
+      }
+      else
+      {
+        $Status = $TaskStatus;
+      }
       $self->Status($Status);
       $self->Save();
       last;

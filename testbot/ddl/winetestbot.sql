@@ -49,6 +49,7 @@ CREATE TABLE VMs
   Type         ENUM('win32', 'win64', 'build') NOT NULL,
   Role         ENUM('extra', 'base', 'winetest', 'retired', 'deleted') NOT NULL,
   Status       ENUM('dirty', 'reverting', 'sleeping', 'idle', 'running', 'offline') NOT NULL,
+  ChildPid     INT(5)           NULL,
   VirtURI      VARCHAR(64)      NOT NULL,
   VirtDomain   VARCHAR(32)      NOT NULL,
   IdleSnapshot VARCHAR(32)      NOT NULL,

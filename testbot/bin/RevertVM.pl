@@ -51,6 +51,7 @@ sub FatalError
   if ($VM)
   {
     $VM->Status("offline");
+    $VM->ChildPid(undef);
     $VM->Save();
 
     my $VMKey = $VM->GetKey();
@@ -133,6 +134,7 @@ if ($SleepAfterRevert != 0)
 }
 
 $VM->Status("idle");
+$VM->ChildPid(undef);
 ($ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
 {
