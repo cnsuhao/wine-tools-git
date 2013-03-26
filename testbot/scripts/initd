@@ -106,9 +106,14 @@ then
             fi
             log_failure_msg "The WineTestBot server is running but not responding"
             exit 1
-        elif [ "$status" = 4 ]; then
-            log_failure_msg "could not access PID file for the WineTestBot server"
+        elif [ "$status" = 4 ]
+        then
+            log_failure_msg "Could not access PID file for the WineTestBot server"
             exit $status
+        elif $PING -q
+        then
+            log_success_msg "A WineTestBot server was started manually already"
+            exit 0
         else
             log_failure_msg "The WineTestBot server is not running"
             exit $status
