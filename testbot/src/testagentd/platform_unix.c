@@ -154,7 +154,7 @@ int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *child
         return 0;
     }
 
-    if (timeout)
+    if (timeout != RUN_NOTIMEOUT)
         deadline = time(NULL) + timeout;
     while (!child->reaped)
     {
@@ -170,14 +170,14 @@ int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *child
         debug("Waiting for " U64FMT "\n", pid);
         FD_ZERO(&rfds);
         FD_SET(client, &rfds);
-        if (timeout)
+        if (timeout != RUN_NOTIMEOUT)
         {
             tv.tv_sec = deadline - time(NULL);
             if (tv.tv_sec < 0)
                 tv.tv_sec = 0;
             tv.tv_usec = 0;
         }
-        ready = select(client+1, &rfds, NULL, NULL, timeout ? &tv : NULL);
+        ready = select(client+1, &rfds, NULL, NULL, timeout != RUN_NOTIMEOUT ? &tv : NULL);
         if (ready == 0)
         {
             /* This is the timeout */

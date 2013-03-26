@@ -1122,7 +1122,7 @@ sub Wait($$$)
       if (!$self->_StartRPC($RPC_WAIT2) or
           !$self->_SendListSize(2) or
           !$self->_SendUInt64($Pid) or
-          !$self->_SendUInt32($Timeout))
+          !$self->_SendUInt32(defined $Timeout ? $Timeout : 0xffffffff))
       {
           return undef;
       }

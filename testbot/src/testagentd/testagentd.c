@@ -34,8 +34,9 @@
  * 1.0:  Initial release.
  * 1.1:  Added the wait2 RPC.
  * 1.2:  Add more redirection options to the run RPC.
+ * 1.3:  Fix the zero / infinite timeouts in the wait2 RPC.
  */
-#define PROTOCOL_VERSION "testagentd 1.2"
+#define PROTOCOL_VERSION "testagentd 1.3"
 
 #define BLOCK_SIZE       65536
 

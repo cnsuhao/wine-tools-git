@@ -177,7 +177,7 @@ int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *child
     handles[0] = WSACreateEvent();
     WSAEventSelect(client, handles[0], FD_CLOSE);
     handles[1] = child->handle;
-    r = WaitForMultipleObjects(2, handles, FALSE, timeout * 1000);
+    r = WaitForMultipleObjects(2, handles, FALSE, timeout == RUN_NOTIMEOUT ? INFINITE : timeout * 1000);
 
     success = 0;
     switch (r)

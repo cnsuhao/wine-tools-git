@@ -64,6 +64,8 @@ enum run_flags_t {
     RUN_DNTRUNC_ERR = 4,
 };
 
+#define RUN_NOTIMEOUT  ((uint32_t)0xffffffff)
+
 /* Starts the specified command in the background and reports the status to
  * the client.
  */
