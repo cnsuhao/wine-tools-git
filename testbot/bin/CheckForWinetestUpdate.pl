@@ -92,7 +92,7 @@ sub AddJob
       $VMs->AddFilter("Type", ["win32", "win64"]);
       $VMs->AddFilter("Role", ["winetest"]);
   }
-  $VMs->FilterNotOffline();
+  $VMs->FilterEnabledStatus();
   foreach my $VMKey (@{$VMs->SortKeysBySortOrder($VMs->GetKeys())})
   {
     my $Task = $Tasks->Add();

@@ -402,7 +402,8 @@ sub InitVMs()
   # On startup we don't know what state the VMs are in. So consider them all
   # to be dirty.
   my $VMs = CreateVMs();
-  $VMs->FilterNotOffline();
+  $VMs->FilterEnabledRole();
+  $VMs->FilterEnabledStatus();
   foreach my $VM (@{$VMs->GetItems()})
   {
     $VM->Status('dirty');

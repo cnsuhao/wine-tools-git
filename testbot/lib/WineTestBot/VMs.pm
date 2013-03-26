@@ -639,10 +639,17 @@ sub SortKeysBySortOrder
   return \@SortedKeys;
 }
 
-sub FilterNotOffline($)
+sub FilterEnabledRole($)
 {
   my ($self) = @_;
-  # All but the offline ones
+  # Filter out the disabled VMs, that is the retired and deleted ones
+  $self->AddFilter("Role", ["extra", "base", "winetest"]);
+}
+
+sub FilterEnabledStatus($)
+{
+  my ($self) = @_;
+  # Filter out the disabled VMs, that is the offline ones
   $self->AddFilter("Status", ["dirty", "reverting", "sleeping", "idle", "running"]);
 }
 
