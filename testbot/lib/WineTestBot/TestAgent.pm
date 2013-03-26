@@ -987,8 +987,8 @@ sub GetVersion($)
 
   if (!$self->{agentversion})
   {
-    # Force a connection
-    $self->Ping();
+    # Retrieve the server version
+    $self->_Connect();
   }
   # And return the version we got.
   # If the connection failed it will be undef as expected.
