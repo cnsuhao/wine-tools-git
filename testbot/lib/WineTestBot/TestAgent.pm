@@ -1107,6 +1107,9 @@ sub Wait($$$)
   # Add 1 second for the reply to come back
   my $OldTimeout = $self->SetTimeout($Timeout + 1) if ($Timeout);
 
+  # Make sure we have the server version
+  return undef if (!$self->{agentversion} and !$self->_Connect());
+
   # Send the command
   if ($self->{agentversion} =~ / 1\.0$/)
   {
