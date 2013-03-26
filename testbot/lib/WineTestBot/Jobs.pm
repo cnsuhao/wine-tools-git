@@ -531,7 +531,10 @@ sub ScheduleJobs()
   # we should check if there are VMs to revert
 
   my %Hosts;
-  foreach my $VM (@{CreateVMs()->GetItems()})
+  my $VMs = CreateVMs();
+  $VMs->FilterEnabledRole();
+  $VMs->FilterEnabledStatus();
+  foreach my $VM (@{$VMs->GetItems()})
   {
     my $Host = $VM->GetHost();
     $Hosts{$Host}->{$VM->VirtURI} = 1;
