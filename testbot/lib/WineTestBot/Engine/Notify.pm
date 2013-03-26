@@ -33,8 +33,8 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $RunningInEngine);
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(&PingEngine &JobSubmit &JobStatusChange &JobCancel &JobRestart
-             &TaskComplete &VMStatusChange &FoundWinetestUpdate
+@EXPORT = qw(&Shutdown &PingEngine &JobSubmit &JobStatusChange &JobCancel
+             &JobRestart &TaskComplete &VMStatusChange &FoundWinetestUpdate
              &WinePatchMLSubmission &WinePatchWebSubmission &GetScreenshot);
 @EXPORT_OK = qw($RunningInEngine);
 
@@ -72,6 +72,25 @@ sub SendCmdReceiveReply
   close(SOCK);
 
   return $Reply;
+}
+
+sub Shutdown
+{
+  my ($KillTasks, $KillVMs) = @_;
+
+  $KillTasks ||= 0;
+  $KillVMs ||= 0;
+  my $Reply = SendCmdReceiveReply("shutdown $KillTasks $KillVMs\n");
+  if (length($Reply) < 1)
+  {
+    return "Unrecognized reply received from engine";
+  }
+  if (substr($Reply, 0, 1) eq "1")
+  {
+    return undef;
+  }
+
+  return substr($Reply, 1);
 }
 
 sub PingEngine

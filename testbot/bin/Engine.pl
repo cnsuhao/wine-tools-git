@@ -43,12 +43,15 @@ use Socket;
 use ObjectModel::BackEnd;
 use WineTestBot::Config;
 use WineTestBot::Engine::Events;
+use WineTestBot::Engine::Notify;
 use WineTestBot::Jobs;
 use WineTestBot::Log;
 use WineTestBot::Patches;
 use WineTestBot::PendingPatchSets;
 use WineTestBot::Utils;
 use WineTestBot::VMs;
+
+my $RunEngine = 1;
 
 sub FatalError
 {
@@ -65,7 +68,8 @@ sub FatalError
 =item C<Cleanup()>
 
 The Cleanup() function gets the tasks and VMs in a consistent state on the
-Engine startup. It has to contend with two main scenarios:
+Engine startup or cleanly stops the tasks and VMs on shutdown.
+It has to contend with three main scenarios:
 - The Engine being restarted. Any task started just before that is still
   running should still have its process and powered on VM and should be left
   alone so it can complete normally. If a task died unexpectedly while the
@@ -75,6 +79,8 @@ Engine startup. It has to contend with two main scenarios:
   it is quite possible that they will still be running. Hopefully any running
   process matching a task's ChildPid will belong to another user so we don't
   mistake that case for the previous one.
+- A shutdown of the Engine and its tasks / VMs. In this case it's used to
+  kill the running tasks and requeue them, and/or shut down the VMs.
 
 In all cases we only trust that a VM status field is still valid:
 - It is 'running' and used by a task that is still running.
@@ -86,8 +92,10 @@ In all other cases the VM will be powered off and marked as dirty.
 =back
 =cut
 
-sub Cleanup()
+sub Cleanup(;$$)
 {
+  my ($KillTasks, $KillVMs) = @_;
+
   # Verify that the running tasks are still alive and requeue them if not.
   # Ignore the Job and Step status fields because they may be a bit out of date.
   my %BusyVMs;
@@ -114,6 +122,14 @@ sub Cleanup()
           $Requeue = 1;
           # Kill the task process if it's still there.
           kill("TERM", $Task->ChildPid);
+        }
+        elsif ($KillTasks)
+        {
+          # Kill the task and requeue. Note that since the VM is still running
+          # we're not in the computer reboot case so ChildPid is probably
+          # still valid.
+          kill("TERM", $Task->ChildPid);
+          $Requeue = 1;
         }
         elsif (!kill(0, $Task->ChildPid))
         {
@@ -165,8 +181,12 @@ sub Cleanup()
     if ($VM->IsPoweredOn())
     {
       next if ($VM->Status eq "idle");
-      if (($VM->Status eq "reverting" or $VM->Status eq "sleeping") and
-          defined $VM->ChildPid and kill(0, $VM->ChildPid))
+      if ($KillVMs)
+      {
+        kill("TERM", $VM->ChildPid) if (defined $VM->ChildPid);
+      }
+      elsif (($VM->Status eq "reverting" or $VM->Status eq "sleeping") and
+             defined $VM->ChildPid and kill(0, $VM->ChildPid))
       {
         # This VM is still being reverted. Let that process run its course.
         LogMsg "$VMKey is being reverted\n";
@@ -187,6 +207,43 @@ sub Cleanup()
   }
 }
 
+
+sub HandleShutdown
+{
+  my ($KillTasks, $KillVMs) = @_;
+
+  if (!defined $KillTasks or !defined $KillVMs)
+  {
+    LogMsg "Missing parameters in shutdown message\n";
+    return "0Missing shutdown parameters";
+  }
+
+  # Untaint parameters
+  if ($KillTasks =~ /^([01])$/)
+  {
+    $KillTasks = $1;
+  }
+  else
+  {
+    LogMsg "Invalid KillTasks $KillTasks in shutdown message\n";
+    return "0Invalid KillTasks shutdown parameter\n";
+  }
+  if ($KillVMs =~ /^([01])$/)
+  {
+    $KillVMs = $1;
+  }
+  else
+  {
+    LogMsg "Invalid KillVMs $KillVMs in shutdown message\n";
+    return "0Invalid KillVMs shutdown parameter\n";
+  }
+
+  Cleanup($KillTasks, $KillVMs);
+  $RunEngine = 0;
+
+  LogMsg "Waiting for the last clients to disconnect...\n";
+  return "1OK\n";
+}
 
 sub HandlePing
 {
@@ -492,6 +549,7 @@ my %Handlers=(
     "jobstatuschange"          => \&HandleJobStatusChange,
     "jobsubmit"                => \&HandleJobSubmit,
     "ping"                     => \&HandlePing,
+    "shutdown"                 => \&HandleShutdown,
     "taskcomplete"             => \&HandleTaskComplete,
     "vmstatuschange"           => \&HandleVMStatusChange,
     "winepatchmlsubmission"    => \&HandleWinePatchMLSubmission,
@@ -621,6 +679,40 @@ sub REAPER
 
 sub main 
 {
+  my ($Shutdown, $KillTasks, $KillVMs);
+  while (@ARGV)
+  {
+    my $Arg = shift @ARGV;
+    if ($Arg eq "--shutdown")
+    {
+      $Shutdown = 1;
+    }
+    elsif ($Arg eq "--kill-tasks")
+    {
+      $KillTasks = 1;
+      $Shutdown = 1;
+    }
+    elsif ($Arg eq "--kill-vms")
+    {
+      $KillVMs = 1;
+      $Shutdown = 1;
+    }
+    else
+    {
+      die "Usage: Engine.pl [--shutdown] [--kill-tasks] [--kill-vms]";
+    }
+  }
+  if ($Shutdown)
+  {
+    my $ErrMessage = Shutdown($KillTasks, $KillVMs);
+    if (defined $ErrMessage)
+    {
+      print STDERR "$ErrMessage\n";
+      exit 1;
+    }
+    exit 0;
+  }
+
   $ENV{PATH} = "/usr/bin:/bin";
   delete $ENV{ENV};
   $SIG{CHLD} = \&REAPER;
@@ -657,7 +749,7 @@ sub main
   AddEvent("SafetyNet", 600, 1, \&SafetyNet);
 
   my @Clients;
-  while (1)
+  while ($RunEngine or @Clients)
   {
     my $ReadyRead = "";
     my $ReadyWrite = "";
