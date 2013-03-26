@@ -159,50 +159,50 @@ then
     # considered a success.
 
     case "$1" in
-        start)
-            echo -n "Starting WineTestBot "
-            ## Start daemon with startproc(8). If this fails
-            ## the return value is set appropriately by startproc.
-            /sbin/startproc -u $USER $DAEMON
+    start)
+        echo -n "Starting WineTestBot "
+        ## Start daemon with startproc(8). If this fails
+        ## the return value is set appropriately by startproc.
+        /sbin/startproc -u $USER $DAEMON
 
-            # Remember status and be verbose
-            rc_status -v
-            ;;
-        stop)
-            echo -n "Shutting down WineTestBot "
-            ## Stop daemon with killproc(8) and if this fails
-            ## killproc sets the return value according to LSB.
+        # Remember status and be verbose
+        rc_status -v
+        ;;
+    stop)
+        echo -n "Shutting down WineTestBot "
+        ## Stop daemon with killproc(8) and if this fails
+        ## killproc sets the return value according to LSB.
 
-            /sbin/killproc -TERM $DAEMON
+        /sbin/killproc -TERM $DAEMON
 
-            # Remember status and be verbose
-            rc_status -v
-            ;;
-        try-restart|condrestart|reload)
-            ## Do a restart only if the service was active before.
-            ## Note: try-restart is now part of LSB (as of 1.9).
-            ## RH has a similar command named condrestart.
-            if test "$1" = "condrestart"; then
-                echo "${attn} Use try-restart ${done}(LSB)${attn} rather than condrestart ${warn}(RH)${norm}"
-            fi
-            $0 status
-            if test $? = 0; then
-                $0 restart
-            else
-                rc_reset        # Not running is not a failure.
-            fi
-            # Remember status and be quiet
-            rc_status
-            ;;
-        restart|force-reload)
-            ## Stop the service and regardless of whether it was
-            ## running or not, start it again.
-            $0 stop
-            $0 start
+        # Remember status and be verbose
+        rc_status -v
+        ;;
+    try-restart|condrestart|reload)
+        ## Do a restart only if the service was active before.
+        ## Note: try-restart is now part of LSB (as of 1.9).
+        ## RH has a similar command named condrestart.
+        if test "$1" = "condrestart"; then
+            echo "${attn} Use try-restart ${done}(LSB)${attn} rather than condrestart ${warn}(RH)${norm}"
+        fi
+        $0 status
+        if test $? = 0; then
+            $0 restart
+        else
+            rc_reset        # Not running is not a failure.
+        fi
+        # Remember status and be quiet
+        rc_status
+        ;;
+    restart|force-reload)
+        ## Stop the service and regardless of whether it was
+        ## running or not, start it again.
+        $0 stop
+        $0 start
 
-            # Remember status and be quiet
-            rc_status
-            ;;
+        # Remember status and be quiet
+        rc_status
+        ;;
     status)
         status_of_proc $DAEMON
         echo -n "Checking for service WineTestBot "
