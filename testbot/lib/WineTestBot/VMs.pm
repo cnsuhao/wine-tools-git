@@ -287,9 +287,8 @@ sub _GetSnapshot($$)
         last;
       }
     }
-    $@ = "Snapshot '$SnapshotName' not found" if (!$Snapshot);
   };
-  return ($@->message(), undef, undef) if ($@);
+  return ("Snapshot '$SnapshotName' not found", undef, undef) if (!defined $Snapshot);
   return (undef, $Domain, $Snapshot);
 }
 
