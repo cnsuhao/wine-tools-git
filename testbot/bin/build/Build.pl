@@ -192,7 +192,7 @@ sub BuildTestExecutable
   {
     InfoMsg "Recreating include/Makefile\n";
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
-           "  ./config.status --file include/Makefile:Make.vars.in:include/Makefile.in " .
+           "  make -j$ncpus include/Makefile " .
            ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
@@ -214,7 +214,7 @@ sub BuildTestExecutable
   {
     InfoMsg "Rebuilding $BaseName import lib\n";
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
-           "  ./config.status --file $PatchType/$BaseName/Makefile:Make.vars.in:$PatchType/$BaseName/Makefile.in " .
+           "  make -j$ncpus $PatchType/$BaseName/Makefile " .
            ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
@@ -236,7 +236,7 @@ sub BuildTestExecutable
   {
     InfoMsg "Recreating tests/Makefile\n";
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
-           "  ./config.status --file $PatchType/$BaseName/tests/Makefile:Make.vars.in:$PatchType/$BaseName/tests/Makefile.in " .
+           "  make -j$ncpus $PatchType/$BaseName/tests/Makefile " .
            ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
