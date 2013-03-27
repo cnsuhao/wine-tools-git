@@ -236,6 +236,7 @@ sub GenerateBody
   
   print "<div class='GeneralStatusItem'>";
   my $VMs = CreateVMs();
+  $VMs->FilterEnabledRole();
   $VMs->AddFilter("Status", ["offline"]);
   if ($VMs->IsEmpty())
   {
