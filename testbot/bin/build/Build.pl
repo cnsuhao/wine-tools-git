@@ -179,7 +179,7 @@ sub BuildTestExecutable
     InfoMsg "Reconfigure $Bits-bit crossbuild\n";
     my $Host = ($Bits == 64 ? "x86_64-w64-mingw32" : "i686-w64-mingw32");
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
-           "  ../wine/configure --host=$Host --with-wine-tools=../build-native --without-x --without-freetype " .
+           "  time ../wine/configure --host=$Host --with-wine-tools=../build-native --without-x --without-freetype " .
            ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
@@ -192,7 +192,7 @@ sub BuildTestExecutable
   {
     InfoMsg "Recreating include/Makefile\n";
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
-           "  make -j$ncpus include/Makefile " .
+           "  time make -j$ncpus include/Makefile " .
            ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
@@ -201,7 +201,7 @@ sub BuildTestExecutable
     }
 
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
-           "  make -j$ncpus include " .
+           "  time make -j$ncpus include " .
            ") >> $LogDir/Build.log 2>&1");
     if ($? != 0)
     {
@@ -214,7 +214,7 @@ sub BuildTestExecutable
   {
     InfoMsg "Rebuilding $BaseName import lib\n";
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
-           "  make -j$ncpus $PatchType/$BaseName/Makefile " .
+           "  time make -j$ncpus $PatchType/$BaseName/Makefile " .
            ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
@@ -223,7 +223,7 @@ sub BuildTestExecutable
     else
     {
       system("( cd $DataDir/build-mingw$Bits && set -x && " .
-             "  make -j$ncpus -C $PatchType/$BaseName lib$BaseName.a " .
+             "  time make -j$ncpus -C $PatchType/$BaseName lib$BaseName.a " .
              ") >>$LogDir/Build.log 2>&1");
       if ($? != 0)
       {
@@ -236,7 +236,7 @@ sub BuildTestExecutable
   {
     InfoMsg "Recreating tests/Makefile\n";
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
-           "  make -j$ncpus $PatchType/$BaseName/tests/Makefile " .
+           "  time make -j$ncpus $PatchType/$BaseName/tests/Makefile " .
            ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
@@ -249,7 +249,7 @@ sub BuildTestExecutable
   {
     InfoMsg "Making build dependencies\n";
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
-           "  make -j$ncpus __builddeps__ " .
+           "  time make -j$ncpus __builddeps__ " .
            ") >>$LogDir/Build.log 2>&1");
     if ($? != 0)
     {
@@ -269,7 +269,7 @@ sub BuildTestExecutable
 
   InfoMsg "Making test executable\n";
   system("( cd $DataDir/build-mingw$Bits && set -x && " .
-         "  make -j$ncpus -C $TestsDir " .
+         "  time make -j$ncpus -C $TestsDir " .
          ") >>$LogDir/Build.log 2>&1");
   if ($? != 0)
   {
