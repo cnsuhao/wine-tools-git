@@ -84,10 +84,9 @@ sub GetHeaderText
     my $HeaderText = "Select the VMs on which you want to run your test.";
     my $VMs = CreateVMs();
     $VMs->AddFilter("Status", ["offline"]);
-    if (! $VMs->IsEmpty())
+    if (!$VMs->IsEmpty())
     {
-      $HeaderText .= "<br>NOTE: Some VMs are currently offline and are not " .
-                     "shown here.";
+      $HeaderText .= "<br>NOTE: Offline VMs will not be able to run your tests right away.";
     }
     return $HeaderText;
   }
@@ -237,8 +236,6 @@ sub GenerateFields
       {
           $VMs->AddFilter("Type", ["win32", "win64"]);
       }
-      # Scheduling jobs on offline VMs is not allowed
-      $VMs->FilterNotOffline();
       if ($self->{ShowAll})
       {
         # All but the retired and deleted ones
@@ -258,6 +255,10 @@ sub GenerateFields
         if ($VM->Description)
         {
           print " (", $self->CGI->escapeHTML($VM->Description), ")";
+        }
+        if ($VM->Status eq 'offline')
+        {
+          print " [offline]";
         }
         print "</label><div class='ItemValue'><input type='checkbox' name='$FieldName'";
         if ($self->GetParam("Page") == 1 || $self->GetParam($FieldName))

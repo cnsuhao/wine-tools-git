@@ -180,10 +180,10 @@ next step will be to revert it to the idle snapshot so it can be used again.
 
 =item offline
 
-This VM should not be used. The WineTestBot automatically puts VMs into this
-state if errors happen when manipulating them, such as if they fail to revert,
-etc. The main web status page has a warning indicator on when some VMs are
-offline.
+An error occurred with this VM (typically it failed to revert or is not
+responding anymore), making it temporarily unusable. New jobs can still be
+added for this VM but they won't be run until an administrator fixes it.
+The main web status page has a warning indicator on when some VMs are offline.
 
 =back
 

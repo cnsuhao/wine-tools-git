@@ -542,7 +542,6 @@ sub ScheduleJobs()
   my %Hosts;
   my $VMs = CreateVMs();
   $VMs->FilterEnabledRole();
-  $VMs->FilterEnabledStatus();
   foreach my $VM (@{$VMs->GetItems()})
   {
     my $Host = $VM->GetHost();

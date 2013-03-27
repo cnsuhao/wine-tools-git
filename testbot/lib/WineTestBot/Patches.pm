@@ -236,7 +236,6 @@ sub Submit
         $VMs = CreateVMs();
         $VMs->AddFilter("Type", $Bits eq "32" ? ["win32", "win64"] : ["win64"]);
         $VMs->AddFilter("Role", ["base"]);
-        $VMs->FilterEnabledStatus();
         if (@{$VMs->GetKeys()})
         {
           # Create the corresponding Step
