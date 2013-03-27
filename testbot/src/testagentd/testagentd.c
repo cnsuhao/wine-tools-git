@@ -387,10 +387,17 @@ static int skip_entries(SOCKET client, uint32_t count)
 
 static int recv_list_size(SOCKET client, uint32_t *u32)
 {
-    int success = recv_raw_uint32(client, u32);
-    if (success)
-        debug("  recv_list_size() -> %u\n", *u32);
-    return success;
+    if (!recv_raw_uint32(client, u32))
+        return 0;
+    debug("  recv_list_size() -> %u\n", *u32);
+
+    if (*u32 >= 1048576)
+    {
+        /* The client is in fact most likely not speaking the right protocol */
+        set_status(ST_FATAL, "the list size is too big (%d)", *u32);
+        return 0;
+    }
+    return 1;
 }
 
 static int expect_list_size(SOCKET client, uint32_t expected)
