@@ -177,7 +177,7 @@ sub BuildTestExecutable
   if ($NeedConfigure)
   {
     InfoMsg "Reconfigure $Bits-bit crossbuild\n";
-    my $Host = ($Bits == 64 ? "x86_64-w64-mingw32" : "i686-pc-mingw32");
+    my $Host = ($Bits == 64 ? "x86_64-w64-mingw32" : "i686-w64-mingw32");
     system("( cd $DataDir/build-mingw$Bits && set -x && " .
            "  ../wine/configure --host=$Host --with-wine-tools=../build-native --without-x --without-freetype " .
            ") >>$LogDir/Build.log 2>&1");
