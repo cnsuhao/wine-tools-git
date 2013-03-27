@@ -410,22 +410,25 @@ sub GenerateBody
 
       if (open ERRFILE, "<$ErrName")
       {
-        if (! $First)
-        {
-          print "</code></pre>\n";
-          $First = 1;
-        }
+        $CurrentDll = "*err*";
         while (defined($Line = <ERRFILE>))
         {
           $HasLogEntries = 1;
           chomp($Line);
-          if ($First)
+          if ($PrintedDll ne $CurrentDll)
           {
-            print "<br>\n";
-            print "<pre><code>";
-            $First = !1;
+            if ($First)
+            {
+              $First = !1;
+            }
+            else
+            {
+              print "</code></pre>\n";
+            }
+            $PrintedDll = $CurrentDll;
           }
-          print $self->escapeHTML($Line), "\n";
+          print "<br>\n";
+          print "<pre><code>", $self->escapeHTML($Line), "\n";
         }
         close ERRFILE;
       }
