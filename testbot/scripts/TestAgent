@@ -53,7 +53,7 @@ sub error(@)
 }
 
 my ($Cmd, $Hostname, $LocalFilename, $ServerFilename, @Rm);
-my (@Run, $RunIn, $RunOut, $RunErr);
+my (@Run, $RunIn, $RunOut, $RunErr, $WaitPid);
 my $SendFlags = 0;
 my $RunFlags = 0;
 my ($Port, $ConnectTimeout, $Timeout, $TunnelOpt);
@@ -172,6 +172,11 @@ while (@ARGV)
         $Cmd = $arg;
         last;
     }
+    elsif ($arg eq "wait")
+    {
+        $Cmd = $arg;
+        $WaitPid = check_opt_val($arg, $WaitPid);
+    }
     elsif ($arg eq "rm")
     {
         $Cmd = $arg;
@@ -216,6 +221,25 @@ if (!defined $Usage)
         error("the --run-xxx options can only be used with the run command\n");
         $Usage = 2;
     }
+    elsif ($Cmd eq "wait")
+    {
+        my $oldwarn = $SIG{__WARN__};
+        $SIG{__WARN__} = sub { die $_[0] };
+        my $bad = eval { $WaitPid < 0 };
+        if (defined $oldwarn)
+        {
+            $SIG{__WARN__} = $oldwarn;
+        }
+        else
+        {
+            delete $SIG{__WARN__};
+        }
+        if ($bad or $@)
+        {
+            error("the pid '$WaitPid' is invalid\n");
+            $Usage = 2;
+        }
+    }
     elsif ($Cmd eq "rm" and !@Rm)
     {
         error("you must specify the server files to delete\n");
@@ -243,6 +267,7 @@ if (defined $Usage)
     print "Usage: $name0 [options] <hostname> sendfile <localpath> <serverpath>\n";
     print "or     $name0 [options] <hostname> getfile <serverpath> <localpath>\n";
     print "or     $name0 [options] <hostname> run <command> <arguments>\n";
+    print "or     $name0 [options] <hostname> wait <pid>\n";
     print "or     $name0 [options] <hostname> rm <serverfiles>\n";
     print "or     $name0 [options] <hostname> [ping|version]\n";
     print "\n";
@@ -264,6 +289,7 @@ if (defined $Usage)
     print "    --run-err <serverpath> Redirect the stderr or the command being run to the\n";
     print "                  specified server file.\n";
     print "    --run-dntrunc-err Do not truncate the file stderr is redirected to.\n";
+    print "  wait          Waits for the specified child process on the server.\n";
     print "  rm            Deletes the specified files on the server.\n";
     print "  getversion    Returns the version of the server.\n";
     print "  ping          Makes sure the server is still alive.\n";
@@ -317,6 +343,11 @@ elsif ($Cmd eq "run")
             print "Child exit status: $Result\n" if (defined $Result);
         }
     }
+}
+elsif ($Cmd eq "wait")
+{
+    $Result = $TA->Wait($WaitPid, $Timeout);
+    print "Child exit status: $Result\n" if (defined $Result);
 }
 elsif ($Cmd eq "rm")
 {
