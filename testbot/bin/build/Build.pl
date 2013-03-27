@@ -86,7 +86,7 @@ sub ApplyPatch
            ($NeedMakefile == 0 || ! $NeedMakeInclude || ! $NeedBuildDeps ||
             ! $NeedImplib || ! $NeedAutoconf || ! $NeedConfigure))
     {
-      if ($Line =~ m=^diff.*tests/Makefile\.in=)
+      if ($Line =~ m=^diff.*(?:tests/Makefile\.in|Make\.vars\.in|Make\.rules\.in|Maketest\.rules\.in)$=)
       {
         $NeedMakefile = 1;
       }
