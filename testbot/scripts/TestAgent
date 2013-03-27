@@ -188,7 +188,7 @@ while (@ARGV)
     }
     else
     {
-        error("unknown command $arg\n");
+        error("unknown command '$arg'\n");
         $Usage = 2;
     }
 }
