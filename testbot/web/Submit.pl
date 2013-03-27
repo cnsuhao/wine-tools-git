@@ -83,10 +83,10 @@ sub GetHeaderText
   {
     my $HeaderText = "Select the VMs on which you want to run your test.";
     my $VMs = CreateVMs();
-    $VMs->AddFilter("Status", ["offline"]);
+    $VMs->AddFilter("Status", ["offline", "maintenance"]);
     if (!$VMs->IsEmpty())
     {
-      $HeaderText .= "<br>NOTE: Offline VMs will not be able to run your tests right away.";
+      $HeaderText .= "<br>NOTE: Offline VMs and those undergoing maintenance will not be able to run your tests right away.";
     }
     return $HeaderText;
   }
@@ -259,6 +259,10 @@ sub GenerateFields
         if ($VM->Status eq 'offline')
         {
           print " [offline]";
+        }
+        elsif ($VM->Status eq 'maintenance')
+        {
+          print " [maintenance]";
         }
         print "</label><div class='ItemValue'><input type='checkbox' name='$FieldName'";
         if ($self->GetParam("Page") == 1 || $self->GetParam($FieldName))

@@ -234,21 +234,36 @@ sub GenerateBody
   }
   print "</div>\n";
   
-  print "<div class='GeneralStatusItem'>";
-  my $VMs = CreateVMs();
-  $VMs->FilterEnabledRole();
-  $VMs->AddFilter("Status", ["offline"]);
-  if ($VMs->IsEmpty())
+  my $OfflineVMs = CreateVMs();
+  $OfflineVMs->FilterEnabledRole();
+  $OfflineVMs->AddFilter("Status", ["offline"]);
+  my $MaintenanceVMs = CreateVMs();
+  $MaintenanceVMs->FilterEnabledRole();
+  $MaintenanceVMs->AddFilter("Status", ["maintenance"]);
+  if ($OfflineVMs->IsEmpty() and $MaintenanceVMs->IsEmpty())
   {
+    print "<div class='GeneralStatusItem'>";
     $self->OutputDot("green");
     print "<div class='GeneralStatusItemText'><a href='#vms'>All VMs are online</a></div>";
+    print "</div>\n";
   }
   else
   {
-    $self->OutputDot("red");
-    print "<div class='GeneralStatusItemText'><a href='#vms'>One or more VMs are offline</a></div>";
+    if (!$OfflineVMs->IsEmpty())
+    {
+      print "<div class='GeneralStatusItem'>";
+      $self->OutputDot("red");
+      print "<div class='GeneralStatusItemText'><a href='#vms'>One or more VMs are offline</a></div>";
+      print "</div>\n";
+    }
+    if (!$MaintenanceVMs->IsEmpty())
+    {
+      print "<div class='GeneralStatusItem'>";
+      $self->OutputDot("red");
+      print "<div class='GeneralStatusItemText'><a href='#vms'>One or more VMs are undergoing maintenance</a></div>";
+      print "</div>\n";
+    }
   }
-  print "</div>\n";
   print "</div>\n";
 
   print "<h2><a name='jobs'></a>Jobs</h2>\n";

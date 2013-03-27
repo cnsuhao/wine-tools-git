@@ -185,6 +185,12 @@ responding anymore), making it temporarily unusable. New jobs can still be
 added for this VM but they won't be run until an administrator fixes it.
 The main web status page has a warning indicator on when some VMs are offline.
 
+=item maintenance
+
+A WineTestBot administrator is working on the VM so that it cannot be used for
+the tests. The main web status page has a warning indicator on when some VMs
+are undergoing maintenance.
+
 =back
 
 =cut
@@ -572,7 +578,7 @@ BEGIN
     CreateBasicPropertyDescriptor("SortOrder", "Display order", !1, 1, "N", 3),
     CreateEnumPropertyDescriptor("Type", "Type of VM", !1, 1, ['win32', 'win64', 'build']),
     CreateEnumPropertyDescriptor("Role", "VM Role", !1, 1, ['extra', 'base', 'winetest', 'retired', 'deleted']),
-    CreateEnumPropertyDescriptor("Status", "Current status", !1, 1, ['dirty', 'reverting', 'sleeping', 'idle', 'running', 'offline']),
+    CreateEnumPropertyDescriptor("Status", "Current status", !1, 1, ['dirty', 'reverting', 'sleeping', 'idle', 'running', 'offline', 'maintenance']),
     # Note: ChildPid is only valid when Status == 'reverting' or 'sleeping'.
     CreateBasicPropertyDescriptor("ChildPid", "Child process id", !1, !1, "N", 5),
     CreateBasicPropertyDescriptor("VirtURI", "LibVirt URI of the VM", !1, 1, "A", 64),
@@ -668,7 +674,7 @@ sub FilterEnabledRole($)
 sub FilterEnabledStatus($)
 {
   my ($self) = @_;
-  # Filter out the disabled VMs, that is the offline ones
+  # Filter out the disabled VMs, that is the offline and maintenance ones
   $self->AddFilter("Status", ["dirty", "reverting", "sleeping", "idle", "running"]);
 }
 
