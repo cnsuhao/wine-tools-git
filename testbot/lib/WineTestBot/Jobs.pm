@@ -218,7 +218,8 @@ sub Cancel
       }
     }
   }
-  # Let the higher layers handle updating the overall job status
+  # Let UpdateStatus() handle updating the overall job status
+  $self->UpdateStatus();
 
   return undef;
 }

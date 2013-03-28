@@ -344,16 +344,11 @@ sub HandleJobCancel
     return "0$ErrMessage";
   }
 
-  # Wait a couple of seconds before rescheduling so the child processes have
-  # the time to die.
-  AddEvent("JobCancel$JobKey", 2, 0, sub {
-    $Job->UpdateStatus();
-    $ErrMessage = ScheduleJobs();
-    if (defined($ErrMessage))
-    {
-      LogMsg "Scheduling problem in HandleJobCancel: $ErrMessage\n";
-    }
-  });
+  $ErrMessage = ScheduleJobs();
+  if (defined($ErrMessage))
+  {
+    LogMsg "Scheduling problem in HandleJobCancel: $ErrMessage\n";
+  }
 
   return "1OK";
 }
