@@ -119,9 +119,9 @@ sub CanRestart
 
   my $Job = CreateJobs()->GetItem($self->{JobId});
   my $Status = $Job->Status;
-  if ($Status ne "failed")
+  if ($Status ne "failed" && $Status ne "canceled")
   {
-    return "Job did not fail";
+    return "Not a failed / canceled Job";
   }
 
   my $Session = $self->GetCurrentSession();
@@ -463,6 +463,10 @@ sub GenerateBody
         print "Empty log";
       }
       close ERRFILE;
+    }
+    elsif ($Item->Status eq "canceled")
+    {
+      print "<p>No log, task was canceled</p>\n";
     }
     elsif ($Item->Status eq "skipped")
     {

@@ -109,7 +109,7 @@ sub UpdateStatus($$)
   # Note that one or more tasks may have been requeued during the cleanup phase
   # of the server startup. So this step may regress from 'running' back to
   # 'queued'. This means all possible task status values must be considered.
-  foreach my $TaskStatus ("running", "failed", "skipped", "completed", "queued")
+  foreach my $TaskStatus ("running", "failed", "canceled", "skipped", "completed", "queued")
   {
     if ($Has{$TaskStatus})
     {
@@ -158,7 +158,7 @@ BEGIN
 {
   @PropertyDescriptors = (
     CreateBasicPropertyDescriptor("No", "Step no",  1,  1, "N", 2),
-    CreateEnumPropertyDescriptor("Status", "Status",  !1,  1, ['queued', 'running', 'completed', 'failed', 'skipped']),
+    CreateEnumPropertyDescriptor("Status", "Status",  !1,  1, ['queued', 'running', 'completed', 'failed', 'canceled', 'skipped']),
     CreateEnumPropertyDescriptor("Type", "Step type",  !1,  1, ['suite', 'single', 'build', 'reconfig']),
     CreateBasicPropertyDescriptor("FileName", "File name",  !1,  1, "A", 100),
     CreateEnumPropertyDescriptor("FileType", "File type",  !1,  1, ['exe32', 'exe64', 'patchdlls', 'patchprograms']),

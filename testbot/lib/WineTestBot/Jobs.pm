@@ -54,6 +54,7 @@ use WineTestBot::Config;
 use WineTestBot::Branches;
 use WineTestBot::Engine::Notify;
 use WineTestBot::WineTestBotObjects;
+use WineTestBot::Log;
 
 use vars qw(@ISA @EXPORT);
 
@@ -144,7 +145,8 @@ sub UpdateStatus($)
     $Has{$StepStatus} = 1;
 
     my $Type = $Step->Type;
-    if ($StepStatus eq "failed" && ($Type eq "build" || $Type eq "reconfig"))
+    if (($StepStatus eq "failed" || $StepStatus eq "canceled") &&
+        ($Type eq "build" || $Type eq "reconfig"))
     {
       # The following steps need binaries that this one was supposed to
       # produce. So skip them.
@@ -156,7 +158,7 @@ sub UpdateStatus($)
   # Note that one or more tasks may have been requeued during the cleanup phase
   # of the server startup. So this job may regress from 'running' back to
   # 'queued'. This means all possible step status values must be considered.
-  foreach my $StepStatus ("running", "failed", "skipped", "completed", "queued")
+  foreach my $StepStatus ("running", "failed", "canceled", "skipped", "completed", "queued")
   {
     if ($Has{$StepStatus})
     {
@@ -168,9 +170,9 @@ sub UpdateStatus($)
       }
       else
       {
-        # If all steps are skipped it's because the user canceled the job. In
-        # that case mark the job as 'failed'.
-        $Status = $StepStatus eq "skipped" ? "failed" : $StepStatus;
+        # If all steps are skipped it's because the user canceled the job
+        # before any of them could run.
+        $Status = $StepStatus eq "skipped" ? "canceled" : $StepStatus;
       }
       $self->Status($Status);
       if ($Status ne "running" && $Status ne "queued" && !defined $self->Ended)
@@ -204,9 +206,15 @@ sub Cancel
       }
       elsif (defined $Task->ChildPid)
       {
-        # We don't unset ChildPid so Task::UpdateStatus()
-        # will add a trace in the log
+        LogMsg "Canceling the ". join("/", $self->Id, $Step->No, $Task->No) . " task\n";
         kill("TERM", $Task->ChildPid);
+        $Task->Status("canceled");
+        $Task->ChildPid(undef);
+        $Task->Save();
+
+        my $VM = $Task->VM;
+        $VM->Status('dirty');
+        $VM->Save();
       }
     }
   }
@@ -219,9 +227,9 @@ sub Restart
 {
   my $self = shift;
 
-  if ($self->Status ne "failed" && $self->Status ne "completed")
+  if ($self->Status eq "queued" || $self->Status eq "running")
   {
-    return "Only completed/failed jobs can be restarted";
+    return "This job is already " . $self->Status;
   }
 
   my $JobDir = "$DataDir/jobs/" . $self->Id;
@@ -251,6 +259,8 @@ sub Restart
     $Step->Status("queued");
   }
   $self->Status("queued");
+  $self->Submitted(time);
+  $self->Ended(undef);
   $self->Save(); # Save it all
 
   return undef;
@@ -328,7 +338,7 @@ BEGIN
     CreateItemrefPropertyDescriptor("Branch", "Branch", !1, 1, \&CreateBranches, ["BranchName"]),
     CreateItemrefPropertyDescriptor("User", "Author", !1, 1, \&WineTestBot::Users::CreateUsers, ["UserName"]),
     CreateBasicPropertyDescriptor("Priority", "Priority", !1, 1, "N", 1),
-    CreateEnumPropertyDescriptor("Status", "Status", !1, 1, ['queued', 'running', 'completed', 'failed']),
+    CreateEnumPropertyDescriptor("Status", "Status", !1, 1, ['queued', 'running', 'completed', 'failed', 'canceled']),
     CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "A", 128),
     CreateBasicPropertyDescriptor("Submitted", "Submitted", !1, !1, "DT", 19),
     CreateBasicPropertyDescriptor("Ended", "Ended", !1, !1, "DT", 19),

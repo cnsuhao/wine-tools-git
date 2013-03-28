@@ -326,3 +326,4 @@ pre
 .success   { color: green; }
 .testfail  { color: red; }
 .botfail   { color: #e55600; }
+.canceled  { color: black; }
