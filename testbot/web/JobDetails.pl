@@ -167,7 +167,8 @@ sub OnCancel
     return !1;
   }
 
-  return 1;
+  $self->Redirect("/JobDetails.pl?Key=" . $self->{JobId});
+  exit;
 }
 
 sub OnRestart
@@ -188,7 +189,8 @@ sub OnRestart
     return !1;
   }
 
-  return 1;
+  $self->Redirect("/JobDetails.pl?Key=" . $self->{JobId});
+  exit;
 }
 
 sub OnAction
@@ -237,27 +239,6 @@ sub GeneratePage
 sub GenerateBody
 {
   my $self = shift;
-
-  if ($self->{ActionPerformed})
-  {
-    print "<h1>" . $self->GetTitle() . "</h1>\n";
-    print "<div class='Content'>\n";
-    my $Action = $self->GetParam("Action");
-    if ($Action eq "Cancel job")
-    {
-      print "<p>Job will be canceled.</p>\n";
-    }
-    elsif ($Action eq "Restart job")
-    {
-      print "<p>Job will be restarted.</p>\n";
-    }
-    else
-    {
-      print "<p>Unknown action $Action.</p>\n";
-    }
-    print "</div>\n";
-    return;
-  }
 
   $self->SUPER::GenerateBody(@_);
 
