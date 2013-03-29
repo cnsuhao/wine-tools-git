@@ -240,8 +240,16 @@ elsif (!defined $ErrMessage)
 if (defined $ErrMessage)
 {
   # Now we can report the previous Run() / Wait() error
-  FatalError "Could not run the reconfig script in the VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Task;
+  if ($ErrMessage =~ /timed out waiting for the child process/)
+  {
+    $NewStatus = "badbuild";
+    LogTaskError("The reconfig timed out\n", $FullErrFileName);
+  }
+  else
+  {
+    FatalError "Could not run the reconfig script in the VM: $ErrMessage\n",
+               $FullErrFileName, $Job, $Task;
+  }
 }
 
 $TA->Disconnect();

@@ -272,8 +272,16 @@ elsif (!defined $ErrMessage)
 if (defined $ErrMessage)
 {
   # Now we can report the previous Run() / Wait() error
-  FatalError "Failure running the build script in the VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Task;
+  if ($ErrMessage =~ /timed out waiting for the child process/)
+  {
+    $NewStatus = "badbuild";
+    LogTaskError("The build timed out\n", $FullErrFileName);
+  }
+  else
+  {
+    FatalError "Failure running the build script in the VM: $ErrMessage\n",
+               $FullErrFileName, $Job, $Task;
+  }
 }
 
 # Don't try copying the test executables if the build step failed
