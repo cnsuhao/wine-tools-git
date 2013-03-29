@@ -314,52 +314,60 @@ if (!$TA->SendFileFromString($Script, "script.bat", $TestAgent::SENDFILE_EXE))
 my $Pid = $TA->Run(["./script.bat"], 0);
 if (!$Pid or !defined $TA->Wait($Pid, $Timeout))
 {
-  $ErrMessage = $TA->GetLastError();
+  $ErrMessage = "Failure running script in VM: " . $TA->GetLastError();
 }
 
-my $LogErrMessage;
-if (!$TA->GetFile($RptFileName, $FullLogFileName))
+my $NewStatus = "boterror";
+if ($TA->GetFile($RptFileName, $FullLogFileName))
 {
-  $LogErrMessage = $TA->GetLastError();
+  my $TestFailures = CountFailures($FullLogFileName);
+  if (!defined $TestFailures)
+  {
+    if (($ErrMessage || "") =~ /timed out waiting for the child process/)
+    {
+      LogTaskError("The test timed out\n", $FullErrFileName);
+      $ErrMessage = undef;
+    }
+    else
+    {
+      LogTaskError("No test summary line found\n", $FullErrFileName);
+    }
+    $TestFailures = 1;
+  }
+  $Task->TestFailures($TestFailures);
+  $NewStatus = "completed";
+
+  if ($Step->Type eq "suite")
+  {
+    chmod 0664, $FullLogFileName;
+  }
+  else
+  {
+    chmod 0664, $FullLogFileName;
+    my $LatestNameBase = "$DataDir/latest/" . $VM->Name . "_" .
+                         ($Step->FileType eq "exe64" ? "64" : "32");
+    unlink("${LatestNameBase}.log");
+    unlink("${LatestNameBase}.err");
+    link("$DataDir/jobs/" . $Job->Id . "/" . $Step->No . "/" . $Task->No . "/log",
+         "${LatestNameBase}.log");
+  }
 }
-elsif ($Step->Type eq "suite")
+elsif (!defined $ErrMessage)
 {
-  chmod 0664, $FullLogFileName;
-}
-else
-{
-  chmod 0664, $FullLogFileName;
-  my $LatestNameBase = "$DataDir/latest/" . $VM->Name . "_" .
-                       ($Step->FileType eq "exe64" ? "64" : "32");
-  unlink("${LatestNameBase}.log");
-  unlink("${LatestNameBase}.err");
-  link("$DataDir/jobs/" . $Job->Id . "/" . $Step->No . "/" . $Task->No . "/log",
-       "${LatestNameBase}.log");
+  $ErrMessage = "Can't copy log from VM: " . $TA->GetLastError();
 }
 
 TakeScreenshot $VM, $FullScreenshotFileName;
-if (defined($ErrMessage))
+if (defined $ErrMessage)
 {
-  FatalError "Failure running script in VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Step, $Task;
-}
-if (defined($LogErrMessage))
-{
-  FatalError "Can't copy log from VM: $LogErrMessage\n",
-             $FullErrFileName, $Job, $Step, $Task;
+  FatalError "$ErrMessage\n", $FullErrFileName, $Job, $Step, $Task;
 }
 $TA->Disconnect();
 
-$Task->Status("completed");
+$Task->Status($NewStatus);
 $Task->ChildPid(undef);
 $Task->Ended(time);
-my $TestFailures = CountFailures($FullLogFileName);
-if (!defined $TestFailures)
-{
-  LogTaskError("No test summary line found\n", $FullErrFileName);
-  $TestFailures = 1;
-}
-$Task->TestFailures($TestFailures);
+
 $Task->Save();
 $Job->UpdateStatus();
 
