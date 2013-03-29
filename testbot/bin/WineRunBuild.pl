@@ -55,7 +55,7 @@ sub FatalError($$$$)
     close($ErrFile);
   }
 
-  $Task->Status("failed");
+  $Task->Status("boterror");
   $Task->Ended(time);
   $Task->Save();
   $Job->UpdateStatus();
@@ -87,7 +87,7 @@ sub ProcessLog($$)
       if ($1 ne "ok")
       {
         $Errors .= "$1\n";
-        $Status = "failed";
+        $Status = ($1 eq "Patch failed to apply") ? "badpatch" : "badbuild";
       }
       elsif (!defined $Status)
       {
@@ -98,13 +98,13 @@ sub ProcessLog($$)
 
     if (!defined $Status)
     {
-      $Status = "failed";
+      $Status = "boterror";
       $Errors = "Missing build status line\n";
     }
   }
   else
   {
-    $Status = "failed";
+    $Status = "boterror";
     $Errors = "Unable to open the log file\n";
     LogMsg "Unable to open '$FullLogFileName' for reading: $!\n";
   }

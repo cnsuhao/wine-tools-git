@@ -93,12 +93,14 @@ sub GenerateDataCell
     my %HTMLChunks = ("queued" => "<span class='queued'>queued</span>",
                       "running" => "<span class='running'>running</span>",
                       "completed" => "<span class='success'>completed</span>",
-                      "failed" => "<span class='botfail'>failed</span>",
+                      "badpatch" => "<span class='badpatch'>bad patch</span>",
+                      "badbuild" => "<span class='badbuild'>build error</span>",
+                      "boterror" => "<span class='boterror'>TestBot error</span>",
                       "canceled" => "<span class='canceled'>canceled</span>",
         );
     my $Status = $Item->Status;
     my $HTMLStatus = $HTMLChunks{$Status} || $Status;
-    if ($Status eq "completed" || $Status eq "failed" || $Status eq "canceled")
+    if ($Status eq "completed" || $Status eq "boterror" || $Status eq "canceled")
     {
       my $Failures = 0;
       my $HasTestResult;

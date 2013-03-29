@@ -119,7 +119,7 @@ sub CanRestart
 
   my $Job = CreateJobs()->GetItem($self->{JobId});
   my $Status = $Job->Status;
-  if ($Status ne "failed" && $Status ne "canceled")
+  if ($Status ne "boterror" && $Status ne "canceled")
   {
     return "Not a failed / canceled Job";
   }

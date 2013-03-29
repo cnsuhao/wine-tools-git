@@ -64,7 +64,7 @@ sub FatalError($$$$$)
     link($FullErrFileName, $LatestName);
   }
 
-  $Task->Status("failed");
+  $Task->Status("boterror");
   $Task->Ended(time);
   $Task->Save();
   $Job->UpdateStatus();

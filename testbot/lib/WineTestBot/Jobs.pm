@@ -144,9 +144,9 @@ sub UpdateStatus($)
     my $StepStatus = $Step->UpdateStatus($Skip);
     $Has{$StepStatus} = 1;
 
-    my $Type = $Step->Type;
-    if (($StepStatus eq "failed" || $StepStatus eq "canceled") &&
-        ($Type eq "build" || $Type eq "reconfig"))
+    if ($StepStatus ne "queued" && $StepStatus ne "running" &&
+        $StepStatus ne "completed" &&
+        ($Step->Type eq "build" || $Step->Type eq "reconfig"))
     {
       # The following steps need binaries that this one was supposed to
       # produce. So skip them.
@@ -158,7 +158,7 @@ sub UpdateStatus($)
   # Note that one or more tasks may have been requeued during the cleanup phase
   # of the server startup. So this job may regress from 'running' back to
   # 'queued'. This means all possible step status values must be considered.
-  foreach my $StepStatus ("running", "failed", "canceled", "skipped", "completed", "queued")
+  foreach my $StepStatus ("running", "boterror", "badpatch", "badbuild", "canceled", "skipped", "completed", "queued")
   {
     if ($Has{$StepStatus})
     {
@@ -339,7 +339,7 @@ BEGIN
     CreateItemrefPropertyDescriptor("Branch", "Branch", !1, 1, \&CreateBranches, ["BranchName"]),
     CreateItemrefPropertyDescriptor("User", "Author", !1, 1, \&WineTestBot::Users::CreateUsers, ["UserName"]),
     CreateBasicPropertyDescriptor("Priority", "Priority", !1, 1, "N", 1),
-    CreateEnumPropertyDescriptor("Status", "Status", !1, 1, ['queued', 'running', 'completed', 'failed', 'canceled']),
+    CreateEnumPropertyDescriptor("Status", "Status", !1, 1, ['queued', 'running', 'completed', 'badpatch', 'badbuild', 'boterror', 'canceled']),
     CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "A", 128),
     CreateBasicPropertyDescriptor("Submitted", "Submitted", !1, !1, "DT", 19),
     CreateBasicPropertyDescriptor("Ended", "Ended", !1, !1, "DT", 19),

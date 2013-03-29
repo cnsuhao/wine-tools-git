@@ -164,8 +164,8 @@ sub UpdateStatus
       # This probably indicates a bug in the task script.
       # Don't requeue the task to avoid an infinite loop.
       LogMsg "Child process for task $JobId/$StepNo/$TaskNo died unexpectedly\n";
-      $self->Status("failed");
-      $Status = "failed";
+      $self->Status("boterror");
+      $Status = "boterror";
 
       my $VM = $self->VM;
       $VM->Status('dirty');
@@ -208,7 +208,7 @@ BEGIN
 {
   @PropertyDescriptors = (
     CreateBasicPropertyDescriptor("No", "Task no",  1,  1, "N", 2),
-    CreateEnumPropertyDescriptor("Status", "Status",  !1,  1, ['queued', 'running', 'completed', 'failed', 'canceled', 'skipped']),
+    CreateEnumPropertyDescriptor("Status", "Status",  !1,  1, ['queued', 'running', 'completed', 'badpatch', 'badbuild', 'boterror', 'canceled', 'skipped']),
     CreateItemrefPropertyDescriptor("VM", "VM", !1,  1, \&CreateVMs, ["VMName"]),
     CreateBasicPropertyDescriptor("Timeout", "Timeout", !1, 1, "N", 4),
     CreateBasicPropertyDescriptor("CmdLineArg", "Command line args", !1, !1, "A", 256),
