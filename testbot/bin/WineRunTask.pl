@@ -251,6 +251,8 @@ if (!$TA->SendFile("$BinDir/windows/$TestLauncher", $TestLauncher, 0))
   FatalError "Can't copy TestLauncher to VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
+
+my $Timeout = $Task->Timeout;
 my $Script = "\@echo off\r\nset WINETEST_DEBUG=" . $Step->DebugLevel .
              "\r\n";
 if ($Step->ReportSuccessfulTests)
@@ -259,7 +261,10 @@ if ($Step->ReportSuccessfulTests)
 }
 if ($Step->Type eq "single")
 {
-  $Script .= "$TestLauncher -t " . $Task->Timeout . " $FileName ";
+  $Script .= "$TestLauncher -t $Timeout $FileName ";
+  # Add 1 second to the timeout so the client-side Wait() does not time out
+  # right before $TestLauncher does.
+  $Timeout += 1;
   my $CmdLineArg = $Task->CmdLineArg;
   if ($CmdLineArg)
   {
@@ -307,7 +312,7 @@ if (!$TA->SendFileFromString($Script, "script.bat", $TestAgent::SENDFILE_EXE))
 }
 
 my $Pid = $TA->Run(["./script.bat"], 0);
-if (!$Pid or !defined $TA->Wait($Pid, $Task->Timeout))
+if (!$Pid or !defined $TA->Wait($Pid, $Timeout))
 {
   $ErrMessage = $TA->GetLastError();
 }
