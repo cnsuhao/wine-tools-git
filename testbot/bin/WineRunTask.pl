@@ -41,6 +41,23 @@ use WineTestBot::Jobs;
 use WineTestBot::Log;
 use WineTestBot::Engine::Notify;
 
+sub LogTaskError($$)
+{
+  my ($ErrMessage, $FullErrFileName) = @_;
+  my $OldUMask = umask(002);
+  if (open(my $ErrFile, ">>", $FullErrFileName))
+  {
+    umask($OldUMask);
+    print $ErrFile $ErrMessage;
+    close($ErrFile);
+  }
+  else
+  {
+    umask($OldUMask);
+    LogMsg "Unable to open '$FullErrFileName' for writing: $!\n";
+  }
+}
+
 sub FatalError($$$$$)
 {
   my ($ErrMessage, $FullErrFileName, $Job, $Step, $Task) = @_;
@@ -48,14 +65,7 @@ sub FatalError($$$$$)
   my ($JobKey, $StepKey, $TaskKey) = @{$Task->GetMasterKey()};
   LogMsg "$JobKey/$StepKey/$TaskKey $ErrMessage";
 
-  my $OldUMask = umask(002);
-  if (open(my $ErrFile, ">>", $FullErrFileName))
-  {
-    print $ErrFile $ErrMessage;
-    close($ErrFile);
-  }
-  umask($OldUMask);
-
+  LogTaskError($ErrMessage, $FullErrFileName);
   if ($Step->Type eq "suite")
   {
     my $LatestName = "$DataDir/latest/" . $Task->VM->Name . "_" .
@@ -341,13 +351,7 @@ $Task->Ended(time);
 my $TestFailures = CountFailures($FullLogFileName);
 if (!defined $TestFailures)
 {
-  my $OldUMask = umask(002);
-  if (open ERRFILE, ">>$FullErrFileName")
-  {
-    print ERRFILE "No test summary line found\n";
-    close ERRFILE;
-  }
-  umask($OldUMask);
+  LogTaskError("No test summary line found\n", $FullErrFileName);
   $TestFailures = 1;
 }
 $Task->TestFailures($TestFailures);

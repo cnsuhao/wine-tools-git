@@ -42,6 +42,20 @@ use WineTestBot::Jobs;
 use WineTestBot::Log;
 use WineTestBot::Engine::Notify;
 
+sub LogTaskError($$)
+{
+  my ($ErrMessage, $FullErrFileName) = @_;
+  if (open(my $ErrFile, ">>", $FullErrFileName))
+  {
+    print $ErrFile $ErrMessage;
+    close($ErrFile);
+  }
+  else
+  {
+    LogMsg "Unable to open '$FullErrFileName' for writing: $!\n";
+  }
+}
+
 sub FatalError($$$$)
 {
   my ($ErrMessage, $FullErrFileName, $Job, $Task) = @_;
@@ -49,12 +63,7 @@ sub FatalError($$$$)
   my ($JobKey, $StepKey, $TaskKey) = @{$Task->GetMasterKey()};
   LogMsg "$JobKey/$StepKey/$TaskKey $ErrMessage";
 
-  if (open(my $ErrFile, ">>", $FullErrFileName))
-  {
-    print $ErrFile $ErrMessage;
-    close($ErrFile);
-  }
-
+  LogTaskError($ErrMessage, $FullErrFileName);
   $Task->Status("boterror");
   $Task->Ended(time);
   $Task->Save();
@@ -109,19 +118,7 @@ sub ProcessLog($$)
     LogMsg "Unable to open '$FullLogFileName' for reading: $!\n";
   }
 
-  if ($Errors)
-  {
-    if (open(my $ErrFile, ">", $FullErrFileName))
-    {
-      print $ErrFile $Errors;
-      close($ErrFile);
-    }
-    else
-    {
-      LogMsg "Unable to open '$FullErrFileName' for writing: $!\n";
-    }
-  }
-
+  LogTaskError($Errors, $FullErrFileName) if ($Errors);
   return $Status;
 }
 
