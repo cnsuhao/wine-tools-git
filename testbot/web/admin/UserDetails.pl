@@ -1,6 +1,7 @@
 # User details page
 #
 # Copyright 2009 Ge van Geldorp
+# Copyright 2013 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -53,8 +54,7 @@ sub GetActions
   my $self = shift;
 
   my @Actions;
-  if ($self->{Item}->Active && length($self->{Item}->Password) == 1 &&
-      ! defined($LDAPServer))
+  if (!defined $LDAPServer and $self->{Item}->WaitingForApproval())
   {
     $Actions[0] = "Approve";
   }
