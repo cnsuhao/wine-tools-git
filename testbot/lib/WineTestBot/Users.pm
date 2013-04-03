@@ -166,7 +166,7 @@ sub SendResetCode
   {
     return "This account has been suspended";
   }
-  if (! $self->Activated() && $self->WaitingForApproval())
+  if ($self->WaitingForApproval())
   {
     return "Your account has not been approved yet";
   }
