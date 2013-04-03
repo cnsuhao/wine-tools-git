@@ -162,7 +162,7 @@ INSERT INTO Roles (Name, IsDefaultRole) VALUES('admin', 'N');
 INSERT INTO Roles (Name, IsDefaultRole) VALUES('wine-devel', 'Y');
 
 INSERT INTO Users (Name, EMail, Password, Active, RealName)
-       VALUES('batch', '/dev/null', '*', 'Batch user for internal jobs', NULL);
+       VALUES('batch', '/dev/null', '*', 'Y', 'Batch user for internal jobs');
 
 INSERT INTO Branches (Name, IsDefault) VALUES('master', 'Y');
 
