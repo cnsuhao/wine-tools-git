@@ -157,12 +157,9 @@ sub OnAction
 
   if ($Action eq "OK")
   {
-    if ($self->Save())
-    {
-      $self->RedirectToList();
-      exit;
-    }
-    return !1;
+    return !1 if (!$self->Save());
+    $self->RedirectToList();
+    exit;
   }
   elsif ($Action eq "Cancel")
   {

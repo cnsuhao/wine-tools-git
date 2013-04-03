@@ -64,21 +64,13 @@ sub GetActions
   return \@Actions;
 }
 
-sub OnApprove
+sub OnApprove($)
 {
   my $self = shift;
 
-  ($self->{ErrField}, $self->{ErrMessage}) = $self->Save();
-  if (defined($self->{ErrMessage}))
-  {
-    return !1;
-  }
+  return !1 if (!$self->Save());
   $self->{ErrMessage} = $self->{Item}->Approve();
-  if (defined($self->{ErrMessage}))
-  {
-    return !1;
-  }
-
+  return !1 if (defined $self->{ErrMessage});
   $self->RedirectToList();
   exit;
 }
@@ -88,8 +80,12 @@ sub OnAction
   my $self = shift;
   my $Action = $_[0];
 
-  return ($Action eq "Approve" ? $self->OnApprove() :
-                                 $self->SUPER::OnAction(@_));
+  if ($Action eq "Approve")
+  {
+    return $self->OnApprove();
+  }
+
+  return $self->SUPER::OnAction(@_);
 }
 
 package main;
