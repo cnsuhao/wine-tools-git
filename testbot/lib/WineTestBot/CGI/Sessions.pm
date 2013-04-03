@@ -75,14 +75,14 @@ sub CreateItem
   return WineTestBot::CGI::Session->new($self);
 }
 
-sub DeleteNonPermanentSessions
+sub DeleteNonPermanentSessions($)
 {
-  my $self = shift;
   my $User = $_[0];
 
-  $self->AddFilter("User", [$User]);
-  $self->AddFilter("Permanent", [!1]);
-  map { $self->DeleteItem($_); } @{$self->GetItems()};
+  my $Sessions = CreateSessions();
+  $Sessions->AddFilter("User", [$User]);
+  $Sessions->AddFilter("Permanent", [!1]);
+  map { $Sessions->DeleteItem($_); } @{$Sessions->GetItems()};
 }
 
 sub NewSession
@@ -90,7 +90,7 @@ sub NewSession
   my $self = shift;
   my ($User, $Permanent) = @_;
 
-  CreateSessions()->DeleteNonPermanentSessions($User);
+  DeleteNonPermanentSessions($User);
 
   my $Session = $self->Add();
   my $Existing = $Session;
