@@ -1,4 +1,5 @@
 # Copyright 2009 Ge van Geldorp
+# Copyright 2013 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -88,12 +89,7 @@ sub WaitingForApproval
 {
   my $self = shift;
 
-  if ($self->Activated())
-  {
-    return !1;
-  }
-
-  return ! $self->ResetCode;
+  return $self->Active && !$self->Activated() && !$self->ResetCode;
 }
 
 sub GenerateResetCode
