@@ -310,12 +310,11 @@ use WineTestBot::Config;
 use WineTestBot::UserRoles;
 use WineTestBot::WineTestBotObjects;
 
-use vars qw (@ISA @EXPORT @PropertyDescriptors $CurrentUser);
+use vars qw (@ISA @EXPORT @PropertyDescriptors);
 
 require Exporter;
 @ISA = qw(WineTestBot::WineTestBotCollection Exporter);
-@EXPORT = qw(&CreateUsers &SetCurrentUser &GetCurrentUser &GetBatchUser
-             &Authenticate);
+@EXPORT = qw(&CreateUsers &GetBatchUser &Authenticate);
 
 BEGIN
 {
@@ -412,16 +411,6 @@ sub GetBatchUser
   my $class = shift;
 
   return $class->CreateUsers()->GetItem("batch");
-}
-
-sub SetCurrentUser
-{
-  $CurrentUser = shift;
-}
-
-sub GetCurrentUser
-{
-  return $CurrentUser;
 }
 
 1;
