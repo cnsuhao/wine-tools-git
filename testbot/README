@@ -78,8 +78,8 @@ but has to be 'activated' before it can be used. Also an email is sent to the
 WineTestBot administrators.
 
 If the request is considered to be illegitimate / spam, the administrator
-should directly delete the provisional account. Otherwise the account should
-be approved.
+should directly delete / reject the provisional account. Otherwise the account
+should be approved.
 
 Approving the account will generate a 'password reset code' and send an email
 to the user with a URL to visit to set the account password. That will activate

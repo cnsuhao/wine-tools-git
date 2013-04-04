@@ -57,7 +57,8 @@ sub GetActions
   my @Actions;
   if (!defined $LDAPServer and $self->{Item}->WaitingForApproval())
   {
-    $Actions[0] = "Approve";
+    push @Actions, "Approve";
+    push @Actions, "Reject" if ($self->{Item}->Name);
   }
 
   push(@Actions, @{$self->SUPER::GetActions()});
@@ -72,6 +73,19 @@ sub OnApprove($)
   return !1 if (!$self->Save());
   $self->{ErrMessage} = $self->{Item}->Approve();
   return !1 if (defined $self->{ErrMessage});
+  $self->RedirectToList();
+  exit;
+}
+
+sub OnReject($)
+{
+  my $self = shift;
+
+  $self->{Item}->Status('deleted');
+  ($self->{ErrField}, $self->{ErrMessage}) = $self->{Item}->Save();
+  return !1 if (defined $self->{ErrMessage});
+  # Forcefully log out that user by deleting his web sessions
+  DeleteSessions($self->{Item});
   $self->RedirectToList();
   exit;
 }
@@ -98,6 +112,10 @@ sub OnAction
   if ($Action eq "Approve")
   {
     return $self->OnApprove();
+  }
+  elsif ($Action eq "Reject")
+  {
+    return $self->OnReject();
   }
   elsif ($Action eq "OK")
   {
