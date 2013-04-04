@@ -78,7 +78,7 @@ sub GenerateFields
 {
   my $self = shift;
 
-  print "<div><input type='hidden' name='Active' value='Y'></div>\n";
+  print "<div><input type='hidden' name='Status' value='active'></div>\n";
   $self->SUPER::GenerateFields();
   print "<div class='DetailProperty'><label>Remarks</label><textarea name='Remarks' cols='40' rows='4'></textarea></div>\n";
   $self->GenerateRequiredLegend();

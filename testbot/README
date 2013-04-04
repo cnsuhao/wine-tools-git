@@ -87,8 +87,8 @@ the account and make it usable.
 
 
 Notes:
-* Existing accounts can be suspended by unchecking the 'active' field. This
-  prevents the user from logging in and changing the password.
+* Existing accounts can be disabled by setting their status field to
+  'disabled'. This prevents the user from logging in and changing the password.
 * Only accounts that have the 'wine-devel' role can submit jobs. So
   administrators who also want to submit jobs should add it to their account
   (see the doc/INSTALL.txt file).

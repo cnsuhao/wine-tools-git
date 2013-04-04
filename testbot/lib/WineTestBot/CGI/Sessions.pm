@@ -57,7 +57,7 @@ use vars qw(@ISA @EXPORT @PropertyDescriptors);
 
 require Exporter;
 @ISA = qw(WineTestBot::WineTestBotCollection Exporter);
-@EXPORT = qw(&CreateSessions &NewSession);
+@EXPORT = qw(&CreateSessions &DeleteSessions &NewSession);
 
 BEGIN
 {
@@ -82,6 +82,15 @@ sub DeleteNonPermanentSessions($)
   my $Sessions = CreateSessions();
   $Sessions->AddFilter("User", [$User]);
   $Sessions->AddFilter("Permanent", [!1]);
+  map { $Sessions->DeleteItem($_); } @{$Sessions->GetItems()};
+}
+
+sub DeleteSessions($)
+{
+  my $User = $_[0];
+
+  my $Sessions = CreateSessions();
+  $Sessions->AddFilter("User", [$User]);
   map { $Sessions->DeleteItem($_); } @{$Sessions->GetItems()};
 }
 

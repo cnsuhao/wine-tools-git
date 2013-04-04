@@ -193,10 +193,10 @@
         </dia:composite>
         <dia:composite type="table_attribute">
           <dia:attribute name="name">
-            <dia:string>#Active#</dia:string>
+            <dia:string>#Status#</dia:string>
           </dia:attribute>
           <dia:attribute name="type">
-            <dia:string>#BOOL#</dia:string>
+            <dia:string>#ENUM#</dia:string>
           </dia:attribute>
           <dia:attribute name="comment">
             <dia:string>##</dia:string>

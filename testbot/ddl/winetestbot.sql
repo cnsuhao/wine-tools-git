@@ -7,7 +7,7 @@ CREATE TABLE Users
   Name      VARCHAR(40)     NOT NULL,
   EMail     VARCHAR(40)     NOT NULL,
   Password  CHAR(49)        NOT NULL,
-  Active    ENUM('Y', 'N')  NOT NULL,
+  Status    ENUM('active', 'disabled', 'deleted')  NOT NULL,
   RealName  VARCHAR(40)     NULL,
   ResetCode CHAR(32)        NULL,
   PRIMARY KEY(Name)
@@ -161,8 +161,8 @@ ENGINE=InnoDB DEFAULT CHARSET=utf8;
 INSERT INTO Roles (Name, IsDefaultRole) VALUES('admin', 'N');
 INSERT INTO Roles (Name, IsDefaultRole) VALUES('wine-devel', 'Y');
 
-INSERT INTO Users (Name, EMail, Password, Active, RealName)
-       VALUES('batch', '/dev/null', '*', 'Y', 'Batch user for internal jobs');
+INSERT INTO Users (Name, EMail, Password, Status, RealName)
+       VALUES('batch', '/dev/null', '*', 'disabled', 'Batch user for internal jobs');
 
 INSERT INTO Branches (Name, IsDefault) VALUES('master', 'Y');
 

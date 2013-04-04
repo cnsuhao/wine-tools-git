@@ -42,7 +42,7 @@ sub InitializeNew
 {
   my $self = shift;
 
-  $self->Active(1);
+  $self->Status('active');
   $self->Password("*");
 }
 
@@ -89,7 +89,7 @@ sub WaitingForApproval
 {
   my $self = shift;
 
-  return $self->Active && !$self->Activated() && !$self->ResetCode;
+  return $self->Status eq 'active' && !$self->Activated() && !$self->ResetCode;
 }
 
 sub GenerateResetCode
@@ -162,9 +162,9 @@ sub SendResetCode
 {
   my $self = shift;
 
-  if (! $self->Active)
+  if ($self->Status ne 'active')
   {
-    return "This account has been suspended";
+    return "This account has been " . $self->Status;
   }
   if ($self->WaitingForApproval())
   {
@@ -243,9 +243,9 @@ sub Authenticate
     return ("Unknown username or incorrect password", undef);
   }
 
-  if (! $self->Active)
+  if ($self->Status ne 'active')
   {
-    return ("This account has been suspended", undef);
+    return ("This account has been " . $self->Status, undef);
   }
 
   return (undef, $self);
@@ -258,7 +258,7 @@ sub FromLDAP
 
   $self->Name($UserName);
   $self->Password("*");
-  $self->Active("Y");
+  $self->Status('active');
 
   my $SearchFilter = $LDAPSearchFilter;
   $SearchFilter =~ s/%USERNAME%/$UserName/;
@@ -300,6 +300,7 @@ WineTestBot::Users - A collection of WineTestBot::User objects
 
 use Net::LDAP;
 use ObjectModel::BasicPropertyDescriptor;
+use ObjectModel::EnumPropertyDescriptor;
 use ObjectModel::DetailrefPropertyDescriptor;
 use ObjectModel::PropertyDescriptor;
 use WineTestBot::Config;
@@ -317,7 +318,7 @@ BEGIN
   @PropertyDescriptors = (
     CreateBasicPropertyDescriptor("Name",      "Username",   1,  1, "A", 40),
     CreateBasicPropertyDescriptor("EMail",     "EMail",     !1,  1, "A", 40),
-    CreateBasicPropertyDescriptor("Active",    "Active",    !1,  1, "B",  1),
+    CreateEnumPropertyDescriptor("Status",     "Status",    !1,  1, ['active', 'disabled', 'deleted']),
     CreateBasicPropertyDescriptor("Password",  "Password",  !1,  1, "A", 49),
     CreateBasicPropertyDescriptor("RealName",  "Real name", !1, !1, "A", 40),
     CreateBasicPropertyDescriptor("ResetCode", "Password reset code", !1, !1, "A", 32),

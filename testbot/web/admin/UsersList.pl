@@ -1,6 +1,7 @@
 # User list page
 #
 # Copyright 2009 Ge van Geldorp
+# Copyright 2013 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -51,7 +52,7 @@ sub DisplayProperty
   my $PropertyName = $PropertyDescriptor->GetName();
 
   return $PropertyName eq "Name" || $PropertyName eq "EMail" ||
-         $PropertyName eq "Active" || $PropertyName eq "RealName";
+         $PropertyName eq "Status" || $PropertyName eq "RealName";
 }
 
 sub GetActions
@@ -61,6 +62,7 @@ sub GetActions
 
   if (defined($LDAPServer))
   {
+    # LDAP accounts cannot be deleted
     return [];
   }
 
