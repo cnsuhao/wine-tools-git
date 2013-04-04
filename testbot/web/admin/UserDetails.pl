@@ -22,6 +22,7 @@ use strict;
 package UserDetailsPage;
 
 use ObjectModel::CGI::ItemPage;
+use WineTestBot::CGI::Sessions;
 use WineTestBot::Config;
 use WineTestBot::Users;
 
@@ -75,6 +76,20 @@ sub OnApprove($)
   exit;
 }
 
+sub OnOK($)
+{
+  my $self = shift;
+
+  return !1 if (!$self->Save());
+  if ($self->{Item}->Status ne 'active')
+  {
+    # Forcefully log out that user by deleting his web sessions
+    DeleteSessions($self->{Item});
+  }
+  $self->RedirectToList();
+  exit;
+}
+
 sub OnAction
 {
   my $self = shift;
@@ -83,6 +98,10 @@ sub OnAction
   if ($Action eq "Approve")
   {
     return $self->OnApprove();
+  }
+  elsif ($Action eq "OK")
+  {
+    return $self->OnOK();
   }
 
   return $self->SUPER::OnAction(@_);

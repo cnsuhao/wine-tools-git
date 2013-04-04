@@ -23,6 +23,7 @@ package UsersListPage;
 
 use ObjectModel::PropertyDescriptor;
 use ObjectModel::CGI::CollectionPage;
+use WineTestBot::CGI::Sessions;
 use WineTestBot::Config;
 use WineTestBot::Users;
 
@@ -68,6 +69,34 @@ sub GetActions
 
   return $self->SUPER::GetActions(@_);
 }
+
+sub OnAction
+{
+  my $self = shift;
+  my ($CollectionBlock, $Action) = @_;
+
+  if ($Action eq "Delete")
+  {
+    foreach my $UserName (@{$self->{Collection}->GetKeys()})
+    {
+      next if (!defined $self->GetParam($CollectionBlock->SelName($UserName)));
+      my $User = $self->{Collection}->GetItem($UserName);
+      $User->Status('deleted');
+      my ($ErrProperty, $ErrMessage) = $User->Save();
+      if (defined $ErrMessage)
+      {
+        $self->{ErrMessage} = $ErrMessage;
+        return !1;
+      }
+      # Forcefully log out that user by deleting his web sessions
+      DeleteSessions($User);
+    }
+    return 1;
+  }
+
+  return $self->SUPER::OnAction(@_);
+}
+
 
 package main;
 
