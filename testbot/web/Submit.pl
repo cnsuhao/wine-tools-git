@@ -564,7 +564,7 @@ sub DetermineFileType
       my $PrevMinus = !1;
       while (defined($Line = <FH>))
       {
-        if ($Line =~ m/^\+\+\+ .*\/(dlls|programs)\/([^\/]+)\/tests\/([^\/\s]+)/)
+        if ($Line =~ m~^\+\+\+ .*/(dlls|programs)/([^/]+)/tests/([^/\s]+)~)
         {
           $FileType = "patch$1";
           my $ThisDllBaseName = $2;
@@ -875,7 +875,7 @@ sub OnSubmit
           my $FileName=$self->GetParam("TestExecutable");
           if ($Bits eq "64")
           {
-            $FileName =~ s/^([a-zA-Z0-9_.]+)_test\.exe/\1_test64.exe/;
+            $FileName =~ s/_test\.exe$/_test64.exe/;
           }
           $TestStep->FileName($FileName);
           $TestStep->InStaging(!1);

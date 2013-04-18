@@ -131,7 +131,7 @@ sub Submit
     my $Line;
     while (defined($Line = <BODY>))
     {
-      if ($Line =~ m/^\+\+\+ .*\/(dlls|programs)\/([^\/]+)\/tests\/([^\/\s]+)/)
+      if ($Line =~ m~^\+\+\+ .*/(dlls|programs)/([^/]+)/tests/([^/\s]+)~)
       {
         my $FileType = "patch$1";
         my $BaseName = $2;

@@ -392,7 +392,8 @@ EOF
     my ($BotFailure, $MessagesFromErr) = CheckErrLog("$TaskDir/err");
     if (! $BotFailure)
     {
-      my $Bits = ($StepTask->FileName =~ /_test64\.exe$/ ? 64 : 32);
+      $StepTask->FileName =~ m/^(.*)_test(64)?\.exe$/;
+      my ($BaseName, $Bits) = ($1, $2 || "32");
       my $LatestName = "$DataDir/latest/" . $StepTask->VM->Name . "_$Bits";
       my ($LatestBotFailure, $Dummy) = CheckErrLog("$LatestName.err");
       my $MessagesFromLog = "";
@@ -400,9 +401,8 @@ EOF
       {
         if (defined($StepTask->CmdLineArg))
         {
-          $StepTask->FileName =~ m/^(.*)_test(64)?\.exe/;
           $MessagesFromLog = CompareLogs("$LatestName.log", "$TaskDir/log",
-                                         $1, $StepTask->CmdLineArg);
+                                         $BaseName, $StepTask->CmdLineArg);
         }
       }
       else
