@@ -202,14 +202,16 @@ foreach my $OtherStep (@{$Job->Steps->GetItems()})
 
   $Run64 = 1 if ($OtherStep->FileType eq "exe64");
   my $OtherFileName = $OtherStep->FileName;
-  if ($OtherFileName =~ m/^([\w_\-]+)(|\.exe)_test(|64)\.exe$/)
+  if ($OtherFileName =~ m/^([\w_.]+)_test(?:64)?\.exe$/)
   {
-    if (defined $BaseName and $BaseName ne $1)
+    my $OtherBaseName = $1;
+    $OtherBaseName =~ s/\.exe$//;
+    if (defined $BaseName and $BaseName ne $OtherBaseName)
     {
-      FatalError "$1 doesn't match previously found $BaseName\n",
+      FatalError "$OtherBaseName doesn't match previously found $BaseName\n",
                  $FullErrFileName, $Job, $Task;
     }
-    $BaseName = $1;
+    $BaseName = $OtherBaseName;
   }
 }
 if (!defined $BaseName)
@@ -292,7 +294,7 @@ if ($NewStatus eq "completed")
     next if ($OtherStep->No == $StepNo);
 
     my $OtherFileName = $OtherStep->FileName;
-    next if ($OtherFileName !~ /^[\w_\-]+(?:|\.exe)_test(?:|64)\.exe$/);
+    next if ($OtherFileName !~ /^[\w_.]+_test(?:64)?\.exe$/);
 
     my $OtherStepDir = "$DataDir/jobs/$JobId/" . $OtherStep->No;
     mkdir $OtherStepDir;
