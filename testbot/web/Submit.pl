@@ -256,16 +256,20 @@ sub GenerateFields
         {
           print " (", $self->CGI->escapeHTML($VM->Description), ")";
         }
+        my $Checked = 1;
         if ($VM->Status eq 'offline')
         {
           print " [offline]";
+          $Checked = undef;
         }
         elsif ($VM->Status eq 'maintenance')
         {
           print " [maintenance]";
+          $Checked = undef;
         }
         print "</label><div class='ItemValue'><input type='checkbox' name='$FieldName'";
-        if ($self->GetParam("Page") == 1 || $self->GetParam($FieldName))
+        if ($Checked and
+            ($self->GetParam("Page") == 1 || $self->GetParam($FieldName)))
         {
           print " checked='checked'";
         }
