@@ -180,10 +180,14 @@ sub Cleanup(;$$)
 
     if ($VM->IsPoweredOn())
     {
-      next if ($VM->Status eq "idle");
       if ($KillVMs)
       {
         kill("TERM", $VM->ChildPid) if (defined $VM->ChildPid);
+      }
+      elsif ($VM->Status eq "idle")
+      {
+        # Assume these are still ready for use
+        next;
       }
       elsif (($VM->Status eq "reverting" or $VM->Status eq "sleeping") and
              defined $VM->ChildPid and kill(0, $VM->ChildPid))
