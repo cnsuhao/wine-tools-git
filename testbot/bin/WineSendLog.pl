@@ -131,7 +131,7 @@ sub ReadLog
   }
   else
   {
-    LogMsg "Unable to open log $LogName\n";
+    LogMsg "Unable to open '$LogName' for reading: $!\n";
   }
 
   return \@Messages;

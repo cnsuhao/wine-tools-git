@@ -119,7 +119,7 @@ sub Run
     }
     else
     {
-      LogMsg "unable to redirect stderr to '$TaskDir/err'\n";
+      LogMsg "unable to redirect stderr to '$TaskDir/err': $!\n";
     }
     $ENV{PATH} = "/usr/bin:/bin";
     delete $ENV{ENV};

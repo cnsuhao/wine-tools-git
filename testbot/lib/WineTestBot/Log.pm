@@ -70,7 +70,7 @@ sub SetupRedirects()
     }
     else
     {
-      LogMsg "unable to redirect stderr to the log file\n";
+      LogMsg "unable to redirect stderr to '$logfile': $!\n";
     }
   }
 }
