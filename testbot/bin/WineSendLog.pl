@@ -401,6 +401,9 @@ EOF
       {
         if (defined($StepTask->CmdLineArg))
         {
+          # Filter out failures that happened in the full test suite:
+          # the test suite is run against code which is already in Wine
+          # so all any failure it reported not caused by this patch.
           $MessagesFromLog = CompareLogs("$LatestName.log", "$TaskDir/log",
                                          $BaseName, $StepTask->CmdLineArg);
         }

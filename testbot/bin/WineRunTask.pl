@@ -68,6 +68,7 @@ sub FatalError($$$$$)
   LogTaskError($ErrMessage, $FullErrFileName);
   if ($Step->Type eq "suite")
   {
+    # Link the test suite's results for future use in WineSendLog.pl.
     my $LatestName = "$DataDir/latest/" . $Task->VM->Name . "_" .
                      ($Step->FileType eq "exe64" ? "64" : "32") . ".err";
     unlink($LatestName);
@@ -337,13 +338,10 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
   $Task->TestFailures($TestFailures);
   $NewStatus = "completed";
 
+  chmod 0664, $FullLogFileName;
   if ($Step->Type eq "suite")
   {
-    chmod 0664, $FullLogFileName;
-  }
-  else
-  {
-    chmod 0664, $FullLogFileName;
+    # Link the test suite's results for future use in WineSendLog.pl.
     my $LatestNameBase = "$DataDir/latest/" . $VM->Name . "_" .
                          ($Step->FileType eq "exe64" ? "64" : "32");
     unlink("${LatestNameBase}.log");
