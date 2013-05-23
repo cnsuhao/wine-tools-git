@@ -49,7 +49,8 @@ if ($q->param('testing')) {
 }
 
 # redirect to data dir when no vars present
-print $q->redirect("http://test.winehq.org/data/" . $build);
+my $base = $q->url(-base => 1);
+print $q->redirect($base . "/data/" . $build);
  
 # done
 exit();
