@@ -52,7 +52,7 @@ my @legend =
  [ "committed",  "<ul><li>You have done everything right; congratulations!</li>" .
                  "<li>You screwed up but AJ missed it, send a fix before someone notices ;-)</li></ul>" ],
  [ "depend",     "<ul><li>The patch is part of a series in which a previous patch hasn't been applied. Resend when the dependent patch is fixed.</li></ul>" ],
- [ "sequence",   "<ul><li>The patch is part of a series but it's not correctly numbered. Resend the series with correct sequence numbers to enable the <a href=\"http://testbot.winehq.org/\">testbot</a> to figure it out.</li></ul>" ],
+ [ "sequence",   "<ul><li>The patch is part of a series but it's not correctly numbered. Resend the series with correct sequence numbers to enable the <a href=\"//testbot.winehq.org/\">testbot</a> to figure it out.</li></ul>" ],
  [ "superseded", "<ul><li>An updated version of the patch has been submitted.</li>" .
                  "<li>Someone else fixed the problem already.</li></ul>" ],
  [ "testcase",   "<ul><li>You need to write some test cases demonstrating that the patch is correct.</li></ul>" ],
@@ -81,7 +81,7 @@ my @legend =
  [ "testfail",   "<ul><li>You didn't run 'make test' before submitting.</li>" .
                  "<li>The patch requires a Wine fix but doesn't use todo_wine.</li>" .
                  "<li>The patch fixes a failure but doesn't remove the corresponding todo_wine.</li>" .
-                 "<li>The <a href=\"http://testbot.winehq.org/\">testbot</a> detected new failures on Windows.</li></ul>" ],
+                 "<li>The <a href=\"//testbot.winehq.org/\">testbot</a> detected new failures on Windows.</li></ul>" ],
 );
 
 my $dir = "$ENV{HOME}/patches";
@@ -101,14 +101,14 @@ print INDEX start_html(-title=>"Patches list",
                        -encoding=>"utf-8",
                        -style=>{src=>"patches.css"});
 
-print INDEX "<div id=\"logo_glass\"><a href=\"/patches/\"><img src=\"http://winehq.org/images/winehq_logo_glass_sm.png\"></a></div>\n";
-print INDEX "<div id=\"logo_text\"><a href=\"/patches/\"><img src=\"http://winehq.org/images/winehq_logo_text.png\" alt=\"WineHQ\" title=\"WineHQ\"></a></div>\n";
+print INDEX "<div id=\"logo_glass\"><a href=\"/patches/\"><img src=\"//winehq.org/images/winehq_logo_glass_sm.png\"></a></div>\n";
+print INDEX "<div id=\"logo_text\"><a href=\"/patches/\"><img src=\"//winehq.org/images/winehq_logo_text.png\" alt=\"WineHQ\" title=\"WineHQ\"></a></div>\n";
 print INDEX "<div id=\"tabs\"><ul>",
-    "<li><a href=\"http://www.winehq.org/\">WineHQ</a></li>",
+    "<li><a href=\"//www.winehq.org/\">WineHQ</a></li>",
     "<li><a href=\"http://wiki.winehq.org/\">Wiki</a></li>",
-    "<li><a href=\"http://appdb.winehq.org/\">AppDB</a></li>",
-    "<li><a href=\"http://bugs.winehq.org/\">Bugzilla</a></li>",
-    "<li><a href=\"http://forums.winehq.org/\">Forums</a></li></ul></div>\n";
+    "<li><a href=\"//appdb.winehq.org/\">AppDB</a></li>",
+    "<li><a href=\"//bugs.winehq.org/\">Bugzilla</a></li>",
+    "<li><a href=\"//forum.winehq.org/\">Forums</a></li></ul></div>\n";
 print INDEX "<div id=\"logo_blurb\">Wine source repository &ndash; Patch status</div>\n";
 print INDEX "<div id=\"main_content\"><div id=\"content\"><div class=\"main\">\n";
 print INDEX "<table class=\"main\"><tr><th class=\"id\">ID</th>",

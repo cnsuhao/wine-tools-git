@@ -38,7 +38,7 @@ while ($line = fgets($summary, 1024))
 <h1>Translation statistics for <?php echo $version[0] ?></h1>
 <div class="contents">
 
-<p>This page shows the state of the translations of <a href="http://www.winehq.org/">Wine</a>.
+<p>This page shows the state of the translations of <a href="//www.winehq.org/">Wine</a>.
 Note that some resources marked as translated may in fact still be English. Sometimes developers
 add new English resources into every language file. This automatic tool has a 'Pedantic' mode that
 detects most of these but currently has a lot of false positives. If you would like to read about

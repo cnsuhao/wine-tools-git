@@ -239,12 +239,12 @@ ${ProjectName} Test Bot
 
 <div id='tabs'>
   <ul>
-    <li><a href='http://www.winehq.org/'>WineHQ</a></li>
+    <li><a href='//www.winehq.org/'>WineHQ</a></li>
     <li><a href='http://wiki.winehq.org'>Wiki</a></li>
-    <li><a href='http://appdb.winehq.org/'>AppDB</a></li>
-    <li><a href='http://bugs.winehq.org/'>Bugzilla</a></li>
-    <li class='s'><a href='http://${WebHostName}/'>TestBot</a></li>
-    <li><a href='http://forums.winehq.org/'>Forums</a></li>
+    <li><a href='//appdb.winehq.org/'>AppDB</a></li>
+    <li><a href='//bugs.winehq.org/'>Bugzilla</a></li>
+    <li class='s'><a href='//${WebHostName}/'>TestBot</a></li>
+    <li><a href='//forum.winehq.org/'>Forums</a></li>
   </ul>
 </div>
 
