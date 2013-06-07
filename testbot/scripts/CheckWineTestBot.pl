@@ -44,8 +44,11 @@ delete $ENV{ENV};
 my $rc = 0;
 if (! PingEngine())
 {
-  system "service winetestbot restart > /dev/null";
-  sleep 5;
+  if ($> == 0)
+  {
+    system "service winetestbot restart > /dev/null";
+    sleep 5;
+  }
   
   open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
   print SENDMAIL <<"EOF";
@@ -54,7 +57,12 @@ To: $AdminEMail
 Subject: WineTestBot engine died
 
 EOF
-  if (PingEngine())
+  if ($> != 0)
+  {
+    print SENDMAIL "Insufficient permissions to restart the engine\n";
+    $rc = 1;
+  }
+  elsif (PingEngine())
   {
     print SENDMAIL "The engine was restarted successfully\n";
   }
