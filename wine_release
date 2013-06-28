@@ -79,7 +79,7 @@ then
   do
     name=`basename $f .man`
     make -s -C `dirname $f` $name.man
-    nroff -man $f | ../bin/man2html --pgsize=100000 | $tools_dir/html2template -o $name.template && mv -f $name.template $templates_dir/en/docs/$name.template
+    groff -man -T html -P -l -k -K utf8 $f | $tools_dir/html2template -o $name.template && mv -f $name.template $templates_dir/en/docs/$name.template
   done
 
   make -s htmlpages && rm -rf ../WineAPI && mv documentation/html ../WineAPI
