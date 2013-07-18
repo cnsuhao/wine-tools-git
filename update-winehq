@@ -34,6 +34,7 @@ system("git", "pull") == 0 or die "git pull failed";
 
 open ANNOUNCE, $ARGV[1] || "ANNOUNCE" or die "cannot open ANNOUNCE";
 my $whats_new = 0;
+my $release_notes = 0;
 my $first = 1;
 
 push @text, "<body>\n<p>";
@@ -41,12 +42,20 @@ push @text, "<body>\n<p>";
 while (<ANNOUNCE>)
 {
     chomp;
-    if (!$whats_new)
+    if (!$whats_new && !$release_notes)
     {
         if (/^What's new in this release/)
         {
             $whats_new = 1;
             push @text, " <a href=\"{\$root}/announce/$rel\">What's new</a> in this release:";
+            next;
+        }
+        elsif (/See the release notes/)
+        {
+            $release_notes = 1;
+            xml_escape($_);
+            s/See the release notes/See the <a href=\"{\$root}\/announce\/$rel\">release notes<\/a>/;
+            push @text, " " . $_;
             next;
         }
         if (/^\s*$/)
@@ -68,8 +77,13 @@ while (<ANNOUNCE>)
         }
         if (/^\s*$/)
         {
-            push @text, "</li>\n</ul></p>\n<p>";
+            if ($release_notes) {
+                push @text, "</p>\n";
+            } else {
+                push @text, "</li>\n</ul>\n";
+            }
             $whats_new = 0;
+            $release_notes = 0;
             next;
         }
         push @text, " " . xml_escape($_);
