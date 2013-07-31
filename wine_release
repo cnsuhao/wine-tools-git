@@ -66,8 +66,15 @@ then
 
   manpages="\
     loader/wine.man \
+    loader/wine.de.man \
+    loader/wine.fr.man \
+    loader/wine.pl.man \
     server/wineserver.man \
+    server/wineserver.de.man \
+    server/wineserver.fr.man \
     tools/winemaker.man \
+    tools/winemaker.de.man \
+    tools/winemaker.fr.man \
     tools/widl/widl.man \
     tools/winebuild/winebuild.man \
     tools/winedump/winedump.man \
@@ -79,7 +86,13 @@ then
   do
     name=`basename $f .man`
     make -s -C `dirname $f` $name.man
-    groff -man -T html -P -l -k -K utf8 $f | $tools_dir/html2template -o $name.template && mv -f $name.template $templates_dir/en/docs/$name.template
+
+    lang=`echo $name | cut -d . -f 2`
+    if [ "$lang" = "$name" ]
+    then lang="en"
+    fi
+
+    groff -man -T html -P -l -k -K utf8 $f | $tools_dir/html2template -o $name.template && mv -f $name.template $templates_dir/$lang/docs/`basename $name .$lang`.template
   done
 
   make -s htmlpages && rm -rf ../WineAPI && mv documentation/html ../WineAPI
