@@ -449,7 +449,7 @@ EOF
   }
 
   my $Patch = $Job->Patch;
-  if (0 and defined $Patch->WebPatchId and -d "$DataDir/webpatches")
+  if (defined $Patch->WebPatchId and -d "$DataDir/webpatches")
   {
     my $BaseName = "$DataDir/webpatches/" . $Patch->WebPatchId;
     if ($Messages)
