@@ -424,6 +424,8 @@ EOF
     }
   }
 
+  my $WebSite = ($UseSSL ? "https://" : "http://") . $WebHostName;
+
   if ($Messages)
   {
     open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
@@ -440,7 +442,7 @@ Being a bot and all I'm not very good at pattern recognition, so I might be
 wrong, but could you please double-check?
 Full results can be found at
 EOF
-    print SENDMAIL "http://$WebHostName/JobDetails.pl?Key=",
+    print SENDMAIL "$WebSite/JobDetails.pl?Key=",
                    $Job->GetKey(), "\n\n";
     print SENDMAIL "Your paranoid android.\n\n";
 
@@ -468,7 +470,7 @@ EOF
     {
       print $result "Status: " . ($Messages ? "Failed" : "OK") . "\n";
       print $result "Job-ID: " . $Job->Id . "\n";
-      print $result "URL: http://$WebHostName/JobDetails.pl?Key=" . $Job->GetKey() . "\n";
+      print $result "URL: $WebSite/JobDetails.pl?Key=" . $Job->GetKey() . "\n";
 
       foreach my $Key (@SortedKeys)
       {
