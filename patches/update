@@ -84,7 +84,7 @@ my @legend =
                  "<li>The <a href=\"//testbot.winehq.org/\">testbot</a> detected new failures on Windows.</li></ul>" ],
 );
 
-my $dir = "$ENV{HOME}/patches";
+my $dir = $ARGV[0] || "$ENV{HOME}/patches";
 my $dest = "/home/winehq/opt/source/patches";
 my %patches;
 
