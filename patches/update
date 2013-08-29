@@ -115,7 +115,8 @@ print INDEX "<table class=\"main\"><tr><th class=\"id\">ID</th>",
     "<th class=\"status\">Status</th>",
     "<th class=\"author\">Author</th>",
     "<th class=\"subject\">Subject</th>",
-    "<th class=\"status\">Testbot</th></tr>\n";
+    "<th class=\"status\">Testbot</th>",
+    "<th class=\"status\">Job ID</th></tr>\n";
 
 opendir DIR, $dir;
 foreach my $file (readdir DIR)
@@ -146,9 +147,21 @@ foreach my $file (readdir DIR)
         close ORDER;
     }
     $patch{"testbot"} = "";
+    $patch{"testjob"} = "";
+    $patch{"testurl"} = "";
     if (-f "$dir/$file.testbot")
     {
         $patch{"testbot"} = "OK";
+        if (open LOG, "<$dir/$file.testbot")
+        {
+            while (<LOG>)
+            {
+                last if /^$/;
+                if (/^Job-ID: (.*)$/) { $patch{"testjob"} = $1; }
+                elsif (/^URL: (.*)$/) { $patch{"testurl"} = $1; }
+            }
+            close LOG;
+        }
     }
     if (-f "$dir/$file.testfail")
     {
@@ -174,6 +187,16 @@ foreach my $file (sort { $patches{$b}->{"order"} <=> $patches{$a}->{"order"} } k
     else
     {
         printf INDEX "<td class=\"testbot\">%s</td>", $patch->{"testbot"};
+    }
+    if ($patch->{"testjob"} && $patch->{"testurl"})
+    {
+        printf INDEX "<td class=\"%s\"><a href=\"%s\">%s</a></td>",
+                     ($patch->{"testbot"} eq "Failed") ? " testbot botfail" : "testbot",
+                     $patch->{"testurl"}, $patch->{"testjob"};
+    }
+    else
+    {
+        print INDEX "<td></td>";
     }
     print INDEX "</tr>\n";
     $row++;
