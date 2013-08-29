@@ -466,6 +466,10 @@ EOF
     }
     if (open (my $result, ">", "$BaseName.testbot"))
     {
+      print $result "Status: " . ($Messages ? "Failed" : "OK") . "\n";
+      print $result "Job-ID: " . $Job->Id . "\n";
+      print $result "URL: http://$WebHostName/JobDetails.pl?Key=" . $Job->GetKey() . "\n";
+
       foreach my $Key (@SortedKeys)
       {
         my $StepTask = $StepsTasks->GetItem($Key);
