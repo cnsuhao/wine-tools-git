@@ -23,5 +23,10 @@ if [ ! -f $lock ]; then
 
     # remove old test builds
     (cd builds && find . -mtime +$expire -name winetest\*.exe -print0 | xargs -0 rm -f)
+
+    # remove old queue files
+    find queue -maxdepth 1 -mtime +30 -name err\* -print0 | xargs -0 rm -rf
+    find queue -maxdepth 1 -mtime +30 -name CGI\* -print0 | xargs -0 rm -f
+
     rm $lock
 fi
