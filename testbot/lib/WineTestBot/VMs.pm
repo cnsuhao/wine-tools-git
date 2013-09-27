@@ -362,9 +362,9 @@ sub PowerOn
   return $self->UpdateStatus($Domain);
 }
 
-sub PowerOff
+sub PowerOff($$)
 {
-  my ($self) = @_;
+  my ($self, $NoStatus) = @_;
 
   my ($ErrMessage, $Domain) = $self->_GetDomain();
   return $ErrMessage if (defined $ErrMessage);
@@ -372,7 +372,8 @@ sub PowerOff
   eval { $Domain->destroy() };
   return $@->message() if ($@);
 
-  return $self->UpdateStatus($Domain);
+  return $self->UpdateStatus($Domain) if (!$NoStatus);
+  return undef;
 }
 
 sub GetAgent($)

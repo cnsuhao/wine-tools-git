@@ -97,6 +97,17 @@ if (defined($ErrMessage))
   FatalError "Can't change status for VM $VMKey: $ErrMessage", $VM;
 }
 
+if ($VM->IsPoweredOn())
+{
+  # Some QEmu/KVM versions are buggy and cannot revert a running VM
+  $ErrMessage = $VM->PowerOff(1);
+  if (defined $ErrMessage)
+  {
+    LogMsg "Could not shut down $VMKey: $ErrMessage\n";
+    LogMsg "Trying the revert anyway\n";
+  }
+}
+
 $ErrMessage = $VM->RevertToSnapshot($VM->IdleSnapshot);
 if (defined($ErrMessage))
 {
