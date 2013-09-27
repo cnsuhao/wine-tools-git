@@ -48,13 +48,17 @@ require Exporter;
 
 @EXPORT_OK = qw(new);
 
+my $Singleton;
 sub new($)
 {
   my ($class) = @_;
 
-  my $self = {};
-  $self = bless $self, $class;
-  return $self;
+  if (!defined $Singleton)
+  {
+    $Singleton = {};
+    $Singleton = bless $Singleton, $class;
+  }
+  return $Singleton;
 }
 
 =pod
@@ -75,8 +79,8 @@ sub GetHypervisor($$)
   my $Key = $URI || "";
   if (!defined $self->{$Key})
   {
-      eval { $self->{$Key} = Sys::Virt->new(uri => $URI); };
-      return ($@->message(), undef) if ($@);
+    eval { $self->{$Key} = Sys::Virt->new(uri => $URI); };
+    return ($@->message(), undef) if ($@);
   }
 
   return (undef, $self->{$Key});
