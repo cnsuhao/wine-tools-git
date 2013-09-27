@@ -521,9 +521,9 @@ sub RunRevert
   {
     $ENV{PATH} = "/usr/bin:/bin";
     delete $ENV{ENV};
+    require WineTestBot::Log;
     WineTestBot::Log::SetupRedirects();
     exec("$BinDir/RevertVM.pl", $self->GetKey()) or
-    require WineTestBot::Log;
     WineTestBot::Log::LogMsg("Unable to exec RevertVM.pl: $!\n");
     exit(1);
   }
