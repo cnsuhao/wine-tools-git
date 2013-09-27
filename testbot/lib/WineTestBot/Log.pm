@@ -54,7 +54,7 @@ sub LogMsg(@)
     $| = 1;
     select($tmp);
   }
-  print $logfile scalar localtime, " ", $logprefix, ": ", @_ if ($logfile);
+  print $logfile scalar localtime, " ", $logprefix, "[$$]: ", @_ if ($logfile);
 }
 
 sub SetupRedirects()
