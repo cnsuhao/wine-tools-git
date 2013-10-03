@@ -54,7 +54,6 @@ use WineTestBot::Config;
 use WineTestBot::Branches;
 use WineTestBot::Engine::Notify;
 use WineTestBot::WineTestBotObjects;
-use WineTestBot::Log;
 
 use vars qw(@ISA @EXPORT);
 
@@ -206,7 +205,8 @@ sub Cancel
       }
       elsif (defined $Task->ChildPid)
       {
-        LogMsg "Canceling the ". join("/", $self->Id, $Step->No, $Task->No) . " task\n";
+        require WineTestBot::Log;
+        WineTestBot::Log::LogMsg("Canceling the " . join("/", $self->Id, $Step->No, $Task->No) . " task\n");
         kill("TERM", $Task->ChildPid);
         $Task->Status("canceled");
         $Task->ChildPid(undef);
