@@ -370,6 +370,13 @@ sub CompareTaskStatus
   return $b->Status cmp $a->Status || $a->No <=> $b->No;
 }
 
+sub min(@)
+{
+  my $m = shift @_;
+  map { $m = $_ if ($_ < $m) } (@_);
+  return $m;
+}
+
 =pod
 =over 12
 
@@ -396,7 +403,8 @@ VM Statuses.
 
 =item *
 
-The number of VMs running on the host must be kept under $MaxRunningVMs. The
+The number of active VMs on the host must be kept under $MaxActiveVMs. This
+includes any VM using resources, including those that are being reverted. The
 rational behind this limit is that the host may not be able to run more VMs
 simultaneously, typically due to memory or CPU constraints. Also note that
 this limit must be respected even if there is more than one hypervisor running
@@ -404,20 +412,15 @@ on the host.
 
 =item *
 
-FIXME: The actual limit on the number of powered on VMs is blurred by the
-$MaxNonBasePoweredOnVms setting and the last loop in ScheduleOnHost().
-
-=item *
-
 The number of VMs being reverted on the host at a given time must be kept under
-$MaxRevertingVMs. This may be set to 1 in case the hypervisor gets confused
-when reverting too many VMs at once.
+$MaxRevertingVMs, or $MaxRevertsWhileRunningVMs if some VMs are currently
+running tests. This may be set to 1 in case the hypervisor gets confused when
+reverting too many VMs at once.
 
 =item *
 
-No Task is started while there are VMs that are being reverted. This is so that
-the tests are not disrupted by the disk or CPU activity caused by reverting a
-VM.
+Once there are no jobs to run anymore the scheduler can prepare up to
+$MaxVMsWhenIdle VMs (or $MaxActiveVMs if not set) for future jobs.
 
 =cut
 
@@ -430,11 +433,51 @@ sub ScheduleOnHost($$)
 
   my $HostVMs = CreateVMs();
   $HostVMs->FilterHypervisor($Hypervisors);
-  my ($RevertingVMs, $RunningVMs) = $HostVMs->CountRevertingRunningVMs();
-  my $PoweredOnNonBaseVMs = $HostVMs->CountPoweredOnNonBaseVMs();
-  my %DirtyVMsBlockingJobs;
 
-  my $DirtyIndex = 0;
+  # Count the VMs that are 'active', that is, that use resources on the host,
+  # and those that are reverting. Also build a prioritized list of those that
+  # are ready to run tests: the idle ones.
+  my ($RevertingCount, $RunningCount, $IdleCount) = (0, 0, 0);
+  my (%VMPriorities, %IdleVMs, @DirtyVMs);
+  foreach my $VM (@{$HostVMs->GetItems()})
+  {
+    my $VMKey = $VM->GetKey();
+    my $VMStatus = $VM->Status;
+    if ($VMStatus eq "reverting")
+    {
+      $RevertingCount++;
+    }
+    elsif ($VMStatus eq "running")
+    {
+      $RunningCount++;
+    }
+    else
+    {
+      my $Priority = $VM->Type eq "build" ? 10 :
+                     $VM->Role ne "base" ? 0 :
+                     $VM->Type eq "win32" ? 1 : 2;
+      $VMPriorities{$VMKey} = $Priority;
+
+      # Consider sleeping VMs to be 'almost idle'. We will check their real
+      # status before starting a job on them anyway. But if there is no such
+      # job, then they are expandable just like idle VMs.
+      if ($VMStatus eq "idle" || $VMStatus eq "sleeping")
+      {
+        $IdleCount++;
+        $IdleVMs{$VMKey} = 1;
+      }
+      elsif ($VMStatus eq "dirty")
+      {
+        push @DirtyVMs, $VMKey;
+      }
+    }
+  }
+
+  # It usually takes longer to revert a VM than to run a test. So readyness
+  # (idleness) trumps the Job priority and thus we start jobs on the idle VMs
+  # right away. Then we build a prioritized list of VMs to revert.
+  my (%VMsToRevert, @VMsNext);
+  my ($RevertNiceness, $SleepingCount) = (0, 0);
   foreach my $Job (@$SortedJobs)
   {
     my $Steps = $Job->Steps;
@@ -444,87 +487,164 @@ sub ScheduleOnHost($$)
     {
       my $Step = $SortedSteps[0];
       $Step->HandleStaging($Job->GetKey());
+      my $PrepareNextStep;
       my $Tasks = $Step->Tasks;
-      $Tasks->AddFilter("Status", ["queued", "running"]);
+      $Tasks->AddFilter("Status", ["queued"]);
       my @SortedTasks = sort CompareTaskStatus @{$Tasks->GetItems()};
       foreach my $Task (@SortedTasks)
       {
         my $VM = $Task->VM;
         my $VMKey = $VM->GetKey();
-        if ($Task->Status eq "queued" && $HostVMs->ItemExists($VMKey))
+        next if (!$HostVMs->ItemExists($VMKey) || exists $VMsToRevert{$VMKey});
+
+        my $VMStatus = $VM->Status;
+        if ($VMStatus eq "idle" &&
+            ($RevertingCount == 0 || $MaxRevertsWhileRunningVMs > 0))
         {
-          if ($VM->Status eq "idle" &&
-              $RunningVMs < $MaxRunningVMs &&
-              $RevertingVMs == 0)
-          {
-            $VM->Status("running");
-            my ($ErrProperty, $ErrMessage) = $VM->Save();
-            if (defined($ErrMessage))
-            {
-              return $ErrMessage;
-            }
-            $ErrMessage = $Task->Run($Job->Id, $Step->No);
-            if (defined($ErrMessage))
-            {
-              return $ErrMessage;
-            }
-            $Job->UpdateStatus();
-            $RunningVMs++;
-          }
-          elsif ($VM->Status eq "dirty")
-          {
-            if (! defined($DirtyVMsBlockingJobs{$VMKey}) ||
-                $Job->Priority < $DirtyVMsBlockingJobs{$VMKey})
-            {
-              $DirtyVMsBlockingJobs{$VMKey} = $DirtyIndex;
-              $DirtyIndex++;
-            }
-          }
+          $IdleVMs{$VMKey} = 0;
+          $IdleCount--;
+          $VM->Status("running");
+          my ($ErrProperty, $ErrMessage) = $VM->Save();
+          return $ErrMessage if (defined $ErrMessage);
+
+          $ErrMessage = $Task->Run($Job->Id, $Step->No);
+          return $ErrMessage if (defined $ErrMessage);
+
+          $Job->UpdateStatus();
+          $RunningCount++;
+          $PrepareNextStep = 1;
+        }
+        elsif ($VMStatus eq "sleeping" and $IdleVMs{$VMKey})
+        {
+          # It's not running jobs yet but soon will be
+          # so it's not a candidate for shutdown.
+          $IdleVMs{$VMKey} = 0;
+          $IdleCount--;
+          $SleepingCount++;
+          $PrepareNextStep = 1;
+        }
+        elsif ($VMStatus eq "off" || $VMStatus eq "dirty")
+        {
+          $RevertNiceness++;
+          $VMsToRevert{$VMKey} = $RevertNiceness;
+        }
+      }
+      if ($PrepareNextStep && @SortedSteps >= 2)
+      {
+        # Build a list of VMs we will need next
+        my $Step = $SortedSteps[1];
+        $Tasks = $Step->Tasks;
+        $Tasks->AddFilter("Status", ["queued"]);
+        @SortedTasks = sort CompareTaskStatus @{$Tasks->GetItems()};
+        foreach my $Task (@SortedTasks)
+        {
+          my $VM = $Task->VM;
+          my $VMKey = $VM->GetKey();
+          push @VMsNext, $VMKey;
+          # Not a candidate for shutdown
+          $IdleVMs{$VMKey} = 0;
         }
       }
     }
   }
 
-  if ($RunningVMs != 0)
+  # Figure out how many VMs we will actually be able to revert now and only
+  # keep the highest priority ones.
+  my @SortedVMsToRevert = sort { $VMsToRevert{$a} <=> $VMsToRevert{$b} } keys %VMsToRevert;
+  # Sleeping VMs will soon be running
+  my $MaxReverts = ($RunningCount > 0) ?
+                   $MaxRevertsWhileRunningVMs : $MaxRevertingVMs;
+  my $ActiveCount = $IdleCount + $SleepingCount + $RunningCount + $RevertingCount;
+  my $RevertableCount = min(scalar(@SortedVMsToRevert),
+                            $MaxReverts - $RevertingCount,
+                            $MaxActiveVMs - ($ActiveCount - $IdleCount));
+  if ($RevertableCount < @SortedVMsToRevert)
   {
-    # We don't revert VMs while jobs are running so we're done
-    return undef;
+    $RevertableCount = 0 if ($RevertableCount < 0);
+    for (my $i = $RevertableCount; $i < @SortedVMsToRevert; $i++)
+    {
+      my $VMKey = $SortedVMsToRevert[$i];
+      delete $VMsToRevert{$VMKey};
+    }
+    splice @SortedVMsToRevert, $RevertableCount;
   }
 
-  # Sort the VMs by decreasing order of priority of the jobs they block
-  my @DirtyVMsByIndex = sort { $DirtyVMsBlockingJobs{$a} <=> $DirtyVMsBlockingJobs{$b} } keys %DirtyVMsBlockingJobs;
-  my $VMKey;
-  foreach $VMKey (@DirtyVMsByIndex)
+  # Power off all the VMs that we won't be reverting now so they don't waste
+  # resources while waiting for their turn.
+  foreach my $VMKey (@DirtyVMs)
   {
-    last if ($RevertingVMs >= $MaxRevertingVMs);
-
-    my $VM = $HostVMs->GetItem($VMKey);
-    if ($VM->Role ne "base")
+    if (!exists $VMsToRevert{$VMKey})
     {
-      if ($PoweredOnNonBaseVMs < $MaxNonBasePoweredOnVms)
-      {
-        $VM->RunRevert();
-        $PoweredOnNonBaseVMs++;
-        $RevertingVMs++;
-      }
-    }
-    else
-    {
-      $VM->RunRevert();
-      $RevertingVMs++;
+      my $VM = $HostVMs->GetItem($VMKey);
+      my $ErrMessage = $VM->PowerOff();
+      return $ErrMessage if (defined $ErrMessage);
     }
   }
 
-  # Again for the VMs that don't block any job
-  foreach $VMKey (@{$HostVMs->GetKeys()})
+  # Power off some idle VMs we don't need immediately so we can revert more
+  # of the VMs we need now.
+  if ($IdleCount > 0 && @SortedVMsToRevert > 0 &&
+      $ActiveCount + @SortedVMsToRevert > $MaxActiveVMs)
+  {
+    # Sort from least important to most important
+    my @SortedIdleVMs = sort { $VMPriorities{$a} <=> $VMPriorities{$b} } keys %IdleVMs;
+    foreach my $VMKey (@SortedIdleVMs)
+    {
+      my $VM = $HostVMs->GetItem($VMKey);
+      next if (!$IdleVMs{$VMKey});
+
+      my $ErrMessage = $VM->PowerOff();
+      return $ErrMessage if (defined $ErrMessage);
+      $IdleCount--;
+      $ActiveCount--;
+      last if ($ActiveCount + @SortedVMsToRevert <= $MaxActiveVMs);
+    }
+  }
+
+  # Revert the VMs that are blocking jobs
+  foreach my $VMKey (@SortedVMsToRevert)
   {
     my $VM = $HostVMs->GetItem($VMKey);
-    if (! defined($DirtyVMsBlockingJobs{$VMKey}) &&
-        $RevertingVMs < $MaxRevertingVMs &&
-        $VM->Status eq 'dirty' && $VM->Role eq "base")
+    delete $VMPriorities{$VMKey};
+    my $ErrMessage = $VM->RunRevert();
+    return $ErrMessage if (defined $ErrMessage);
+  }
+  $RevertingCount += @SortedVMsToRevert;
+  $ActiveCount += @SortedVMsToRevert;
+
+  # Prepare some VMs for the current jobs next step
+  foreach my $VMKey (@VMsNext)
+  {
+    last if ($RevertingCount == $MaxReverts);
+    last if ($ActiveCount == $MaxActiveVMs);
+
+    my $VM = $HostVMs->GetItem($VMKey);
+    next if ($VM->Status ne "off");
+
+    my $ErrMessage = $VM->RunRevert();
+    return $ErrMessage if (defined $ErrMessage);
+    $RevertingCount++;
+    $ActiveCount++;
+  }
+
+  # Finally, if we are otherwise idle, prepare some VMs for future jobs
+  my $MaxIdleVMs = defined $MaxVMsWhenIdle ? $MaxVMsWhenIdle : $MaxActiveVMs;
+  if ($ActiveCount - $IdleCount == 0 && $ActiveCount < $MaxIdleVMs)
+  {
+    # Sort from most important to least important
+    my @SortedVMs = sort { $VMPriorities{$b} <=> $VMPriorities{$a} } keys %VMPriorities;
+    foreach my $VMKey (@SortedVMs)
     {
-      $VM->RunRevert();
-      $RevertingVMs++;
+      last if ($RevertingCount == $MaxReverts);
+      last if ($ActiveCount >= $MaxIdleVMs);
+
+      my $VM = $HostVMs->GetItem($VMKey);
+      next if ($VM->Status ne "off");
+
+      my $ErrMessage = $VM->RunRevert();
+      return $ErrMessage if (defined $ErrMessage);
+      $RevertingCount++;
+      $ActiveCount++;
     }
   }
 

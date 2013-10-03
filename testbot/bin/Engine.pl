@@ -80,14 +80,14 @@ It has to contend with three main scenarios:
   process matching a task's ChildPid will belong to another user so we don't
   mistake that case for the previous one.
 - A shutdown of the Engine and its tasks / VMs. In this case it's used to
-  kill the running tasks and requeue them, and/or shut down the VMs.
+  kill the running tasks and requeue them, and/or power off the VMs.
 
 In all cases we only trust that a VM status field is still valid if:
 - It is 'running' and used by a task that is still running.
 - It is 'reverting' or 'sleeping', is powered on and the revert process is
   still running.
 - It is 'idle' and powered on.
-In all other cases the VM will be powered off and marked as dirty.
+In all other cases the VM will be powered off and marked as such.
 
 =back
 =cut
@@ -196,16 +196,16 @@ sub Cleanup(;$$)
         LogMsg "$VMKey is being reverted\n";
         next;
       }
-      LogMsg "Marking $VMKey as dirty and shutting it down\n";
+      LogMsg "Powering off $VMKey\n";
       $VM->PowerOff();
     }
     else
     {
-      next if ($VM->Status eq "dirty");
-      LogMsg "Marking $VMKey as dirty\n";
+      next if ($VM->Status eq "off");
+      LogMsg "Marking $VMKey as off\n";
     }
 
-    $VM->Status('dirty');
+    $VM->Status('off');
     $VM->ChildPid(undef);
     $VM->Save();
   }

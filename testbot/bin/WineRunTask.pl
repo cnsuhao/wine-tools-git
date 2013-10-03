@@ -81,7 +81,6 @@ sub FatalError($$$$$)
   $Job->UpdateStatus();
 
   my $VM = $Task->VM;
-  $VM->PowerOff() if ($VM->Role ne "base");
   $VM->Status('dirty');
   $VM->Save();
 
@@ -369,7 +368,6 @@ $Task->Ended(time);
 $Task->Save();
 $Job->UpdateStatus();
 
-$VM->PowerOff() if ($VM->Role ne "base");
 $VM->Status('dirty');
 $VM->Save();
 

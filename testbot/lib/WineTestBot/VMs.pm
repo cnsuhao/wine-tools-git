@@ -179,8 +179,14 @@ The VM is running some task.
 
 =item dirty
 
-The VM has completed the task it was given and thus has been powered off. The
-next step will be to revert it to the idle snapshot so it can be used again.
+The VM has completed the task it was given and must now be reverted to a clean
+state before it can be used again. If it is not needed right away it may be
+powered off instead.
+
+=item off
+
+The VM is not currently needed and has been powered off to free resources for
+the other VMs.
 
 =item offline
 
@@ -272,7 +278,7 @@ sub UpdateStatus($$)
   if ($State == Sys::Virt::Domain::STATE_SHUTDOWN or
       $State == Sys::Virt::Domain::STATE_SHUTOFF)
   {
-    $self->Status("dirty");
+    $self->Status("off");
     $self->Save();
   }
 
@@ -583,7 +589,7 @@ BEGIN
     CreateBasicPropertyDescriptor("SortOrder", "Display order", !1, 1, "N", 3),
     CreateEnumPropertyDescriptor("Type", "Type of VM", !1, 1, ['win32', 'win64', 'build']),
     CreateEnumPropertyDescriptor("Role", "VM Role", !1, 1, ['extra', 'base', 'winetest', 'retired', 'deleted']),
-    CreateEnumPropertyDescriptor("Status", "Current status", !1, 1, ['dirty', 'reverting', 'sleeping', 'idle', 'running', 'offline', 'maintenance']),
+    CreateEnumPropertyDescriptor("Status", "Current status", !1, 1, ['dirty', 'reverting', 'sleeping', 'idle', 'running', 'off', 'offline', 'maintenance']),
     # Note: ChildPid is only valid when Status == 'reverting' or 'sleeping'.
     CreateBasicPropertyDescriptor("ChildPid", "Child process id", !1, !1, "N", 5),
     CreateBasicPropertyDescriptor("VirtURI", "LibVirt URI of the VM", !1, 1, "A", 64),
@@ -680,7 +686,7 @@ sub FilterEnabledStatus($)
 {
   my ($self) = @_;
   # Filter out the disabled VMs, that is the offline and maintenance ones
-  $self->AddFilter("Status", ["dirty", "reverting", "sleeping", "idle", "running"]);
+  $self->AddFilter("Status", ["dirty", "reverting", "sleeping", "idle", "running", "off"]);
 }
 
 sub FilterHypervisor

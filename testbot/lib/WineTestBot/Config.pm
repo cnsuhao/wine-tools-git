@@ -26,9 +26,9 @@ WineTestBot::Config - Site-independent configuration settings
 
 use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
              $DbDataSource $DbUsername $DbPassword $MaxRevertingVMs
-             $MaxRunningVMs $MaxNonBasePoweredOnVms $SleepAfterRevert
-             $WaitForToolsInVM $AdminEMail $RobotEMail $WinePatchToOverride
-             $WinePatchCc $SuiteTimeout $SingleTimeout
+             $MaxRevertsWhileRunningVMs $MaxActiveVMs $MaxVMsWhenIdle
+             $SleepAfterRevert $WaitForToolsInVM $AdminEMail $RobotEMail
+             $WinePatchToOverride $WinePatchCc $SuiteTimeout $SingleTimeout
              $BuildTimeout $ReconfigTimeout $OverheadTimeout $TagPrefix
              $ProjectName $PatchesMailingList $LDAPServer
              $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter
@@ -38,9 +38,9 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw($UseSSL $LogDir $DataDir $BinDir
-             $MaxRevertingVMs $MaxRunningVMs $MaxNonBasePoweredOnVms
-             $SleepAfterRevert $WaitForToolsInVM $AdminEMail $RobotEMail
-             $WinePatchToOverride $WinePatchCc $SuiteTimeout
+             $MaxRevertingVMs $MaxRevertsWhileRunningVMs $MaxActiveVMs
+             $MaxVMsWhenIdle $SleepAfterRevert $WaitForToolsInVM $AdminEMail
+             $RobotEMail $WinePatchToOverride $WinePatchCc $SuiteTimeout
              $SingleTimeout $BuildTimeout $ReconfigTimeout $OverheadTimeout
              $TagPrefix $ProjectName $PatchesMailingList
              $LDAPServer $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter
@@ -61,8 +61,9 @@ $DataDir = "$::RootDir/var";
 $BinDir = "$::RootDir/bin";
 
 $MaxRevertingVMs = 1;
-$MaxRunningVMs = 2;
-$MaxNonBasePoweredOnVms = 2;
+$MaxRevertsWhileRunningVMs = 0;
+$MaxActiveVMs = 2;
+$MaxVMsWhenIdle = undef;
 $SleepAfterRevert = 30;
 $WaitForToolsInVM = 30;
 
