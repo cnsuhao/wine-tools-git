@@ -58,16 +58,8 @@ Apache setup:
 - Run expire regularly to delete old patches:
     0 0 * * * $HOME/tools/patches/expire -v $HOME/patches
 
-To integrate with the WineTestBot also do the following:
-- Run the notify-bot script regularly to notify the WineTestBot when there are
-  new patches to test.
-    */5 * * * * $HOME/tools/patches/notify-bot <winetestbot-email-address>
-- Arrange for the filter-testbot script to be fed the WineTestBot emails. One
-  way to do so is to add the following lines to the .procmailrc file:
-    :0 bfw
-    * ^X-TestBot-Results:
-    | $HOME/tools/patches/filter-testbot
-
+For integration with the WineTestBot, see the corresponding section in the
+WineTestBot documentation.
 
 
 5. Setup for the regressions site
