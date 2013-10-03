@@ -535,7 +535,7 @@ sub RunRevert
 
   # Note that if the child process completes quickly (typically due to some
   # error), it may set ChildPid to undef before we get here. So we may end up
-  # with non-reverting VM for which ChildPid is set. That's ok because
+  # with non-reverting VMs for which ChildPid is set. That's ok because
   # ChildPid should be ignored anyway if Status is not 'reverting' or
   # 'sleeping'.
   $self->ChildPid($Pid);

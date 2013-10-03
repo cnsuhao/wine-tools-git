@@ -73,7 +73,7 @@ It has to contend with three main scenarios:
 - The Engine being restarted. Any task started just before that is still
   running should still have its process and powered on VM and should be left
   alone so it can complete normally. If a task died unexpectedly while the
-  Engine was done it's ok to requeue it.
+  Engine was down it's ok to requeue it.
 - The Engine startup after a reboot. All task processes will be dead and need
   to be requeued. But the VMs are likely to be hosted on a separate machine so
   it is quite possible that they will still be running. Hopefully any running
@@ -82,7 +82,7 @@ It has to contend with three main scenarios:
 - A shutdown of the Engine and its tasks / VMs. In this case it's used to
   kill the running tasks and requeue them, and/or shut down the VMs.
 
-In all cases we only trust that a VM status field is still valid:
+In all cases we only trust that a VM status field is still valid if:
 - It is 'running' and used by a task that is still running.
 - It is 'reverting' or 'sleeping', is powered on and the revert process is
   still running.

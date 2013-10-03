@@ -399,7 +399,7 @@ VM Statuses.
 The number of VMs running on the host must be kept under $MaxRunningVMs. The
 rational behind this limit is that the host may not be able to run more VMs
 simultaneously, typically due to memory or CPU constraints. Also note that
-this limit must be respected even if there are more than one hypervisor running
+this limit must be respected even if there is more than one hypervisor running
 on the host.
 
 =item *
