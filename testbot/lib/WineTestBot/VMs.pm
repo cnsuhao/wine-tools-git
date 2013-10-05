@@ -417,6 +417,9 @@ sub CaptureScreenImage($)
 {
   my ($self) = @_;
 
+  # FIXME: Disable screenshots for now
+  return ("Screenshotting has been disabled for the time being", undef, undef);
+
   my ($ErrMessage, $Domain) = $self->_GetDomain();
   return ($ErrMessage, undef, undef) if (defined $ErrMessage);
 

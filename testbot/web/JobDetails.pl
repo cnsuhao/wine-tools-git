@@ -257,7 +257,8 @@ sub GenerateBody
     my $LogName = "$TaskDir/log";
     my $ErrName = "$TaskDir/err";
     print "<div class='TaskMoreInfoLinks'>\n";
-    if ($Item->Status eq "running" &&
+    # FIXME: Disable live screenshots for now
+    if (0 && $Item->Status eq "running" &&
         ($Item->Type eq "single" || $Item->Type eq "suite"))
     {
       if (defined($self->GetParam($ScreenshotParamName)))
