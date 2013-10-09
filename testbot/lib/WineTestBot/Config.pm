@@ -61,7 +61,7 @@ $DataDir = "$::RootDir/var";
 $BinDir = "$::RootDir/bin";
 
 $MaxRevertingVMs = 1;
-$MaxRevertsWhileRunningVMs = 0;
+$MaxRevertsWhileRunningVMs = 1;
 $MaxActiveVMs = 2;
 $MaxVMsWhenIdle = undef;
 $SleepAfterRevert = 30;
