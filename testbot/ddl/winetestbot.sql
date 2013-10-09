@@ -48,7 +48,7 @@ CREATE TABLE VMs
   SortOrder    INT(3)           NOT NULL,
   Type         ENUM('win32', 'win64', 'build') NOT NULL,
   Role         ENUM('extra', 'base', 'winetest', 'retired', 'deleted') NOT NULL,
-  Status       ENUM('dirty', 'reverting', 'sleeping', 'idle', 'running', 'offline', 'maintenance') NOT NULL,
+  Status       ENUM('dirty', 'reverting', 'sleeping', 'idle', 'running', 'off', 'offline', 'maintenance') NOT NULL,
   ChildPid     INT(5)           NULL,
   VirtURI      VARCHAR(64)      NOT NULL,
   VirtDomain   VARCHAR(32)      NOT NULL,
