@@ -790,9 +790,7 @@ sub _SendFile($$$)
 
 sub create_ip_socket(@)
 {
-  my $socket;
-  eval { $socket = IO::Socket::IP->new(@_); };
-  return $socket;
+  return IO::Socket::IP->new(@_);
 }
 
 sub create_inet_socket(@)
