@@ -375,11 +375,21 @@ sub PowerOff($$)
   my ($ErrMessage, $Domain) = $self->_GetDomain();
   return $ErrMessage if (defined $ErrMessage);
 
-  eval { $Domain->destroy() };
-  return $@->message() if ($@);
-
-  return $self->UpdateStatus($Domain) if (!$NoStatus);
-  return undef;
+  if ($self->IsPoweredOn())
+  {
+    eval { $Domain->destroy() };
+    if ($@)
+    {
+      $ErrMessage = $@->message();
+    }
+    elsif ($self->IsPoweredOn())
+    {
+      $ErrMessage = "The VM is still active";
+    }
+  }
+  $ErrMessage ||= $self->UpdateStatus($Domain) if (!$NoStatus);
+  return undef if (!defined $ErrMessage);
+  return join("", "Could not power off ", $self->Name, ": ", $ErrMessage);
 }
 
 sub GetAgent($)
