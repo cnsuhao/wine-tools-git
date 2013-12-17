@@ -433,7 +433,7 @@ sub ScheduleOnHost($$)
 
   my $HostVMs = CreateVMs();
   $HostVMs->FilterEnabledRole();
-  $HostVMs->FilterHypervisor($Hypervisors);
+  $HostVMs->FilterHypervisors($Hypervisors);
 
   # Count the VMs that are 'active', that is, that use resources on the host,
   # and those that are reverting. Also build a prioritized list of those that

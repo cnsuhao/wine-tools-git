@@ -702,12 +702,12 @@ sub FilterEnabledStatus($)
   $self->AddFilter("Status", ["dirty", "reverting", "sleeping", "idle", "running", "off"]);
 }
 
-sub FilterHypervisor
+sub FilterHypervisors($$)
 {
   my $self = shift;
-  my $Hypervisor = $_[0];
+  my $Hypervisors = $_[0];
 
-  $self->AddFilter("VirtURI", $Hypervisor);
+  $self->AddFilter("VirtURI", $Hypervisors);
 }
 
 1;
