@@ -432,6 +432,7 @@ sub ScheduleOnHost($$)
   my ($SortedJobs, $Hypervisors) = @_;
 
   my $HostVMs = CreateVMs();
+  $HostVMs->FilterEnabledRole();
   $HostVMs->FilterHypervisor($Hypervisors);
 
   # Count the VMs that are 'active', that is, that use resources on the host,
