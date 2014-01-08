@@ -2,6 +2,7 @@ Order Allow,Deny
 Allow From All
 
 SetEnv no-gzip dont-vary
+AddType application/winetest .winetest
 
 <Files chunked>
   Allow from All
