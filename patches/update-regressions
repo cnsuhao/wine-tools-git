@@ -42,8 +42,7 @@ my $count = 0;
 
 sub read_bugs()
 {
-    my $csv = Text::CSV::Encoded->new({ encoding_in     => "utf-8",
-                                        encoding_out    => "utf-8" });
+    my $csv = Text::CSV::Encoded->new({ binary => 1 });
 
     open LIST, "-|", "wget", "-qO-", "http://bugs.winehq.org/buglist.cgi?bug_status=UNCONFIRMED&bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&columnlist=cf_regression_sha1sum%2Cshort_desc&keywords=regression&keywords_type=anywords&product=Wine&query_format=advanced&ctype=csv" or die "cannot query bug list";
 
