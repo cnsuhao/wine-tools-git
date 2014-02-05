@@ -33,7 +33,7 @@ use open ':utf8';
 use CGI qw(:standard);
 charset("utf-8");
 
-use vars qw/$gitdir $gitweb $queuedir $datadir $maxmult $maxuserskips $maxfilesize $acceptwin9x/;
+use vars qw/$gitdir $gitweb $queuedir $datadir $maxmult $maxuserskips $maxfilesize $acceptprediluvianwin/;
 require "winetest.conf";
 
 my $name0=$0;
@@ -154,7 +154,8 @@ while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
 }
 $box->{data} .= "</table>\n";
 
-if ($plid != 2) { mydie "platform $plid not accepted\n" unless $acceptwin9x; }
+my $prediluvian = 0;
+if ($plid != 2) { $prediluvian = 1; }
 
 $version = "unknown";
 if ($plid==1 && $major==4) {
@@ -168,8 +169,10 @@ if ($plid==1 && $major==4) {
 } elsif ($plid==2) {
     if      ($major==3 && $minor==51) {
         $version = "nt3";
+        $prediluvian = 1;
     } elsif ($major==4 && $minor== 0) {
         $version = "nt4";
+        $prediluvian = 1;
     } elsif ($major==5) {
         if      ($minor==0) {
             $version = "2000";
@@ -202,6 +205,9 @@ if ($plid==1 && $major==4) {
 } elsif ($plid==3) {
     #$version = "ce$major$minor";
 }
+
+if ($prediluvian and not $acceptprediluvianwin) { mydie "platform $version not accepted\n"; }
+
 if ($wine) {
     my %known_hosts = ( "Linux" => "linux",
                         "Darwin" => "mac",
