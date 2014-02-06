@@ -234,7 +234,7 @@ foreach my $build (@builds)
     {
         next unless defined($versions{$ver->{name}});
         my $counts = $build->{versions}->{$ver->{name}};
-        if (!defined @{$counts})
+        if (!$counts || !@{$counts})
         {
             printf OUT "<td class=\"note\"> </td>";
         }
