@@ -33,7 +33,7 @@ use open ':utf8';
 use CGI qw(:standard);
 charset("utf-8");
 
-use vars qw/$gitdir $gitweb $queuedir $datadir $maxmult $maxuserskips $maxfilesize $acceptprediluvianwin/;
+use vars qw/$gitdir $gitweb $queuedir $datadir $maxmult $maxuserskips $maxfailedtests $maxfilesize $acceptprediluvianwin/;
 require "winetest.conf";
 
 my $name0=$0;
@@ -237,6 +237,7 @@ if ($wine_build) {
 }
 
 my $user_skips = 0;
+my $failed_tests = 0;
 my %dllinfo;
 /^Dll info:\r?$/ or mydie "no Dll info header: $_";
 $box->{data} .= "<h2>DLL version</h2>\n";
@@ -302,8 +303,10 @@ while (<IN>) {
             if ($1 == 258) { $reason = "test failed: timed out"; }
             elsif ($1 < 0) { $reason = "test failed: crash"; }
             $testbox->{data} .= "<div class=\"test end\">$reason</div>\n";
+            mydie "too many test failures\n" if ++$failed_tests > $maxfailedtests;
         } else {
             $result = "$total $todo $failed $skipped";
+            if ($failed) { mydie "too many test failures\n" if ++$failed_tests > $maxfailedtests; }
         }
         print SUM "- $dll $unit $result $source $rev\n";
         $dll = undef;
