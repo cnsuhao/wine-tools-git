@@ -79,6 +79,12 @@ uint64_t platform_run(char** argv, uint32_t flags, char** redirects);
  */
 int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *childstatus);
 
+/* Sets the system time to the specified Unix epoch. If the system time is
+ * already within leeway seconds of the specified time, then consider that
+ * the system clock is already correct.
+ */
+int platform_settime(uint64_t epoch, uint32_t leeway);
+
 /* Returns a string describing the last socket-related error */
 int sockeintr(void);
 const char* sockerror(void);

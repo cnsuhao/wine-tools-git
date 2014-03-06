@@ -221,6 +221,43 @@ int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *child
     return success;
 }
 
+int platform_settime(uint64_t epoch, uint32_t leeway)
+{
+    FILETIME filetime;
+    SYSTEMTIME systemtime;
+
+    /* Where 134774 is the number of days from 1601/1/1 to 1970/1/1 */
+    epoch = (epoch + ((uint64_t)134774) * 24 * 3600 ) * 10000000;
+
+    if (leeway)
+    {
+        ULARGE_INTEGER ul;
+        GetSystemTime(&systemtime);
+        /* in case of an error set the time unconditionally */
+        if (SystemTimeToFileTime(&systemtime, &filetime))
+        {
+            ul.LowPart = filetime.dwLowDateTime;
+            ul.HighPart = filetime.dwHighDateTime;
+            if (llabs(ul.QuadPart-epoch)/10000000 < leeway)
+                return 1;
+        }
+    }
+
+    filetime.dwLowDateTime = (DWORD)epoch;
+    filetime.dwHighDateTime = epoch >> 32;
+    if (!FileTimeToSystemTime(&filetime, &systemtime))
+    {
+        set_status(ST_ERROR, "failed to oconvert the time (%lu)", GetLastError());
+        return 0;
+    }
+    if (!SetSystemTime(&systemtime))
+    {
+        set_status(ST_ERROR, "failed to set the time (%lu)", GetLastError());
+        return 0;
+    }
+    return 1;
+}
+
 int sockretry(void)
 {
     return (WSAGetLastError() == WSAEINTR);

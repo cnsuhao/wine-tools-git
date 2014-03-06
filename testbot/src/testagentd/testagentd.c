@@ -35,8 +35,9 @@
  * 1.1:  Added the wait2 RPC.
  * 1.2:  Add more redirection options to the run RPC.
  * 1.3:  Fix the zero / infinite timeouts in the wait2 RPC.
+ * 1.4:  Add the settime RPC.
  */
-#define PROTOCOL_VERSION "testagentd 1.3"
+#define PROTOCOL_VERSION "testagentd 1.4"
 
 #define BLOCK_SIZE       65536
 
@@ -82,6 +83,7 @@ enum rpc_ids_t
     RPCID_WAIT,
     RPCID_RM,
     RPCID_WAIT2,
+    RPCID_SETTIME,
 };
 
 /* This is the RPC currently being processed */
@@ -891,6 +893,24 @@ static void do_rm(SOCKET client)
     }
 }
 
+static void do_settime(SOCKET client)
+{
+    uint64_t epoch;
+    uint32_t leeway;
+
+    if (!expect_list_size(client, 2) ||
+        !recv_uint64(client, &epoch) ||
+        !recv_uint32(client, &leeway))
+    {
+        send_error(client);
+        return;
+    }
+    if (platform_settime(epoch, leeway))
+        send_list_size(client, 0);
+    else
+        send_error(client);
+}
+
 static void do_unknown(SOCKET client, uint32_t id)
 {
     uint32_t argc;
@@ -951,6 +971,9 @@ static void process_rpc(SOCKET client)
         break;
     case RPCID_RM:
         do_rm(client);
+        break;
+    case RPCID_SETTIME:
+        do_settime(client);
         break;
     default:
         do_unknown(client, rpcid);

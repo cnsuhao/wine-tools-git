@@ -36,6 +36,7 @@ my $RPC_RUN = 3;
 my $RPC_WAIT = 4;
 my $RPC_RM = 5;
 my $RPC_WAIT2 = 6;
+my $RPC_SETTIME = 7;
 
 my %RpcNames=(
     $RPC_PING => 'ping',
@@ -45,6 +46,7 @@ my %RpcNames=(
     $RPC_WAIT => 'wait',
     $RPC_RM => 'rm',
     $RPC_WAIT2 => 'wait2',
+    $RPC_SETTIME => 'settime',
 );
 
 my $Debug = 0;
@@ -1153,6 +1155,27 @@ sub Rm($@)
 
   # Get the reply
   return $self->_RecvErrorList();
+}
+
+sub SetTime($)
+{
+  my ($self) = @_;
+  debug("SetTime\n");
+
+  # Make sure we have the server version
+  return undef if (!$self->{agentversion} and !$self->_Connect());
+
+  # Send the command
+  if (!$self->_StartRPC($RPC_SETTIME) or
+      !$self->_SendListSize(2) or
+      !$self->_SendUInt64(time()) or
+      !$self->_SendUInt32(30))
+  {
+      return undef;
+  }
+
+  # Get the reply
+  return $self->_RecvList('');
 }
 
 1;

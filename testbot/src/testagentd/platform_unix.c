@@ -29,6 +29,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <time.h>
+#include <sys/time.h>
 
 #include "platform.h"
 #include "list.h"
@@ -195,6 +196,29 @@ int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *child
     *childstatus = child->status;
     list_remove(&child->entry);
     free(child);
+    return 1;
+}
+
+int platform_settime(uint64_t epoch, uint32_t leeway)
+{
+    struct timeval tv;
+
+    if (leeway)
+    {
+        uint64_t offset;
+        gettimeofday(&tv, NULL);
+        offset = llabs(tv.tv_sec-epoch);
+        if (offset <= leeway)
+            return 2;
+    }
+
+    tv.tv_sec = epoch;
+    tv.tv_usec = 0;
+    if (!settimeofday(&tv, NULL))
+    {
+        set_status(ST_ERROR, "failed to set the time: %s", strerror(errno));
+        return 0;
+    }
     return 1;
 }
 
