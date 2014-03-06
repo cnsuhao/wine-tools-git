@@ -228,6 +228,11 @@ if (defined $ErrMessage)
   FatalError "Can't set VM status to running: $ErrMessage\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
+if (!$TA->SetTime())
+{
+    # Not a fatal error
+    LogTaskError("Unable to set the VM system time (". $TA->GetVersion() ."): ". $TA->GetLastError() ."\n", $FullErrFileName);
+}
 
 my $FileType = $Step->FileType;
 if ($FileType ne "exe32" && $FileType ne "exe64")
