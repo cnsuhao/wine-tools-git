@@ -29,7 +29,7 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
              $MaxRevertsWhileRunningVMs $MaxActiveVMs $MaxVMsWhenIdle
              $SleepAfterRevert $WaitForToolsInVM $AdminEMail $RobotEMail
              $WinePatchToOverride $WinePatchCc $SuiteTimeout $SingleTimeout
-             $BuildTimeout $ReconfigTimeout $OverheadTimeout $TagPrefix
+             $BuildTimeout $ReconfigTimeout $TagPrefix
              $ProjectName $PatchesMailingList $LDAPServer
              $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter
              $LDAPRealNameAttribute $LDAPEMailAttribute $AgentPort $Tunnel
@@ -41,7 +41,7 @@ require Exporter;
              $MaxRevertingVMs $MaxRevertsWhileRunningVMs $MaxActiveVMs
              $MaxVMsWhenIdle $SleepAfterRevert $WaitForToolsInVM $AdminEMail
              $RobotEMail $WinePatchToOverride $WinePatchCc $SuiteTimeout
-             $SingleTimeout $BuildTimeout $ReconfigTimeout $OverheadTimeout
+             $SingleTimeout $BuildTimeout $ReconfigTimeout
              $TagPrefix $ProjectName $PatchesMailingList
              $LDAPServer $LDAPBindDN $LDAPSearchBase $LDAPSearchFilter
              $LDAPRealNameAttribute $LDAPEMailAttribute $AgentPort $Tunnel
@@ -71,7 +71,6 @@ $SuiteTimeout = 30 * 60;
 $SingleTimeout = 2 * 60;
 $BuildTimeout = 5 * 60;
 $ReconfigTimeout = 45 * 60;
-$OverheadTimeout = 3 * 60;
 
 $ProjectName = "Wine";
 $PatchesMailingList = "wine-patches";
