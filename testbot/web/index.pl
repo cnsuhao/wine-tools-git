@@ -124,7 +124,8 @@ sub GenerateDataCell
       {
         $HTMLStatus = $Item->Status eq "completed" ? "" : "$HTMLStatus - ";
         my $class = $Failures ? "testfail" : "success";
-        print "$HTMLStatus<span class='$class'>$Failures test failures</span>";
+        my $s = $Failures == 1 ? "" : "s";
+        print "$HTMLStatus<span class='$class'>$Failures test failure$s</span>";
       }
     }
     else
