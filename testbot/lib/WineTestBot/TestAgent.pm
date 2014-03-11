@@ -1100,40 +1100,83 @@ sub Run($$$;$$$)
   return $self->_RecvList('Q');
 }
 
-sub Wait($$$)
+=pod
+=over 12
+
+=item C<Wait()>
+
+Waits at most Timeout seconds for the specified remote process to terminate.
+The Keepalive specifies how often, in seconds, to check that the remote end
+is still alive and reachable.
+
+=back
+=cut
+
+sub Wait($$$;$)
 {
-  my ($self, $Pid, $Timeout) = @_;
-  debug("Wait $Pid, ", defined $Timeout ? $Timeout : "<undef>", "\n");
-  # Add 1 second for the reply to come back
-  my $OldTimeout = $self->SetTimeout($Timeout + 1) if ($Timeout);
+  my ($self, $Pid, $Timeout, $Keepalive) = @_;
+  debug("Wait $Pid, ", defined $Timeout ? $Timeout : "<undef>", ", ",
+        defined $Keepalive ? $Keepalive : "<undef>", "\n");
 
   # Make sure we have the server version
   return undef if (!$self->{agentversion} and !$self->_Connect());
 
-  # Send the command
+  my ($OldTimeout, $Result);
   if ($self->{agentversion} =~ / 1\.0$/)
   {
-      if (!$self->_StartRPC($RPC_WAIT) or
-          !$self->_SendListSize(1) or
-          !$self->_SendUInt64($Pid))
-      {
-          return undef;
-      }
+    # Add a 5 second leeway to take into account network transmission delays
+    $OldTimeout = $self->SetTimeout($Timeout + 5) if ($Timeout);
+
+    # Send the command
+    if (!$self->_StartRPC($RPC_WAIT) or
+        !$self->_SendListSize(1) or
+        !$self->_SendUInt64($Pid))
+    {
+      last;
+    }
+
+    # Get the reply
+    $Result = $self->_RecvList('I');
   }
   else
   {
+    $Keepalive ||= 0xffffffff;
+    $OldTimeout = $self->{timeout};
+
+    my $Deadline;
+    $Deadline = time() + $Timeout if ($Timeout);
+    while (1)
+    {
+      my $Remaining = $Keepalive;
+      if ($Deadline)
+      {
+        $Remaining = $Deadline - time();
+        last if ($Remaining < 0);
+        $Remaining = $Keepalive if ($Keepalive < $Remaining);
+      }
+      # Add a 5 second leeway to take into account network transmission delays
+      $self->SetTimeout($Remaining + 5);
+
+      # Send the command
       if (!$self->_StartRPC($RPC_WAIT2) or
           !$self->_SendListSize(2) or
           !$self->_SendUInt64($Pid) or
-          !$self->_SendUInt32(defined $Timeout ? $Timeout : 0xffffffff))
+          !$self->_SendUInt32($Remaining))
       {
-          return undef;
+        last;
       }
-  }
 
-  # Get the reply
-  my $Result = $self->_RecvList('I');
-  $self->SetTimeout($OldTimeout) if ($Timeout);
+      # Get the reply
+      $Result = $self->_RecvList('I');
+
+      # The process has quit
+      last if (defined $Result);
+
+      # Retry only if the timeout occurred on the remote end
+      last if ($self->{err} !~ /timed out waiting/);
+    }
+  }
+  $self->SetTimeout($OldTimeout);
   return $Result;
 }
 

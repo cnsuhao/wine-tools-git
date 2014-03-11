@@ -3,7 +3,7 @@
 # This is a testagentd client. It can be used to exchange files or run
 # commands on the testagentd server, mostly for testing purposes.
 #
-# Copyright 2012 Francois Gouget
+# Copyright 2012-2014 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -56,7 +56,7 @@ my ($Cmd, $Hostname, $LocalFilename, $ServerFilename, @Rm);
 my (@Run, $RunIn, $RunOut, $RunErr, $WaitPid);
 my $SendFlags = 0;
 my $RunFlags = 0;
-my ($Port, $ConnectTimeout, $Timeout, $TunnelOpt);
+my ($Port, $ConnectTimeout, $Timeout, $Keepalive, $TunnelOpt);
 my $Usage;
 
 sub check_opt_val($$)
@@ -95,6 +95,10 @@ while (@ARGV)
     elsif ($arg eq "--timeout")
     {
         $Timeout = check_opt_val($arg, $Timeout);
+    }
+    elsif ($arg eq "--keepalive")
+    {
+        $Keepalive = check_opt_val($arg, $Keepalive);
     }
     elsif ($arg eq "--tunnel")
     {
@@ -216,7 +220,7 @@ if (!defined $Usage)
         $Usage = 2;
     }
     elsif ($Cmd ne "run" and ($RunFlags or defined $RunIn or defined $RunOut or
-                           defined $RunErr))
+                           defined $RunErr or defined $Keepalive))
     {
         error("the --run-xxx options can only be used with the run command\n");
         $Usage = 2;
@@ -245,6 +249,7 @@ if (!defined $Usage)
         error("you must specify the server files to delete\n");
         $Usage = 2;
     }
+    $Keepalive = 60 if (!defined $Keepalive);
     $AgentPort = $Port if (defined $Port);
     if (!defined $AgentPort)
     {
@@ -301,6 +306,9 @@ if (defined $Usage)
     print "                connecting instead of the default one.\n";
     print "  --timeout <timeout> Use the specified timeout (in seconds) instead of the\n";
     print "                default one for the operation.\n";
+    print "  --keepalive <keepalive> How often (in seconds) the run and wait operations\n";
+    print "                should check that the remove end is still alive and reachable.\n";
+    print "                The default is 60 seconds.\n";
     print "  --tunnel <uri> Tunnel the connection through ssh. The SSH connection is\n";
     print "                specified in the form of an ssh:// URI.\n";
     print "  --help        Shows this usage message.\n";
@@ -341,14 +349,14 @@ elsif ($Cmd eq "run")
         print "Started process $Pid\n";
         if (!($RunFlags & $TestAgent::RUN_DNT))
         {
-            $Result = $TA->Wait($Pid, $Timeout);
+            $Result = $TA->Wait($Pid, $Timeout, $Keepalive);
             print "Child exit status: $Result\n" if (defined $Result);
         }
     }
 }
 elsif ($Cmd eq "wait")
 {
-    $Result = $TA->Wait($WaitPid, $Timeout);
+    $Result = $TA->Wait($WaitPid, $Timeout, $Keepalive);
     print "Child exit status: $Result\n" if (defined $Result);
 }
 elsif ($Cmd eq "rm")
