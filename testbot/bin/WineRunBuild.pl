@@ -254,7 +254,7 @@ if (!$TA->SendFileFromString($Script, "task", $TestAgent::SENDFILE_EXE))
              $FullErrFileName, $Job, $Task;
 }
 my $Pid = $TA->Run(["./task"], 0);
-if (!$Pid or !defined $TA->Wait($Pid, $Task->Timeout))
+if (!$Pid or !defined $TA->Wait($Pid, $Task->Timeout, 60))
 {
   $ErrMessage = $TA->GetLastError();
   # Try to grab the build log before reporting the failure

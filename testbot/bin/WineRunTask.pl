@@ -257,6 +257,7 @@ if (!$TA->SendFile("$BinDir/windows/$TestLauncher", $TestLauncher, 0))
              $FullErrFileName, $Job, $Step, $Task;
 }
 
+my $Keepalive;
 my $Timeout = $Task->Timeout;
 my $Script = "\@echo off\r\nset WINETEST_DEBUG=" . $Step->DebugLevel .
              "\r\n";
@@ -270,6 +271,7 @@ if ($Step->Type eq "single")
   # Add 1 second to the timeout so the client-side Wait() does not time out
   # right before $TestLauncher does.
   $Timeout += 1;
+  $Keepalive = 20;
   my $CmdLineArg = $Task->CmdLineArg;
   if ($CmdLineArg)
   {
@@ -279,6 +281,7 @@ if ($Step->Type eq "single")
 }
 elsif ($Step->Type eq "suite")
 {
+  $Keepalive = 60;
   $Script .= "$FileName ";
   my $Tag = lc($TagPrefix) . "-" . lc($VM->Name);
   $Tag =~ s/[^a-zA-Z0-9]/-/g;
@@ -317,7 +320,7 @@ if (!$TA->SendFileFromString($Script, "script.bat", $TestAgent::SENDFILE_EXE))
 }
 
 my $Pid = $TA->Run(["./script.bat"], 0);
-if (!$Pid or !defined $TA->Wait($Pid, $Timeout))
+if (!$Pid or !defined $TA->Wait($Pid, $Timeout, $Keepalive))
 {
   $ErrMessage = "Failure running script in VM: " . $TA->GetLastError();
 }
