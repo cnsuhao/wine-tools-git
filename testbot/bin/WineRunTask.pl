@@ -231,7 +231,7 @@ if (defined $ErrMessage)
 if (!$TA->SetTime())
 {
     # Not a fatal error
-    LogTaskError("Unable to set the VM system time (". $TA->GetVersion() ."): ". $TA->GetLastError() ."\n", $FullErrFileName);
+    LogTaskError("Unable to set the VM system time: ". $TA->GetLastError() ."\n", $FullErrFileName);
 }
 
 my $FileType = $Step->FileType;
