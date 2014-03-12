@@ -2,7 +2,7 @@
 # to run scripts.
 #
 # Copyright 2009 Ge van Geldorp
-# Copyright 2012 Francois Gouget
+# Copyright 2012-2014 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -1205,9 +1205,6 @@ sub SetTime($)
 {
   my ($self) = @_;
   debug("SetTime\n");
-
-  # Make sure we have the server version
-  return undef if (!$self->{agentversion} and !$self->_Connect());
 
   # Send the command
   if (!$self->_StartRPC($RPC_SETTIME) or
