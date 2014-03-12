@@ -95,7 +95,8 @@ sub new($$$;$)
     agentport  => $Port,
     port       => $Port,
     connection => "$Hostname:$Port",
-    ctimeout   => 30,
+    ctimeout   => 20,
+    cattempts  => 3,
     timeout    => 0,
     fd         => undef,
     deadline   => undef,
@@ -137,12 +138,21 @@ sub Disconnect($)
   $self->{agentversion} = undef;
 }
 
-sub SetConnectTimeout($$)
+sub SetConnectTimeout($$;$)
 {
-  my ($self, $Timeout) = @_;
-  my $OldTimeout = $self->{ctimeout};
-  $self->{ctimeout} = $Timeout;
-  return $OldTimeout;
+  my ($self, $Timeout, $Attempts) = @_;
+  my @Ret;
+  if (defined $Timeout)
+  {
+    push @Ret, $self->{ctimeout};
+    $self->{ctimeout} = $Timeout;
+  }
+  if (defined $Attempts)
+  {
+    push @Ret, $self->{cattempts};
+    $self->{cattempts} = $Attempts;
+  }
+  return @Ret;
 }
 
 sub SetTimeout($$)
@@ -820,125 +830,140 @@ sub _Connect($)
 {
   my ($self) = @_;
 
-  my $Err;
-  eval
+  my $Step;
+  foreach my $Dummy (1..$self->{cattempts})
   {
-    local $SIG{ALRM} = sub { die "timeout" };
-    $self->{deadline} = $self->{ctimeout} ? time() + $self->{ctimeout} : undef;
-    $self->_SetAlarm();
-
-    while (1)
+    eval
     {
+      local $SIG{ALRM} = sub { die "timeout" };
+      $self->{deadline} = $self->{ctimeout} ? time() + $self->{ctimeout} : undef;
+      $self->_SetAlarm();
+
+      $Step = "create_socket";
       $self->{fd} = &$create_socket(PeerHost => $self->{host},
                                     PeerPort => $self->{port},
                                     Type => SOCK_STREAM);
-      last if ($self->{fd});
-      $Err = $!;
-      # Ideally we should probably not retry on errors that are likely
-      # permanent, like a hostname that does not resolve. Instead we just
-      # rate-limit our connection attempts.
-      sleep(1);
-    }
-    alarm(0);
-  };
-  if (!$self->{fd})
-  {
-    $Err ||= $@;
-    $Err = "connection timed out" if ($Err =~ /^timeout /);
-    $self->_SetError($FATAL, "Unable to connect to $self->{connection}: $Err");
-    return undef;
-  }
-
-  if ($self->{tunnel})
-  {
-    # We are in fact connected to the SSH server.
-    # Now forward that connection to the TestAgent server.
-    $self->{sshfd} = $self->{fd};
-    $self->{fd} = undef;
-
-    require Net::SSH2;
-    $self->{ssh} = Net::SSH2->new();
-    $self->{ssh}->debug(1) if ($Debug > 1);
-
-    # Set up compression
-    $self->{ssh}->method('COMP_CS', 'zlib', 'none');
-    $self->{ssh}->method('COMP_SC', 'zlib', 'none');
-
-    if (!$self->{ssh}->connect($self->{sshfd}))
-    {
-      $self->_SetError($FATAL, "Unable to connect to the SSH server: " . $self->_ssherror());
-      return undef;
-    }
-
-    # Authenticate ourselves
-    my $Tunnel = $self->{tunnel};
-    my %AuthOptions=(username => $Tunnel->{username} || $ENV{USER});
-    foreach my $Key ("username", "password", "publickey", "privatekey",
-                     "hostname", "local_username")
-    {
-      $AuthOptions{$Key} = $Tunnel->{$Key} if (defined $Tunnel->{$Key});
-    }
-    # Old versions of Net::SSH2 won't automatically find DSA keys, and new ones
-    # still won't automatically find RSA ones.
-    if (defined $ENV{HOME} and !exists $AuthOptions{"privatekey"} and
-        !exists $AuthOptions{"publickey"})
-    {
-      foreach my $key ("id_dsa", "id_rsa")
+      if (!$self->{fd})
       {
-        if (-f "$ENV{HOME}/.ssh/$key" and -f "$ENV{HOME}/.ssh/$key.pub")
+        alarm(0);
+        $self->_SetError($FATAL, $!);
+        return; # out of eval
+      }
+
+      if ($self->{tunnel})
+      {
+        # We are in fact connected to the SSH server.
+        # Now forward that connection to the TestAgent server.
+        $Step = "tunnel_connect";
+        $self->{sshfd} = $self->{fd};
+        $self->{fd} = undef;
+
+        require Net::SSH2;
+        $self->{ssh} = Net::SSH2->new();
+        $self->{ssh}->debug(1) if ($Debug > 1);
+
+        # Set up compression
+        $self->{ssh}->method('COMP_CS', 'zlib', 'none');
+        $self->{ssh}->method('COMP_SC', 'zlib', 'none');
+
+        if (!$self->{ssh}->connect($self->{sshfd}))
         {
-          $AuthOptions{"privatekey"} = "$ENV{HOME}/.ssh/$key";
-          $AuthOptions{"publickey"} = "$ENV{HOME}/.ssh/$key.pub";
-          last;
+          alarm(0);
+          $self->_SetError($FATAL, "Unable to connect to the SSH server: " . $self->_ssherror());
+          return; # out of eval
+        }
+
+        # Authenticate ourselves
+        $Step = "tunnel_auth";
+        my $Tunnel = $self->{tunnel};
+        my %AuthOptions=(username => $Tunnel->{username} || $ENV{USER});
+        foreach my $Key ("username", "password", "publickey", "privatekey",
+                         "hostname", "local_username")
+        {
+          $AuthOptions{$Key} = $Tunnel->{$Key} if (defined $Tunnel->{$Key});
+        }
+        # Old versions of Net::SSH2 won't automatically find DSA keys,
+        # and new ones still won't automatically find RSA ones.
+        if (defined $ENV{HOME} and !exists $AuthOptions{"privatekey"} and
+            !exists $AuthOptions{"publickey"})
+        {
+          foreach my $key ("id_dsa", "id_rsa")
+          {
+            if (-f "$ENV{HOME}/.ssh/$key" and -f "$ENV{HOME}/.ssh/$key.pub")
+            {
+              $AuthOptions{"privatekey"} = "$ENV{HOME}/.ssh/$key";
+              $AuthOptions{"publickey"} = "$ENV{HOME}/.ssh/$key.pub";
+              last;
+            }
+          }
+        }
+        # Interactive authentication makes no sense with automatic reconnects
+        $AuthOptions{interact} = 0;
+        if (!$self->{ssh}->auth(%AuthOptions))
+        {
+          alarm(0);
+          # auth() returns no error of any sort :-(
+          $self->_SetError($FATAL, "Unable to authenticate to the SSH server");
+          return; # out of eval
+        }
+
+        $Step = "tunnel_channel";
+        $self->{fd} = $self->{ssh}->channel();
+        if (!$self->{fd})
+        {
+          alarm(0);
+          $self->_SetError($FATAL, "Unable to create the SSH channel: " . $self->_ssherror());
+          return; # out of eval
+        }
+
+        # Check that the agent hostname and port won't mess with quoting.
+        if ($self->{agenthost} !~ /^[-a-zA-Z0-9.]*$/ or
+            $self->{agentport} !~ /^[a-zA-Z0-9]*$/)
+        {
+          alarm(0);
+          $self->_SetError($FATAL, "The agent hostname or port is invalid");
+          return; # out of eval
+        }
+
+        # Use netcat to forward the connection from the SSH server to the
+        # TestAgent server. Note that we won't know about netcat errors at
+        # this point.
+        $Step = "tunnel_netcat";
+        $self->{nc} = "nc -q0 '$self->{agenthost}' '$self->{agentport}'";
+        debug("Tunneling command: $self->{nc}\n");
+        if (!$self->{fd}->exec($self->{nc}))
+        {
+          alarm(0);
+          $self->_SetError($FATAL, "Unable to start netcat: " . $self->_ssherror());
+          return; # out of eval
         }
       }
-    }
-    # Interactive authentication makes no sense with automatic reconnects
-    $AuthOptions{interact} = 0;
-    if (!$self->{ssh}->auth(%AuthOptions))
-    {
-      # auth() returns no error of any sort :-(
-      $self->_SetError($FATAL, "Unable to authenticate to the SSH server");
-      return undef;
-    }
 
-    $self->{fd} = $self->{ssh}->channel();
-    if (!$self->{fd})
-    {
-      $self->_SetError($FATAL, "Unable to create the SSH channel: " . $self->_ssherror());
-      return undef;
-    }
+      # Get the protocol version supported by the server.
+      # This also lets us verify that the connection really works.
+      $Step = "agent_version";
+      $self->{agentversion} = $self->_RecvString();
+      if (!defined $self->{agentversion})
+      {
+        alarm(0);
+        # We have already been disconnected at this point
+        debug("could not get the protocol version spoken by the server\n");
+        return; # out of eval
+      }
 
-    # Check that the agent hostname and port won't mess with quoting.
-    if ($self->{agenthost} !~ /^[-a-zA-Z0-9.]*$/ or
-        $self->{agentport} !~ /^[a-zA-Z0-9]*$/)
+      alarm(0);
+      $Step = "done";
+    };
+    return 1 if ($Step eq "done");
+    if ($@)
     {
-      $self->_SetError($FATAL, "The agent hostname or port is invalid");
-      return undef;
+      $self->_SetError($FATAL, "Timed out in $Step while connecting to $self->{connection}");
     }
-
-    # Use netcat to forward the connection from the SSH server to the TestAgent
-    # server. Note that we won't know about netcat errors at this point.
-    $self->{nc} = "nc -q0 '$self->{agenthost}' '$self->{agentport}'";
-    debug("Tunneling command: $self->{nc}\n");
-    if (!$self->{fd}->exec($self->{nc}))
-    {
-      $self->_SetError($FATAL, "Unable to start netcat: " . $self->_ssherror());
-      return undef;
-    }
+    # Ideally we should probably check the error and not retry if it is likely
+    # permanent, like a hostname that does not resolve.
+    sleep(1);
   }
-
-  # Get the protocol version supported by the server.
-  # This also lets us verify that the connection really works.
-  $self->{agentversion} = $self->_RecvString();
-  if (!defined $self->{agentversion})
-  {
-    # We have already been disconnected at this point
-    debug("could not get the protocol version spoken by the server\n");
-    return undef;
-  }
-
-  return 1;
+  return undef;
 }
 
 sub _StartRPC($$)
