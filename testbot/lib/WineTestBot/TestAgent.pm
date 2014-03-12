@@ -212,7 +212,8 @@ sub _SetError($$$)
     # We did not even manage to connect but record the error anyway
     $self->{err} = $Msg;
   }
-  debug($RpcNames{$self->{rpcid}} || $self->{rpcid}, ": $self->{err}\n");
+  my $RpcName = defined $self->{rpcid} ? $RpcNames{$self->{rpcid}} || $self->{rpcid} : "Connect";
+  debug("$RpcName: $self->{err}\n");
 }
 
 sub GetLastError($)
