@@ -116,7 +116,7 @@ sub ReadLog
           if ($Line =~ m/${BaseName}:${TestSet} done \((\d+)\)/ &&
               $1 eq "258")
           {
-            $Messages[@Messages] = "Timeout";
+            $Messages[@Messages] = "The test timed out";
           }
           $Found = 1;
         }
@@ -256,7 +256,7 @@ EOF
           }
           if ($Line =~ m/^[^:]+:([^ ]+) done \(258\)/)
           {
-            print SENDMAIL "$1: Timeout\n";
+            print SENDMAIL "$1: The test timed out\n";
           }
           else
           {
