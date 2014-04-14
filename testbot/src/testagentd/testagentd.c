@@ -1192,7 +1192,8 @@ int main(int argc, char** argv)
             break;
         closesocket(master);
     };
-    addrlen = addrp->ai_addrlen;
+    if (addrp)
+        addrlen = addrp->ai_addrlen;
     ta_freeaddrinfo(addresses);
     if (addrp == NULL)
     {
