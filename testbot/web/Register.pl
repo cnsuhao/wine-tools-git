@@ -110,8 +110,8 @@ sub OnSendRequest
   {
     $Msg .= "Remarks:\n" . $self->GetParam("Remarks") . "\n";
   }
-  my $URL = MakeSecureURL("/admin/UserDetails.pl?Key=" .
-                          uri_escape($self->GetParam("Name")));
+  my $URL = ($UseSSL ? "https://" : "http://") . $WebHostName .
+            "/admin/UserDetails.pl?Key=" . uri_escape($self->GetParam("Name"));
   $Msg .= "\nTo approve or deny the request, please go to " . $URL;
 
   open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
