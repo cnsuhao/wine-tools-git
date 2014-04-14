@@ -129,31 +129,38 @@ const char* status_names[] = {"ok:", "error:", "fatal:"};
 /* If true, then the current connection is in a broken state */
 static int broken = 0;
 
+
+static char* vformat_msg(char** buf, unsigned* size, const char* format, va_list valist)
+{
+    unsigned len;
+    va_list args;
+    len = 1;
+    do
+    {
+        if (len >= *size)
+        {
+            /* len does not count the trailing '\0'. So add 1 and round up
+             * to the next 16 bytes multiple.
+             */
+            *size = (len + 1 + 0xf) & ~0xf;
+            *buf = realloc(*buf, *size);
+        }
+        va_copy(args, valist);
+        len = vsnprintf(*buf, *size, format, args);
+        va_end(args);
+        if (len < 0)
+            len = *size * 1.1;
+    }
+    while (len >= *size);
+    return *buf;
+}
+
 /* This is a message which indicates the reason for the status */
 static char* status_msg = NULL;
 static unsigned status_size = 0;
 static void vset_status_msg(const char* format, va_list valist)
 {
-    int len;
-    va_list args;
-    len = 1;
-    do
-    {
-        if (len >= status_size)
-        {
-            /* len does not count the trailing '\0'. So add 1 and round up
-             * to the next 16 bytes multiple.
-             */
-            status_size = (len + 1 + 0xf) & ~0xf;
-            status_msg = realloc(status_msg, status_size);
-        }
-        va_copy(args, valist);
-        len = vsnprintf(status_msg, status_size, format, args);
-        va_end(args);
-        if (len < 0)
-            len = status_size * 1.1;
-    }
-    while (len >= status_size);
+    vformat_msg(&status_msg, &status_size, format, valist);
     if (opt_debug || status != ST_OK)
         fprintf(stderr, "%s%s: %s\n", status_names[status], rpc_name(rpcid), status_msg);
 }
