@@ -52,7 +52,7 @@ sub error(@)
     print STDERR "$name0:error: ", @_;
 }
 
-my ($Cmd, $Hostname, $LocalFilename, $ServerFilename, @Rm);
+my ($Cmd, $Hostname, $LocalFilename, $ServerFilename, $PropName, @Rm);
 my (@Run, $RunIn, $RunOut, $RunErr, $WaitPid);
 my $SendFlags = 0;
 my $RunFlags = 0;
@@ -206,6 +206,16 @@ while (@ARGV)
     {
         set_cmd($arg);
     }
+    elsif ($arg eq "getproperty")
+    {
+        set_cmd($arg);
+        $PropName = @ARGV ? check_opt_val($arg, $PropName) : '*';
+    }
+    elsif ($arg eq "upgrade")
+    {
+        set_cmd($arg);
+        $LocalFilename = check_opt_val($arg, $LocalFilename);
+    }
     else
     {
         error("unknown command '$arg'\n");
@@ -309,8 +319,13 @@ if (defined $Usage)
     print "  wait          Waits for the specified child process on the server.\n";
     print "  settime       Set the system time of the remote host.\n";
     print "  rm            Deletes the specified files on the server.\n";
-    print "  getversion    Returns the version of the server.\n";
+    print "  getversion    Returns the protocol version.\n";
+    print "  getproperty <name> Retrieves and prints the specified server property, for\n";
+    print "                instance its architecture, 'server.arch'. One can print all the\n";
+    print "                properties at once by omitting the name or setting it to '*'.\n";
     print "  ping          Makes sure the server is still alive.\n";
+    print "  upgrade       Replaces the server executable with the specified file and\n";
+    print "                restarts it.\n";
     print "  <hostname>    Is the hostname of the server.\n";
     print "  --port <port> Use the specified port number instead of the default one.\n";
     print "  --connect-timeout <timeout> Use the specified timeout (in seconds) when\n";
@@ -394,6 +409,28 @@ elsif ($Cmd eq "rm")
 elsif ($Cmd eq "settime")
 {
     $Result = $TA->SetTime();
+}
+elsif ($Cmd eq "getproperty")
+{
+    $Result = $TA->GetProperties();
+    if (defined $Result)
+    {
+        if ($PropName eq '*')
+        {
+            foreach my $Name (sort keys %$Result)
+            {
+                print "$Name=$Result->{$Name}\n";
+            }
+        }
+        else
+        {
+            print "$Result->{$PropName}\n" if (defined $Result->{$PropName});
+        }
+    }
+}
+elsif ($Cmd eq "upgrade")
+{
+    $Result = $TA->Upgrade($LocalFilename);
 }
 elsif ($Cmd eq "getversion")
 {
