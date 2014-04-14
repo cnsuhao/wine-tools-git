@@ -1067,7 +1067,7 @@ int main(int argc, char** argv)
     char* opt_port = NULL;
     char* opt_srchost = NULL;
     struct addrinfo *addresses, *addrp;
-    int rc, addrlen;
+    int rc, sockflags, addrlen;
     int opt_usage = 0;
     SOCKET master;
     int on = 1;
@@ -1171,6 +1171,11 @@ int main(int argc, char** argv)
     }
 
     /* Bind to the host in a protocol neutral way */
+#ifdef SOCK_CLOEXEC
+    sockflags = SOCK_CLOEXEC;
+#else
+    sockflags = 0;
+#endif
     rc = ta_getaddrinfo(NULL, opt_port, &addresses);
     if (rc)
     {
@@ -1182,7 +1187,8 @@ int main(int argc, char** argv)
         debug("trying family=%d\n", addrp->ai_family);
         if (addrp->ai_family != PF_INET)
             continue;
-        master = socket(addrp->ai_family, addrp->ai_socktype, addrp->ai_protocol);
+        master = socket(addrp->ai_family, addrp->ai_socktype | sockflags,
+                        addrp->ai_protocol);
         if (master < 0)
             continue;
         setsockopt(master, SOL_SOCKET, SO_REUSEADDR, (void*)&on, sizeof(on));
@@ -1212,6 +1218,9 @@ int main(int argc, char** argv)
         SOCKET client;
         debug("Waiting in accept()\n");
         client = accept(master, NULL, NULL);
+#ifdef O_CLOEXEC
+        fcntl(client, F_SETFL, fcntl(client, F_GETFL, 0) | O_CLOEXEC);
+#endif
         if (client >= 0)
         {
             if (is_host_allowed(client, opt_srchost, addrlen))
