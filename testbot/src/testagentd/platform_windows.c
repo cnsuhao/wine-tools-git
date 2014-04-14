@@ -258,6 +258,39 @@ int platform_settime(uint64_t epoch, uint32_t leeway)
     return 1;
 }
 
+
+int platform_upgrade_script(const char* script, const char* tmpserver, char** argv)
+{
+    char testagentd[MAX_PATH];
+    DWORD rc;
+    FILE* fh;
+
+    rc = GetModuleFileName(NULL, testagentd, sizeof(testagentd));
+    if (!rc || rc == sizeof(testagentd))
+    {
+        set_status(ST_ERROR, "unable to get the current process filename (%lu, le=%lu)", rc, GetLastError());
+        return 0;
+    }
+
+    fh = fopen(script, "w");
+    if (!fh)
+    {
+        set_status(ST_ERROR, "unable to open '%s' for writing: %s", script, strerror(errno));
+        return 0;
+    }
+    /* Allow time for the server to exit */
+    fprintf(fh, "ping -n 1 -w 1000 1.1.1.1 >/nul\r\n");
+    /* Note that preserving the server filename is necessary and sufficient
+     * in order to get through the Windows firewall.
+     */
+    fprintf(fh, "copy /y \"%s\" \"%s\"\r\n", tmpserver, testagentd);
+    fprintf(fh, "del \"%s\"\r\n", tmpserver);
+    fprintf(fh, "%s\r\n", GetCommandLine());
+    fclose(fh);
+
+    return 1;
+}
+
 int sockretry(void)
 {
     return (WSAGetLastError() == WSAEINTR);

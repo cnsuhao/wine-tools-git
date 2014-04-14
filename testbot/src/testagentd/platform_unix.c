@@ -222,6 +222,37 @@ int platform_settime(uint64_t epoch, uint32_t leeway)
     return 1;
 }
 
+int platform_upgrade_script(const char* script, const char* tmpserver, char** argv)
+{
+    char** arg;
+    FILE* fh;
+
+    fh = fopen(script, "w");
+    if (!fh)
+    {
+        set_status(ST_ERROR, "unable to open '%s' for writing: %s", script, strerror(errno));
+        return 0;
+    }
+    /* Allow time for the server to exit */
+    fprintf(fh, "#!/bin/sh\n");
+    fprintf(fh, "sleep 1\n");
+    fprintf(fh, "mv %s %s\n", tmpserver, argv[0]);
+    arg = argv;
+    while (*arg)
+    {
+        fprintf(fh, "'%s' ", *arg);
+        arg++;
+    }
+    fprintf(fh, "\n");
+    fclose(fh);
+    if (chmod(script, S_IRUSR | S_IWUSR | S_IXUSR) < 0)
+    {
+        set_status(ST_ERROR, "could not make '%s' executable: %s", script, strerror(errno));
+        return 0;
+    }
+    return 1;
+}
+
 int sockeintr(void)
 {
     return errno == EINTR;

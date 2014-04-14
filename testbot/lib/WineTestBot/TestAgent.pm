@@ -37,6 +37,8 @@ my $RPC_WAIT = 4;
 my $RPC_RM = 5;
 my $RPC_WAIT2 = 6;
 my $RPC_SETTIME = 7;
+my $RPC_GETPROPERTIES = 8;
+my $RPC_UPGRADE = 9;
 
 my %RpcNames=(
     $RPC_PING => 'ping',
@@ -47,6 +49,8 @@ my %RpcNames=(
     $RPC_RM => 'rm',
     $RPC_WAIT2 => 'wait2',
     $RPC_SETTIME => 'settime',
+    $RPC_GETPROPERTIES => 'getproperties',
+    $RPC_UPGRADE => 'upgrade',
 );
 
 my $Debug = 0;
@@ -1274,6 +1278,102 @@ sub SetTime($)
 
   # Get the reply
   return $self->_RecvList('');
+}
+
+sub GetProperties($;$)
+{
+  my ($self, $PropName) = @_;
+  debug("GetProperties ", $PropName || "", "\n");
+
+  # Send the command
+  if (!$self->_StartRPC($RPC_GETPROPERTIES) or
+      !$self->_SendListSize('ArgC', 0))
+  {
+    return undef;
+  }
+
+  # Get the reply
+  my $Count = $self->_RecvListSize('PropertyCount');
+  return undef if (!$Count);
+
+  my $i = 0;
+  my $Properties;
+  while ($Count--)
+  {
+    my ($Type, $Size) = $self->_RecvEntryHeader("Prop$i");
+    if ($Type eq 's')
+    {
+      my $Property = $self->_RecvRawString("Prop$i.s", $Size);
+      return undef if (!defined $Property);
+      debug("  RecvProperty() -> '$Property'\n");
+      if ($Property =~ s/^([a-zA-Z0-9.]+)=//)
+      {
+        $Properties->{$1} = $Property;
+      }
+      else
+      {
+        $self->_SetError($ERROR, "Invalid property string '$Property'");
+        $self->_SkipEntries($Count);
+        return undef;
+      }
+    }
+    elsif ($Type eq 'e')
+    {
+      # The expected property was replaced with an error message
+      my $Message = $self->_RecvRawString("Str$i.e", $Size);
+      if (defined $Message)
+      {
+        debug("  RecvError() -> '$Message'\n");
+        $self->_SetError($ERROR, $Message);
+      }
+      $self->_SkipEntries($Count);
+      return undef;
+    }
+    else
+    {
+      $self->_SetError($ERROR, "Expected an s entry but got $Type instead");
+      $self->_SkipRawData("Prop$i.$Type", $Size);
+      $self->_SkipEntries($Count);
+      return undef;
+    }
+    $i++;
+  }
+
+  return $Properties->{$PropName} if (defined $PropName);
+  return $Properties;
+}
+
+sub Upgrade($$)
+{
+  my ($self, $Filename) = @_;
+  debug("Upgrade $Filename\n");
+
+  my $fh;
+  if (!open($fh, "<", $Filename))
+  {
+      $self->_SetError($ERROR, "Unable to open '$Filename' for reading: $!");
+      return undef;
+  }
+
+  # Send the command
+  if (!$self->_StartRPC($RPC_UPGRADE) or
+      !$self->_SendListSize('ArgC', 1) or
+      !$self->_SendFile('FileData', $fh, $Filename))
+  {
+      close($fh);
+      return undef;
+  }
+  close($fh);
+
+  # Get the reply
+  my $rc = $self->_RecvList('');
+
+  # The server has quit and thus the connection is no longer usable.
+  # So disconnect now to force the next RPC to reconnect, instead or letting it
+  # try to reuse the broken connection and fail.
+  $self->Disconnect();
+
+  return $rc;
 }
 
 1;

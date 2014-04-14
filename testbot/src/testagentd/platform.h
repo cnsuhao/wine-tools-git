@@ -85,6 +85,13 @@ int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *child
  */
 int platform_settime(uint64_t epoch, uint32_t leeway);
 
+/* Creates a script to be invoked to upgrade the current server.
+ * The current server is responsible for starting the script and quickly exit.
+ * The script will wait a bit, replace the server file and restart the server
+ * with the same arguments as the original server.
+ */
+int platform_upgrade_script(const char* script, const char* tmpserver, char** argv);
+
 /* Returns a string describing the last socket-related error */
 int sockeintr(void);
 const char* sockerror(void);

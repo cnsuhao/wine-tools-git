@@ -36,11 +36,13 @@
  * 1.2:  Add more redirection options to the run RPC.
  * 1.3:  Fix the zero / infinite timeouts in the wait2 RPC.
  * 1.4:  Add the settime RPC.
+ * 1.5:  Add support for upgrading the server.
  */
-#define PROTOCOL_VERSION "testagentd 1.4"
+#define PROTOCOL_VERSION "testagentd 1.5"
 
 #define BLOCK_SIZE       65536
 
+static char** server_argv;
 const char *name0;
 int opt_debug = 0;
 
@@ -84,6 +86,8 @@ enum rpc_ids_t
     RPCID_RM,
     RPCID_WAIT2,
     RPCID_SETTIME,
+    RPCID_GETPROPERTIES,
+    RPCID_UPGRADE,
 };
 
 /* This is the RPC currently being processed */
@@ -129,6 +133,8 @@ const char* status_names[] = {"ok:", "error:", "fatal:"};
 /* If true, then the current connection is in a broken state */
 static int broken = 0;
 
+/* If true, then the server should exit */
+static int quit = 0;
 
 static char* vformat_msg(char** buf, unsigned* size, const char* format, va_list valist)
 {
@@ -152,6 +158,15 @@ static char* vformat_msg(char** buf, unsigned* size, const char* format, va_list
             len = *size * 1.1;
     }
     while (len >= *size);
+    return *buf;
+}
+
+static char* format_msg(char** buf, unsigned* size, const char* format, ...)
+{
+    va_list valist;
+    va_start(valist, format);
+    vformat_msg(buf, size, format, valist);
+    va_end(valist);
     return *buf;
 }
 
@@ -918,6 +933,90 @@ static void do_settime(SOCKET client)
         send_error(client);
 }
 
+static void do_getproperties(SOCKET client)
+{
+    const char* arch;
+    char* buf = NULL;
+    unsigned size = 0;
+
+    if (!expect_list_size(client, 0))
+    {
+        send_error(client);
+        return;
+    }
+    send_list_size(client, 2);
+
+    format_msg(&buf, &size, "protocol.version=%s", PROTOCOL_VERSION);
+    send_string(client, buf);
+
+#ifdef WIN32
+    arch = "win32";
+#else
+    if (sizeof(void*) == 4)
+        arch = "linux32";
+    else
+        arch = "linux64";
+#endif
+    format_msg(&buf, &size, "server.arch=%s", arch);
+    send_string(client, buf);
+    free(buf);
+}
+
+static void do_upgrade(SOCKET client)
+{
+    static const char *filename = "testagentd.tmp";
+    static const char* upgrade_script = "./replace.bat";
+    int fd, success;
+
+    if (!expect_list_size(client, 1)
+        /* Next entry is the file data */
+        )
+    {
+        send_error(client);
+        return;
+    }
+
+    unlink(filename); /* To force re-setting the mode */
+    fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0700);
+    if (fd < 0)
+    {
+        skip_entries(client, 1);
+        set_status(ST_ERROR, "unable to open '%s' for writing: %s", filename, strerror(errno));
+        success = 0;
+    }
+    else
+    {
+        success = recv_file(client, fd, filename);
+        close(fd);
+    }
+
+    if (!success)
+        unlink(filename);
+    else
+        success = platform_upgrade_script(upgrade_script, filename, server_argv);
+
+    if (success)
+    {
+        char* args[2];
+        char* redirects[3] = {"", "", ""};
+
+        send_list_size(client, 0);
+
+        args[0] = strdup(upgrade_script);
+        args[1] = NULL;
+        success = platform_run(args, RUN_DNT, redirects);
+        free(args[0]);
+        if (success)
+        {
+            broken = 1;
+            quit = 1;
+        }
+    }
+    else
+        send_error(client);
+
+}
+
 static void do_unknown(SOCKET client, uint32_t id)
 {
     uint32_t argc;
@@ -981,6 +1080,12 @@ static void process_rpc(SOCKET client)
         break;
     case RPCID_SETTIME:
         do_settime(client);
+        break;
+    case RPCID_GETPROPERTIES:
+        do_getproperties(client);
+        break;
+    case RPCID_UPGRADE:
+        do_upgrade(client);
         break;
     default:
         do_unknown(client, rpcid);
@@ -1079,6 +1184,7 @@ int main(int argc, char** argv)
     SOCKET master;
     int on = 1;
 
+    server_argv = argv;
     name0 = p = argv[0];
     while (*p != '\0')
     {
@@ -1220,7 +1326,7 @@ int main(int argc, char** argv)
         exit(1);
     }
     printf("Starting %s\n", PROTOCOL_VERSION);
-    while (1)
+    while (!quit)
     {
         SOCKET client;
         debug("Waiting in accept()\n");
@@ -1250,6 +1356,8 @@ int main(int argc, char** argv)
             exit(1);
         }
     }
+    debug("stopping\n");
+    closesocket(master);
 
     return 0;
 }
