@@ -59,6 +59,17 @@ my $RunFlags = 0;
 my ($Port, $ConnectTimeout, $Timeout, $Keepalive, $TunnelOpt);
 my $Usage;
 
+sub set_cmd($)
+{
+    my ($Value) = @_;
+    if (defined $Cmd)
+    {
+        error("the '$Cmd' and '$Value' commands are mutually exclusive\n");
+        $Usage = 2;
+    }
+    $Cmd = $Value;
+}
+
 sub check_opt_val($$)
 {
     my ($option, $val) = @_;
@@ -138,7 +149,7 @@ while (@ARGV)
     }
     elsif ($arg eq "sendfile")
     {
-        $Cmd = $arg;
+        set_cmd($arg);
         $LocalFilename = check_opt_val($arg, $LocalFilename);
         if (!$Usage)
         {
@@ -155,7 +166,7 @@ while (@ARGV)
     }
     elsif ($arg eq "getfile")
     {
-        $Cmd = $arg;
+        set_cmd($arg);
         $ServerFilename = check_opt_val($arg, $ServerFilename);
         if (!$Usage)
         {
@@ -172,28 +183,28 @@ while (@ARGV)
     }
     elsif ($arg eq "run")
     {
+        set_cmd($arg);
         @Run = @ARGV;
-        $Cmd = $arg;
         last;
     }
     elsif ($arg eq "wait")
     {
-        $Cmd = $arg;
+        set_cmd($arg);
         $WaitPid = check_opt_val($arg, $WaitPid);
     }
     elsif ($arg eq "rm")
     {
-        $Cmd = $arg;
+        set_cmd($arg);
         @Rm = @ARGV;
         last;
     }
     elsif ($arg eq "getversion")
     {
-        $Cmd = $arg;
+        set_cmd($arg);
     }
     elsif ($arg eq "ping" or $arg eq "settime")
     {
-        $Cmd = $arg;
+        set_cmd($arg);
     }
     else
     {
