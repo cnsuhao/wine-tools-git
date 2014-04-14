@@ -13,7 +13,7 @@ $(builddir)/testagentd: testagentd.o platform_unix.o
 	strip $@
 
 .c.o:
-	gcc -Wall -c -o $@ $<
+	gcc -Wall -g -c -o $@ $<
 
 
 TestAgentd.exe: testagentd.obj platform_windows.obj
@@ -22,7 +22,7 @@ TestAgentd.exe: testagentd.obj platform_windows.obj
 
 .SUFFIXES: .obj
 .c.obj:
-	$(CROSSCC32) -Wall -c -o $@ $<
+	$(CROSSCC32) -Wall -g -c -o $@ $<
 
 testagentd.o testagentd.obj: platform.h
 platform_unix.o: platform.h list.h
