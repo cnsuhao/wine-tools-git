@@ -323,6 +323,20 @@ sub _SkipRawData($$)
   return $Success;
 }
 
+sub _RecvRawString($$$)
+{
+  my ($self, $Name, $Size) = @_;
+
+  my $Str = $self->_RecvRawData($Name, $Size);
+  if (defined $Str)
+  {
+    # Remove the trailing '\0'
+    chop $Str;
+    debug("  RecvRawString('$Name') -> '$Str'\n");
+  }
+  return $Str;
+}
+
 sub _RecvRawUInt32($$)
 {
   my ($self, $Name) = @_;
@@ -379,7 +393,7 @@ sub _ExpectEntryHeader($$$;$)
   if ($HType eq 'e')
   {
     # The expected data was replaced with an error message
-    my $Message = $self->_RecvRawData("$Name.e", $HSize);
+    my $Message = $self->_RecvRawString("$Name.e", $HSize);
     return undef if (!defined $Message);
     $self->_SetError($ERROR, $Message);
   }
@@ -502,7 +516,7 @@ sub _SkipEntries($$)
     if ($Type eq 'e')
     {
       # The expected data was replaced with an error message
-      my $Message = $self->_RecvRawData("Skip$i.e", $Size);
+      my $Message = $self->_RecvRawString("Skip$i.e", $Size);
       return undef if (!defined $Message);
       $self->_SetError($ERROR, $Message);
     }
@@ -599,7 +613,7 @@ sub _RecvErrorList($)
     }
     elsif ($Type eq 's')
     {
-      my $Status = $self->_RecvRawData("Err$i.s", $Size);
+      my $Status = $self->_RecvRawString("Err$i.s", $Size);
       return $self->GetLastError() if (!defined $Status);
       debug("  RecvStatus() -> '$Status'\n");
       push @$Errors, $Status;
@@ -607,7 +621,7 @@ sub _RecvErrorList($)
     elsif ($Type eq 'e')
     {
       # The expected data was replaced with an error message
-      my $Message = $self->_RecvRawData("Err$i.e", $Size);
+      my $Message = $self->_RecvRawString("Err$i.e", $Size);
       if (defined $Message)
       {
         debug("  RecvError() -> '$Message'\n");
