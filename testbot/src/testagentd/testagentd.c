@@ -136,9 +136,9 @@ static int broken = 0;
 /* If true, then the server should exit */
 static int quit = 0;
 
-static char* vformat_msg(char** buf, unsigned* size, const char* format, va_list valist)
+static char* vformat_msg(char** buf, int* size, const char* format, va_list valist)
 {
-    unsigned len;
+    int len;
     va_list args;
     len = 1;
     do
@@ -161,7 +161,7 @@ static char* vformat_msg(char** buf, unsigned* size, const char* format, va_list
     return *buf;
 }
 
-static char* format_msg(char** buf, unsigned* size, const char* format, ...)
+static char* format_msg(char** buf, int* size, const char* format, ...)
 {
     va_list valist;
     va_start(valist, format);
@@ -172,7 +172,7 @@ static char* format_msg(char** buf, unsigned* size, const char* format, ...)
 
 /* This is a message which indicates the reason for the status */
 static char* status_msg = NULL;
-static unsigned status_size = 0;
+static int status_size = 0;
 static void vset_status_msg(const char* format, va_list valist)
 {
     vformat_msg(&status_msg, &status_size, format, valist);
@@ -937,7 +937,7 @@ static void do_getproperties(SOCKET client)
 {
     const char* arch;
     char* buf = NULL;
-    unsigned size = 0;
+    int size = 0;
 
     if (!expect_list_size(client, 0))
     {
