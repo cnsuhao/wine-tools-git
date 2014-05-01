@@ -196,14 +196,14 @@ sub CallGenerateErrorDiv
 {
   my $self = shift;
 
-  $self->{EnclosingPage}->GenerateErrorDiv($self, @_);
+  $self->{EnclosingPage}->GenerateErrorDiv();
 }
 
 sub CallGenerateErrorPopup
 {
   my $self = shift;
 
-  $self->{EnclosingPage}->GenerateErrorPopup($self, @_);
+  $self->{EnclosingPage}->GenerateErrorPopup();
 }
 
 sub CallGenerateFormEnd
