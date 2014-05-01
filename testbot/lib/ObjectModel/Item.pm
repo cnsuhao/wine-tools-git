@@ -1,5 +1,5 @@
 # Copyright 2009 Ge van Geldorp
-# Copyright 2012 Francois Gouget
+# Copyright 2012, 2014 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -218,8 +218,8 @@ sub AUTOLOAD
         if (@_)
         {
           $self->{Itemrefs}{$PropertyName} = shift;
-          if (ValuesDiffer($self->{ColValues}{@{$ColNames}[0]},
-                           $self->{Itemrefs}{$PropertyName}->GetKey()))
+          if ($self->ValuesDiffer($self->{ColValues}{@{$ColNames}[0]},
+                                  $self->{Itemrefs}{$PropertyName}->GetKey()))
           {
             $self->{IsModified} = 1;
             $self->{ColValues}{@{$ColNames}[0]} = $self->{Itemrefs}{$PropertyName}->GetKey();
