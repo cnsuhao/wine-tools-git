@@ -416,11 +416,11 @@ my %StreamData;
 
 sub _Stream2Image($$$)
 {
-    my ($Stream, $Data, $Size) = @_;
-    my $Image=$StreamData{$Stream};
-    $Image->{Size} += $Size;
-    $Image->{Bytes} .= $Data;
-    return $Size;
+  my ($Stream, $Data, $Size) = @_;
+  my $Image = $StreamData{$Stream};
+  $Image->{Size} += $Size;
+  $Image->{Bytes} .= $Data;
+  return $Size;
 }
 
 sub CaptureScreenImage($)
@@ -507,7 +507,7 @@ sub Validate
   if ($self->Type ne "win32" && $self->Type ne "win64" &&
       ($self->Role eq "winetest" || $self->Role eq "extra"))
   {
-      return ("Role", "Only win32 and win64 VMs can have a role of '" . $self->Role . "'");
+    return ("Role", "Only win32 and win64 VMs can have a role of '" . $self->Role . "'");
   }
   return $self->SUPER::Validate(@_);
 }
