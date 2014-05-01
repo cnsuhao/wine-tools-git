@@ -44,6 +44,7 @@ sub InitializeNew
 
   $self->Status('active');
   $self->Password("*");
+  $self->SUPER::InitializeNew();
 }
 
 sub GeneratePasswordHash

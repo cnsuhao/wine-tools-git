@@ -38,6 +38,7 @@ sub InitializeNew
   my $self = shift;
 
   $self->IsDefault(!1);
+  $self->SUPER::InitializeNew();
 }
 
 package WineTestBot::Branches;
