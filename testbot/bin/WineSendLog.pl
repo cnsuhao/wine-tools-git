@@ -42,16 +42,6 @@ use WineTestBot::Jobs;
 use WineTestBot::Log;
 use WineTestBot::StepsTasks;
 
-sub FatalError
-{
-  my ($ErrMessage, $Job) = @_;
-
-  my $JobKey = defined($Job) ? $Job->GetKey() : "0";
-
-  LogMsg "$JobKey $ErrMessage";
-
-  exit 1;
-}
 
 sub IsBotFailure
 {
@@ -535,17 +525,19 @@ if ($JobId =~ /^(\d+)$/)
 }
 else
 {
-  FatalError "Invalid JobId $JobId\n";
+  LogMsg "Invalid JobId $JobId\n";
+  exit(1);
 }
 
 my $Job = CreateJobs()->GetItem($JobId);
 if (! defined($Job))
 {
-  FatalError "Job $JobId doesn't exist\n";
+  LogMsg "Job $JobId doesn't exist\n";
+  exit(1);
 }
 
 SendLog($Job);
 
 LogMsg "Log for job $JobId sent\n";
 
-exit;
+exit(0);
