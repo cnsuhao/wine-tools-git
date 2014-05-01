@@ -196,7 +196,7 @@ sub _initialize
 {
   my $self = shift;
 
-  $self->SUPER::_initialize(@_, CreateJobs());
+  $self->SUPER::_initialize(@_);
 }
 
 sub OutputDot
