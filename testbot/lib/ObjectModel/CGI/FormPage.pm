@@ -223,7 +223,6 @@ sub GetInputType
   my $self = shift;
   my $PropertyDescriptor = shift;
 
-  my $Class=$PropertyDescriptor->GetClass();
   if ($PropertyDescriptor->GetClass() eq "Enum")
   {
     return "select";
