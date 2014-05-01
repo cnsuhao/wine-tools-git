@@ -35,11 +35,6 @@ use vars qw (@ISA @EXPORT);
 require Exporter;
 @ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
-sub HasRole
-{
-  my $self = shift;
-  my $RoleName = shift;
-}
 
 package WineTestBot::Roles;
 
