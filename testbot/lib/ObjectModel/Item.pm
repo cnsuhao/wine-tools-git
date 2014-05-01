@@ -345,10 +345,8 @@ sub ValidateProperty
 
   my $PropertyDescriptor = shift;
   my $PropertyName = $PropertyDescriptor->GetName();
-  my $Value = $self->$PropertyName;
-
   return $PropertyDescriptor->ValidateValue($self->$PropertyName,
-                                             $self->GetIsNew());
+                                            $self->GetIsNew());
 }
 
 sub Validate
