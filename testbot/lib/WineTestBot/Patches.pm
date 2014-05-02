@@ -180,7 +180,7 @@ sub Submit
   }
   if (! defined($User))
   {
-    $User = $Users->GetBatchUser();
+    $User = GetBatchUser();
   }
 
   my $Disposition = "Submitted job ";

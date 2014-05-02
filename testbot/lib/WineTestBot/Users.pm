@@ -404,11 +404,9 @@ sub Authenticate
                                 $self->AuthenticateBuiltin(@_);
 }
 
-sub GetBatchUser
+sub GetBatchUser()
 {
-  my $class = shift;
-
-  return $class->CreateUsers()->GetItem("batch");
+  return CreateUsers()->GetItem("batch");
 }
 
 1;

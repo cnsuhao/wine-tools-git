@@ -46,6 +46,7 @@ use HTTP::Response;
 use HTTP::Status;
 use WineTestBot::Config;
 use WineTestBot::Jobs;
+use WineTestBot::Users;
 use WineTestBot::Log;
 use WineTestBot::Utils;
 use WineTestBot::VMs;
@@ -58,7 +59,7 @@ sub AddJob
   # First create a new job
   my $Jobs = WineTestBot::Jobs->CreateJobs();
   my $NewJob = $Jobs->Add();
-  $NewJob->User(WineTestBot::Users->GetBatchUser());
+  $NewJob->User(GetBatchUser());
   $NewJob->Priority($BaseJob && $Bits == 32 ? 6 : 7);
   $NewJob->Remarks("WineTest: " .
                    ($Bits == 32 ? ($BaseJob ? "base" : "other") : "64-bit") .
@@ -119,7 +120,7 @@ sub AddReconfigJob
   # First create a new job
   my $Jobs = WineTestBot::Jobs->CreateJobs();
   my $NewJob = $Jobs->Add();
-  $NewJob->User(WineTestBot::Users->GetBatchUser());
+  $NewJob->User(GetBatchUser());
   $NewJob->Priority(3);
   $NewJob->Remarks("Update Wine to latest git");
 
