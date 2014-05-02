@@ -40,7 +40,10 @@ use Fcntl;
 use MIME::Parser;
 use POSIX ":sys_wait_h";
 use Socket;
+use File::Path;
+
 use ObjectModel::BackEnd;
+
 use WineTestBot::Config;
 use WineTestBot::Engine::Events;
 use WineTestBot::Engine::Notify;
@@ -465,7 +468,11 @@ sub HandleWinePatchMLSubmission
   CreatePatches()->NewPatch($Entity);
 
   # Clean up
-  system("rm -rf $WorkDir");
+  if (!rmtree($WorkDir))
+  {
+    # Not a fatal error but log it to help diagnosis
+    LogMsg "Unable to delete '$WorkDir': $!\n";
+  }
   unlink($FullMessageFileName);
 
   return "1OK";
@@ -507,7 +514,11 @@ sub HandleWinePatchWebSubmission
   my $ErrMessage = CreatePatches()->NewPatch($Entity, $WebPatchId);
 
   # Clean up
-  system("rm -rf $WorkDir");
+  if (!rmtree($WorkDir))
+  {
+    # Not a fatal error but log it to help diagnosis
+    LogMsg "Unable to delete '$WorkDir': $!\n";
+  }
   unlink($FullFileName);
 
   return defined($ErrMessage) ? "0" . $ErrMessage : "1OK";
