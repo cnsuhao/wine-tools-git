@@ -172,7 +172,7 @@ sub GetCurrentSession
 {
   my $self = shift;
 
-  return $self->{PageBase}->GetCurrentSession($self, @_);
+  return $self->{PageBase}->GetCurrentSession();
 }
 
 sub SetCurrentSession
