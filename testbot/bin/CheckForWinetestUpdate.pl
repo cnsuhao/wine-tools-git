@@ -57,7 +57,7 @@ sub AddJob
   my ($BaseJob, $FileNameRandomPart, $Bits) = @_;
 
   # First create a new job
-  my $Jobs = WineTestBot::Jobs->CreateJobs();
+  my $Jobs = CreateJobs();
   my $NewJob = $Jobs->Add();
   $NewJob->User(GetBatchUser());
   $NewJob->Priority($BaseJob && $Bits == 32 ? 6 : 7);
@@ -118,7 +118,7 @@ sub AddJob
 sub AddReconfigJob
 {
   # First create a new job
-  my $Jobs = WineTestBot::Jobs->CreateJobs();
+  my $Jobs = CreateJobs();
   my $NewJob = $Jobs->Add();
   $NewJob->User(GetBatchUser());
   $NewJob->Priority(3);
