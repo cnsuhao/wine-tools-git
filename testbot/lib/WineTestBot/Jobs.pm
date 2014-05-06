@@ -507,11 +507,8 @@ sub ScheduleOnHost($$$)
         {
           $IdleVMs{$VMKey} = 0;
           $IdleCount--;
-          $VM->Status("running");
-          my ($ErrProperty, $ErrMessage) = $VM->Save();
-          return $ErrMessage if (defined $ErrMessage);
 
-          $ErrMessage = $Task->Run($Step);
+          my $ErrMessage = $Task->Run($Step);
           return $ErrMessage if (defined $ErrMessage);
 
           $Job->UpdateStatus();

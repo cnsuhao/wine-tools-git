@@ -79,6 +79,11 @@ sub Run($$)
   $self->Status("running");
   $self->Save();
 
+  my $VM = $self->VM;
+  $VM->Status("running");
+  my ($ErrProperty, $ErrMessage) = $VM->Save();
+  return $ErrMessage if (defined $ErrMessage);
+
   my $RunScript;
   if ($Step->Type eq "build")
   {
@@ -131,8 +136,7 @@ sub Run($$)
   # ChildPid should be ignored anyway if Status is not 'running'.
   $self->ChildPid($Pid);
   $self->Started(time);
-  my ($ErrProperty, $ErrMessage) = $self->Save();
-
+  ($ErrProperty, $ErrMessage) = $self->Save();
   return $ErrMessage;
 }
 
