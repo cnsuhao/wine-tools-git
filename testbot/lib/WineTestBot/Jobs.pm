@@ -429,11 +429,12 @@ $MaxVMsWhenIdle VMs (or $MaxActiveVMs if not set) for future jobs.
 =back
 =cut
 
-sub ScheduleOnHost($$)
+sub ScheduleOnHost($$$)
 {
-  my ($SortedJobs, $Hypervisors) = @_;
+  my ($ScopeObject, $SortedJobs, $Hypervisors) = @_;
 
-  my $HostVMs = CreateVMs();
+
+  my $HostVMs = CreateVMs($ScopeObject);
   $HostVMs->FilterEnabledRole();
   $HostVMs->FilterHypervisors($Hypervisors);
 
@@ -674,7 +675,7 @@ sub ScheduleJobs()
   # we should check if there are VMs to revert
 
   my %Hosts;
-  my $VMs = CreateVMs();
+  my $VMs = CreateVMs($Jobs);
   $VMs->FilterEnabledRole();
   foreach my $VM (@{$VMs->GetItems()})
   {
@@ -686,7 +687,7 @@ sub ScheduleJobs()
   foreach my $Host (keys %Hosts)
   {
     my @HostHypervisors = keys %{$Hosts{$Host}};
-    my $HostErrMessage = ScheduleOnHost(\@SortedJobs, \@HostHypervisors);
+    my $HostErrMessage = ScheduleOnHost($Jobs, \@SortedJobs, \@HostHypervisors);
     push @ErrMessages, $HostErrMessage if (defined $HostErrMessage);
   }
   return @ErrMessages ? join("\n", @ErrMessages) : undef;
