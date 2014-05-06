@@ -1,5 +1,5 @@
 # Copyright 2009 Ge van Geldorp
-# Copyright 2012 Francois Gouget
+# Copyright 2012-2014 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -72,16 +72,13 @@ Where $Type corresponds to the Task's type.
 =back
 =cut
 
-sub Run
+sub Run($$)
 {
-  my $self = shift;
-  my ($JobId, $StepNo) = @_;
+  my ($self, $Step) = @_;
 
   $self->Status("running");
   $self->Save();
 
-  my $Job = WineTestBot::Jobs::CreateJobs()->GetItem($JobId);
-  my $Step = $Job->Steps->GetItem($StepNo);
   my $RunScript;
   if ($Step->Type eq "build")
   {
@@ -95,8 +92,6 @@ sub Run
   {
     $RunScript = "RunTask.pl";
   }
-  $Step = undef;
-  $Job = undef;
 
   $self->GetBackEnd()->PrepareForFork();
   my $Pid = fork;
@@ -107,7 +102,8 @@ sub Run
   elsif (!$Pid)
   {
     # Capture Perl errors in the task's generic error log
-    my $TaskDir = "$DataDir/jobs/$JobId/$StepNo/" . $self->No;
+    my ($JobId, $StepNo, $TaskNo) = @{$self->GetMasterKey()};
+    my $TaskDir = "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
     mkdir $TaskDir;
     unlink "$TaskDir/err"; # truncate the log since this is a new run
     if (open(STDERR, ">>", "$TaskDir/err"))
@@ -123,7 +119,7 @@ sub Run
     }
     $ENV{PATH} = "/usr/bin:/bin";
     delete $ENV{ENV};
-    exec("$BinDir/${ProjectName}$RunScript", $JobId, $StepNo, $self->No) or
+    exec("$BinDir/${ProjectName}$RunScript", $JobId, $StepNo, $TaskNo) or
     require WineTestBot::Log;
     WineTestBot::Log::LogMsg("Unable to exec ${ProjectName}$RunScript: $!\n");
     exit(1);

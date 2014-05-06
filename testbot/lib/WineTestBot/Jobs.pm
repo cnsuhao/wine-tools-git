@@ -1,5 +1,5 @@
 # Copyright 2009 Ge van Geldorp
-# Copyright 2012 Francois Gouget
+# Copyright 2012-2014 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -511,7 +511,7 @@ sub ScheduleOnHost($$$)
           my ($ErrProperty, $ErrMessage) = $VM->Save();
           return $ErrMessage if (defined $ErrMessage);
 
-          $ErrMessage = $Task->Run($Job->Id, $Step->No);
+          $ErrMessage = $Task->Run($Step);
           return $ErrMessage if (defined $ErrMessage);
 
           $Job->UpdateStatus();
