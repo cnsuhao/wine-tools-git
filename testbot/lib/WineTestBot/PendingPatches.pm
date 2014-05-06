@@ -72,11 +72,11 @@ sub CreateItem
   return WineTestBot::PendingPatch->new($self);
 }
 
-sub CreatePendingPatches
+sub CreatePendingPatches(;$$)
 {
-  my $PendingPatchSet = shift;
+  my ($ScopeObject, $PendingPatchSet) = @_;
 
-  return WineTestBot::PendingPatches->new("PendingPatches", "PendingPatches", "PendingPatch", \@WineTestBot::PendingPatches::PropertyDescriptors, $PendingPatchSet);
+  return WineTestBot::PendingPatches->new("PendingPatches", "PendingPatches", "PendingPatch", \@PropertyDescriptors, $ScopeObject, $PendingPatchSet);
 }
 
 1;

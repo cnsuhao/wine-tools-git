@@ -47,7 +47,7 @@ sub _initialize
   }
   $self->{JobId} = $JobId;
 
-  $self->SUPER::_initialize(@_, CreateStepsTasks($self->{Job}));
+  $self->SUPER::_initialize(@_, CreateStepsTasks(undef, $self->{Job}));
 }
 
 sub GetPageTitle()

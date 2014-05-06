@@ -340,9 +340,10 @@ sub CheckForCompleteSet
   return $ErrMessage;
 }
 
-sub CreatePendingPatchSets
+sub CreatePendingPatchSets(;$)
 {
-  return WineTestBot::PendingPatchSets->new("PendingPatchSets", "PendingPatchSets", "PendingPatchSet", \@PropertyDescriptors);
+  my ($ScopeObject) = @_;
+  return WineTestBot::PendingPatchSets->new("PendingPatchSets", "PendingPatchSets", "PendingPatchSet", \@PropertyDescriptors, $ScopeObject);
 }
 
 1;

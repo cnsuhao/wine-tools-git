@@ -1,4 +1,5 @@
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012-2014 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -39,11 +40,28 @@ use vars qw(@ISA @EXPORT_OK);
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(&new);
+@EXPORT_OK = qw(&new &ComputeMasterKey);
 
 use ObjectModel::BackEnd;
 use ObjectModel::Item;
 use ObjectModel::PropertyDescriptor;
+
+
+sub ComputeMasterKey($)
+{
+  my ($MasterColValues) = @_;
+
+  my $MasterKey = "";
+  if (defined $MasterColValues)
+  {
+    foreach my $ColValue (@$MasterColValues)
+    {
+      return undef if (!defined $ColValue);
+      $MasterKey .= "$ColValue#@#";
+    }
+  }
+  return $MasterKey;
+}
 
 sub new
 {
@@ -52,13 +70,19 @@ sub new
   my $CollectionName = shift;
   my $ItemName = shift;
   my $PropertyDescriptors = shift;
+  my $ScopeObject = shift;
   my $MasterObject = $_[0];
 
-  my $MasterColNames;
-  my $MasterColValues;
-  if (defined($MasterObject))
+  my $MasterKey = "";
+  my ($AllScopeItems, $MasterColNames, $MasterColValues);
+  if (defined $MasterObject)
   {
+    $AllScopeItems = $MasterObject->{AllScopeItems};
     ($MasterColNames, $MasterColValues) = $MasterObject->GetMasterKey();
+  }
+  if (defined $ScopeObject)
+  {
+    $AllScopeItems ||= $ScopeObject->{AllScopeItems};
   }
 
   my $self = {TableName           => $TableName,
@@ -67,7 +91,9 @@ sub new
               PropertyDescriptors => $PropertyDescriptors,
               MasterColNames      => $MasterColNames,
               MasterColValues     => $MasterColValues,
+              MasterKey           => ComputeMasterKey($MasterColValues),
               Filters             => {},
+              AllScopeItems       => $AllScopeItems || {},
               Items               => undef};
   $self = bless $self, $class;
   $self->_initialize(@_);
@@ -76,6 +102,9 @@ sub new
 
 sub _initialize
 {
+  my ($self) = @_;
+
+  $self->{AllScopeItems}->{ref($self)} ||= {};
 }
 
 sub GetPropertyDescriptors
@@ -137,7 +166,17 @@ sub Add
 
   my $NewItem = $self->CreateItem();
   $NewItem->InitializeNew($self);
-  $self->{Items}{$NewItem->GetKey()} = $NewItem;
+  my $Key = $NewItem->GetKey();
+  $self->{Items}{$Key} = $NewItem;
+
+  my $FullKey = $self->GetFullKey($Key);
+  if (defined $FullKey)
+  {
+    my $ScopeItems = $self->{AllScopeItems}->{ref($self)};
+    $ScopeItems->{$FullKey} = $NewItem;
+  }
+  # If the Item does not yet have a full key, then it will be added to
+  # AllScopeItems when Item::MasterKeyChanged() is called.
 
   $self->{Loaded} = 1;
 
@@ -164,34 +203,111 @@ sub GetKeys
   return $self->GetKeysNoLoad();
 }
 
+=pod
+=over 12
+
+=item C<GetFullKey()>
+
+Turns a string that uniquely identifies an Item object for the current
+Collection into a string that uniquely identifies across all Collections of
+the same type.
+
+For instance a TaskNo uniquely identifies a Task within the corresponding
+Step->Tasks collection. However only a string derived from the
+(JobId, StepNo, TaskNo) triplet uniquely identifies it across all Tasks
+collections.
+
+=back
+=cut
+
+sub GetFullKey
+{
+  my ($self, $Key) = @_;
+
+  return undef if (!defined $self->{MasterKey});
+  return $self->{MasterKey} . $Key;
+}
+
+=pod
+=over 12
+
+=item C<GetScopeItem()>
+
+Returns the Item object for the specified key if it is already present in the
+current scope cache. If not present in the scope cache but an item object was
+given as a parameter, then that Item is added to the scope cache and that
+Item is returned.
+
+=back
+=cut
+
+sub GetScopeItem
+{
+  my ($self, $Key, $NewItem) = @_;
+
+  my $FullKey = $self->GetFullKey($Key);
+  return $NewItem if (!defined $FullKey);
+
+  my $ScopeItems = $self->{AllScopeItems}->{ref($self)};
+  my $Item = $ScopeItems->{$FullKey};
+  return $Item if (defined $Item);
+  return undef if (!defined $NewItem);
+
+  $ScopeItems->{$FullKey} = $NewItem;
+  return $NewItem;
+}
+
+=pod
+=over 12
+
+=item C<GetItem()>
+
+Loads the specified Item and adds it to the Collection. Note that the Item
+gets loaded and added even if it does not match the Collection's filters.
+
+=back
+=cut
+
 sub GetItem
 {
-  my $self = shift;
+  my ($self, $Key) = @_;
 
-  my $Key = shift;
-  if (! defined($Key))
+  return undef if (!defined $Key);
+  return $self->{Items}{$Key} if (defined $self->{Items}{$Key});
+
+  # The Item is not present in this Collection.
+  # See if another in-scope Collection loaded it already.
+  my ($ScopeItems, $Item);
+  my $FullKey = $self->GetFullKey($Key);
+  if (defined $FullKey)
   {
-    return undef;
+    $ScopeItems = $self->{AllScopeItems}->{ref($self)};
+    $Item = $ScopeItems->{$FullKey};
+  }
+  if (!defined $Item)
+  {
+    # Still not found so try to load it from the database.
+    $Item = $self->GetBackEnd()->LoadItem($self, $Key);
+    return undef if (!defined $Item);
+    $ScopeItems->{$FullKey} = $Item if ($ScopeItems);
   }
 
-  if (! exists($self->{Items}{$Key}))
-  {
-    my $NewItem = $self->GetBackEnd()->LoadItem($self, $Key);
-    if (defined($NewItem))
-    {
-      $self->{Items}{$NewItem->GetKey()} = $NewItem;
-    }
-    return $NewItem;
-  }
-
-  my $Item = undef;
-  if (exists($self->{Items}{$Key}))
-  {
-    $Item = $self->{Items}{$Key};
-  }
-
+  # Add the Item to this Collection.
+  $self->{Items}{$Key} = $Item;
   return $Item;
 }
+
+=pod
+=over 12
+
+=item C<ItemExists()>
+
+Returns true if the specified item is present in the collection, that is if it
+either matches the specified filter, or has been explicitly loaded through
+GetItem().
+
+=back
+=cut
 
 sub ItemExists
 {
@@ -211,6 +327,18 @@ sub ItemExists
   return exists($self->{Items}{$Key});
 }
 
+=pod
+=over 12
+
+=item C<GetItems()>
+
+Returns all the Item objects present in the Collection, that is all the objects
+that either match the Collection's filter, or have been explicitly loaded
+through GetItem().
+
+=back
+=cut
+
 sub GetItems
 {
   my $self = shift;
@@ -223,6 +351,16 @@ sub GetItems
   my @Items = values %{$self->{Items}};
   return \@Items;
 }
+
+=pod
+=over 12
+
+=item C<IsEmpty()>
+
+Returns true if the Collection contains no Item.
+
+=back
+=cut
 
 sub IsEmpty
 {
@@ -347,11 +485,17 @@ sub KeyChanged
   {
     die "Can't change key from $OldKey to $NewKey";
   }
+  my $ScopeItems = $self->{AllScopeItems}->{ref($self)};
+  my $FullKey = $self->GetFullKey($OldKey);
+  delete $ScopeItems->{$FullKey} if (defined $FullKey);
   delete $self->{Items}{$OldKey};
+
   if (defined($self->{Items}{$NewKey}))
   {
     die "Cant change key, new key $NewKey already exists";
   }
+  $FullKey = $self->GetFullKey($NewKey);
+  $ScopeItems->{$FullKey} = $Item if (defined $FullKey);
   $self->{Items}{$NewKey} = $Item;
 
   $Item->KeyChanged();
@@ -363,6 +507,7 @@ sub MasterKeyChanged
   my $MasterColValues = shift;
 
   $self->{MasterColValues} = $MasterColValues;
+  $self->{MasterKey} = ComputeMasterKey($MasterColValues);
 
   foreach my $Item (values %{$self->{Items}})
   {
@@ -394,10 +539,13 @@ sub DeleteItem
     return $ErrMessage;
   }
 
-  if (defined($self->{Items}{$Key}))
+  my $FullKey = $self->GetFullKey($Key);
+  if (defined $FullKey)
   {
-    delete($self->{Items}{$Key});
+    my $ScopeItems = $self->{AllScopeItems}->{ref($self)};
+    delete($ScopeItems->{$FullKey})
   }
+  delete($self->{Items}{$Key});
 
   return undef;
 }
@@ -425,8 +573,11 @@ sub DeleteAll
     return $ErrMessage;
   }
 
+  my $ScopeItems = $self->{AllScopeItems}->{ref($self)};
   foreach my $Key (keys %{$self->{Items}})
   {
+    my $FullKey = $self->GetFullKey($Key);
+    delete($ScopeItems->{$FullKey}) if (defined $FullKey);
     delete($self->{Items}{$Key});
   }
 

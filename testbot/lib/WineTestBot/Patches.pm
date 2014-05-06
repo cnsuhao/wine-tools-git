@@ -479,9 +479,10 @@ sub NewPatch
   return undef;
 }
 
-sub CreatePatches
+sub CreatePatches(;$)
 {
-  return WineTestBot::Patches->new("Patches", "Patches", "Patch", \@PropertyDescriptors);
+  my ($ScopeObject) = @_;
+  return WineTestBot::Patches->new("Patches", "Patches", "Patch", \@PropertyDescriptors, $ScopeObject);
 }
 
 1;

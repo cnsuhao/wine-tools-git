@@ -355,9 +355,11 @@ sub CreateItem
   return WineTestBot::Job->new($self);
 }
 
-sub CreateJobs
+sub CreateJobs(;$)
 {
-  return WineTestBot::Jobs->new("Jobs", "Jobs", "Job", \@PropertyDescriptors);
+  my ($ScopeObject) = @_;
+  return WineTestBot::Jobs->new("Jobs", "Jobs", "Job", \@PropertyDescriptors,
+                                $ScopeObject);
 }
 
 sub CompareJobPriority

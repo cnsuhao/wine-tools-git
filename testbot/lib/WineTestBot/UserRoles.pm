@@ -65,12 +65,11 @@ sub CreateItem
   return WineTestBot::UserRole->new($self);
 }
 
-sub CreateUserRoles
+sub CreateUserRoles(;$$)
 {
-  my $User = shift;
-
+  my ($ScopeObject, $User) = @_;
   return WineTestBot::UserRoles->new("UserRoles", "UserRoles", "UserRole",
-                                     \@PropertyDescriptors, $User);
+                                     \@PropertyDescriptors, $ScopeObject, $User);
 }
 
 1;

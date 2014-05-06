@@ -1,4 +1,5 @@
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012, 2014 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -245,7 +246,8 @@ sub LoadCollection
     }
     $Item->ResetModified();
 
-    $Collection->{Items}{$Item->GetKey()} = $Item;
+    my $Key = $Item->GetKey();
+    $Collection->{Items}{$Key} = $Collection->GetScopeItem($Key, $Item);
   }
 
   $Statement->finish();
@@ -255,6 +257,9 @@ sub LoadItem
 {
   my $self = shift;
   my ($Collection, $RequestedKey) = @_;
+
+  my $Item = $Collection->GetScopeItem($RequestedKey);
+  return $Item if (defined $Item);
 
   my $Fields = $self->BuildFieldList($Collection->GetPropertyDescriptors());
 
@@ -278,7 +283,7 @@ sub LoadItem
   my $Statement = $self->GetDb()->prepare($Query);
   $Statement->execute(@Data);
 
-  my $Item = undef;
+  $Item = undef;
   if (my $Row = $Statement->fetchrow_hashref())
   {
     $Item = $Collection->CreateItem();
@@ -291,6 +296,7 @@ sub LoadItem
       }
     }
     $Item->ResetModified();
+    $Item = $Collection->GetScopeItem($RequestedKey, $Item);
   }
 
   $Statement->finish();

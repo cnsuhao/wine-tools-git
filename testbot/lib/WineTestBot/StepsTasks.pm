@@ -171,12 +171,12 @@ sub CreateItem
   return WineTestBot::StepTask->new($self);
 }
 
-sub CreateStepsTasks
+sub CreateStepsTasks(;$$)
 {
-  my $Job = shift;
+  my ($ScopeObject, $Job) = @_;
 
   return WineTestBot::StepsTasks->new(undef, "Tasks", undef,
-                                      \@PropertyDescriptors, $Job);
+                                      \@PropertyDescriptors, $ScopeObject, $Job);
 }
 
 1;

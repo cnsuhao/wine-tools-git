@@ -122,10 +122,11 @@ sub NewSession
   return ($ErrMessage, $Session);
 }
 
-sub CreateSessions
+sub CreateSessions(;$)
 {
+  my ($ScopeObject) = @_;
   return WineTestBot::CGI::Sessions->new("Sessions", "Sessions", "Session",
-                                         \@PropertyDescriptors);
+                                         \@PropertyDescriptors, $ScopeObject);
 }
 
 1;

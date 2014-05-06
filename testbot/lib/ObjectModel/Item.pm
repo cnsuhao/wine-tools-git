@@ -1,5 +1,5 @@
 # Copyright 2009 Ge van Geldorp
-# Copyright 2012, 2014 Francois Gouget
+# Copyright 2012-2014 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -42,9 +42,12 @@ sub new
 
   my $self = {};
   $self->{TableName} = $Collection->{TableName};
+  $self->{ScopeItems} = $Collection->{AllScopeItems}->{ref($Collection)};
+  $self->{AllScopeItems} = $Collection->{AllScopeItems};
   $self->{PropertyDescriptors} = $Collection->{PropertyDescriptors};
   $self->{MasterColNames} = $Collection->{MasterColNames};
   $self->{MasterColValues} = $Collection->{MasterColValues};
+  $self->{MasterKey} = ObjectModel::Collection::ComputeMasterKey($self->{MasterColValues});
   $self->{IsNew} = 1;
   $self->{IsModified} = !1;
   foreach my $PropertyDescriptor (@{$self->{PropertyDescriptors}})
@@ -227,7 +230,7 @@ sub AUTOLOAD
         }
         elsif (! defined($self->{Itemrefs}{$PropertyName}))
         {
-          my $Collection = &{$PropertyDescriptor->GetCreator()}();
+          my $Collection = &{$PropertyDescriptor->GetCreator()}($self);
           my $Item = $Collection->GetItem($self->{ColValues}{@{$ColNames}[0]});
           $self->{Itemrefs}{$PropertyName} = $Item;
         }
@@ -237,7 +240,7 @@ sub AUTOLOAD
       {
         if (! defined($self->{Details}{$PropertyName}))
         {
-          my $Detail = &{$PropertyDescriptor->GetCreator()}($self);
+          my $Detail = &{$PropertyDescriptor->GetCreator()}(undef, $self);
           $self->{Details}{$PropertyName} = $Detail;
           return $Detail;
         }
@@ -318,6 +321,14 @@ sub GetKey
   }
 
   return $Key;
+}
+
+sub GetFullKey($)
+{
+  my ($self) = @_;
+
+  return undef if (!defined $self->{MasterKey});
+  return $self->{MasterKey} . $self->GetKey();
 }
 
 sub GetKeyComponents
@@ -456,10 +467,16 @@ sub KeyChanged
 
 sub MasterKeyChanged
 {
-  my $self = shift;
-  my $MasterColValues = shift;
+  my ($self, $MasterColValues) = @_;
+
+  my $Key = $self->GetKey();
+  my $FullKey = $self->GetFullKey($Key);
+  delete($self->{ScopeItems}->{$FullKey}) if (defined $FullKey);
 
   $self->{MasterColValues} = $MasterColValues;
+  $self->{MasterKey} = ObjectModel::Collection::ComputeMasterKey($MasterColValues);
+  $FullKey = $self->GetFullKey($Key);
+  $self->{ScopeItems}->{$FullKey} = $self if (defined $FullKey);
 
   $self->KeyChanged();
 }

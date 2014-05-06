@@ -622,9 +622,11 @@ sub CreateItem
   return WineTestBot::VM->new($self);
 }
 
-sub CreateVMs
+sub CreateVMs(;$)
 {
-  return WineTestBot::VMs::->new("VMs", "VMs", "VM", \@PropertyDescriptors);
+  my ($ScopeObject) = @_;
+  return WineTestBot::VMs::->new("VMs", "VMs", "VM",
+                                 \@PropertyDescriptors, $ScopeObject);
 }
 
 sub CountRevertingRunningVMs

@@ -175,7 +175,7 @@ sub SendLog
     return;
   }
 
-  my $StepsTasks = CreateStepsTasks($Job);
+  my $StepsTasks = CreateStepsTasks(undef, $Job);
   my @SortedKeys = sort @{$StepsTasks->GetKeys()};
 
   open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
