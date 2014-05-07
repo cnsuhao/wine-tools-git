@@ -390,12 +390,12 @@ sub HandleJobRestart
   return "1OK";
 }
 
-sub HandleTaskComplete
+sub HandleRescheduleJobs
 {
   my $ErrMessage = ScheduleJobs();
   if (defined($ErrMessage))
   {
-    LogMsg "Scheduling problem in HandleTaskComplete: $ErrMessage\n";
+    LogMsg "Scheduling problem in HandleRescheduleJobs: $ErrMessage\n";
   }
 
   return "1OK";
@@ -560,7 +560,7 @@ my %Handlers=(
     "jobsubmit"                => \&HandleJobSubmit,
     "ping"                     => \&HandlePing,
     "shutdown"                 => \&HandleShutdown,
-    "taskcomplete"             => \&HandleTaskComplete,
+    "reschedulejobs"           => \&HandleRescheduleJobs,
     "vmstatuschange"           => \&HandleVMStatusChange,
     "winepatchmlsubmission"    => \&HandleWinePatchMLSubmission,
     "winepatchwebsubmission"   => \&HandleWinePatchWebSubmission,

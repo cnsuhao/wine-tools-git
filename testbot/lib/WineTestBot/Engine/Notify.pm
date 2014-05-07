@@ -34,7 +34,7 @@ use vars qw (@ISA @EXPORT @EXPORT_OK $RunningInEngine);
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(&Shutdown &PingEngine &JobSubmit &JobStatusChange &JobCancel
-             &JobRestart &TaskComplete &VMStatusChange &FoundWinetestUpdate
+             &JobRestart &RescheduleJobs &VMStatusChange &FoundWinetestUpdate
              &WinePatchMLSubmission &WinePatchWebSubmission &GetScreenshot);
 @EXPORT_OK = qw($RunningInEngine);
 
@@ -167,11 +167,9 @@ sub JobRestart
   return substr($Reply, 1);
 }
 
-sub TaskComplete
+sub RescheduleJobs
 {
-  my ($JobKey, $StepKey, $TaskKey) = @_;
-
-  my $Reply = SendCmdReceiveReply("taskcomplete $JobKey $StepKey $TaskKey\n");
+  my $Reply = SendCmdReceiveReply("reschedulejobs\n");
   if (length($Reply) < 1)
   {
     return "Unrecognized reply received from engine";

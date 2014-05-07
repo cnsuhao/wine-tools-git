@@ -76,7 +76,7 @@ sub FatalError($$$$)
     $VM->Save();
   }
 
-  TaskComplete($JobKey, $StepKey, $TaskKey);
+  RescheduleJobs();
   exit 1;
 }
 
@@ -333,7 +333,7 @@ $Task = undef;
 $Step = undef;
 $Job = undef;
 
-TaskComplete($JobId, $StepNo, $TaskNo);
+RescheduleJobs();
 
 LogMsg "Task $JobId/$StepNo/$TaskNo completed\n";
 exit 0;
