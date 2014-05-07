@@ -402,10 +402,10 @@ sub GenerateBody
             {
               print "</code></pre>\n";
             }
+            print "<br><pre><code>";
             $PrintedDll = $CurrentDll;
           }
-          print "<br>\n";
-          print "<pre><code>", $self->escapeHTML($Line), "\n";
+          print $self->escapeHTML($Line), "\n";
         }
         close ERRFILE;
       }
