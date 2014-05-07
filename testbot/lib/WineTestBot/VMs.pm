@@ -352,7 +352,10 @@ sub IsPoweredOn($)
 
   my ($ErrMessage, $Domain) = $self->_GetDomain();
   return undef if (defined $ErrMessage);
-  return $Domain->is_active();
+  my $IsActive;
+  eval { $IsActive = $Domain->is_active() };
+  return undef if ($@);
+  return $IsActive;
 }
 
 sub PowerOn
