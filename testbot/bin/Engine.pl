@@ -497,48 +497,73 @@ sub HandleWinePatchMLSubmission
 
 sub HandleWinePatchWebSubmission
 {
-  # Validate file name
-  if ($_[0] !~ m/([0-9a-fA-F]{32}_patch_\d+)/)
-  {
-    return "0Invalid file name";
-  }
-  my $FullFileName = "$DataDir/staging/$1";
-  if ($_[1] !~ m/^(\d+)$/)
-  {
-    return "0Invalid patch id";
-  }
-  my $WebPatchId = $1;
+  my $LatestWebPatchId = 0;
   my $Patches = CreatePatches();
-  $Patches->AddFilter("WebPatchId", [$WebPatchId]);
-  if (@{$Patches->GetKeys()})
+  foreach my $Patch (@{$Patches->GetItems()})
   {
-    LogMsg "Patch $WebPatchId already exists\n";
-    return "1OK";
+    my $WebPatchId = $Patch->WebPatchId;
+    if (defined $WebPatchId and $LatestWebPatchId < $WebPatchId)
+    {
+      $LatestWebPatchId = $WebPatchId;
+    }
   }
 
-  # Create a working dir
-  my $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
-  while (-e $WorkDir)
+  # Rescan the directory for robustness in case the patches site has already
+  # expired $LatestWebPatchId+1 (for instance if the WineTestBot has not been
+  # run for a while).
+  my (@ErrMessages, @WebPatchIds);
+  if (opendir(my $dh, "$DataDir/webpatches"))
   {
-    $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
+    foreach my $Entry (readdir($dh))
+    {
+      next if ($Entry !~ /^(\d+)$/);
+      my $WebPatchId = $1;
+      next if ($WebPatchId <= $LatestWebPatchId);
+
+      my $Patches = CreatePatches($Patches);
+      $Patches->AddFilter("WebPatchId", [$WebPatchId]);
+      if (@{$Patches->GetKeys()})
+      {
+        push @ErrMessages, "$WebPatchId already exists and yet the latest patch is $LatestWebPatchId";
+        next;
+      }
+      push @WebPatchIds, $WebPatchId;
+    }
+    close($dh);
   }
-  mkdir $WorkDir;
-
-  # Process the patch
-  my $Parser = new MIME::Parser;
-  $Parser->output_dir($WorkDir);
-  my $Entity = $Parser->parse_open($FullFileName);
-  my $ErrMessage = CreatePatches()->NewPatch($Entity, $WebPatchId);
-
-  # Clean up
-  if (!rmtree($WorkDir))
+  else
   {
-    # Not a fatal error but log it to help diagnosis
-    LogMsg "Unable to delete '$WorkDir': $!\n";
+    return "0Unable to open '$DataDir/webpatches': $!";
   }
-  unlink($FullFileName);
 
-  return defined($ErrMessage) ? "0" . $ErrMessage : "1OK";
+  # Add the patches in increasing WebPatchId order so that next time
+  # $LatestWebPatchId still makes sense in case something goes wrong now
+  foreach my $WebPatchId (sort { $a <=> $b } @WebPatchIds)
+  {
+    # Create a working dir
+    my $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
+    while (-e $WorkDir)
+    {
+      $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
+    }
+    mkdir $WorkDir;
+
+    # Process the patch
+    my $Parser = new MIME::Parser;
+    $Parser->output_dir($WorkDir);
+    my $Entity = $Parser->parse_open("$DataDir/webpatches/$WebPatchId");
+    my $ErrMessage = $Patches->NewPatch($Entity, $WebPatchId);
+    push @ErrMessages, $ErrMessage if (defined $ErrMessage);
+
+    # Clean up
+    if (!rmtree($WorkDir))
+    {
+      # Not a fatal error but log it to help diagnosis
+      LogMsg "Unable to delete '$WorkDir': $!\n";
+    }
+  }
+
+  return @ErrMessages ? "0". join("; ", @ErrMessages) : "1OK";
 }
 
 sub HandleGetScreenshot
@@ -629,6 +654,7 @@ sub SafetyNet
 {
   CheckJobs();
   ScheduleJobs();
+  HandleWinePatchWebSubmission();
 
   my $Set = WineTestBot::PendingPatchSets::CreatePendingPatchSets();
   my $ErrMessage = $Set->CheckForCompleteSet();

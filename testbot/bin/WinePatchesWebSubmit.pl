@@ -37,56 +37,15 @@ sub BEGIN
   }
 }
 
-use File::Copy;
-use WineTestBot::Config;
 use WineTestBot::Log;
-use WineTestBot::Utils;
-use WineTestBot::Patches;
 use WineTestBot::Engine::Notify;
 
-my ($MaxCount) = @ARGV;
-if (defined $MaxCount)
+# Just tell the Engine to rescan the webpatches directory
+my $ErrMessage = WinePatchWebSubmission();
+if (defined $ErrMessage)
 {
-  $MaxCount =~ m/^(\d+)$/;
-  $MaxCount = $1;
+  LogMsg "$ErrMessage\n";
+  exit(1);
 }
 
-my $LastWebPatchId = 0;
-foreach my $Patch (@{CreatePatches()->GetItems()})
-{
-  my $WebPatchId = $Patch->WebPatchId;
-  if (defined $WebPatchId and $LastWebPatchId < $WebPatchId)
-  {
-    $LastWebPatchId = $WebPatchId;
-  }
-}
-
-while (1)
-{
-  $LastWebPatchId++;
-  my $NewPatch = "$DataDir/webpatches/$LastWebPatchId";
-  last if (!-f $NewPatch);
-
-  my $FileNameRandomPart = GenerateRandomString(32);
-  while (-e "$DataDir/staging/${FileNameRandomPart}_patch_$LastWebPatchId")
-  {
-    $FileNameRandomPart = GenerateRandomString(32);
-  }
-  my $StagingFileName = "$DataDir/staging/${FileNameRandomPart}_patch_$LastWebPatchId";
-
-  if (!copy($NewPatch, $StagingFileName))
-  {
-    LogMsg "Unable to copy '$NewPatch' to '$StagingFileName': $!\n";
-    exit 1;
-  }
-
-  WinePatchWebSubmission("${FileNameRandomPart}_patch_$LastWebPatchId", $LastWebPatchId);
-  LogMsg "Added wine-patches patch $LastWebPatchId\n";
-  if (defined $MaxCount)
-  {
-    $MaxCount--;
-    last if ($MaxCount == 0);
-  }
-}
-
-exit;
+exit(0);

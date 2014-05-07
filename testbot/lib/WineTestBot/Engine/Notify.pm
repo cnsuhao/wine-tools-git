@@ -233,9 +233,7 @@ sub WinePatchMLSubmission
 
 sub WinePatchWebSubmission
 {
-  my ($FileName, $WebPatchId) = @_;
-
-  my $Reply = SendCmdReceiveReply("winepatchwebsubmission $FileName $WebPatchId\n");
+  my $Reply = SendCmdReceiveReply("winepatchwebsubmission\n");
   if (length($Reply) < 1)
   {
     return "Unrecognized reply received from engine";
