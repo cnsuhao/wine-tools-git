@@ -218,9 +218,7 @@ sub FoundWinetestUpdate
 
 sub WinePatchMLSubmission
 {
-  my $FileName = $_[0];
-
-  my $Reply = SendCmdReceiveReply("winepatchmlsubmission $FileName\n");
+  my $Reply = SendCmdReceiveReply("winepatchmlsubmission\n");
   if (length($Reply) < 1)
   {
     return "Unrecognized reply received from engine";

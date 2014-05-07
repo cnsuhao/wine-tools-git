@@ -446,36 +446,53 @@ sub HandleFoundWinetestUpdate
 
 sub HandleWinePatchMLSubmission
 {
-  # Validate file name
-  if ($_[0] !~ m/([0-9a-fA-F]{32}_wine-patches)/)
+  my $dh;
+  if (!opendir($dh, "$DataDir/staging"))
   {
-    return "0Invalid file name";
+    return "0Unable to open '$DataDir/staging': $!";
   }
-  my $FullMessageFileName = "$DataDir/staging/$1";
 
-  # Create a working dir
-  my $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
-  while (-e $WorkDir)
+  # Read the directory ahead as we'll be adding / removing entries
+  my @Entries = readdir($dh);
+  closedir($dh);
+
+  my @ErrMessages;
+  foreach my $Entry (@Entries)
   {
-    $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
+    # Validate file name
+    next if ($Entry !~ m/^([0-9a-fA-F]{32}_wine-patches)$/);
+    my $FullMessageFileName = "$DataDir/staging/$1";
+
+    # Create a work directory
+    my $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
+    while (-e $WorkDir)
+    {
+      $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
+    }
+    mkdir $WorkDir;
+
+    # Process the patch
+    my $Parser = new MIME::Parser;
+    $Parser->output_dir($WorkDir);
+    my $Entity = $Parser->parse_open($FullMessageFileName);
+    my $ErrMessage = CreatePatches()->NewPatch($Entity);
+    push @ErrMessages, $ErrMessage if (defined $ErrMessage);
+
+    # Clean up
+    if (!rmtree($WorkDir))
+    {
+       # Not a fatal error but log it to help diagnosis
+       LogMsg "Unable to delete '$WorkDir': $!\n";
+    }
+    if (!unlink($FullMessageFileName))
+    {
+      # This is more serious because it could cause a patch to be added
+      # again and again. But there is not much we can do.
+      LogMsg "Unable to delete '$FullMessageFileName': $!\n";
+    }
   }
-  mkdir $WorkDir;
 
-  # Process the patch
-  my $Parser = new MIME::Parser;
-  $Parser->output_dir($WorkDir);
-  my $Entity = $Parser->parse_open($FullMessageFileName);
-  CreatePatches()->NewPatch($Entity);
-
-  # Clean up
-  if (!rmtree($WorkDir))
-  {
-    # Not a fatal error but log it to help diagnosis
-    LogMsg "Unable to delete '$WorkDir': $!\n";
-  }
-  unlink($FullMessageFileName);
-
-  return "1OK";
+  return @ErrMessages ? "0". join("; ", @ErrMessages) : "1OK";
 }
 
 sub HandleWinePatchWebSubmission
@@ -613,19 +630,6 @@ sub SafetyNet
   CheckJobs();
   ScheduleJobs();
 
-  if (opendir STAGING, "$DataDir/staging")
-  {
-    my @DirEntries = readdir STAGING;
-    closedir STAGING;
-    foreach my $DirEntry (@DirEntries)
-    {
-      if ($DirEntry =~ m/[0-9a-fA-F]{32}_wine-patches/)
-      {
-        HandleWinePatchMLSubmission($DirEntry);
-      }
-    }
-  }
-
   my $Set = WineTestBot::PendingPatchSets::CreatePendingPatchSets();
   my $ErrMessage = $Set->CheckForCompleteSet();
   if (defined($ErrMessage))
@@ -736,6 +740,9 @@ sub main
   LogMsg "Starting the WineTestBot Engine\n";
 
   Cleanup();
+
+  # Check for patches that arrived while the server was off.
+  HandleWinePatchMLSubmission();
 
   my $SockName = "$DataDir/socket/engine";
   my $uaddr = sockaddr_un($SockName);
