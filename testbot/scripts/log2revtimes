@@ -1,0 +1,324 @@
+#!/usr/bin/perl
+#
+# Parses the WineTestBot Engine's log to extract the VM revert times.
+#
+# Copyright 2013-2014 Francois Gouget
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+
+use warnings;
+use strict;
+
+use DateTime::Format::Strptime;
+
+
+my $name0 = $0;
+$name0 =~ s+^.*/++;
+
+sub error(@)
+{
+    print STDERR "$name0:error: ", @_;
+}
+
+
+#
+# Command line parsing
+#
+
+my $Usage;
+
+sub check_opt_val($$)
+{
+    my ($option, $val) = @_;
+
+    if (defined $val)
+    {
+        error("$option can only be specified once\n");
+        $Usage = 2; # but continue processing this option
+    }
+    if (!@ARGV)
+    {
+        error("missing value for $option\n");
+        $Usage = 2;
+        return undef;
+    }
+    return shift @ARGV;
+}
+
+sub CheckAndConvertDate($)
+{
+    my ($DateStr) = @_;
+    return undef if (!defined $DateStr);
+
+    my $DateParser = DateTime::Format::Strptime->new(
+        pattern => '%Y/%m/%d',
+        time_zone => 'local',
+        );
+    my $DT = $DateParser->parse_datetime($DateStr);
+    if (!defined $DT)
+    {
+        error("'$DateStr' is not a valid timestamp\n");
+        $Usage = 2;
+        return undef;
+    }
+    return $DT->epoch;
+}
+
+my ($OptLogFile, $OptMixed, $OptStart, $OptStop, $OptMaxLines);
+
+while (@ARGV)
+{
+    my $arg = shift @ARGV;
+    if ($arg eq "--help")
+    {
+        $Usage = 0;
+    }
+    elsif ($arg eq "--mixed")
+    {
+        $OptMixed = 1;
+    }
+    elsif ($arg eq "--start")
+    {
+        $OptStart = check_opt_val($arg, $OptStart);
+    }
+    elsif ($arg eq "--stop")
+    {
+        $OptStop = check_opt_val($arg, $OptStop);
+    }
+    elsif ($arg eq "--max-lines")
+    {
+        $OptMaxLines = check_opt_val($arg, $OptMaxLines);
+    }
+    elsif (!defined $OptLogFile)
+    {
+        $OptLogFile = $arg;
+    }
+    else
+    {
+        error("unexpected argument '$arg'\n");
+        $Usage = 2;
+    }
+}
+
+if (!defined $Usage)
+{
+    if (!defined $OptLogFile)
+    {
+        error("you must specify the log file to analyze\n");
+        $Usage = 2;
+    }
+    $OptStart = CheckAndConvertDate($OptStart);
+    $OptStop = CheckAndConvertDate($OptStop);
+    if (defined $OptStart and defined $OptStop and $OptStop <= $OptStart)
+    {
+        error("the start date must be earlier than the stop date\n");
+        $Usage = 2;
+    }
+    if (defined $OptMaxLines)
+    {
+        my $oldwarn = $SIG{__WARN__};
+        $SIG{__WARN__} = sub { die $_[0] };
+        my $bad = eval { $OptMaxLines < 1 };
+        if (defined $oldwarn)
+        {
+            $SIG{__WARN__} = $oldwarn;
+        }
+        else
+        {
+            delete $SIG{__WARN__};
+        }
+        if ($bad or $@)
+        {
+            error("the maximum line count is invalid\n");
+            $Usage = 2;
+        }
+    }
+}
+if (defined $Usage)
+{
+    if ($Usage)
+    {
+        error("try '$name0 --help' for more information\n");
+        exit $Usage;
+    }
+    print "Usage: $name0 [--help] LOGFILE\n";
+    print "\n";
+    print "Analyzes a WineTestBot log file and generates a report on stdout containing the revert times per VM. The report is tab-separated and is suitable for import into a spreadsheet.\n";
+    print "\n";
+    print "Where:\n";
+    print "  LOGFILE           Is the log file to analyze.\n";
+    print "  --mixed           Report the revert times of all the VMs together instead of\n";
+    print "                    having a set of columns for each VM.\n";
+    print "  --start DATE      Only report about revert starting on or after the specified\n";
+    print "                    date (in yyyy/mm/dd format).\n";
+    print "  --stop DATE       Only report about revert ending on or before the specified\n";
+    print "                    date (in yyyy/mm/dd format).\n";
+    print "  --max-lines COUNT The maximum number of lines to return.\n";
+    print "  --help        Shows this usage message.\n";
+    exit 0;
+}
+
+
+#
+# Log parsing
+#
+
+my ($Lines, %VMReverts, %VMLines);
+
+sub AddRevert($$$$)
+{
+    my ($Date, $Duration, $VM, $Snapshot) = @_;
+
+    if ($OptMixed)
+    {
+        print "$Date\t$Duration\t\"$VM\"\t\"$Snapshot\"\n";
+        $Lines++;
+        return 0 if (defined $OptMaxLines and $Lines > $OptMaxLines);
+    }
+    else
+    {
+        # Skip reverts that have errors
+        return 1 if ($Duration < 0);
+        $VMReverts{$VM} ||= [];
+        push @{$VMReverts{$VM}}, [$Date, $Duration, $Snapshot];
+        $VMLines{$VM}++;
+        return 0 if (defined $OptMaxLines and $VMLines{$VM} > $OptMaxLines);
+    }
+    return 1;
+}
+
+if (open(my $fh, "<", $OptLogFile))
+{
+    print "Timestamp\tDuration\tVM\tSnapshot\n" if ($OptMixed);
+
+    my $DateParser = DateTime::Format::Strptime->new(
+        pattern => '%a %b %d %H:%M:%S %Y',
+        time_zone => 'local',
+        );
+
+    my (%Epochs, %Dates, %Snapshots);
+    my $Skip = defined $OptStart ? 1 : defined $OptStop ? 0 : undef;
+    foreach my $Line (<$fh>)
+    {
+        next if ($Line !~ s/^(.*?) RevertVM(?:\[[0-9]*\])?: (Reverting|Letting) ([a-zA-Z0-9-]+)//);
+        my ($DateStr, $Action, $VM) = ($1, $2, $3);
+        my $DT = $DateParser->parse_datetime($DateStr);
+        my $Epoch = $DT->epoch;
+
+        if ($Skip)
+        {
+            if (defined $OptStart and $OptStart <= $Epoch)
+            {
+                $Skip = 0;
+            }
+            else
+            {
+                next;
+            }
+        }
+        elsif (defined $Skip and defined $OptStop and $Epoch > $OptStop)
+        {
+            last;
+        }
+
+        if ($Action eq "Reverting")
+        {
+            if (defined $Epochs{$VM})
+            {
+                # This revert never completed!
+                my $Snapshot = $Snapshots{$VM} || "Unknown";
+                last if (!AddRevert($Dates{$VM}, -2, $VM, $Snapshot));
+            }
+
+            $Epochs{$VM} = $Epoch;
+            $Dates{$VM} = $DT->ymd("/") . " " . $DT->hms();
+            $Snapshots{$VM} = $1 if ($Line =~ /to ([a-zA-Z0-9-]+)$/);
+        }
+        else
+        {
+            my $Snapshot = $Snapshots{$VM} || "Unknown";
+            if (!defined $Epochs{$VM})
+            {
+                # We don't have a start date for this revert!
+                last if (!AddRevert($Dates{$VM}, -1, $VM, "Unknown"));
+            }
+            else
+            {
+                my $Duration = $Epoch - $Epochs{$VM};
+                last if (!AddRevert($Dates{$VM}, $Duration, $VM, $Snapshot));
+            }
+
+            delete $Epochs{$VM};
+            delete $Dates{$VM};
+            delete $Snapshots{$VM};
+        }
+    }
+    close($fh);
+}
+else
+{
+    error("unable to open '$OptLogFile' for reading: $!\n");
+    exit 1;
+}
+
+
+#
+# Report output
+#
+
+if (!$OptMixed)
+{
+    my $First=1;
+    foreach my $VM (sort keys %VMReverts)
+    {
+        print "\t" if (!$First);
+        $First = undef;
+        print "$VM\t\t";
+    }
+    print "\n";
+
+    $First=1;
+    my $LineCount = 0;
+    foreach my $VM (sort keys %VMReverts)
+    {
+        print "\t" if (!$First);
+        $First = undef;
+        print "Date\tDuration\tSnapshot";
+        $LineCount = $VMLines{$VM} if ($LineCount < $VMLines{$VM});
+    }
+    print "\n";
+
+    for (my $i = 0; $i < $LineCount; $i++)
+    {
+        $First=1;
+        foreach my $VM (sort keys %VMReverts)
+        {
+            print "\t" if (!$First);
+            $First = undef;
+
+            my $Revert = $VMReverts{$VM}->[$i];
+            if ($Revert)
+            {
+                my ($Date, $Duration, $Snapshot) = @$Revert;
+                print "$Date\t$Duration\t$Snapshot";
+            }
+            else
+            {
+                print "\t\t";
+            }
+        }
+        print "\n";
+    }
+}
