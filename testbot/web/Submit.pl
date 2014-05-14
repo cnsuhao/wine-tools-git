@@ -794,7 +794,7 @@ sub OnSubmit
 
   # Make sure the file has a unique name even when not picked up directly
   # by the engine
-  my $FileNameRandomPart = $self->GetCurrentSession()->Id;
+  my $FileNameRandomPart = GenerateRandomString(32);
   while (-e ("$DataDir/staging/${FileNameRandomPart}_" .
              $self->GetParam("FileName")))
   {
