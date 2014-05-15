@@ -9,11 +9,11 @@ windows: TestAgentd.exe
 
 
 $(builddir)/testagentd: testagentd.o platform_unix.o
-	gcc -o $@ $^
+	$(CC) -o $@ $^
 	strip $@
 
 .c.o:
-	gcc -Wall -g -c -o $@ $<
+	$(CC) -Wall -g -c -o $@ $<
 
 
 TestAgentd.exe: testagentd.obj platform_windows.obj
