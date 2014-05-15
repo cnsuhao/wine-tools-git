@@ -802,7 +802,7 @@ static void do_wait(SOCKET client)
         return;
     }
 
-    if (platform_wait(client, pid, 0, &childstatus))
+    if (platform_wait(client, pid, RUN_NOTIMEOUT, &childstatus))
     {
         send_list_size(client, 1);
         send_uint32(client, childstatus);
