@@ -425,25 +425,6 @@ sub HandleVMStatusChange
   return "1OK";
 }
 
-sub HandleFoundWinetestUpdate
-{
-  my $Bits = $_[0];
-
-  if ($Bits !~ /^(?:32|64)$/)
-  {
-    LogMsg "Invalid number of bits in foundwinetestupdate message\n";
-    return "0Invalid number of bits";
-  }
-
-  my $ErrMessage = ScheduleJobs();
-  if (defined($ErrMessage))
-  {
-    LogMsg "Scheduling problem in HandleFoundWinetestUpdate: $ErrMessage\n";
-  }
-
-  return "1OK";
-}
-
 sub HandleWinePatchMLSubmission
 {
   my $dh;
@@ -594,7 +575,6 @@ sub HandleGetScreenshot
 }
 
 my %Handlers=(
-    "foundwinetestupdate"      => \&HandleFoundWinetestUpdate,
     "getscreenshot"            => \&HandleGetScreenshot,
     "jobcancel"                => \&HandleJobCancel,
     "jobrestart"               => \&HandleJobRestart,

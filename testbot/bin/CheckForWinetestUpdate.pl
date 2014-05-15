@@ -251,7 +251,7 @@ else
   AddJob(1, $FileNameRandomPart, $Bits);
 }
 
-FoundWinetestUpdate($Bits);
+RescheduleJobs();
 
 LogMsg "Submitted jobs\n";
 
