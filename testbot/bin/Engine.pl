@@ -590,7 +590,7 @@ through the cracks, possibly because of an Engine restart.
 Specifically it updates the status of all the current Jobs, Steps and
 Tasks, then schedules Tasks to be run, checks the staging directory for
 wine-patches emails dropped by WinePatchesMLSubmit.pl, for notifications of
-changes on Wine's Patches web site dropped by WinePatchesWebNotify.pl, and
+changes on Wine's Patches web site dropped by WinePatchesWebSubmit.pl, and
 checks whether any pending patchsets are now complete and thus can be scheduled.
 
 =back
