@@ -164,7 +164,7 @@ int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *child
         struct timeval tv;
         int ready;
 
-        /* select() blocks until either the client disconnects or until, or
+        /* select() blocks until either the client disconnects, or
          * the SIGCHLD signal indicates the child has exited. The recv() call
          * tells us if it is the former.
          */
