@@ -174,7 +174,8 @@ sub _SetAlarm($)
   {
     my $Timeout = $self->{deadline} - time();
     die "timeout" if ($Timeout <= 0);
-    alarm($Timeout);
+    # alarm() has a 32-bit limit, even on 64-bit systems
+    alarm($Timeout <= 0xffffffff ? $Timeout : 0xffffffff);
   }
 }
 
