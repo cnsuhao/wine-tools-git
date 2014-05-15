@@ -792,8 +792,10 @@ sub OnSubmit
     return !1;
   }
 
-  # Make sure the file has a unique name even when not picked up directly
-  # by the engine
+  # Store the file in the staging directory until the relevant Job and Step
+  # IDs are known and it can be moved to the jobs directory tree. But rename
+  # it so it does not get overwritten if the user submits another one before
+  # the Engine gets around to doing so.
   my $FileNameRandomPart = GenerateRandomString(32);
   while (-e ("$DataDir/staging/${FileNameRandomPart}_" .
              $self->GetParam("FileName")))

@@ -175,7 +175,11 @@ umask 002;
 mkdir "$DataDir/latest";
 mkdir "$DataDir/staging";
 
-my $LatestFileName = "$DataDir/latest/winetest${BitsSuffix}-latest.exe";
+# Store the new WineTest executable in the staging directory:
+# - So we can compare it to the reference one in the latest directory to
+#   check that it is truly new.
+# - Because we don't know the relevant Job and Step IDs yet and thus cannot
+#   put it in the jobs directory tree.
 my $FileNameRandomPart = GenerateRandomString(32);
 while (-e "$DataDir/staging/${FileNameRandomPart}_winetest${BitsSuffix}-latest.exe")
 {
@@ -186,7 +190,7 @@ my $StagingFileName = "$DataDir/staging/${FileNameRandomPart}_winetest${BitsSuff
 my $UA = LWP::UserAgent->new();
 $UA->agent("WineTestBot");
 my $Request = HTTP::Request->new(GET => $WinetestUrl);
-my $NowDate = gmtime;
+my $LatestFileName = "$DataDir/latest/winetest${BitsSuffix}-latest.exe";
 if (-r $LatestFileName)
 {
   my $Since = gmtime((stat $LatestFileName)[9]);
@@ -230,14 +234,15 @@ if ($Bits == 32)
 {
   AddReconfigJob();
   AddJob(1, $FileNameRandomPart, $Bits);
-  
+
+  # Create another copy for the non-base VMs Job.
   $FileNameRandomPart = GenerateRandomString(32);
   while (-e "$DataDir/staging/${FileNameRandomPart}_winetest-latest.exe")
   {
     $FileNameRandomPart = GenerateRandomString(32);
   }
   $StagingFileName = "$DataDir/staging/${FileNameRandomPart}_winetest-latest.exe";
-  if (! copy($LatestFileName, $StagingFileName))
+  if (!copy($LatestFileName, $StagingFileName))
   {
     LogMsg "Can't copy $LatestFileName to $StagingFileName: $!\n";
   }
