@@ -77,14 +77,14 @@ sub trace_speed($$)
         if ($Elapsed)
         {
             $Speed = $Bytes * 8 / $Elapsed / 1000;
-            $Speed = $Speed < 1000 ? sprintf(" (%.1fKb/s)", $Speed) :
-                                     sprintf(" (%.1fMb/s)", $Speed / 1000);
+            $Speed = $Speed < 1000 ? sprintf(" (%.1f kb/s)", $Speed) :
+                                     sprintf(" (%.1f Mb/s)", $Speed / 1000);
         }
         $Bytes = $Bytes < 8 * 1024 ? "$Bytes bytes" :
-                 $Bytes < 8 * 1024 * 1024 ? sprintf("%.1fKiB", $Bytes / 1024) :
-                 sprintf("%.1fMiB", $Bytes / 1024 / 1024);
-        $Elapsed = $Elapsed < 1 ? sprintf("%.1fms", $Elapsed * 1000) :
-                   sprintf("%.1fs", $Elapsed);
+                 $Bytes < 8 * 1024 * 1024 ? sprintf("%.1f KiB", $Bytes / 1024) :
+                 sprintf("%.1f MiB", $Bytes / 1024 / 1024);
+        $Elapsed = $Elapsed < 1 ? sprintf("%.1f ms", $Elapsed * 1000) :
+                   sprintf("%.1f s", $Elapsed);
         debug("Transferred $Bytes in $Elapsed$Speed\n");
     }
 }
