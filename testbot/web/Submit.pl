@@ -917,14 +917,16 @@ sub OnSubmit
   $Jobs = undef;
 
   # Notify engine
-  if (defined(JobSubmit($JobKey)))
+  my $ErrMessage = RescheduleJobs();
+  if (defined $ErrMessage)
   {
+    LogMsg "$ErrMessage\n";
     $self->{Page} = 4;
-    $self->{JobKey} = $NewJob->GetKey();
+    $self->{JobKey} = $JobKey;
     return !1;
   }
 
-  $self->Redirect("/JobDetails.pl?Key=" . $NewJob->Id);
+  $self->Redirect("/JobDetails.pl?Key=$JobKey");
   exit;
 }
 

@@ -257,39 +257,6 @@ sub HandlePing
   return "1pong\n";
 }
 
-sub HandleJobSubmit
-{
-  my $JobKey = $_[0];
-
-  my $Job = CreateJobs()->GetItem($JobKey);
-  if (! $Job)
-  {
-    LogMsg "JobSubmit for nonexistent job $JobKey\n";
-    return "0Job $JobKey not found";
-  }
-  # We've already determined that JobKey is valid, untaint it
-  $JobKey =~ m/^(.*)$/;
-  $JobKey = $1;
-
-  my $ErrMessage;
-  foreach my $Step (@{$Job->Steps->GetItems()})
-  {
-    $ErrMessage = $Step->HandleStaging($JobKey);
-    if (defined($ErrMessage))
-    {
-      LogMsg "Staging problem: $ErrMessage\n";
-    }
-  }
-
-  $ErrMessage = ScheduleJobs();
-  if (defined($ErrMessage))
-  {
-    LogMsg "Scheduling problem in HandleJobSubmit: $ErrMessage\n";
-  }
-
-  return "1OK";
-}
-
 sub HandleJobStatusChange
 {
   my ($JobKey, $OldStatus, $NewStatus) = @_;
@@ -579,7 +546,6 @@ my %Handlers=(
     "jobcancel"                => \&HandleJobCancel,
     "jobrestart"               => \&HandleJobRestart,
     "jobstatuschange"          => \&HandleJobStatusChange,
-    "jobsubmit"                => \&HandleJobSubmit,
     "ping"                     => \&HandlePing,
     "shutdown"                 => \&HandleShutdown,
     "reschedulejobs"           => \&HandleRescheduleJobs,
