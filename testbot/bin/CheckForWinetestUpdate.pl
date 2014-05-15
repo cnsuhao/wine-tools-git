@@ -110,8 +110,6 @@ sub AddJob
       LogMsg "Failed to save job: $ErrMessage\n";
       exit 1;
     }
-
-    $NewStep->HandleStaging($NewJob->Id);
   }
 }
 
