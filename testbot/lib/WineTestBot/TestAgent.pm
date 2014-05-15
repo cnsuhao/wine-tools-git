@@ -1232,8 +1232,12 @@ sub Wait($$$;$)
       # The process has quit
       last if (defined $Result);
 
-      # Retry only if the timeout occurred on the remote end
-      last if ($self->{err} !~ /timed out waiting/);
+      # The only 'error' we should be getting here is the TestAgent server
+      # telling us it timed out waiting for the process. However flaky network
+      # connections like to break while we're waiting for the reply. So retry
+      # if that happens and let the automatic reconnection detect real network
+      # issues.
+      last if ($self->{err} !~ /(?:timed out waiting|network read timed out)/);
     }
   }
   $self->SetTimeout($OldTimeout);
