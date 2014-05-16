@@ -212,7 +212,7 @@ sub Submit
       $FileNameRandomPart = GenerateRandomString(32);
     }
     link $PatchFileName, "$DataDir/staging/${FileNameRandomPart}_patch.diff";
-    $NewStep->FileName($FileNameRandomPart . " patch.diff");
+    $NewStep->FileName($FileNameRandomPart . "_patch.diff");
     my @Keys = keys %{$Targets{$BaseName}};
     $NewStep->FileType($Targets{$BaseName}{$Keys[0]});
     $NewStep->InStaging(1);

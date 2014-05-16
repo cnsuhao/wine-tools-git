@@ -67,23 +67,23 @@ sub HandleStaging
   }
 
   my $FileName = $self->FileName;
-  if (! ($FileName =~ m/^([\da-fA-F]+) (.*)$/))
+  if ($FileName !~ m/^[0-9a-f]+_(.*)$/)
   {
-    return "Can't split staging file name";
+    return "Can't split staging filename";
   }
-  $FileName = $2;
-  my $StagingFileName = "$DataDir/staging/$1_$FileName";
+  my $BaseName = $1;
+  my $StagingFileName = "$DataDir/staging/$FileName";
   my $FinalFileName = "$DataDir/jobs/$JobKey/" . $self->GetKey() .
-                      "/$FileName";
+                      "/$BaseName";
   mkdir "$DataDir/jobs/$JobKey";
   mkdir "$DataDir/jobs/$JobKey/" . $self->GetKey();
-  if (! copy($StagingFileName, $FinalFileName))
+  if (!copy($StagingFileName, $FinalFileName))
   {
-    return "Can't copy file from staging area: $!";
+    return "Can't move the staging file: $!";
   }
   unlink($StagingFileName);
 
-  $self->FileName($FileName);
+  $self->FileName($BaseName);
   $self->InStaging(!1);
   my ($ErrProperty, $ErrMessage) = $self->Save();
 

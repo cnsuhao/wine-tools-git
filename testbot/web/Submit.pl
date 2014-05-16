@@ -839,7 +839,7 @@ sub OnSubmit
   {
     # This is a patch so add a build step...
     my $BuildStep = $Steps->Add();
-    $BuildStep->FileName($FileNameRandomPart . " " . $self->GetParam("FileName"));
+    $BuildStep->FileName($FileNameRandomPart . "_" . $self->GetParam("FileName"));
     $BuildStep->FileType($FileType);
     $BuildStep->InStaging(1);
     $BuildStep->Type("build");
@@ -888,7 +888,7 @@ sub OnSubmit
         }
         else
         {
-          $TestStep->FileName($FileNameRandomPart . " " . $self->GetParam("FileName"));
+          $TestStep->FileName($FileNameRandomPart . "_" . $self->GetParam("FileName"));
           $TestStep->InStaging(1);
         }
         $TestStep->FileType("exe$Bits");

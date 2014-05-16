@@ -70,7 +70,7 @@ sub AddJob
   my $NewStep = $Steps->Add();
   my $BitsSuffix = ($Bits == 64 ? "64" : "");
   $NewStep->Type("suite");
-  $NewStep->FileName("${FileNameRandomPart} winetest${BitsSuffix}-latest.exe");
+  $NewStep->FileName("${FileNameRandomPart}_winetest${BitsSuffix}-latest.exe");
   $NewStep->FileType($Bits == 64 ? "exe64" : "exe32");
   $NewStep->InStaging(1);
 
