@@ -105,6 +105,9 @@ static const char* rpc_name(uint32_t id)
         "wait",
         "rm",
         "wait2",
+        "settime",
+        "getproperties",
+        "upgrade",
     };
 
     if (id < sizeof(names) / sizeof(*names))
