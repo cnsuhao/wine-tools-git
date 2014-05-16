@@ -922,7 +922,7 @@ sub OnSubmit
   my $ErrMessage = RescheduleJobs();
   if (defined $ErrMessage)
   {
-    LogMsg "$ErrMessage\n";
+    $self->{ErrMessage} = $ErrMessage;
     $self->{Page} = 4;
     $self->{JobKey} = $JobKey;
     return !1;
