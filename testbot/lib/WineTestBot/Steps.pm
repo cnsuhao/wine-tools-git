@@ -77,11 +77,10 @@ sub HandleStaging
                       "/$BaseName";
   mkdir "$DataDir/jobs/$JobKey";
   mkdir "$DataDir/jobs/$JobKey/" . $self->GetKey();
-  if (!copy($StagingFileName, $FinalFileName))
+  if (!move($StagingFileName, $FinalFileName))
   {
-    return "Can't move the staging file: $!";
+    return "Could not move the staging file: $!";
   }
-  unlink($StagingFileName);
 
   $self->FileName($BaseName);
   $self->InStaging(!1);
