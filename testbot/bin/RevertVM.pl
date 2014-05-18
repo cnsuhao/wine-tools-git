@@ -48,16 +48,14 @@ sub FatalError
 
   LogMsg $ErrMessage, "\n";
 
-  if ($VM)
-  {
-    $VM->Status("offline");
-    $VM->ChildPid(undef);
-    $VM->Save();
+  $VM->Status("offline");
+  $VM->ChildPid(undef);
+  $VM->Save();
 
-    my $VMKey = $VM->GetKey();
-    my $VMSnapshot = $VM->IdleSnapshot;
-    open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
-    print SENDMAIL <<"EOF";
+  my $VMKey = $VM->GetKey();
+  my $VMSnapshot = $VM->IdleSnapshot;
+  open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
+  print SENDMAIL <<"EOF";
 From: $RobotEMail
 To: $AdminEMail
 Subject: VM $VMKey offline
@@ -68,8 +66,7 @@ $ErrMessage
 
 The VM has been put offline.
 EOF
-    close(SENDMAIL);
-  }
+  close(SENDMAIL);
 
   exit 1;
 }
@@ -86,7 +83,8 @@ if (! $VMKey)
 my $VM = CreateVMs()->GetItem($VMKey);
 if (! defined($VM))
 {
-  FatalError "VM $VMKey doesn't exist";
+  LogMsg "VM $VMKey doesn't exist\n";
+  exit 1;
 }
 
 LogMsg "Reverting $VMKey to ", $VM->IdleSnapshot, "\n";
@@ -146,4 +144,4 @@ if (defined($ErrMessage))
 
 LogMsg "Revert of $VMKey completed\n";
 
-exit;
+exit 0;
