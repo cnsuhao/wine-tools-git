@@ -33,9 +33,9 @@ require Exporter;
 @EXPORT = qw(&MakeSecureURL &SecureConnection &GenerateRandomString
              &BuildEMailRecipient);
 
-sub MakeSecureURL
+sub MakeSecureURL($)
 {
-  my $URL = shift;
+  my ($URL) = @_;
 
   my $Protocol = "http";
   if ($UseSSL || SecureConnection())
@@ -46,14 +46,14 @@ sub MakeSecureURL
   return $Protocol . "://" . $ENV{"HTTP_HOST"} . $URL;
 }
 
-sub SecureConnection
+sub SecureConnection()
 {
   return defined($ENV{"HTTPS"}) && $ENV{"HTTPS"} eq "on";
 }
 
-sub GenerateRandomString
+sub GenerateRandomString($)
 {
-  my $Len = $_[0];
+  my ($Len) = @_;
 
   my $RandomString = "";
   while (length($RandomString) < $Len)
@@ -65,15 +65,15 @@ sub GenerateRandomString
   return substr($RandomString, 0, $Len);
 }
 
-sub DateTimeToString
+sub DateTimeToString($)
 {
-  my $Time = $_[0];
+  my ($Time) = @_;
 
 #  my ($Sec, $Min, $Hour, $MDay, $Mon, $Year, $WDay, $YDay, $IsDst) = localtime($Time);
   return strftime("%Y/%m/%d %H:%M:%S", localtime($Time));
 }
 
-sub BuildEMailRecipient
+sub BuildEMailRecipient($$)
 {
   my ($EMailAddress, $Name) = @_;
 
