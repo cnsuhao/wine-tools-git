@@ -192,7 +192,7 @@ sub Submit
     # Create a new job for this patch
     my $NewJob = $Jobs->Add();
     $NewJob->User($User);
-    $NewJob->Priority(9);
+    $NewJob->Priority(6);
     my $PropertyDescriptor = $Jobs->GetPropertyDescriptorByName("Remarks");
     my $Subject = $self->Subject;
     $Subject =~ s/\[PATCH[^\]]*]//i;

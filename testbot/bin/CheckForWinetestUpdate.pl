@@ -60,7 +60,7 @@ sub AddJob
   my $Jobs = CreateJobs();
   my $NewJob = $Jobs->Add();
   $NewJob->User(GetBatchUser());
-  $NewJob->Priority($BaseJob && $Bits == 32 ? 6 : 7);
+  $NewJob->Priority($BaseJob && $Bits == 32 ? 8 : 9);
   $NewJob->Remarks("WineTest: " .
                    ($Bits == 32 ? ($BaseJob ? "base" : "other") : "64-bit") .
                    " VMs");
