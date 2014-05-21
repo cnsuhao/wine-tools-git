@@ -35,10 +35,10 @@ require Exporter;
 
 sub InitializeNew
 {
-  my $self = shift;
+  my ($self, $Collection) = @_;
 
   $self->IsDefault(!1);
-  $self->SUPER::InitializeNew();
+  $self->SUPER::InitializeNew($Collection);
 }
 
 package WineTestBot::Branches;

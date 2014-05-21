@@ -102,7 +102,8 @@ sub new
 
 sub _initialize
 {
-  my ($self) = @_;
+  # $MasterObject may be required for some Collections.
+  my ($self, $MasterObject) = @_;
 
   $self->{AllScopeItems}->{ref($self)} ||= {};
 }

@@ -49,11 +49,11 @@ require Exporter;
 
 sub InitializeNew
 {
-  my $self = shift;
+  my ($self, $Collection) = @_;
 
   $self->Received(time());
 
-  $self->SUPER::InitializeNew();
+  $self->SUPER::InitializeNew($Collection);
 }
 
 =pod

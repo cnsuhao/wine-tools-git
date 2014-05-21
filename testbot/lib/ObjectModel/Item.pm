@@ -72,11 +72,12 @@ sub new
 
 sub _initialize
 {
+  #my ($self, $Collection) = @_;
 }
 
 sub InitializeNew
 {
-  my $self = shift;
+  my ($self, $_Collection) = @_;
 
   $self->{IsModified} = !1;
 }

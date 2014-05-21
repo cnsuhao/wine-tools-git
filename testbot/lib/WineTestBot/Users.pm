@@ -40,11 +40,11 @@ require Exporter;
 
 sub InitializeNew
 {
-  my $self = shift;
+  my ($self, $Collection) = @_;
 
   $self->Status('active');
   $self->Password("*");
-  $self->SUPER::InitializeNew();
+  $self->SUPER::InitializeNew($Collection);
 }
 
 sub GeneratePasswordHash

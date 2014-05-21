@@ -54,7 +54,7 @@ sub InitializeNew
   my $Keys = $Collection->GetKeys();
   $self->No(scalar @$Keys + 1);
 
-  $self->SUPER::InitializeNew(@_);
+  $self->SUPER::InitializeNew($Collection);
 }
 
 =pod

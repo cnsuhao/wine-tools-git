@@ -223,6 +223,8 @@ sub _initialize($$)
 {
   my ($self, $VMs) = @_;
 
+  $self->SUPER::_initialize($VMs);
+
   $self->{Hypervisors} = $VMs->{Hypervisors};
   $self->{Hypervisor} = undef;
   $self->{Domain} = undef;
@@ -231,12 +233,12 @@ sub _initialize($$)
 
 sub InitializeNew
 {
-  my $self = shift;
+  my ($self, $Collection) = @_;
 
   $self->Status("idle");
   $self->IdleSnapshot("wtb");
 
-  $self->SUPER::InitializeNew(@_);
+  $self->SUPER::InitializeNew($Collection);
 }
 
 sub GetHost($)

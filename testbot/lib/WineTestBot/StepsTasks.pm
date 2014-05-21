@@ -120,7 +120,7 @@ sub _initialize
   my $self = shift;
   my $Job = $_[0];
 
-  $self->SUPER::_initialize(@_);
+  $self->SUPER::_initialize($Job);
 
   foreach my $Step (@{$Job->Steps->GetItems()})
   {

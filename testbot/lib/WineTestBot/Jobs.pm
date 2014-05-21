@@ -62,23 +62,23 @@ require Exporter;
 
 sub _initialize
 {
-  my $self = shift;
+  my ($self, $Collection) = @_;
 
-  $self->SUPER::_initialize(@_);
+  $self->SUPER::_initialize($Collection);
 
   $self->{OldStatus} = undef;
 }
 
 sub InitializeNew
 {
-  my $self = shift;
+  my ($self, $Collection) = @_;
 
   $self->Archived(!1);
   $self->Branch(CreateBranches()->GetDefaultBranch());
   $self->Status("queued");
   $self->Submitted(time());
 
-  $self->SUPER::InitializeNew();
+  $self->SUPER::InitializeNew($Collection);
 }
 
 sub Status

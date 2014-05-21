@@ -53,7 +53,7 @@ sub InitializeNew
   $self->DebugLevel(1);
   $self->ReportSuccessfulTests(!1);
 
-  $self->SUPER::InitializeNew(@_);
+  $self->SUPER::InitializeNew($Collection);
 }
 
 sub HandleStaging

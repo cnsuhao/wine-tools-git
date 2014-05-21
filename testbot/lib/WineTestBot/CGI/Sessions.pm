@@ -36,9 +36,9 @@ use vars qw(@ISA @EXPORT);
 
 sub InitializeNew
 {
-  my $self = shift;
+  my ($self, $Collection) = @_;
 
-  $self->SUPER::InitializeNew(@_);
+  $self->SUPER::InitializeNew($Collection);
 
   $self->Permanent(!1);
 }
