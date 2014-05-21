@@ -24,6 +24,8 @@ use CGI qw(:standard);
 use Fcntl;
 use IO::Handle;
 use POSIX qw(:fcntl_h);
+use File::Basename;
+
 use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::CGI::FreeFormPage;
 use WineTestBot::Branches;
@@ -430,17 +432,13 @@ sub GetPropertyValue
   return $self->SUPER::GetPropertyValue(@_);
 }
 
-sub GetStagingFileName
+sub GetTmpStagingFullPath
 {
   my $self = shift;
   my $FileName = $_[0];
 
-  if (! $FileName)
-  {
-    return undef;
-  }
-
-  return "$DataDir/staging/" . $self->GetCurrentSession()->Id . "_$FileName";
+  return undef if (!$FileName);
+  return "$DataDir/staging/" . $self->GetCurrentSession()->Id . "-websubmit_$FileName";
 }
 
 sub Validate
@@ -666,7 +664,7 @@ sub OnPage1Next
       $self->{ErrMessage} = "File: Name is too long";
       return !1;
     }
-    my $StagingFile = $self->GetStagingFileName($FileName);
+    my $StagingFile = $self->GetTmpStagingFullPath($FileName);
     my $OldUMask = umask(002);
     if (! open (OUTFILE,">$StagingFile"))
     {
@@ -756,7 +754,7 @@ sub OnPage2Prev
 {
   my $self = shift;
 
-  my $StagingFileName = $self->GetStagingFileName($self->GetParam("FileName"));
+  my $StagingFileName = $self->GetTmpStagingFullPath($self->GetParam("FileName"));
   if ($StagingFileName)
   {
     unlink($StagingFileName);
@@ -796,20 +794,20 @@ sub OnSubmit
   # IDs are known and it can be moved to the jobs directory tree. But rename
   # it so it does not get overwritten if the user submits another one before
   # the Engine gets around to doing so.
+  my $BaseName = $self->GetParam("FileName");
   my $FileNameRandomPart = GenerateRandomString(32);
-  while (-e ("$DataDir/staging/${FileNameRandomPart}_" .
-             $self->GetParam("FileName")))
+  while (-e "$DataDir/staging/${FileNameRandomPart}_$BaseName")
   {
     $FileNameRandomPart = GenerateRandomString(32);
   }
-  if (! rename("$DataDir/staging/" . $self->GetCurrentSession()->Id . "_" .
-               $self->GetParam("FileName"),
-               "$DataDir/staging/${FileNameRandomPart}_" .
-               $self->GetParam("FileName")))
+  my $StagingFileName = "${FileNameRandomPart}_$BaseName";
+
+  my $TmpStagingFullPath = $self->GetTmpStagingFullPath($BaseName);
+  if (!rename($TmpStagingFullPath, "$DataDir/staging/$StagingFileName"))
   {
-    # Can't give the file a unique name. Maybe we're lucky and using the
-    # session id works
-    $FileNameRandomPart = $self->GetCurrentSession()->Id;
+    # Use the existing staging file and hope for the best.
+    $self->{ErrMessage} = "Could not rename '$TmpStagingFullPath' to '$DataDir/staging/$StagingFileName': $!";
+    $StagingFileName = basename($TmpStagingFullPath);
   }
 
   # See also Patches::Submit() in lib/WineTestBot/Patches.pm
@@ -839,7 +837,7 @@ sub OnSubmit
   {
     # This is a patch so add a build step...
     my $BuildStep = $Steps->Add();
-    $BuildStep->FileName($FileNameRandomPart . "_" . $self->GetParam("FileName"));
+    $BuildStep->FileName($StagingFileName);
     $BuildStep->FileType($FileType);
     $BuildStep->InStaging(1);
     $BuildStep->Type("build");
@@ -888,7 +886,7 @@ sub OnSubmit
         }
         else
         {
-          $TestStep->FileName($FileNameRandomPart . "_" . $self->GetParam("FileName"));
+          $TestStep->FileName($StagingFileName);
           $TestStep->InStaging(1);
         }
         $TestStep->FileType("exe$Bits");

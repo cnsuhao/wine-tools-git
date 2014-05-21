@@ -67,7 +67,7 @@ sub HandleStaging
   }
 
   my $FileName = $self->FileName;
-  if ($FileName !~ m/^[0-9a-f]+_(.*)$/)
+  if ($FileName !~ m/^[0-9a-z-]+_(.*)$/)
   {
     return "Can't split staging filename";
   }
