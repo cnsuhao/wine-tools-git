@@ -36,10 +36,9 @@ require Exporter;
 
 sub _initialize
 {
-  my $self = shift;
-  my $PropertyDescriptors = shift;
+  my ($self, $Request, $RequiredRole, $PropertyDescriptors) = @_;
 
-  $self->SUPER::_initialize(@_);
+  $self->SUPER::_initialize($Request, $RequiredRole);
 
   $self->{PropertyDescriptors} = $PropertyDescriptors;
   $self->{HasRequired} = !1;

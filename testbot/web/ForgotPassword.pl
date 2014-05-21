@@ -31,7 +31,7 @@ use WineTestBot::CGI::Sessions;
 
 sub _initialize
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
 
   $self->GetPageBase()->CheckSecurePage();
 
@@ -39,7 +39,7 @@ sub _initialize
     CreateBasicPropertyDescriptor("Name", "Username or EMail", 1, 1, "A", 40),
   );
 
-  $self->SUPER::_initialize(\@PropertyDescriptors);
+  $self->SUPER::_initialize($Request, $RequiredRole, \@PropertyDescriptors);
 }
 
 sub GetTitle

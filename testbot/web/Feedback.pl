@@ -29,7 +29,7 @@ use WineTestBot::Config;
 
 sub _initialize
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
 
   my @PropertyDescriptors = (
     CreateBasicPropertyDescriptor("Name", "Name", !1, !1, "A", 40),
@@ -37,7 +37,7 @@ sub _initialize
     CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, 1, "A", 1024),
   );
 
-  $self->SUPER::_initialize(\@PropertyDescriptors);
+  $self->SUPER::_initialize($Request, $RequiredRole, \@PropertyDescriptors);
 
   my $Session = $self->GetCurrentSession();
   if (defined($Session))

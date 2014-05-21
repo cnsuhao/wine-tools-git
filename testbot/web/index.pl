@@ -194,9 +194,9 @@ use WineTestBot::VMs;
 
 sub _initialize
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
 
-  $self->SUPER::_initialize(@_);
+  $self->SUPER::_initialize($Request, $RequiredRole);
 }
 
 sub OutputDot

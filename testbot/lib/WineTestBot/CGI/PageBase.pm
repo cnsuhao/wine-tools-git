@@ -68,6 +68,7 @@ sub new
 
 sub _initialize
 {
+  #my ($self, $Page, $Request, $RequiredRole) = @_;
 }
 
 sub CheckSecurePage

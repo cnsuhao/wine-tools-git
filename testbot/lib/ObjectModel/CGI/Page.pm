@@ -37,7 +37,7 @@ require Exporter;
 sub new
 {
   my $class = shift;
-  my $Request = $_[0];
+  my ($Request, $RequiredRole) = @_;
 
   my $self = {Request => $Request,
               CGIObj => CGI->new($Request),
@@ -45,12 +45,13 @@ sub new
               ErrField => undef};
   $self = bless $self, $class;
   $self->{PageBase} = &$PageBaseCreator($self, @_);
-  $self->_initialize(@_);
+  $self->_initialize($Request, $RequiredRole);
   return $self;
 }
 
 sub _initialize
 {
+  #my ($self, $Request, $RequiredRole) = @_;
 }
 
 sub GetParam

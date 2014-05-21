@@ -32,7 +32,7 @@ use WineTestBot::CGI::Sessions;
 
 sub _initialize
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
 
   $self->GetPageBase()->CheckSecurePage();
 
@@ -42,7 +42,7 @@ sub _initialize
     CreateBasicPropertyDescriptor("AutoLogin", "Log me in automatically each visit", !1, !1, "B", 1),
   );
 
-  $self->SUPER::_initialize(\@PropertyDescriptors);
+  $self->SUPER::_initialize($Request, $RequiredRole, \@PropertyDescriptors);
 }
 
 sub GetTitle

@@ -42,7 +42,7 @@ sub _initialize
 
   $self->{Collection} = $Collection;
 
-  $self->SUPER::_initialize($Collection->GetPropertyDescriptors(), @_);
+  $self->SUPER::_initialize($Request, $RequiredRole, $Collection->GetPropertyDescriptors());
 
   if (defined($self->GetParam("Key")))
   {

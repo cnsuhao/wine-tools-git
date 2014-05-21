@@ -29,7 +29,9 @@ use CGI::Cookie;
 
 sub _initialize
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
+
+  $self->SUPER::_initialize($Request, $RequiredRole);
 
   $self->{WasLoggedIn} = undef;
 

@@ -39,7 +39,7 @@ use WineTestBot::VMs;
 
 sub _initialize
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
 
   $self->{Page} = $self->GetParam("Page") || 1;
 
@@ -62,7 +62,7 @@ sub _initialize
     $self->{ShowAll} = defined($self->GetParam("ShowAll"));
   }
 
-  $self->SUPER::_initialize(undef);
+  $self->SUPER::_initialize($Request, $RequiredRole, undef);
 }
 
 sub GetTitle
