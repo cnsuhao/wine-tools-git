@@ -214,3 +214,54 @@ if (%DeletedUsers or %DeletedVMs)
     }
   }
 }
+
+# Check the content of the staging directory
+if (opendir(my $dh, "$DataDir/staging"))
+{
+  # We will be deleting files so read the directory in one go
+  my @Entries = readdir($dh);
+  close($dh);
+  foreach my $Entry (@Entries)
+  {
+    next if ($Entry eq "." or $Entry eq "..");
+    $Entry =~ m%^([^/]+)$%;
+    my $FileName = "$DataDir/staging/$1";
+    my $Age = int((-M $FileName) + 0.5);
+
+    if ($Entry =~ /^[0-9a-f]{32}-websubmit_/)
+    {
+      if ($Age >= 1 and !unlink $FileName)
+      {
+        # The user abandonned the submit procedure half-way
+        LogMsg "Could not delete '$FileName': $!\n" if (!unlink($FileName));
+      }
+    }
+    else
+    {
+      if ($Entry !~ /^[0-9a-f]{32}_(?:patch|patch\.diff|wine-patches|winetest(?:64)?-latest\.exe|work)$/)
+      {
+        LogMsg "Found a suspicious staging file: $Entry\n";
+      }
+
+      if ($JobPurgeDays != 0)
+      {
+        if ($Age >= $JobPurgeDays + 7)
+        {
+          if ((-d $FileName and !rmtree($FileName)) or
+              !unlink($FileName))
+          {
+            LogMsg "Could not delete '$FileName': $!\n";
+          }
+        }
+        elsif ($Age > $JobPurgeDays)
+        {
+          LogMsg "'$FileName' is $Age days old and should have been deleted already. It will be deleted in ", $JobPurgeDays + 7 - $Age, " day(s).\n";
+        }
+      }
+    }
+  }
+}
+else
+{
+  LogMsg "0Unable to open '$DataDir/staging': $!";
+}
