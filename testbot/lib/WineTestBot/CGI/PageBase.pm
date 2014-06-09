@@ -41,7 +41,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(&CreatePageBase);
 
-sub new
+sub new($$$$@)
 {
   my $class = shift;
   my ($Page, $Request, $RequiredRole) = @_;
@@ -66,15 +66,14 @@ sub new
   return $self;
 }
 
-sub _initialize
+sub _initialize($$$$)
 {
   #my ($self, $Page, $Request, $RequiredRole) = @_;
 }
 
-sub CheckSecurePage
+sub CheckSecurePage($$)
 {
-  my $self = shift;
-  my $Page = $_[0];
+  my ($self, $Page) = @_;
 
   if (! $UseSSL || SecureConnection())
   {
@@ -84,9 +83,9 @@ sub CheckSecurePage
   $self->Redirect($Page, MakeSecureURL($ENV{"REQUEST_URI"}));
 }
 
-sub GenerateHttpHeaders
+sub GenerateHttpHeaders($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Request = $self->{Request};
 
@@ -109,9 +108,9 @@ sub GenerateHttpHeaders
   $self->SetCookies();
 }
 
-sub UnsetCookies
+sub UnsetCookies($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Request = $self->{Request};
   my %Cookies = CGI::Cookie->fetch($Request);
@@ -138,9 +137,9 @@ sub UnsetCookies
   delete $Request->headers_in->{"Cookie"};
 }
 
-sub SetCookies
+sub SetCookies($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Request = $self->{Request};
   if ($self->SessionActive())
@@ -196,10 +195,9 @@ sub SetCookies
   }
 }
 
-sub GetPageTitle
+sub GetPageTitle($$)
 {
-  my $self = shift;
-  my $Page = $_[0];
+  my ($self, $Page) = @_;
 
   my $Title = $Page->GetTitle() || "";
   $Title .= " - " if ($Title ne "");
@@ -207,10 +205,9 @@ sub GetPageTitle
   return $Title;
 }
 
-sub GenerateHeader
+sub GenerateHeader($$)
 {
-  my $self = shift;
-  my $Page = $_[0];
+  my ($self, $Page) = @_;
 
   my $Title = $Page->CGI->escapeHTML($Page->GetPageTitle());
   print <<EOF;
@@ -324,9 +321,9 @@ EOF
 EOF
 }
 
-sub GenerateFooter
+sub GenerateFooter($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   print <<EOF;
     </div>
@@ -339,10 +336,9 @@ sub GenerateFooter
 EOF
 }
 
-sub GenerateErrorDiv
+sub GenerateErrorDiv($$)
 {
-  my $self = shift;
-  my $Page = shift;
+  my ($self, $Page) = @_;
 
   my $ErrMessage = $Page->GetErrMessage();
   if ($ErrMessage)
@@ -353,10 +349,9 @@ sub GenerateErrorDiv
   }
 }
 
-sub GenerateErrorPopup
+sub GenerateErrorPopup($$)
 {
-  my $self = shift;
-  my $Page = shift;
+  my ($self, $Page) = @_;
 
   my $ErrMessage = $Page->GetErrMessage();
   if ($ErrMessage)
@@ -375,17 +370,16 @@ sub GenerateErrorPopup
   }
 }
 
-sub GenerateBody
+sub GenerateBody($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   die "Pure virtual function " . ref($self) . "::GenerateBody called";
 }
 
-sub GetOnLoadJavascriptFunction
+sub GetOnLoadJavascriptFunction($$)
 {
-  my $self = shift;
-  my $Page = $_[0];
+  my ($self, $Page) = @_;
 
   if ($Page->GetErrMessage())
   {
@@ -395,10 +389,9 @@ sub GetOnLoadJavascriptFunction
   return undef;
 }
 
-sub Redirect
+sub Redirect($$$)
 {
-  my $self = shift;
-  my ($Page, $Location) = @_;
+  my ($self, $Page, $Location) = @_;
 
   $self->SetCookies();
   if (substr($Location, 0, 4) ne "http")
@@ -422,9 +415,9 @@ sub Redirect
   exit;
 }
 
-sub GetCurrentSession
+sub GetCurrentSession($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if ($UseSSL && ! SecureConnection())
   {
@@ -445,10 +438,9 @@ sub GetCurrentSession
   return $self->{Session};
 }
 
-sub SetCurrentSession
+sub SetCurrentSession($$$)
 {
-  my $self = shift;
-  my ($Page, $Session) = @_;
+  my ($self, $Page, $Session) = @_;
 
   $self->{Session} = $Session;
   if (! defined($Session))
@@ -457,9 +449,9 @@ sub SetCurrentSession
   }
 }
 
-sub SessionActive
+sub SessionActive($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (defined($self->GetCurrentSession()))
   {
@@ -475,8 +467,9 @@ sub SessionActive
   return !1;
 }
 
-sub CreatePageBase
+sub CreatePageBase($$$@)
 {
+  #my ($Page, $Request, $RequiredRole) = @_;
   return WineTestBot::CGI::PageBase->new(@_);
 }
 

@@ -34,19 +34,19 @@ use vars qw(@ISA @EXPORT);
 require Exporter;
 @ISA = qw(ObjectModel::CGI::Page Exporter);
 
-sub _initialize
+
+sub _initialize($$$$)
 {
-  my $self = shift;
-  my ($Request, $RequiredRole, $Collection) = @_;
+  my ($self, $Request, $RequiredRole, $Collection) = @_;
 
   $self->{Collection} = $Collection;
 
   $self->SUPER::_initialize($Request, $RequiredRole);
 }
 
-sub GeneratePage
+sub GeneratePage($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if ($self->GetParam("Action"))
   {
@@ -55,12 +55,12 @@ sub GeneratePage
                                                $self->GetParam("Action"));
   }
 
-  $self->SUPER::GeneratePage(@_);
+  $self->SUPER::GeneratePage();
 }
 
-sub GenerateTitle
+sub GenerateTitle($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Title = $self->GetTitle();
   if ($Title)
@@ -69,9 +69,9 @@ sub GenerateTitle
   }
 }
 
-sub GenerateBody
+sub GenerateBody($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   print "<div class='CollectionPageBody'>\n";
   $self->GenerateTitle();
@@ -82,124 +82,109 @@ sub GenerateBody
   print "</div>\n";
 }
 
-sub GenerateFormStart
+sub GenerateFormStart($$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
+  my ($self, $CollectionBlock) = @_;
 
-  $CollectionBlock->GenerateFormStart(@_);
+  $CollectionBlock->GenerateFormStart();
 }
 
-sub GenerateFormEnd
+sub GenerateFormEnd($$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
+  my ($self, $CollectionBlock) = @_;
 
-  $CollectionBlock->GenerateFormEnd(@_);
+  $CollectionBlock->GenerateFormEnd();
 }
 
-sub GenerateHeaderRow
+sub GenerateHeaderRow($$$$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
+  my ($self, $CollectionBlock, $PropertyDescriptors, $Actions) = @_;
 
-  $CollectionBlock->GenerateHeaderRow(@_);
+  $CollectionBlock->GenerateHeaderRow($PropertyDescriptors, $Actions);
 }
 
-sub GenerateDataRow
+sub GenerateDataRow($$$$$$$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
+  my ($self, $CollectionBlock, $Item, $PropertyDescriptors, $DetailsPage, $Class, $Actions) = @_;
 
-  $CollectionBlock->GenerateDataRow(@_);
+  $CollectionBlock->GenerateDataRow($Item, $PropertyDescriptors, $DetailsPage, $Class, $Actions);
 }
 
-sub GenerateDataCell
+sub GenerateDataCell($$$$$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
+  my ($self, $CollectionBlock, $Item, $PropertyDescriptor, $DetailsPage) = @_;
 
-  $CollectionBlock->GenerateDataCell(@_);
+  $CollectionBlock->GenerateDataCell($Item, $PropertyDescriptor, $DetailsPage);
 }
 
-sub CreateCollectionBlock
+sub CreateCollectionBlock($$)
 {
-  my $self = shift;
-  my $Collection = $_[0];
+  my ($self, $Collection) = @_;
 
   return ObjectModel::CGI::CollectionBlockForPage->new($Collection, $self);
 }
 
-sub GetDetailsPage
+sub GetDetailsPage($$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
+  my ($self, $CollectionBlock) = @_;
 
-  return $CollectionBlock->GetDetailsPage(@_);
+  return $CollectionBlock->GetDetailsPage();
 }
 
-sub GetTitle
+sub GetTitle($)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
+  my ($self) = @_;
 
   return ucfirst($self->{Collection}->GetCollectionName());
 }
 
-sub GetItemActions
+sub GetItemActions($$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
+  my ($self, $CollectionBlock) = @_;
 
-  return $CollectionBlock->GetItemActions(@_);
+  return $CollectionBlock->GetItemActions();
 }
 
-sub GetActions
+sub GetActions($$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
+  my ($self, $CollectionBlock) = @_;
 
-  return $CollectionBlock->GetActions(@_);
+  return $CollectionBlock->GetActions();
 }
 
-sub DisplayProperty
+sub DisplayProperty($$$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
+  my ($self, $CollectionBlock, $PropertyDescriptor) = @_;
 
-  return $CollectionBlock->DisplayProperty(@_);
+  return $CollectionBlock->DisplayProperty($PropertyDescriptor);
 }
 
-sub OnAction
+sub OnAction($$$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
+  my ($self, $CollectionBlock, $Action) = @_;
 
-  $CollectionBlock->OnAction(@_);
+  $CollectionBlock->OnAction($Action);
 }
 
-sub OnItemAction
+sub OnItemAction($$$$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
+  my ($self, $CollectionBlock, $Item, $Action) = @_;
 
-  return $CollectionBlock->OnItemAction(@_);
+  return $CollectionBlock->OnItemAction($Item, $Action);
 }
 
-sub GetDisplayValue
+sub GetDisplayValue($$$$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
+  my ($self, $CollectionBlock, $Item, $PropertyDescriptor) = @_;
 
-  return $CollectionBlock->GetDisplayValue(@_);
+  return $CollectionBlock->GetDisplayValue($Item, $PropertyDescriptor);
 }
 
-sub SortKeys
+sub SortKeys($$$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
+  my ($self, $CollectionBlock, $Keys) = @_;
 
-  return $CollectionBlock->SortKeys(@_);
+  return $CollectionBlock->SortKeys($Keys);
 }
 
 1;

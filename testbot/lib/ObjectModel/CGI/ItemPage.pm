@@ -35,10 +35,9 @@ use vars qw(@ISA @EXPORT);
 require Exporter;
 @ISA = qw(ObjectModel::CGI::FormPage Exporter);
 
-sub _initialize
+sub _initialize($$$$)
 {
-  my $self = shift;
-  my ($Request, $RequiredRole, $Collection) = @_;
+  my ($self, $Request, $RequiredRole, $Collection) = @_;
 
   $self->{Collection} = $Collection;
 
@@ -58,9 +57,9 @@ sub _initialize
   }
 }
 
-sub GenerateFormStart
+sub GenerateFormStart($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->SUPER::GenerateFormStart();
 
@@ -81,18 +80,17 @@ sub GenerateFormStart
   }
 }
 
-sub GetPropertyValue
+sub GetPropertyValue($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = $_[0];
+  my ($self, $PropertyDescriptor) = @_;
 
   my $PropertyName = $PropertyDescriptor->GetName();
   return $self->{Item}->$PropertyName;
 }
 
-sub GetTitle
+sub GetTitle($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Title;
   if ($self->GetParam("Key"))
@@ -107,12 +105,11 @@ sub GetTitle
   return $self->escapeHTML($Title);
 }
 
-sub DisplayProperty
+sub DisplayProperty($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = $_[0];
+  my ($self, $PropertyDescriptor) = @_;
 
-  my $Display = $self->SUPER::DisplayProperty(@_);
+  my $Display = $self->SUPER::DisplayProperty($PropertyDescriptor);
   if ($Display eq "rw" && ! $self->{Item}->GetIsNew() &&
       $PropertyDescriptor->GetIsKey())
   {
@@ -122,9 +119,9 @@ sub DisplayProperty
   return $Display;
 }
 
-sub GetActions
+sub GetActions($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my @Actions = @{$self->SUPER::GetActions()};
   $Actions[@Actions] = "OK";
@@ -133,10 +130,9 @@ sub GetActions
   return \@Actions;
 }
 
-sub SaveProperty
+sub SaveProperty($$$)
 {
-  my $self = shift;
-  my ($PropertyDescriptor, $Value) = @_;
+  my ($self, $PropertyDescriptor, $Value) = @_;
 
   if ($PropertyDescriptor->GetClass() eq "Basic" &&
       $PropertyDescriptor->GetType() eq "B" && $Value)
@@ -150,10 +146,9 @@ sub SaveProperty
   return 1;
 }
 
-sub OnAction
+sub OnAction($$)
 {
-  my $self = shift;
-  my $Action = $_[0];
+  my ($self, $Action) = @_;
 
   if ($Action eq "OK")
   {
@@ -167,12 +162,12 @@ sub OnAction
     exit;
   }
 
-  return $self->SUPER::OnAction(@_);
+  return $self->SUPER::OnAction($Action);
 }
 
-sub RedirectToList
+sub RedirectToList($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Target = $self->{Collection}->GetCollectionName() . "List.pl";
   my ($MasterColNames, $MasterColValues) = $self->{Collection}->GetMasterCols();

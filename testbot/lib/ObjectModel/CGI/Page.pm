@@ -34,10 +34,10 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(new SetPageBaseCreator);
 
-sub new
+sub new($$$@)
 {
   my $class = shift;
-  my ($Request, $RequiredRole) = @_;
+  my ($Request, $_RequiredRole) = @_;
 
   my $self = {Request => $Request,
               CGIObj => CGI->new($Request),
@@ -49,112 +49,121 @@ sub new
   return $self;
 }
 
-sub _initialize
+sub _initialize($$$)
 {
   #my ($self, $Request, $RequiredRole) = @_;
 }
 
-sub GetParam
+=pod
+=over 12
+
+=head1 C<GetParam()>
+
+This thunks to CGI::param() and thus takes the same arguments list.
+
+=back
+=cut
+
+sub GetParam($@)
 {
   my $self = shift;
 
   return $self->{CGIObj}->param(@_);
 }
 
-sub CGI
+sub CGI($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{CGIObj};
 }
 
-sub escapeHTML
+sub escapeHTML($$)
 {
-  my $self = shift;
+  my ($self, $String) = @_;
 
-  return $self->{CGIObj}->escapeHTML(@_);
+  return $self->{CGIObj}->escapeHTML($String);
 }
 
-sub GetPageBase
+sub GetPageBase($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{PageBase};
 }
 
-sub GenerateHttpHeaders
+sub GenerateHttpHeaders($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{PageBase}->GenerateHttpHeaders($self);
 }
 
-sub UnsetCookies
+sub UnsetCookies($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{PageBase}->UnsetCookies($self);
 }
 
-sub SetCookies
+sub SetCookies($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{PageBase}->SetCookies($self);
 }
 
-sub GetPageTitle
+sub GetPageTitle($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{PageBase}->GetPageTitle($self);
 }
 
-sub GetTitle
+sub GetTitle($)
 {
-  my $self = shift;
-
+  #my ($self) = @_;
   return undef;
 }
 
-sub GenerateHeader
+sub GenerateHeader($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{PageBase}->GenerateHeader($self);
 }
 
-sub GenerateFooter
+sub GenerateFooter($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{PageBase}->GenerateFooter($self);
 }
 
-sub GenerateErrorDiv
+sub GenerateErrorDiv($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{PageBase}->GenerateErrorDiv($self);
 }
 
-sub GenerateErrorPopup
+sub GenerateErrorPopup($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{PageBase}->GenerateErrorPopup($self);
 }
 
-sub GenerateBody
+sub GenerateBody($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   die "Pure virtual function " . ref($self) . "::GenerateBody called";
 }
 
-sub GeneratePage
+sub GeneratePage($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->GenerateHttpHeaders();
   $self->GenerateHeader();
@@ -162,44 +171,44 @@ sub GeneratePage
   $self->GenerateFooter();
 }
 
-sub Redirect
+sub Redirect($$)
 {
-  my $self = shift;
+  my ($self, $Location) = @_;
 
-  $self->{PageBase}->Redirect($self, @_);
+  $self->{PageBase}->Redirect($self, $Location);
 }
 
-sub GetCurrentSession
+sub GetCurrentSession($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{PageBase}->GetCurrentSession();
 }
 
-sub SetCurrentSession
+sub SetCurrentSession($$)
 {
-  my $self = shift;
+  my ($self, $Session) = @_;
 
-  $self->{PageBase}->SetCurrentSession($self, @_);
+  $self->{PageBase}->SetCurrentSession($self, $Session);
 }
 
-sub GetErrMessage
+sub GetErrMessage($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{ErrMessage};
 }
 
-sub GetErrField
+sub GetErrField($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{ErrField};
 }
 
-sub SetPageBaseCreator
+sub SetPageBaseCreator($)
 {
-  $PageBaseCreator = shift;
+  ($PageBaseCreator) = @_;
 }
 
 1;

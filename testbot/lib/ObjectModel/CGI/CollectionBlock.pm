@@ -36,7 +36,7 @@ require Exporter;
 
 @EXPORT = qw(new);
 
-sub new
+sub new($$$@)
 {
   my $class = shift;
   my ($Collection, $EnclosingPage) = @_;
@@ -48,20 +48,21 @@ sub new
   return $self;
 }
 
-sub _initialize
+sub _initialize($$$)
 {
+  #my ($self, $Collection, $EnclosingPage) = @_;
 }
 
-sub escapeHTML
+sub escapeHTML($$)
 {
-  my $self = shift;
+  my ($self, $String) = @_;
 
-  return $self->{EnclosingPage}->escapeHTML(@_);
+  return $self->{EnclosingPage}->escapeHTML($String);
 }
 
-sub GenerateList
+sub GenerateList($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Collection = $self->{Collection};
   my $PropertyDescriptors = $Collection->GetPropertyDescriptors();
@@ -168,16 +169,16 @@ EOF
   print "</div>\n";
 }
 
-sub CallGenerateFormStart
+sub CallGenerateFormStart($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
-  $self->GenerateFormStart(@_);
+  $self->GenerateFormStart();
 }
 
-sub GenerateFormStart
+sub GenerateFormStart($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   print "<form action='" . $ENV{"SCRIPT_NAME"} . "' method='post'>\n";
   my ($MasterColNames, $MasterColValues) = $self->{Collection}->GetMasterCols();
@@ -192,45 +193,43 @@ sub GenerateFormStart
   }
 }
 
-sub CallGenerateErrorDiv
+sub CallGenerateErrorDiv($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{EnclosingPage}->GenerateErrorDiv();
 }
 
-sub CallGenerateErrorPopup
+sub CallGenerateErrorPopup($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{EnclosingPage}->GenerateErrorPopup();
 }
 
-sub CallGenerateFormEnd
+sub CallGenerateFormEnd($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
-  $self->GenerateFormEnd(@_);
+  $self->GenerateFormEnd();
 }
 
-sub GenerateFormEnd
+sub GenerateFormEnd($)
 {
-  my $self = shift;
-
+  #my ($self) = @_;
   print "</form>\n";
 }
 
-sub CallGenerateHeaderRow
+sub CallGenerateHeaderRow($$$)
 {
-  my $self = shift;
+  my ($self, $PropertyDescriptors, $Actions) = @_;
 
-  $self->GenerateHeaderRow(@_);
+  $self->GenerateHeaderRow($PropertyDescriptors, $Actions);
 }
 
-sub GenerateHeaderRow
+sub GenerateHeaderRow($$$)
 {
-  my $self = shift;
-  my ($PropertyDescriptors, $Actions) = @_;
+  my ($self, $PropertyDescriptors, $Actions) = @_;
 
   print "<tr>\n";
   if (@$Actions != 0)
@@ -249,26 +248,24 @@ sub GenerateHeaderRow
   print "</tr>\n";
 }
 
-sub CallGenerateDataRow
+sub CallGenerateDataRow($$$$$$)
 {
-  my $self = shift;
+  my ($self, $Item, $PropertyDescriptors, $DetailsPage, $Class, $Actions) = @_;
 
-  $self->GenerateDataRow(@_);
+  $self->GenerateDataRow($Item, $PropertyDescriptors, $DetailsPage, $Class, $Actions);
 }
 
-sub SelName
+sub SelName($$)
 {
-  my $self = shift;
-  my $Key = $_[0];
+  my ($self, $Key) = @_;
 
   $Key =~ s/[^0-9a-zA-Z]+/_/g;
   return "sel_" . $Key;
 }
 
-sub GenerateDataRow
+sub GenerateDataRow($$$$$$)
 {
-  my $self = shift;
-  my ($Item, $PropertyDescriptors, $DetailsPage, $Class, $Actions) = @_;
+  my ($self, $Item, $PropertyDescriptors, $DetailsPage, $Class, $Actions) = @_;
 
   print "<tr class='$Class'>\n";
   if (@$Actions != 0)
@@ -286,17 +283,16 @@ sub GenerateDataRow
   print "</tr>\n";
 }
 
-sub CallGenerateDataCell
+sub CallGenerateDataCell($$$$)
 {
-  my $self = shift;
+  my ($self, $Item, $PropertyDescriptor, $DetailsPage) = @_;
 
-  return $self->GenerateDataCell(@_);
+  return $self->GenerateDataCell($Item, $PropertyDescriptor, $DetailsPage);
 }
 
-sub GenerateDataCell
+sub GenerateDataCell($$$$)
 {
-  my $self = shift;
-  my ($Item, $PropertyDescriptor, $DetailsPage) = @_;
+  my ($self, $Item, $PropertyDescriptor, $DetailsPage) = @_;
 
   print "<td>";
   my $NeedLink;
@@ -330,42 +326,43 @@ sub GenerateDataCell
   print "</td>\n";
 }
 
-sub CallGetDetailsPage
+sub CallGetDetailsPage($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
-  return $self->GetDetailsPage(@_);
+  return $self->GetDetailsPage();
 }
 
-sub GetDetailsPage
+sub GetDetailsPage($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{Collection}->GetItemName() . "Details.pl";
 }
 
-sub CallGetItemActions
+sub CallGetItemActions($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
-  return $self->GetItemActions(@_);
+  return $self->GetItemActions();
 }
 
-sub GetItemActions
+sub GetItemActions($)
 {
+  #my ($self) = @_;
   return ["Delete"];
 }
 
-sub CallGetActions
+sub CallGetActions($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
-  return $self->GetActions(@_);
+  return $self->GetActions();
 }
 
-sub GetActions
+sub GetActions($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my @Actions;
   if ($self->CallGetDetailsPage())
@@ -381,39 +378,37 @@ sub GetActions
   return \@Actions;
 }
 
-sub CallDisplayProperty
+sub CallDisplayProperty($$)
 {
-  my $self = shift;
+  my ($self, $PropertyDescriptor) = @_;
 
-  return $self->DisplayProperty(@_);
+  return $self->DisplayProperty($PropertyDescriptor);
 }
 
-sub DisplayProperty
+sub DisplayProperty($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = $_[0];
+  my ($self, $PropertyDescriptor) = @_;
 
   return $PropertyDescriptor->GetClass ne "Detailref";
 }
 
-sub CallGetEscapedDisplayValue
+sub CallGetEscapedDisplayValue($$$)
 {
-  my $self = shift;
+  my ($self, $Item, $PropertyDescriptor) = @_;
 
-  return $self->GetEscapedDisplayValue(@_);
+  return $self->GetEscapedDisplayValue($Item, $PropertyDescriptor);
 }
 
-sub CallGetDisplayValue
+sub CallGetDisplayValue($$$)
 {
-  my $self = shift;
+  my ($self, $Item, $PropertyDescriptor) = @_;
 
-  return $self->GetDisplayValue(@_);
+  return $self->GetDisplayValue($Item, $PropertyDescriptor);
 }
 
-sub GetDisplayValue
+sub GetDisplayValue($$$)
 {
-  my $self = shift;
-  my ($Item, $PropertyDescriptor) = @_;
+  my ($self, $Item, $PropertyDescriptor) = @_;
 
   my $PropertyName = $PropertyDescriptor->GetName();
   my $Value = $Item->$PropertyName;
@@ -457,10 +452,9 @@ $Value =
   return $Value;
 }
 
-sub GetEscapedDisplayValue
+sub GetEscapedDisplayValue($$$)
 {
-  my $self = shift;
-  my ($Item, $PropertyDescriptor) = @_;
+  my ($self, $Item, $PropertyDescriptor) = @_;
 
   my $PropertyName = $PropertyDescriptor->GetName();
   my $Value = $Item->$PropertyName;
@@ -486,10 +480,9 @@ sub GetEscapedDisplayValue
   return $Value;
 }
 
-sub OnAction
+sub OnAction($$)
 {
-  my $self = shift;
-  my $Action = $_[0];
+  my ($self, $Action) = @_;
 
   if ($Action eq "Cancel")
   {
@@ -525,17 +518,16 @@ sub OnAction
   }
 }
 
-sub CallOnItemAction
+sub CallOnItemAction($$$)
 {
-  my $self = shift;
+  my ($self, $Item, $Action) = @_;
 
-  return $self->OnItemAction(@_);
+  return $self->OnItemAction($Item, $Action);
 }
 
-sub OnItemAction
+sub OnItemAction($$$)
 {
-  my $self = shift;
-  my ($Item, $Action) = @_;
+  my ($self, $Item, $Action) = @_;
 
   if ($Action eq "Delete")
   {
@@ -547,17 +539,16 @@ sub OnItemAction
   return 1;
 }
 
-sub CallSortKeys
+sub CallSortKeys($$)
 {
-  my $self = shift;
+  my ($self, $Keys) = @_;
 
-  return $self->SortKeys(@_);
+  return $self->SortKeys($Keys);
 }
 
-sub SortKeys
+sub SortKeys($$)
 {
-  my $self = shift;
-  my $Keys = $_[0];
+  my ($self, $Keys) = @_;
 
   return $Keys;
 }

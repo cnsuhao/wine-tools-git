@@ -33,88 +33,88 @@ use vars qw(@ISA @EXPORT);
 require Exporter;
 @ISA = qw(ObjectModel::CGI::CollectionBlock Exporter);
 
-sub CallGenerateFormStart
+sub CallGenerateFormStart($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{EnclosingPage}->GenerateFormStart($self);
 }
 
-sub CallGenerateFormEnd
+sub CallGenerateFormEnd($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{EnclosingPage}->GenerateFormEnd($self);
 }
 
-sub CallGenerateHeaderRow
+sub CallGenerateHeaderRow($$$)
 {
-  my $self = shift;
+  my ($self, $PropertyDescriptors, $Actions) = @_;
 
-  $self->{EnclosingPage}->GenerateHeaderRow($self, @_);
+  $self->{EnclosingPage}->GenerateHeaderRow($self, $PropertyDescriptors, $Actions);
 }
 
-sub CallGenerateDataRow
+sub CallGenerateDataRow($$$$$$)
 {
-  my $self = shift;
+  my ($self, $Item, $PropertyDescriptors, $DetailsPage, $Class, $Actions) = @_;
 
-  $self->{EnclosingPage}->GenerateDataRow($self, @_);
+  $self->{EnclosingPage}->GenerateDataRow($self, $Item, $PropertyDescriptors, $DetailsPage, $Class, $Actions);
 }
 
-sub CallGenerateDataCell
+sub CallGenerateDataCell($$$$)
 {
-  my $self = shift;
+  my ($self, $Item, $PropertyDescriptor, $DetailsPage) = @_;
 
-  return $self->{EnclosingPage}->GenerateDataCell($self, @_);
+  return $self->{EnclosingPage}->GenerateDataCell($self, $Item, $PropertyDescriptor, $DetailsPage);
 }
 
-sub CallGetDetailsPage
+sub CallGetDetailsPage($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
-  return $self->{EnclosingPage}->GetDetailsPage($self, @_);
+  return $self->{EnclosingPage}->GetDetailsPage($self);
 }
 
-sub CallGetItemActions
+sub CallGetItemActions($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
-  return $self->{EnclosingPage}->GetItemActions($self, @_);
+  return $self->{EnclosingPage}->GetItemActions($self);
 }
 
-sub CallGetActions
+sub CallGetActions($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
-  return $self->{EnclosingPage}->GetActions($self, @_);
+  return $self->{EnclosingPage}->GetActions($self);
 }
 
-sub CallDisplayProperty
+sub CallDisplayProperty($$)
 {
-  my $self = shift;
+  my ($self, $PropertyDescriptor) = @_;
 
-  return $self->{EnclosingPage}->DisplayProperty($self, @_);
+  return $self->{EnclosingPage}->DisplayProperty($self, $PropertyDescriptor);
 }
 
-sub CallGetDisplayValue
+sub CallGetDisplayValue($$$)
 {
-  my $self = shift;
+  my ($self, $Item, $PropertyDescriptor) = @_;
 
-  return $self->{EnclosingPage}->GetDisplayValue($self, @_);
+  return $self->{EnclosingPage}->GetDisplayValue($self, $Item, $PropertyDescriptor);
 }
 
-sub CallOnItemAction
+sub CallOnItemAction($$$)
 {
-  my $self = shift;
+  my ($self, $Item, $Action) = @_;
 
-  return $self->{EnclosingPage}->OnItemAction($self, @_);
+  return $self->{EnclosingPage}->OnItemAction($self, $Item, $Action);
 }
 
-sub CallSortKeys
+sub CallSortKeys($$)
 {
-  my $self = shift;
+  my ($self, $Keys) = @_;
 
-  return $self->{EnclosingPage}->SortKeys($self, @_);
+  return $self->{EnclosingPage}->SortKeys($self, $Keys);
 }
 
 1;

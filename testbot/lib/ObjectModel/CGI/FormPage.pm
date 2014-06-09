@@ -34,7 +34,7 @@ use vars qw(@ISA @EXPORT);
 require Exporter;
 @ISA = qw(ObjectModel::CGI::Page Exporter);
 
-sub _initialize
+sub _initialize($$$$)
 {
   my ($self, $Request, $RequiredRole, $PropertyDescriptors) = @_;
 
@@ -45,17 +45,16 @@ sub _initialize
   $self->{ActionPerformed} = !1;
 }
 
-sub GetPropertyDescriptors
+sub GetPropertyDescriptors($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{PropertyDescriptors};
 }
 
-sub GetPropertyDescriptorByName
+sub GetPropertyDescriptorByName($$)
 {
-  my $self = shift;
-  my $Name = shift;
+  my ($self, $Name) = @_;
 
   my $PropertyDescriptors = $self->GetPropertyDescriptors();
   foreach my $PropertyDescriptor (@{$PropertyDescriptors})
@@ -69,21 +68,21 @@ sub GetPropertyDescriptorByName
   return undef;
 }
 
-sub GeneratePage
+sub GeneratePage($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if ($self->GetParam("Action"))
   {
     $self->{ActionPerformed} = $self->OnAction($self->GetParam("Action"));
   }
 
-  $self->SUPER::GeneratePage(@_);
+  $self->SUPER::GeneratePage();
 }
 
-sub GenerateTitle
+sub GenerateTitle($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Title = $self->GetTitle();
   if ($Title)
@@ -92,9 +91,9 @@ sub GenerateTitle
   }
 }
 
-sub GenerateBody
+sub GenerateBody($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   print "<div class='ItemBody'>\n";
   $self->GenerateTitle();
@@ -134,15 +133,16 @@ sub GenerateBody
   print "</div>\n";
 }
 
-sub GenerateFormStart
+sub GenerateFormStart($)
 {
+  #my ($self) = @_;
   print "<form action='" . $ENV{"SCRIPT_NAME"} .
        "' method='post' enctype='multipart/form-data'>\n";
 }
 
-sub GenerateFields
+sub GenerateFields($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $PropertyDescriptors = $self->GetPropertyDescriptors();
   foreach my $PropertyDescriptor (@{$PropertyDescriptors})
@@ -159,9 +159,9 @@ sub GenerateFields
   }
 }
 
-sub GenerateRequiredLegend
+sub GenerateRequiredLegend($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if ($self->{HasRequired})
   {
@@ -169,9 +169,9 @@ sub GenerateRequiredLegend
   }
 }
 
-sub GenerateActions
+sub GenerateActions($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   print "<div class='ItemActions'>\n";
   foreach my $Action (@{$self->GetActions()})
@@ -181,20 +181,21 @@ sub GenerateActions
   print "</div>\n";
 }
 
-sub GenerateFormEnd
+sub GenerateFormEnd($)
 {
+  #my ($self) = @_;
   print "</form>\n";
 }
 
-sub GetPropertyValue
+sub GetPropertyValue($$)
 {
+  #my ($self, $PropertyDescriptor) = @_;
   return undef;
 }
 
-sub GetDisplayValue
+sub GetDisplayValue($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = shift;
+  my ($self, $PropertyDescriptor) = @_;
 
   my $Value;
   if (defined($self->GetParam($PropertyDescriptor->GetName())))
@@ -209,18 +210,16 @@ sub GetDisplayValue
   return $Value;
 }
 
-sub GetDisplayName
+sub GetDisplayName($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = shift;
+  my ($self, $PropertyDescriptor) = @_;
 
   return $PropertyDescriptor->GetDisplayName();
 }
 
-sub GetInputType
+sub GetInputType($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = shift;
+  my ($self, $PropertyDescriptor) = @_;
 
   if ($PropertyDescriptor->GetClass() eq "Enum")
   {
@@ -235,10 +234,9 @@ sub GetInputType
   return "text";
 }
 
-sub GenerateField
+sub GenerateField($$$)
 {
-  my $self = shift;
-  my ($PropertyDescriptor, $Display) = @_;
+  my ($self, $PropertyDescriptor, $Display) = @_;
 
   my $Value = $self->GetDisplayValue($PropertyDescriptor);
   if ($Display eq "rw")
@@ -314,10 +312,9 @@ sub GenerateField
   }
 }
 
-sub GenerateRequired
+sub GenerateRequired($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = shift;
+  my ($self, $PropertyDescriptor) = @_;
 
   if ($PropertyDescriptor->GetIsRequired())
   {
@@ -326,25 +323,27 @@ sub GenerateRequired
   }
 }
 
-sub GetTitle
+sub GetTitle($)
 {
+  #my ($self) = @_;
   return undef;
 }
 
-sub GetHeaderText
+sub GetHeaderText($)
 {
+  #my ($self) = @_;
   return undef;
 }
 
-sub GetFooterText
+sub GetFooterText($)
 {
+  #my ($self) = @_;
   return undef;
 }
 
-sub DisplayProperty
+sub DisplayProperty($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = $_[0];
+  my ($self, $PropertyDescriptor) = @_;
 
   if ($PropertyDescriptor->GetClass() eq "Detailref")
   {
@@ -354,19 +353,21 @@ sub DisplayProperty
   return "rw";
 }
 
-sub GetActions
+sub GetActions($)
 {
+  #my ($self) = @_;
   return [];
 }
 
-sub SaveProperty
+sub SaveProperty($$$)
 {
+  #my ($self, $PropertyDescriptor, $Value) = @_;
   die "Pure virtual function FormPage::SaveProperty called";
 }
 
-sub Save
+sub Save($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my @ParamNames = $self->GetParam();
   foreach my $ParameterName (@ParamNames)
@@ -401,17 +402,16 @@ sub Save
   return ! defined($self->{ErrMessage});
 }
 
-sub OnAction
+sub OnAction($$)
 {
-  my $self = shift;
-  my $Action = $_[0];
+  my ($self, $Action) = @_;
 
   die "No action defined for $Action";
 }
 
-sub Validate
+sub Validate($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $PropertyDescriptors = $self->GetPropertyDescriptors();
   foreach my $PropertyDescriptor (@{$PropertyDescriptors})

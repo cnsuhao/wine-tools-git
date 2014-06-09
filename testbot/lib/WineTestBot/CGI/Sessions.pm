@@ -34,7 +34,7 @@ require Exporter;
 use vars qw(@ISA @EXPORT);
 @ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
-sub InitializeNew
+sub InitializeNew($$)
 {
   my ($self, $Collection) = @_;
 
@@ -68,16 +68,16 @@ BEGIN
   );
 }
 
-sub CreateItem
+sub CreateItem($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return WineTestBot::CGI::Session->new($self);
 }
 
 sub DeleteNonPermanentSessions($)
 {
-  my $User = $_[0];
+  my ($User) = @_;
 
   my $Sessions = CreateSessions();
   $Sessions->AddFilter("User", [$User]);
@@ -87,17 +87,16 @@ sub DeleteNonPermanentSessions($)
 
 sub DeleteSessions($)
 {
-  my $User = $_[0];
+  my ($User) = @_;
 
   my $Sessions = CreateSessions();
   $Sessions->AddFilter("User", [$User]);
   map { $Sessions->DeleteItem($_); } @{$Sessions->GetItems()};
 }
 
-sub NewSession
+sub NewSession($$$)
 {
-  my $self = shift;
-  my ($User, $Permanent) = @_;
+  my ($self, $User, $Permanent) = @_;
 
   DeleteNonPermanentSessions($User);
 
