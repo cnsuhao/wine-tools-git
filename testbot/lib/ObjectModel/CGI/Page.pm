@@ -45,7 +45,7 @@ sub new
               ErrField => undef};
   $self = bless $self, $class;
   $self->{PageBase} = &$PageBaseCreator($self, @_);
-  $self->_initialize($Request, $RequiredRole);
+  $self->_initialize(@_);
   return $self;
 }
 
