@@ -25,7 +25,7 @@ use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::Steps;
 
-sub GetFile
+sub GetFile($$$$)
 {
   my ($Request, $JobKey, $StepKey, $TaskKey) = @_;
 

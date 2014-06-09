@@ -30,7 +30,7 @@ use WineTestBot::CGI::Sessions;
 
 @LoginPage::ISA = qw(ObjectModel::CGI::FreeFormPage);
 
-sub _initialize
+sub _initialize($$$)
 {
   my ($self, $Request, $RequiredRole) = @_;
 
@@ -45,34 +45,35 @@ sub _initialize
   $self->SUPER::_initialize($Request, $RequiredRole, \@PropertyDescriptors);
 }
 
-sub GetTitle
+sub GetTitle($)
 {
+  #my ($self) = @_;
   return "Log in";
 }
 
-sub GetFooterText
+sub GetFooterText($)
 {
+  #my ($self) = @_;
   return defined($LDAPServer) ? "" :
          "<a href='ForgotPassword.pl'>I forgot my password</a><br>\n" .
          "<a href='Register.pl'>I want to register an account</a>";
 }
 
-sub GetInputType
+sub GetInputType($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = $_[0];
+  my ($self, $PropertyDescriptor) = @_;
 
   if ($PropertyDescriptor->GetName() eq "Password")
   {
     return "password";
   }
 
-  return $self->SUPER::GetInputType(@_);
+  return $self->SUPER::GetInputType($PropertyDescriptor);
 }
 
-sub GenerateFields
+sub GenerateFields($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (defined($self->GetParam("Target")))
   {
@@ -80,12 +81,12 @@ sub GenerateFields
           escapeHTML($self->GetParam("Target")), "'></div>\n";
   }
 
-  $self->SUPER::GenerateFields(@_);
+  $self->SUPER::GenerateFields();
 }
 
-sub GetActions
+sub GetActions($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Actions = $self->SUPER::GetActions();
   push(@$Actions, "Log in");
@@ -93,9 +94,9 @@ sub GetActions
   return $Actions;
 }
 
-sub OnLogIn
+sub OnLogIn($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (! $self->Validate)
   {
@@ -140,17 +141,16 @@ sub OnLogIn
   exit;
 }
 
-sub OnAction
+sub OnAction($$)
 {
-  my $self = shift;
-  my $Action = $_[0];
+  my ($self, $Action) = @_;
 
   if ($Action eq "Log in")
   {
     return $self->OnLogIn();
   }
 
-  return $self->SUPER::OnAction(@_);
+  return $self->SUPER::OnAction($Action);
 }
 
 package main;

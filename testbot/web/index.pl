@@ -28,30 +28,30 @@ use vars qw(@ISA);
 
 @ISA = qw(ObjectModel::CGI::CollectionBlock);
 
-sub SortKeys
+sub SortKeys($$)
 {
-  my $self = shift;
-  my $Keys = $_[0];
+  my ($self, $Keys) = @_;
 
   my @SortedKeys = sort { $b <=> $a } @$Keys;
   return \@SortedKeys;
 }
 
-sub GetItemActions
+sub GetItemActions($)
 {
+  #my ($self) = @_;
   return [];
 }
 
-sub GetActions
+sub GetActions($)
 {
+  #my ($self) = @_;
   return [];
 }
 
-sub DisplayProperty
+sub DisplayProperty($$)
 {
-  my $self = shift;
+  my ($self, $PropertyDescriptor) = @_;
 
-  my $PropertyDescriptor = $_[0];
   my $PropertyName = $PropertyDescriptor->GetName();
   if ($PropertyName eq "Archived" ||
       $PropertyName eq "Patch" ||
@@ -61,13 +61,12 @@ sub DisplayProperty
     return !1;
   }
 
-  return $self->SUPER::DisplayProperty(@_);
+  return $self->SUPER::DisplayProperty($PropertyDescriptor);
 }
 
-sub GetDisplayValue
+sub GetDisplayValue($$$)
 {
-  my $self = shift;
-  my ($Item, $PropertyDescriptor) = @_;
+  my ($self, $Item, $PropertyDescriptor) = @_;
 
   if ($PropertyDescriptor->GetName() eq "User" &&
       defined($Item->Patch) &&
@@ -77,13 +76,12 @@ sub GetDisplayValue
     return $Item->Patch->FromName;
   }
 
-  return $self->SUPER::GetDisplayValue(@_);
+  return $self->SUPER::GetDisplayValue($Item, $PropertyDescriptor);
 }
 
-sub GenerateDataCell
+sub GenerateDataCell($$$$)
 {
-  my $self = shift;
-  my ($Item, $PropertyDescriptor, $DetailsPage) = @_;
+  my ($self, $Item, $PropertyDescriptor, $DetailsPage) = @_;
 
   my $PropertyName = $PropertyDescriptor->GetName();
   if ($PropertyName eq "Status")
@@ -136,7 +134,7 @@ sub GenerateDataCell
   }
   else
   {
-    $self->SUPER::GenerateDataCell(@_);
+    $self->SUPER::GenerateDataCell($Item, $PropertyDescriptor, $DetailsPage);
   }
 }
 
@@ -148,28 +146,28 @@ use vars qw(@ISA);
 
 @ISA = qw(ObjectModel::CGI::CollectionBlock);
 
-sub SortKeys
+sub SortKeys($$)
 {
-  my $self = shift;
-  my $Keys = $_[0];
+  my ($self, $Keys) = @_;
 
   return $self->{Collection}->SortKeysBySortOrder($Keys);
 }
 
-sub GetItemActions
+sub GetItemActions($)
 {
+  #my ($self) = @_;
   return [];
 }
 
-sub GetActions
+sub GetActions($)
 {
+  #my ($self) = @_;
   return [];
 }
 
-sub DisplayProperty
+sub DisplayProperty($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = $_[0];
+  my ($self, $PropertyDescriptor) = @_;
 
   my $PropertyName = $PropertyDescriptor->GetName();
   return $PropertyName eq "Name" || $PropertyName eq "Type" ||
@@ -177,8 +175,9 @@ sub DisplayProperty
          $PropertyName eq "Description";
 }
 
-sub GetDetailsPage
+sub GetDetailsPage($)
 {
+  #my ($self) = @_;
   return undef;
 }
 
@@ -192,34 +191,33 @@ use WineTestBot::VMs;
 
 @StatusPage::ISA = qw(ObjectModel::CGI::Page);
 
-sub _initialize
+sub _initialize($$$)
 {
   my ($self, $Request, $RequiredRole) = @_;
 
   $self->SUPER::_initialize($Request, $RequiredRole);
 }
 
-sub OutputDot
+sub OutputDot($$)
 {
-  my $self = shift;
-  my $DotColor = $_[0];
+  my ($self, $DotColor) = @_;
 
   print "<img src='/images/${DotColor}dot.jpg' alt='${DotColor} dot' " .
         "width='20' height='20' />";
 }
 
-sub GeneratePage
+sub GeneratePage($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{Request}->headers_out->add("Refresh", "60");
 
-  $self->SUPER::GeneratePage(@_);
+  $self->SUPER::GeneratePage();
 }
 
-sub GenerateBody
+sub GenerateBody($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   print "<h1>${ProjectName} Test Bot status</h1>\n";
   print "<div class='Content'>\n";

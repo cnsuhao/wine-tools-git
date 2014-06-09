@@ -28,20 +28,22 @@ use WineTestBot::Utils;
 
 @RegisterPage::ISA = qw(ObjectModel::CGI::ItemPage);
 
-sub _initialize
+sub _initialize($$$)
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
 
-  $self->SUPER::_initialize(@_, CreateUsers());
+  $self->SUPER::_initialize($Request, $RequiredRole, CreateUsers());
 }
 
-sub GetTitle
+sub GetTitle($)
 {
+  #my ($self) = @_;
   return "Request new account";
 }
 
-sub GetHeaderText
+sub GetHeaderText($)
 {
+  #my ($self) = @_;
   return "Since an account will allow you to run code on this system, your " .
          "request for an account will have to be manually approved. That " .
          "should be no problem if you're a well-known member of the Wine " .
@@ -51,16 +53,16 @@ sub GetHeaderText
          "you should receive that email within a couple of hours.";
 }
 
-sub GetFooterText
+sub GetFooterText($)
 {
+  #my ($self) = @_;
   return "Your real name and email address will be treated confidentially " .
          "and will not be shown on any bot-accessible part of this site.";
 }
 
-sub DisplayProperty
+sub DisplayProperty($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = $_[0];
+  my ($self, $PropertyDescriptor) = @_;
 
   my $PropertyName = $PropertyDescriptor->GetName();
 
@@ -71,12 +73,12 @@ sub DisplayProperty
     return "";
   }
 
-  return $self->SUPER::DisplayProperty(@_);
+  return $self->SUPER::DisplayProperty($PropertyDescriptor);
 }
 
-sub GenerateFields
+sub GenerateFields($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   print "<div><input type='hidden' name='Status' value='active'></div>\n";
   $self->SUPER::GenerateFields();
@@ -85,8 +87,9 @@ sub GenerateFields
   $self->{HasRequired} = !1;
 }
 
-sub GenerateActions
+sub GenerateActions($)
 {
+  #my ($self) = @_;
   print <<EOF;
 <div class='DetailActions'>
 <input type='submit' name='Action' value='Send request' />
@@ -94,9 +97,9 @@ sub GenerateActions
 EOF
 }
 
-sub OnSendRequest
+sub OnSendRequest($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (! $self->Save())
   {
@@ -127,22 +130,21 @@ EOF
   return 1;
 }
 
-sub OnAction
+sub OnAction($$)
 {
-  my $self = shift;
-  my $Action = $_[0];
+  my ($self, $Action) = @_;
 
   if ($Action eq 'Send request')
   {
-    return $self->OnSendRequest(@_);
+    return $self->OnSendRequest();
   }
 
-  return $self->SUPER::OnAction(@_);
+  return $self->SUPER::OnAction($Action);
 }
 
-sub GenerateBody
+sub GenerateBody($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if ($self->{ActionPerformed})
   {
@@ -157,7 +159,7 @@ EOF
     return;
   }
 
-  $self->SUPER::GenerateBody(@_);
+  $self->SUPER::GenerateBody();
 }
 
 package main;

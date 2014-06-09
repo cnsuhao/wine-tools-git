@@ -27,26 +27,24 @@ use WineTestBot::Patches;
 
 @PatchesListPage::ISA = qw(ObjectModel::CGI::CollectionPage);
 
-sub _initialize
+sub _initialize($$$)
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
 
-  $self->SUPER::_initialize(@_, CreatePatches());
+  $self->SUPER::_initialize($Request, $RequiredRole, CreatePatches());
 }
 
-sub SortKeys
+sub SortKeys($$$)
 {
-  my $self = shift;
-  my ($CollectionBlock, $Keys) = @_;
+  my ($self, $CollectionBlock, $Keys) = @_;
 
   my @SortedKeys = sort { $b <=> $a } @$Keys;
   return \@SortedKeys;
 }
 
-sub DisplayProperty
+sub DisplayProperty($$$)
 {
-  my $self = shift;
-  my ($CollectionBlock, $PropertyDescriptor) = @_;
+  my ($self, $CollectionBlock, $PropertyDescriptor) = @_;
 
   my $PropertyName = $PropertyDescriptor->GetName();
 
@@ -54,35 +52,30 @@ sub DisplayProperty
          $PropertyName eq "FromName" || $PropertyName eq "Subject";
 }
 
-sub GetItemActions
+sub GetItemActions($$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
-
+  #my ($self, $CollectionBlock) = @_;
   return [];
 }
 
-sub GetActions
+sub GetActions($$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
-
+  #my ($self, $CollectionBlock) = @_;
   return [];
 }
 
-sub GeneratePage
+sub GeneratePage($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{Request}->headers_out->add("Refresh", "60");
 
-  $self->SUPER::GeneratePage(@_);
+  $self->SUPER::GeneratePage();
 }
 
-sub GenerateDataCell
+sub GenerateDataCell($$$$$)
 {
-  my $self = shift;
-  my ($CollectionBlock, $Item, $PropertyDescriptor, $DetailsPage) = @_;
+  my ($self, $CollectionBlock, $Item, $PropertyDescriptor, $DetailsPage) = @_;
 
   my $PropertyName = $PropertyDescriptor->GetName();
   if ($PropertyName eq "Disposition" and $Item->Disposition =~ /job ([0-9]+)$/)
@@ -94,7 +87,7 @@ sub GenerateDataCell
   }
   else
   {
-    $self->SUPER::GenerateDataCell(@_);
+    $self->SUPER::GenerateDataCell($CollectionBlock, $Item, $PropertyDescriptor, $DetailsPage);
   }
 }
 

@@ -9,16 +9,16 @@ use WineTestBot::CGI::Sessions;
 use WineTestBot::Engine::Notify;
 use WineTestBot::VMs;
 
-sub NotAvailable
+sub NotAvailable($)
 {
-  my $Request = $_[0];
+  my ($Request) = @_;
 
   $Request->headers_out->set("Location", "/images/NotAvailable.png");
   $Request->status(Apache2::Const::REDIRECT);
   exit;
 }
 
-sub LiveScreenshot
+sub LiveScreenshot($$)
 {
   my ($Request, $VMName) = @_;
 
@@ -58,7 +58,7 @@ sub LiveScreenshot
   return $ImageBytes;
 }
 
-sub StoredScreenshot
+sub StoredScreenshot($$$$)
 {
   my ($Request, $JobKey, $StepKey, $TaskKey) = @_;
 

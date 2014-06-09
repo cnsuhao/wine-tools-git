@@ -27,7 +27,7 @@ use WineTestBot::Config;
 
 @FeedbackPage::ISA = qw(ObjectModel::CGI::FreeFormPage);
 
-sub _initialize
+sub _initialize($$$)
 {
   my ($self, $Request, $RequiredRole) = @_;
 
@@ -53,56 +53,57 @@ sub _initialize
   }
 }
 
-sub GetPropertyValue
+sub GetPropertyValue($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = $_[0];
+  my ($self, $PropertyDescriptor) = @_;
 
   if (defined($self->{$PropertyDescriptor->GetName()}))
   {
     return $self->{$PropertyDescriptor->GetName()};
   }
 
-  return $self->SUPER::GetPropertyValue(@_);
+  return $self->SUPER::GetPropertyValue($PropertyDescriptor);
 }
 
-sub GetTitle
+sub GetTitle($)
 {
+  #my ($self) = @_;
   return "Provide feedback";
 }
 
-sub GetHeaderText
+sub GetHeaderText($)
 {
+  #my ($self) = @_;
   return "Remarks on how to improve this service are highly appreciated! " .
          "If you wish to stay anonymous, you don't have to enter your name " .
          "or email address.";
 }
 
-sub GetInputType
+sub GetInputType($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = $_[0];
+  my ($self, $PropertyDescriptor) = @_;
 
   if (substr($PropertyDescriptor->GetName(), 0, 8) eq "Remarks")
   {
     return "textarea";
   }
 
-  return $self->SUPER::GetInputType(@_);
+  return $self->SUPER::GetInputType($PropertyDescriptor);
 }
 
-sub GetActions
+sub GetActions($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Actions = $self->SUPER::GetActions();
   push(@$Actions, "Send");
 
   return $Actions;
 }
-sub OnSend
+
+sub OnSend($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (! $self->Validate)
   {
@@ -124,22 +125,21 @@ EOF
   return 1;
 }
 
-sub OnAction
+sub OnAction($$)
 {
-  my $self = shift;
-  my $Action = $_[0];
+  my ($self, $Action) = @_;
 
   if ($Action eq "Send")
   {
     return $self->OnSend();
   }
 
-  return $self->SUPER::OnAction(@_);
+  return $self->SUPER::OnAction($Action);
 }
 
-sub GenerateBody
+sub GenerateBody($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if ($self->{ActionPerformed})
   {
@@ -150,7 +150,7 @@ sub GenerateBody
     return;
   }
 
-  $self->SUPER::GenerateBody(@_);
+  $self->SUPER::GenerateBody();
 }
 
 package main;

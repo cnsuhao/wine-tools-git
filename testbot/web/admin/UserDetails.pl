@@ -28,17 +28,16 @@ use WineTestBot::Users;
 
 @UserDetailsPage::ISA = qw(ObjectModel::CGI::ItemPage);
 
-sub _initialize
+sub _initialize($$$)
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
 
-  $self->SUPER::_initialize(@_, CreateUsers());
+  $self->SUPER::_initialize($Request, $RequiredRole, CreateUsers());
 }
 
-sub DisplayProperty
+sub DisplayProperty($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = $_[0];
+  my ($self, $PropertyDescriptor) = @_;
 
   my $PropertyName = $PropertyDescriptor->GetName();
   if (defined($LDAPServer) &&
@@ -47,12 +46,12 @@ sub DisplayProperty
     return "";
   }
 
-  return $self->SUPER::DisplayProperty(@_);
+  return $self->SUPER::DisplayProperty($PropertyDescriptor);
 }
 
-sub GetActions
+sub GetActions($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my @Actions;
   if (!defined $LDAPServer and $self->{Item}->WaitingForApproval())
@@ -68,7 +67,7 @@ sub GetActions
 
 sub OnApprove($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return !1 if (!$self->Save());
   $self->{ErrMessage} = $self->{Item}->Approve();
@@ -79,7 +78,7 @@ sub OnApprove($)
 
 sub OnReject($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{Item}->Status('deleted');
   ($self->{ErrField}, $self->{ErrMessage}) = $self->{Item}->Save();
@@ -92,7 +91,7 @@ sub OnReject($)
 
 sub OnOK($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return !1 if (!$self->Save());
   if ($self->{Item}->Status ne 'active')
@@ -104,10 +103,9 @@ sub OnOK($)
   exit;
 }
 
-sub OnAction
+sub OnAction($$)
 {
-  my $self = shift;
-  my $Action = $_[0];
+  my ($self, $Action) = @_;
 
   if ($Action eq "Approve")
   {
@@ -122,7 +120,7 @@ sub OnAction
     return $self->OnOK();
   }
 
-  return $self->SUPER::OnAction(@_);
+  return $self->SUPER::OnAction($Action);
 }
 
 package main;

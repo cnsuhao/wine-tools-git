@@ -26,17 +26,16 @@ use WineTestBot::VMs;
 
 @VMsListPage::ISA = qw(ObjectModel::CGI::CollectionPage);
 
-sub _initialize
+sub _initialize($$$)
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
 
-  $self->SUPER::_initialize(@_, CreateVMs());
+  $self->SUPER::_initialize($Request, $RequiredRole, CreateVMs());
 }
 
-sub DisplayProperty
+sub DisplayProperty($$$)
 {
-  my $self = shift;
-  my ($CollectionBlock, $PropertyDescriptor) = @_;
+  my ($self, $CollectionBlock, $PropertyDescriptor) = @_;
 
   my $PropertyName = $PropertyDescriptor->GetName();
 
@@ -45,19 +44,16 @@ sub DisplayProperty
          $PropertyName eq "Description";
 }
 
-sub SortKeys
+sub SortKeys($$$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
-  my $Keys = $_[0];
+  my ($self, $CollectionBlock, $Keys) = @_;
 
   return $self->{Collection}->SortKeysBySortOrder($Keys);
 }
 
-sub OnItemAction
+sub OnItemAction($$$$)
 {
-  my $self = shift;
-  my ($CollectionBlock, $Item, $Action) = @_;
+  my ($self, $CollectionBlock, $Item, $Action) = @_;
 
   if ($Action eq "Delete")
   {
@@ -66,7 +62,7 @@ sub OnItemAction
     return ! defined($ErrMessage);
   }
 
-  return $self->SUPER::OnItemAction(@_);
+  return $self->SUPER::OnItemAction($CollectionBlock, $Item, $Action);
 }
 
 package main;

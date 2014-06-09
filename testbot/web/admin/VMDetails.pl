@@ -26,20 +26,19 @@ use WineTestBot::VMs;
 
 @VMDetailsPage::ISA = qw(ObjectModel::CGI::ItemPage);
 
-sub _initialize
+sub _initialize($$$)
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
 
-  $self->SUPER::_initialize(@_, CreateVMs());
+  $self->SUPER::_initialize($Request, $RequiredRole, CreateVMs());
 }
 
-sub DisplayProperty
+sub DisplayProperty($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = $_[0];
+  my ($self, $PropertyDescriptor) = @_;
 
   return "" if ($PropertyDescriptor->GetName() eq "ChildPid");
-  return $self->SUPER::DisplayProperty(@_);
+  return $self->SUPER::DisplayProperty($PropertyDescriptor);
 }
 
 package main;

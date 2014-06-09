@@ -26,11 +26,11 @@ use WineTestBot::Branches;
 
 @BranchDetailsPage::ISA = qw(ObjectModel::CGI::ItemPage);
 
-sub _initialize
+sub _initialize($$$)
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
 
-  $self->SUPER::_initialize(@_, CreateBranches());
+  $self->SUPER::_initialize($Request, $RequiredRole, CreateBranches());
 }
 
 package main;

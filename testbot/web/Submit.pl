@@ -37,7 +37,7 @@ use WineTestBot::VMs;
 
 @SubmitPage::ISA = qw(ObjectModel::CGI::FreeFormPage);
 
-sub _initialize
+sub _initialize($$$)
 {
   my ($self, $Request, $RequiredRole) = @_;
 
@@ -65,14 +65,15 @@ sub _initialize
   $self->SUPER::_initialize($Request, $RequiredRole, undef);
 }
 
-sub GetTitle
+sub GetTitle($)
 {
+  #my ($self) = @_;
   return "Submit a job";
 }
 
-sub GetHeaderText
+sub GetHeaderText($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if ($self->{Page} == 1)
   {
@@ -103,9 +104,9 @@ sub GetHeaderText
   return "";
 }
 
-sub GetPropertyDescriptors
+sub GetPropertyDescriptors($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if ($self->{Page} == 1)
   {
@@ -119,12 +120,12 @@ sub GetPropertyDescriptors
     return $self->{PropertyDescriptors3};
   }
 
-  return $self->SUPER::GetPropertyDescriptors(@_);
+  return $self->SUPER::GetPropertyDescriptors();
 }
 
-sub GenerateFields
+sub GenerateFields($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   print "<div><input type='hidden' name='Page' value='", $self->{Page},
         "'></div>\n";
@@ -307,12 +308,12 @@ sub GenerateFields
           "'></div>\n";
   }
 
-  $self->SUPER::GenerateFields(@_);
+  $self->SUPER::GenerateFields();
 }
 
-sub GenerateActions
+sub GenerateActions($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if ($self->{Page} == 2)
   {
@@ -343,9 +344,9 @@ EOF
   $self->SUPER::GenerateActions();
 }
 
-sub GetActions
+sub GetActions($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Actions = $self->SUPER::GetActions();
   if ($self->{Page} == 1)
@@ -368,10 +369,9 @@ sub GetActions
   return $Actions;
 }
 
-sub DisplayProperty
+sub DisplayProperty($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = $_[0];
+  my ($self, $PropertyDescriptor) = @_;
 
   if ($self->{Page} == 3)
   {
@@ -408,13 +408,12 @@ sub DisplayProperty
     }
   }
 
-  return $self->SUPER::DisplayProperty(@_);
+  return $self->SUPER::DisplayProperty($PropertyDescriptor);
 }
 
-sub GetPropertyValue
+sub GetPropertyValue($$)
 {
-  my $self = shift;
-  my $PropertyDescriptor = $_[0];
+  my ($self, $PropertyDescriptor) = @_;
 
   if ($self->{Page} == 3)
   {
@@ -429,21 +428,20 @@ sub GetPropertyValue
     }
   }
 
-  return $self->SUPER::GetPropertyValue(@_);
+  return $self->SUPER::GetPropertyValue($PropertyDescriptor);
 }
 
-sub GetTmpStagingFullPath
+sub GetTmpStagingFullPath($$)
 {
-  my $self = shift;
-  my $FileName = $_[0];
+  my ($self, $FileName) = @_;
 
   return undef if (!$FileName);
   return "$DataDir/staging/" . $self->GetCurrentSession()->Id . "-websubmit_$FileName";
 }
 
-sub Validate
+sub Validate($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if ($self->{Page} == 2 && $self->GetParam("Page") == 2)
   {
@@ -494,13 +492,12 @@ sub Validate
     }
   }
 
-  return $self->SUPER::Validate(@_);
+  return $self->SUPER::Validate();
 }
 
-sub DetermineFileType
+sub DetermineFileType($$)
 {
-  my $self = shift;
-  my $FileName = $_[0];
+  my ($self, $FileName) = @_;
 
   my $ErrMessage = undef;
   my $FileType = "unknown";
@@ -639,9 +636,9 @@ sub DetermineFileType
   return ($ErrMessage, $FileType, $DllBaseName, $TestSet);
 }
 
-sub OnPage1Next
+sub OnPage1Next($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $FileName = $self->GetParam("File");
   if (! $FileName)
@@ -729,9 +726,9 @@ sub OnPage1Next
   return 1;
 }
 
-sub OnPage2Next
+sub OnPage2Next($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (! $self->Validate)
   {
@@ -743,16 +740,16 @@ sub OnPage2Next
   return 1;
 }
 
-sub OnNext
+sub OnNext($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{Page} == 2 ? $self->OnPage2Next() : $self->OnPage1Next();
 }
 
-sub OnPage2Prev
+sub OnPage2Prev($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $StagingFileName = $self->GetTmpStagingFullPath($self->GetParam("FileName"));
   if ($StagingFileName)
@@ -765,25 +762,25 @@ sub OnPage2Prev
   return 1;
 }
 
-sub OnPage3Prev
+sub OnPage3Prev($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{Page} = 2;
 
   return 1;
 }
 
-sub OnPrev
+sub OnPrev($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{Page} == 3 ? $self->OnPage3Prev() : $self->OnPage2Prev();
 }
 
-sub OnSubmit
+sub OnSubmit($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (! $self->Validate())
   {
@@ -930,27 +927,27 @@ sub OnSubmit
   exit;
 }
 
-sub OnShowAllVMs
+sub OnShowAllVMs($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{ShowAll} = 1;
 
   return !1;
 }
 
-sub OnShowBaseVMs
+sub OnShowBaseVMs($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{ShowAll} = !1;
 
   return !1;
 }
 
-sub OnOK
+sub OnOK($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (defined($self->GetParam("JobKey")))
   {
@@ -962,10 +959,9 @@ sub OnOK
   }
 }
 
-sub OnAction
+sub OnAction($$)
 {
-  my $self = shift;
-  my $Action = $_[0];
+  my ($self, $Action) = @_;
 
   if ($Action eq "Next >")
   {
@@ -992,7 +988,7 @@ sub OnAction
     return $self->OnOK();
   }
 
-  return $self->SUPER::OnAction(@_);
+  return $self->SUPER::OnAction($Action);
 }
 
 package main;

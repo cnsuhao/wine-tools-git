@@ -31,9 +31,9 @@ use WineTestBot::Log;
 
 @JobDetailsPage::ISA = qw(ObjectModel::CGI::CollectionPage);
 
-sub _initialize
+sub _initialize($$$)
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
 
   my $JobId = $self->GetParam("Key");
   if (! defined($JobId))
@@ -47,12 +47,12 @@ sub _initialize
   }
   $self->{JobId} = $JobId;
 
-  $self->SUPER::_initialize(@_, CreateStepsTasks(undef, $self->{Job}));
+  $self->SUPER::_initialize($Request, $RequiredRole, CreateStepsTasks(undef, $self->{Job}));
 }
 
-sub GetPageTitle()
+sub GetPageTitle($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $PageTitle = $self->{Job}->Remarks;
   $PageTitle =~ s/^[[]wine-patches[]] //;
@@ -61,17 +61,16 @@ sub GetPageTitle()
   return $PageTitle;
 }
 
-sub GetTitle()
+sub GetTitle($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return "Job " . $self->{JobId} . " - " . $self->{Job}->Remarks;
 }
 
-sub DisplayProperty
+sub DisplayProperty($$$)
 {
-  my $self = shift;
-  my ($CollectionBlock, $PropertyDescriptor) = @_;
+  my ($self, $CollectionBlock, $PropertyDescriptor) = @_;
 
   my $PropertyName = $PropertyDescriptor->GetName();
 
@@ -82,14 +81,15 @@ sub DisplayProperty
          $PropertyName eq "Ended" || $PropertyName eq "TestFailures";
 }
 
-sub GetItemActions
+sub GetItemActions($$)
 {
+  #my ($self, $CollectionBlock) = @_;
   return [];
 }
 
-sub CanCancel
+sub CanCancel($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Job = CreateJobs()->GetItem($self->{JobId});
   my $Status = $Job->Status;
@@ -113,9 +113,9 @@ sub CanCancel
   return undef;
 }
 
-sub CanRestart
+sub CanRestart($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Job = CreateJobs()->GetItem($self->{JobId});
   my $Status = $Job->Status;
@@ -139,9 +139,9 @@ sub CanRestart
   return undef;
 }
 
-sub GetActions
+sub GetActions($$)
 {
-  my $self = shift;
+  my ($self, $CollectionBlock) = @_;
 
   # These are mutually exclusive
   return ["Cancel job"] if (!defined $self->CanCancel());
@@ -149,9 +149,9 @@ sub GetActions
   return [];
 }
 
-sub OnCancel
+sub OnCancel($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $ErrMessage = $self->CanCancel();
   if (defined($ErrMessage))
@@ -171,9 +171,9 @@ sub OnCancel
   exit;
 }
 
-sub OnRestart
+sub OnRestart($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $ErrMessage = $self->CanRestart();
   if (defined($ErrMessage))
@@ -193,10 +193,9 @@ sub OnRestart
   exit;
 }
 
-sub OnAction
+sub OnAction($$$)
 {
-  my $self = shift;
-  my $Action = $_[1];
+  my ($self, $CollectionBlock, $Action) = @_;
 
   if ($Action eq "Cancel job")
   {
@@ -207,22 +206,20 @@ sub OnAction
     return $self->OnRestart();
   }
 
-  return $self->SUPER::OnAction(@_);
+  return $self->SUPER::OnAction($CollectionBlock, $Action);
 }
 
-sub SortKeys
+sub SortKeys($$$)
 {
-  my $self = shift;
-  my $CollectionBlock = shift;
-  my $Keys = $_[0];
+  my ($self, $CollectionBlock, $Keys) = @_;
 
   my @SortedKeys = sort @$Keys;
   return \@SortedKeys;
 }
 
-sub GeneratePage
+sub GeneratePage($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   foreach my $Job (@{$self->{Collection}->GetItems()})
   {
@@ -233,14 +230,14 @@ sub GeneratePage
     }
   }
 
-  $self->SUPER::GeneratePage(@_);
+  $self->SUPER::GeneratePage();
 }
 
-sub GenerateBody
+sub GenerateBody($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
-  $self->SUPER::GenerateBody(@_);
+  $self->SUPER::GenerateBody();
 
   print "<div class='Content'>\n";
   my $Keys = $self->SortKeys(undef, $self->{Collection}->GetKeys());
@@ -462,10 +459,9 @@ sub GenerateBody
   print "</div>\n";
 }
 
-sub GenerateDataCell
+sub GenerateDataCell($$$$$)
 {
-  my $self = shift;
-  my ($CollectionBlock, $Item, $PropertyDescriptor, $DetailsPage) = @_;
+  my ($self, $CollectionBlock, $Item, $PropertyDescriptor, $DetailsPage) = @_;
 
   my $PropertyName = $PropertyDescriptor->GetName();
   if ($PropertyName eq "VM")
@@ -490,12 +486,12 @@ sub GenerateDataCell
     }
     else
     {
-      $self->SUPER::GenerateDataCell(@_);
+      $self->SUPER::GenerateDataCell($CollectionBlock, $Item, $PropertyDescriptor, $DetailsPage);
     }
   }
   else
   {
-    $self->SUPER::GenerateDataCell(@_);
+    $self->SUPER::GenerateDataCell($CollectionBlock, $Item, $PropertyDescriptor, $DetailsPage);
   }
 }
 

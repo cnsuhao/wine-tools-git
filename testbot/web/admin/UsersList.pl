@@ -29,26 +29,24 @@ use WineTestBot::Users;
 
 @UsersListPage::ISA = qw(ObjectModel::CGI::CollectionPage);
 
-sub _initialize
+sub _initialize($$$)
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
 
-  $self->SUPER::_initialize(@_, CreateUsers());
+  $self->SUPER::_initialize($Request, $RequiredRole, CreateUsers());
 }
 
-sub SortKeys
+sub SortKeys($$$)
 {
-  my $self = shift;
-  my ($CollectionBlock, $Keys) = @_;
+  my ($self, $CollectionBlock, $Keys) = @_;
 
   my @SortedKeys = sort { $a cmp $b } @$Keys;
   return \@SortedKeys;
 }
 
-sub DisplayProperty
+sub DisplayProperty($$$)
 {
-  my $self = shift;
-  my ($CollectionBlock, $PropertyDescriptor) = @_;
+  my ($self, $CollectionBlock, $PropertyDescriptor) = @_;
 
   my $PropertyName = $PropertyDescriptor->GetName();
 
@@ -56,10 +54,9 @@ sub DisplayProperty
          $PropertyName eq "Status" || $PropertyName eq "RealName";
 }
 
-sub GetActions
+sub GetActions($$)
 {
-  my $self = shift;
-  my $CollectionBlock = $_[0];
+  my ($self, $CollectionBlock) = @_;
 
   if (defined($LDAPServer))
   {
@@ -67,13 +64,12 @@ sub GetActions
     return [];
   }
 
-  return $self->SUPER::GetActions(@_);
+  return $self->SUPER::GetActions($CollectionBlock);
 }
 
-sub OnAction
+sub OnAction($$$)
 {
-  my $self = shift;
-  my ($CollectionBlock, $Action) = @_;
+  my ($self, $CollectionBlock, $Action) = @_;
 
   if ($Action eq "Delete")
   {
@@ -94,7 +90,7 @@ sub OnAction
     return 1;
   }
 
-  return $self->SUPER::OnAction(@_);
+  return $self->SUPER::OnAction($CollectionBlock, $Action);
 }
 
 

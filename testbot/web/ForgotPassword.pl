@@ -29,7 +29,7 @@ use WineTestBot::CGI::Sessions;
 
 @ForgotPasswordPage::ISA = qw(ObjectModel::CGI::FreeFormPage);
 
-sub _initialize
+sub _initialize($$$)
 {
   my ($self, $Request, $RequiredRole) = @_;
 
@@ -42,21 +42,23 @@ sub _initialize
   $self->SUPER::_initialize($Request, $RequiredRole, \@PropertyDescriptors);
 }
 
-sub GetTitle
+sub GetTitle($)
 {
+  #my ($self) = @_;
   return "Reset password";
 }
 
-sub GetHeaderText
+sub GetHeaderText($)
 {
+  #my ($self) = @_;
   return "Please enter your username or your email address<br>\n" .
          "If you don't have an account yet, you can " .
          "<a href='Register.pl'>register</a> for one.";
 }
 
-sub GetActions
+sub GetActions($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Actions = $self->SUPER::GetActions();
   push(@$Actions, "Reset password");
@@ -64,9 +66,9 @@ sub GetActions
   return $Actions;
 }
 
-sub OnResetPassword
+sub OnResetPassword($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (! $self->Validate)
   {
@@ -101,22 +103,21 @@ sub OnResetPassword
   return 1;
 }
 
-sub OnAction
+sub OnAction($$)
 {
-  my $self = shift;
-  my $Action = $_[0];
+  my ($self, $Action) = @_;
 
   if ($Action eq "Reset password")
   {
     return $self->OnResetPassword();
   }
 
-  return $self->SUPER::OnAction(@_);
+  return $self->SUPER::OnAction($Action);
 }
 
-sub GenerateBody
+sub GenerateBody($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if ($self->{ActionPerformed})
   {
@@ -127,7 +128,7 @@ sub GenerateBody
     return;
   }
 
-  $self->SUPER::GenerateBody(@_);
+  $self->SUPER::GenerateBody();
 }
 
 package main;

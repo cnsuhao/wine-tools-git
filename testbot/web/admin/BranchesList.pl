@@ -27,17 +27,16 @@ use WineTestBot::Branches;
 
 @BranchesListPage::ISA = qw(ObjectModel::CGI::CollectionPage);
 
-sub _initialize
+sub _initialize($$$)
 {
-  my $self = shift;
+  my ($self, $Request, $RequiredRole) = @_;
 
-  $self->SUPER::_initialize(@_, CreateBranches());
+  $self->SUPER::_initialize($Request, $RequiredRole, CreateBranches());
 }
 
-sub SortKeys
+sub SortKeys($$$)
 {
-  my $self = shift;
-  my ($CollectionBlock, $Keys) = @_;
+  my ($self, $CollectionBlock, $Keys) = @_;
 
   my @SortedKeys = sort { $a cmp $b } @$Keys;
   return \@SortedKeys;

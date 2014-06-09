@@ -27,7 +27,7 @@ use CGI::Cookie;
 
 @LogoutPage::ISA = qw(ObjectModel::CGI::Page);
 
-sub _initialize
+sub _initialize($$$)
 {
   my ($self, $Request, $RequiredRole) = @_;
 
@@ -38,9 +38,9 @@ sub _initialize
   $self->GetPageBase()->CheckSecurePage();
 }
 
-sub GenerateBody
+sub GenerateBody($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   print "<h1>Log out</h1>";
   print "<div class='Content'>\n";
@@ -56,9 +56,9 @@ sub GenerateBody
   print "</div>\n";
 }
 
-sub GeneratePage
+sub GeneratePage($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Session = $self->GetCurrentSession();
   $self->{WasLoggedIn} = defined($Session);
@@ -69,7 +69,7 @@ sub GeneratePage
     $self->SetCurrentSession(undef);
   }
 
-  $self->SUPER::GeneratePage(@_);
+  $self->SUPER::GeneratePage();
 }
 
 package main;
