@@ -162,8 +162,6 @@ sub SetCookies($)
       $Cookie = CGI::Cookie->new(-Name    => "SessionId",
                                  -Value   => $Session->Id,
                                  -Expires => $Expire,
-                                 -Domain  => $ENV{"HTTP_HOST"},
-                                 -Path    => "/",
                                  -Secure  => $UseSSL);
       $Request->err_headers_out->add("Set-Cookie", $Cookie);
     }
@@ -184,8 +182,6 @@ sub SetCookies($)
     $Cookie = CGI::Cookie->new(-Name    => "SessionActive",
                                -Value   => $SessionPermanent,
                                -Expires => $Expire,
-                               -Domain  => $ENV{"HTTP_HOST"},
-                               -Path    => "/",
                                -Secure  => !1);
     $Request->err_headers_out->add("Set-Cookie", $Cookie);
   }
