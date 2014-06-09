@@ -40,7 +40,7 @@ sub BEGIN
 
 use WineTestBot::Config;
 
-sub InfoMsg
+sub InfoMsg(@)
 {
   my $oldumask = umask(002);
   if (open LOGFILE, ">>$LogDir/Build.log")
@@ -51,7 +51,7 @@ sub InfoMsg
   umask($oldumask);
 }
 
-sub LogMsg
+sub LogMsg(@)
 {
   my $oldumask = umask(002);
   if (open LOGFILE, ">>$LogDir/Build.log")
@@ -62,14 +62,14 @@ sub LogMsg
   umask($oldumask);
 }
 
-sub FatalError
+sub FatalError(@)
 {
   LogMsg @_;
 
   exit 1;
 }
 
-sub ApplyPatch
+sub ApplyPatch($$$)
 {
   my ($PatchFile, $PatchType, $BaseName) = @_;
 
@@ -169,7 +169,7 @@ sub CountCPUs()
     $ncpus ||= 1;
 }
 
-sub BuildTestExecutable
+sub BuildTestExecutable($$$$$$$$)
 {
   my ($BaseName, $PatchType, $Bits, $NeedConfigure, $NeedMakefile,
       $NeedMakeInclude, $NeedBuildDeps, $NeedImplib) = @_;

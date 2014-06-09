@@ -43,9 +43,9 @@ use WineTestBot::Log;
 use WineTestBot::StepsTasks;
 
 
-sub IsBotFailure
+sub IsBotFailure($)
 {
-  my $ErrLine = $_[0];
+  my ($ErrLine) = @_;
 
   return ($ErrLine =~ m/Can't set VM status to running/ ||
           $ErrLine =~ m/Can't copy exe to VM/ ||
@@ -53,9 +53,9 @@ sub IsBotFailure
           $ErrLine =~ m/Can't copy generated executable from VM/);
 }
 
-sub CheckErrLog
+sub CheckErrLog($)
 {
-  my $ErrLogFileName = $_[0];
+  my ($ErrLogFileName) = @_;
 
   my $BotFailure = !1;
   my $Messages = "";
@@ -82,7 +82,7 @@ sub CheckErrLog
   return ($BotFailure, $Messages);
 }
 
-sub ReadLog
+sub ReadLog($$$)
 {
   my ($LogName, $BaseName, $TestSet) = @_;
 
@@ -127,16 +127,16 @@ sub ReadLog
   return \@Messages;
 }
 
-sub GetLineKey
+sub GetLineKey($)
 {
-  my $Line = $_[0];
+  my ($Line) = @_;
 
   $Line =~ s/^([\w_.]+:)\d+(:.*)$/$1$2/;
 
   return $Line;
 }
 
-sub CompareLogs
+sub CompareLogs($$$$)
 {
   my ($SuiteLog, $TaskLog, $BaseName, $TestSet) = @_;
 
@@ -166,9 +166,10 @@ sub CompareLogs
   return $Messages;
 }
 
-sub SendLog
+sub SendLog($)
 {
-  my $Job = shift;
+  my ($Job) = @_;
+
   my $To = $WinePatchToOverride || $Job->GetEMailRecipient();
   if (! defined($To))
   {

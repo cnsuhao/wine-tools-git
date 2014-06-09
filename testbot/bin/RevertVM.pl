@@ -42,7 +42,7 @@ use WineTestBot::Config;
 use WineTestBot::Log;
 use WineTestBot::VMs;
 
-sub FatalError
+sub FatalError($$)
 {
   my ($ErrMessage, $VM) = @_;
 

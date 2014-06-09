@@ -40,7 +40,7 @@ sub BEGIN
 
 use WineTestBot::Config;
 
-sub LogMsg
+sub LogMsg(@)
 {
   my $oldumask = umask(002);
   if (open LOGFILE, ">>$LogDir/Reconfig.log")
@@ -51,14 +51,14 @@ sub LogMsg
   umask($oldumask);
 }
 
-sub FatalError
+sub FatalError(@)
 {
   LogMsg @_;
 
   exit 1;
 }
 
-sub GitPull
+sub GitPull()
 {
   system("cd $DataDir/wine && git pull >> $LogDir/Reconfig.log 2>&1");
   if ($? != 0)
@@ -82,7 +82,7 @@ sub CountCPUs()
     $ncpus ||= 1;
 }
 
-sub BuildTestAgentd
+sub BuildTestAgentd()
 {
   # If testagentd already exists it's likely already running
   # so don't rebuild it.
@@ -110,7 +110,7 @@ sub BuildTestAgentd
   return 1;
 }
 
-sub BuildNative
+sub BuildNative()
 {
   mkdir "$DataDir/build-native" if (! -d "$DataDir/build-native");
   system("( cd $DataDir/build-native && set -x && " .
@@ -129,9 +129,9 @@ sub BuildNative
   return 1;
 }
 
-sub BuildCross
+sub BuildCross($)
 {
-  my $Bits = $_[0];
+  my ($Bits) = @_;
 
   my $Host = ($Bits == 64 ? "x86_64-w64-mingw32" : "i686-w64-mingw32");
   mkdir "$DataDir/build-mingw$Bits" if (! -d "$DataDir/build-mingw$Bits");

@@ -60,7 +60,7 @@ my %WineTestUrls = (
 );
 
 
-sub AddJob
+sub AddJob($$$)
 {
   my ($BaseJob, $LatestBaseName, $Bits) = @_;
 
@@ -140,7 +140,7 @@ sub AddJob
   return 1;
 }
 
-sub AddReconfigJob
+sub AddReconfigJob()
 {
   # First create a new job
   my $Jobs = CreateJobs();
