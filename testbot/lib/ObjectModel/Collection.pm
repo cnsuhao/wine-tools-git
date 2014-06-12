@@ -409,18 +409,14 @@ sub Validate
       if ($Item->GetIsNew())
       {
         my $HasSequenceKey = !1;
-        my $ErrProperty, my $ErrMessage;
         foreach my $PropertyDescriptor (@{$self->{PropertyDescriptors}})
         {
-          if ($PropertyDescriptor->GetIsKey())
+          if ($PropertyDescriptor->GetIsKey() &&
+              $PropertyDescriptor->GetClass() eq "Basic" &&
+              $PropertyDescriptor->GetType() eq "S")
           {
-            $ErrProperty = $PropertyDescriptor->GetName();
-            $ErrMessage = $Item->$ErrProperty;
-            if ($PropertyDescriptor->GetClass() eq "Basic" &&
-                $PropertyDescriptor->GetType() eq "S")
-            {
-              $HasSequenceKey = 1;
-            }
+            $HasSequenceKey = 1;
+            last;
           }
         }
         if (! $HasSequenceKey)
