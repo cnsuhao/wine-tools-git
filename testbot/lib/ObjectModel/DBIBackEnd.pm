@@ -253,13 +253,23 @@ sub LoadCollection
   $Statement->finish();
 }
 
+=pod
+=over 12
+
+=item C<LoadItem()>
+
+Loads the specified Item from the database and adds it to the Collection.
+By design this method will not check if the Item is already present in the
+Collection scope. Such checks belong in the higher levels. This method will
+however put the Item in the Collection's scope.
+
+=back
+=cut
+
 sub LoadItem
 {
   my $self = shift;
   my ($Collection, $RequestedKey) = @_;
-
-  my $Item = $Collection->GetScopeItem($RequestedKey);
-  return $Item if (defined $Item);
 
   my $Fields = $self->BuildFieldList($Collection->GetPropertyDescriptors());
 
@@ -283,7 +293,7 @@ sub LoadItem
   my $Statement = $self->GetDb()->prepare($Query);
   $Statement->execute(@Data);
 
-  $Item = undef;
+  my $Item;
   if (my $Row = $Statement->fetchrow_hashref())
   {
     $Item = $Collection->CreateItem();
