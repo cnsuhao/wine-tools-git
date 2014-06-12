@@ -404,7 +404,8 @@ sub Validate
       (my $ErrProperty, my $ErrMessage) = $Item->Validate();
       if (defined($ErrMessage))
       {
-        return ($Item->GetKey(), $ErrProperty, $ErrMessage);
+        return ($Item->GetKey(), $ErrProperty, "$ErrMessage for " .
+                $self->GetItemName() . " " . $Item->GetFullKey());
       }
       if ($Item->GetIsNew())
       {
@@ -424,7 +425,7 @@ sub Validate
           my $ExistingItem = $self->GetBackEnd()->LoadItem($self, $Item->GetKey());
           if (defined($ExistingItem))
           {
-            $ErrMessage = $self->GetItemName() . " " . $ErrMessage .
+            $ErrMessage = $self->GetItemName() . " " . $Item->GetFullKey() .
                           " already exists";
             return ($Item->GetKey(), undef, $ErrMessage);
           }

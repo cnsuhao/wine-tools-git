@@ -382,8 +382,7 @@ sub Validate
       my ($ErrKey, $ErrProperty, $ErrMessage) = $Detail->Validate();
       if (defined($ErrMessage))
       {
-        return (undef, $ErrMessage . " for " . $Detail->GetItemName() .
-                       $ErrKey);
+        return (undef, $ErrMessage);
       }
     }
   }
