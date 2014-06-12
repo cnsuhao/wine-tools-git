@@ -35,17 +35,19 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(%ActiveBackEnds);
 
-sub new
+sub new($@)
 {
   my $class = shift;
+
   my $self = {};
   $self = bless $self, $class;
-  $self->_initialize();
+  $self->_initialize(@_);
   return $self;
 }
 
-sub _initialize
+sub _initialize($)
 {
+  #my ($self) = @_;
 }
 
 1;

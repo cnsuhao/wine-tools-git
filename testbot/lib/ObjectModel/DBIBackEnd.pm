@@ -40,9 +40,9 @@ require Exporter;
 @ISA = qw(ObjectModel::BackEnd Exporter);
 @EXPORT = qw(&UseDBIBackend);
 
-sub GetDb
+sub GetDb($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (defined $self->{Db} && !$self->{Db}->ping())
   {
@@ -58,10 +58,9 @@ sub GetDb
   return $self->{Db};
 }
 
-sub ToDb
+sub ToDb($$$)
 {
-  my $self = shift;
-  my ($Value, $PropertyDescriptor) = @_;
+  my ($self, $Value, $PropertyDescriptor) = @_;
 
   if ($PropertyDescriptor->GetClass eq "Basic")
   {
@@ -97,10 +96,9 @@ sub ToDb
   return $Value;
 }
 
-sub FromDb
+sub FromDb($$$)
 {
-  my $self = shift;
-  my ($Value, $PropertyDescriptor) = @_;
+  my ($self, $Value, $PropertyDescriptor) = @_;
 
   if ($PropertyDescriptor->GetClass eq "Basic")
   {
@@ -129,10 +127,9 @@ sub FromDb
   return $Value;
 }
 
-sub BuildKeyWhere
+sub BuildKeyWhere($$$$)
 {
-  my $self = shift;
-  my ($PropertyDescriptors, $ColPrefix, $Where) = @_;
+  my ($self, $PropertyDescriptors, $ColPrefix, $Where) = @_;
 
   foreach my $PropertyDescriptor (@{$PropertyDescriptors})
   {
@@ -152,10 +149,9 @@ sub BuildKeyWhere
   return $Where;
 }
 
-sub BuildFieldList
+sub BuildFieldList($$)
 {
-  my $self = shift;
-  my $PropertyDescriptors = $_[0];
+  my ($self, $PropertyDescriptors) = @_;
 
   my $Fields = "";
   foreach my $PropertyDescriptor (@$PropertyDescriptors)
@@ -173,10 +169,9 @@ sub BuildFieldList
   return $Fields;
 }
 
-sub LoadCollection
+sub LoadCollection($$)
 {
-  my $self = shift;
-  my $Collection = $_[0];
+  my ($self, $Collection) = @_;
 
   my $Fields = $self->BuildFieldList($Collection->GetPropertyDescriptors());
 
@@ -266,10 +261,9 @@ however put the Item in the Collection's scope.
 =back
 =cut
 
-sub LoadItem
+sub LoadItem($$$)
 {
-  my $self = shift;
-  my ($Collection, $RequestedKey) = @_;
+  my ($self, $Collection, $RequestedKey) = @_;
 
   my $Fields = $self->BuildFieldList($Collection->GetPropertyDescriptors());
 
@@ -314,10 +308,9 @@ sub LoadItem
   return $Item;
 }
 
-sub BuildInsertStatement
+sub BuildInsertStatement($$$$)
 {
-  my $self = shift;
-  my ($TableName, $PropertyDescriptors, $MasterColNames) = @_;
+  my ($self, $TableName, $PropertyDescriptors, $MasterColNames) = @_;
 
   my $Fields = "";
   my $PlaceHolders = "";
@@ -352,11 +345,9 @@ sub BuildInsertStatement
   return "INSERT INTO $TableName ($Fields) VALUES($PlaceHolders)";
 }
 
-sub GetInsertData
+sub GetInsertData($$$)
 {
-  my $self = shift;
-  my $MasterColValues = shift;
-  my $Item = shift;
+  my ($self, $MasterColValues, $Item) = @_;
 
   my @Data;
   if (defined($MasterColValues))
@@ -376,10 +367,9 @@ sub GetInsertData
   return \@Data;
 }
 
-sub BuildUpdateStatement
+sub BuildUpdateStatement($$$$)
 {
-  my $self = shift;
-  my ($TableName, $PropertyDescriptors, $MasterColNames) = @_;
+  my ($self, $TableName, $PropertyDescriptors, $MasterColNames) = @_;
 
   my $Fields = "";
   foreach my $PropertyDescriptor (@{$PropertyDescriptors})
@@ -407,11 +397,9 @@ sub BuildUpdateStatement
   return "UPDATE $TableName SET $Fields WHERE $Where";
 }
 
-sub GetUpdateData
+sub GetUpdateData($$$)
 {
-  my $self = shift;
-  my $MasterColValues = shift;
-  my $Item = shift;
+  my ($self, $MasterColValues, $Item) = @_;
 
   my @Data;
   foreach my $PropertyDescriptor (@{$Item->GetPropertyDescriptors()})
@@ -445,10 +433,9 @@ sub GetUpdateData
   return \@Data;
 }
 
-sub SaveCollection
+sub SaveCollection($$)
 {
-  my $self = shift;
-  my $Collection = shift;
+  my ($self, $Collection) = @_;
 
   my $Db = $self->GetDb();
   my ($MasterColNames, $MasterColValues) = $Collection->GetMasterCols();
@@ -500,10 +487,9 @@ sub SaveCollection
   $UpdateStatement->finish();
 }
 
-sub SaveItem
+sub SaveItem($$)
 {
-  my $self = shift;
-  my $Item = $_[0];
+  my ($self, $Item) = @_;
 
   my $Query;
   my ($MasterColNames, $MasterColValues) = $Item->GetMasterCols();
@@ -528,10 +514,9 @@ sub SaveItem
   $Statement->finish();
 }
 
-sub DeleteItem
+sub DeleteItem($$)
 {
-  my $self = shift;
-  my $Item = shift;
+  my ($self, $Item) = @_;
 
   my $Where = "";
   my @Data;
@@ -554,10 +539,9 @@ sub DeleteItem
   return undef;
 }
 
-sub DeleteAll
+sub DeleteAll($$)
 {
-  my $self = shift;
-  my $Collection = shift;
+  my ($self, $Collection) = @_;
 
   my $Where = "";
   my @Data;
@@ -580,9 +564,9 @@ sub DeleteAll
   return undef;
 }
 
-sub PrepareForFork
+sub PrepareForFork($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (defined($self->{Db}))
   {
@@ -591,7 +575,7 @@ sub PrepareForFork
   }
 }
 
-sub UseDBIBackEnd
+sub UseDBIBackEnd($$@)
 {
   my $class = shift;
   my $DbSelector = shift;
