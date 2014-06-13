@@ -37,35 +37,33 @@ require Exporter;
 @ISA = qw(ObjectModel::PropertyDescriptor Exporter);
 @EXPORT = qw(&CreateEnumPropertyDescriptor);
 
-sub _initialize
+sub _initialize($$)
 {
-  my $self = shift;
-  my $Values = shift;
+  my ($self, $Values) = @_;
 
   $self->{Class} = "Enum";
   $self->{Values} = $Values;
 
-  $self->SUPER::_initialize(@_);
+  $self->SUPER::_initialize();
 }
 
-sub GetValues
+sub GetValues($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{Values};
 }
 
-sub GetColNames
+sub GetColNames($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return [$self->{Name}];
 }
 
-sub ValidateValue
+sub ValidateValue($$$)
 {
-  my $self = shift;
-  my ($Value, $IsNew) = @_;
+  my ($self, $Value, $IsNew) = @_;
 
   if ($self->GetIsRequired())
   {
@@ -82,9 +80,10 @@ sub ValidateValue
   return $self->GetDisplayName() . ": Is not valid";
 }
 
-sub CreateEnumPropertyDescriptor
+sub CreateEnumPropertyDescriptor($$$$$)
 {
-  return ObjectModel::EnumPropertyDescriptor->new(@_);
+  my ($Name, $DisplayName, $IsKey, $IsRequired, $Values) = @_;
+  return ObjectModel::EnumPropertyDescriptor->new($Name, $DisplayName, $IsKey, $IsRequired, $Values);
 }
 
 1;

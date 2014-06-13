@@ -37,44 +37,41 @@ require Exporter;
 @ISA = qw(ObjectModel::PropertyDescriptor Exporter);
 @EXPORT = qw(&CreateBasicPropertyDescriptor);
 
-sub _initialize
+sub _initialize($$$)
 {
-  my $self = shift;
-  my $Type = shift;
-  my $MaxLength = shift;
+  my ($self, $Type, $MaxLength) = @_;
 
   $self->{Class} = "Basic";
   $self->{Type} = $Type;
   $self->{MaxLength} = $MaxLength;
 
-  $self->SUPER::_initialize(@_);
+  $self->SUPER::_initialize();
 }
 
-sub GetType
+sub GetType($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{Type};
 }
 
-sub GetMaxLength
+sub GetMaxLength($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{MaxLength};
 }
 
-sub GetColNames
+sub GetColNames($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return [$self->{Name}];
 }
 
-sub ValidateValue
+sub ValidateValue($$$)
 {
-  my $self = shift;
-  my ($Value, $IsNew) = @_;
+  my ($self, $Value, $IsNew) = @_;
 
   if ($self->GetIsRequired())
   {
@@ -104,9 +101,10 @@ sub ValidateValue
   return undef;
 }
 
-sub CreateBasicPropertyDescriptor
+sub CreateBasicPropertyDescriptor($$$$$$)
 {
-  return ObjectModel::BasicPropertyDescriptor->new(@_);
+  my ($Name, $DisplayName, $IsKey, $IsRequired, $Type, $MaxLength) = @_;
+  return ObjectModel::BasicPropertyDescriptor->new($Name, $DisplayName, $IsKey, $IsRequired, $Type, $MaxLength);
 }
 
 1;

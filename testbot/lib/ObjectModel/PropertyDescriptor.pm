@@ -36,7 +36,7 @@ use vars qw(@ISA @EXPORT);
 require Exporter;
 @ISA = qw(Exporter);
 
-sub new
+sub new($$$$$@)
 {
   my $class = shift;
   my $Name = shift;
@@ -54,41 +54,43 @@ sub new
   return $self;
 }
 
-sub _initialize
+sub _initialize($)
 {
+  #my ($self) = @_;
 }
 
-sub GetName
+sub GetName($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{Name};
 }
 
-sub GetDisplayName
+sub GetDisplayName($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{DisplayName};
 }
 
-sub GetIsKey
+sub GetIsKey($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{IsKey};
 }
 
-sub GetIsRequired
+sub GetIsRequired($)
 {
-  my $self = shift;
+  my ($self) = @_;
+
 
   return $self->{IsRequired};
 }
 
-sub GetClass
+sub GetClass($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{Class};
 }

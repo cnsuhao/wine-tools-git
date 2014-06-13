@@ -30,37 +30,39 @@ require Exporter;
 @ISA = qw(ObjectModel::PropertyDescriptor Exporter);
 @EXPORT = qw(&CreateDetailrefPropertyDescriptor);
 
-sub _initialize
+sub _initialize($$)
 {
-  my $self = shift;
-  my $Creator = shift;
+  my ($self, $Creator) = @_;
 
   $self->{Class} = "Detailref";
   $self->{Creator} = $Creator;
 
-  $self->SUPER::_initialize(@_);
+  $self->SUPER::_initialize();
 }
 
-sub GetColNames
+sub GetColNames($)
 {
+  #my ($self) = @_;
   return [];
 }
 
-sub GetCreator
+sub GetCreator($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{Creator};
 }
 
-sub ValidateValue
+sub ValidateValue($$$)
 {
+  #my ($self, $Value, $IsNew) = @_;
   return undef;
 }
 
-sub CreateDetailrefPropertyDescriptor
+sub CreateDetailrefPropertyDescriptor($$$$$)
 {
-  return ObjectModel::DetailrefPropertyDescriptor->new(@_);
+  my ($Name, $DisplayName, $IsKey, $IsRequired, $Creator) = @_;
+  return ObjectModel::DetailrefPropertyDescriptor->new($Name, $DisplayName, $IsKey, $IsRequired, $Creator);
 }
 
 1;

@@ -30,37 +30,34 @@ require Exporter;
 @ISA = qw(ObjectModel::PropertyDescriptor Exporter);
 @EXPORT = qw(&CreateItemrefPropertyDescriptor);
 
-sub _initialize
+sub _initialize($$$)
 {
-  my $self = shift;
-  my $Creator = shift;
-  my $ColNames = shift;
+  my ($self, $Creator, $ColNames) = @_;
 
   $self->{Class} = "Itemref";
   $self->{Creator} = $Creator;
   $self->{ColNames} = $ColNames;
 
-  $self->SUPER::_initialize(@_);
+  $self->SUPER::_initialize();
 }
 
-sub GetCreator
+sub GetCreator($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{Creator};
 }
 
-sub GetColNames
+sub GetColNames($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{ColNames};
 }
 
-sub ValidateValue
+sub ValidateValue($$$)
 {
-  my $self = shift;
-  my ($Value, $IsNew) = @_;
+  my ($self, $Value, $IsNew) = @_;
 
   if ($self->GetIsRequired() && ! defined($Value))
   {
@@ -70,9 +67,10 @@ sub ValidateValue
   return undef;
 }
 
-sub CreateItemrefPropertyDescriptor
+sub CreateItemrefPropertyDescriptor($$$$$$)
 {
-  return ObjectModel::ItemrefPropertyDescriptor->new(@_);
+  my ($Name, $DisplayName, $IsKey, $IsRequired, $Creator, $ColNames) = @_;
+  return ObjectModel::ItemrefPropertyDescriptor->new($Name, $DisplayName, $IsKey, $IsRequired, $Creator, $ColNames);
 }
 
 1;
