@@ -42,27 +42,11 @@ sub _initialize($$$)
   my $Session = $self->GetCurrentSession();
   if (defined($Session))
   {
+    # Provide default values
     my $User = $Session->User;
-    $self->{Name} = $User->RealName;
-    $self->{EMail} = $User->EMail;
+    $self->GetParam("Name", $User->RealName) if (!defined $self->GetParam("Name"));
+    $self->GetParam("EMail", $User->EMail) if (!defined $self->GetParam("EMail"));
   }
-  else
-  {
-    $self->{Name} = undef;
-    $self->{EMail} = undef;
-  }
-}
-
-sub GetPropertyValue($$)
-{
-  my ($self, $PropertyDescriptor) = @_;
-
-  if (defined($self->{$PropertyDescriptor->GetName()}))
-  {
-    return $self->{$PropertyDescriptor->GetName()};
-  }
-
-  return $self->SUPER::GetPropertyValue($PropertyDescriptor);
 }
 
 sub GetTitle($)
