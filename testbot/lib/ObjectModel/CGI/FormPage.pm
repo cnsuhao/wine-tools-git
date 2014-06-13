@@ -221,17 +221,10 @@ sub GetInputType($$)
 {
   my ($self, $PropertyDescriptor) = @_;
 
-  if ($PropertyDescriptor->GetClass() eq "Enum")
-  {
-    return "select";
-  }
-
-  if ($PropertyDescriptor->GetType() eq "B")
-  {
-    return "checkbox";
-  }
-
-  return "text";
+  return $PropertyDescriptor->GetClass() eq "Enum" ? "select" :
+         $PropertyDescriptor->GetType() eq "B" ? "checkbox" :
+         $PropertyDescriptor->GetType() eq "textarea" ? "textarea" :
+         "text";
 }
 
 sub GenerateField($$$)

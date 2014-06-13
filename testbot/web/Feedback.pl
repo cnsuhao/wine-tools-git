@@ -34,7 +34,7 @@ sub _initialize($$$)
   my @PropertyDescriptors = (
     CreateBasicPropertyDescriptor("Name", "Name", !1, !1, "A", 40),
     CreateBasicPropertyDescriptor("EMail", "Email", !1, !1, "A", 40),
-    CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, 1, "A", 1024),
+    CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, 1, "textarea", 1024),
   );
 
   $self->SUPER::_initialize($Request, $RequiredRole, \@PropertyDescriptors);
@@ -77,18 +77,6 @@ sub GetHeaderText($)
   return "Remarks on how to improve this service are highly appreciated! " .
          "If you wish to stay anonymous, you don't have to enter your name " .
          "or email address.";
-}
-
-sub GetInputType($$)
-{
-  my ($self, $PropertyDescriptor) = @_;
-
-  if (substr($PropertyDescriptor->GetName(), 0, 8) eq "Remarks")
-  {
-    return "textarea";
-  }
-
-  return $self->SUPER::GetInputType($PropertyDescriptor);
 }
 
 sub GetActions($)
