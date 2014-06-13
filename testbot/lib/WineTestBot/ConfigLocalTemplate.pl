@@ -49,6 +49,11 @@ $WineTestBot::Config::WinePatchCc = "";
 # Host name of the web interface
 $WineTestBot::Config::WebHostName = undef;
 
+# The question to ask to filter out bots trying to register, and the regular
+# expression that the answer must match.
+$RegistrationQ = "What is the software project being tested?";
+$RegistrationARE = "(?i:wine)";
+
 # Prefix of the tag used for sending winetest reports
 $WineTestBot::Config::TagPrefix = undef;
 

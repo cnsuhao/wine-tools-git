@@ -35,11 +35,15 @@ sub _initialize($$$)
   my ($self, $Request, $RequiredRole) = @_;
 
   $self->SUPER::_initialize($Request, $RequiredRole, CreateUsers());
+  $self->{ExtraProperties} = [];
+  if ($RegistrationQ)
+  {
+    $self->GetParam("RegA", "") if (!defined $self->GetParam("RegA"));
+    push @{$self->{ExtraProperties}}, CreateBasicPropertyDescriptor("RegA", "Please demonstrate you are not a bot by answering this question: $RegistrationQ", !1, 1, "A", 40);
+  }
 
   $self->GetParam("Remarks", "") if (!defined $self->GetParam("Remarks"));
-  $self->{ExtraProperties} = [
-    CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "textarea", 200)
-  ];
+  push @{$self->{ExtraProperties}}, CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "textarea", 160);
 }
 
 sub GetTitle($)
@@ -110,6 +114,16 @@ sub OnSendRequest($)
 {
   my ($self) = @_;
 
+  if ($RegistrationQ)
+  {
+    my $RegA = $self->GetParam("RegA");
+    if ($RegA !~ /$RegistrationARE/)
+    {
+      $self->{ErrMessage} = "Wrong 'captcha' answer. Please try again.";
+      $self->{ErrField} = "Captcha";
+      return !1;
+    }
+  }
   if (! $self->Save())
   {
     return !1;
