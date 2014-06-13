@@ -148,14 +148,7 @@ sub GenerateFields($)
   foreach my $PropertyDescriptor (@{$PropertyDescriptors})
   {
     my $Display = $self->DisplayProperty($PropertyDescriptor);
-    if ($Display)
-    {
-      print "<div class='ItemProperty'><label>",
-            $self->CGI->escapeHTML($self->GetDisplayName($PropertyDescriptor)) .
-            "</label>";
-      $self->GenerateField($PropertyDescriptor, $Display);
-      print "</div>\n";
-    }
+    $self->GenerateField($PropertyDescriptor, $Display) if ($Display);
   }
 }
 
@@ -231,6 +224,10 @@ sub GenerateField($$$)
 {
   my ($self, $PropertyDescriptor, $Display) = @_;
 
+  print "<div class='ItemProperty'><label>",
+        $self->CGI->escapeHTML($self->GetDisplayName($PropertyDescriptor)) .
+        "</label>";
+
   my $Value = $self->GetDisplayValue($PropertyDescriptor);
   if ($Display eq "rw")
   {
@@ -303,6 +300,8 @@ sub GenerateField($$$)
       print "&nbsp;";
     }
   }
+
+  print "</div>\n";
 }
 
 sub GenerateRequired($$)
