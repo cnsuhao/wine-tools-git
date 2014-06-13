@@ -56,7 +56,7 @@ use WineTestBot::VMs;
 
 my $RunEngine = 1;
 
-sub FatalError
+sub FatalError(@)
 {
   LogMsg @_;
   LogMsg "Shutdown following a fatal error\n";
@@ -215,7 +215,7 @@ sub Cleanup(;$$)
 }
 
 
-sub HandleShutdown
+sub HandleShutdown($$)
 {
   my ($KillTasks, $KillVMs) = @_;
 
@@ -252,12 +252,12 @@ sub HandleShutdown
   return "1OK\n";
 }
 
-sub HandlePing
+sub HandlePing()
 {
   return "1pong\n";
 }
 
-sub HandleJobStatusChange
+sub HandleJobStatusChange($$$)
 {
   my ($JobKey, $OldStatus, $NewStatus) = @_;
 
@@ -297,9 +297,9 @@ sub HandleJobStatusChange
   return "1OK";
 }
 
-sub HandleJobCancel
+sub HandleJobCancel($)
 {
-  my $JobKey = $_[0];
+  my ($JobKey) = @_;
 
   my $Job = CreateJobs()->GetItem($JobKey);
   if (! $Job)
@@ -327,9 +327,9 @@ sub HandleJobCancel
   return "1OK";
 }
 
-sub HandleJobRestart
+sub HandleJobRestart($)
 {
-  my $JobKey = $_[0];
+  my ($JobKey) = @_;
 
   my $Job = CreateJobs()->GetItem($JobKey);
   if (! $Job)
@@ -357,7 +357,7 @@ sub HandleJobRestart
   return "1OK";
 }
 
-sub HandleRescheduleJobs
+sub HandleRescheduleJobs()
 {
   my $ErrMessage = ScheduleJobs();
   if (defined($ErrMessage))
@@ -368,7 +368,7 @@ sub HandleRescheduleJobs
   return "1OK";
 }
 
-sub HandleVMStatusChange
+sub HandleVMStatusChange($$$)
 {
   my ($VMKey, $OldStatus, $NewStatus) = @_;
 
@@ -392,7 +392,7 @@ sub HandleVMStatusChange
   return "1OK";
 }
 
-sub HandleWinePatchMLSubmission
+sub HandleWinePatchMLSubmission()
 {
   my $dh;
   if (!opendir($dh, "$DataDir/staging"))
@@ -443,7 +443,7 @@ sub HandleWinePatchMLSubmission
   return @ErrMessages ? "0". join("; ", @ErrMessages) : "1OK";
 }
 
-sub HandleWinePatchWebSubmission
+sub HandleWinePatchWebSubmission()
 {
   my $LatestWebPatchId = 0;
   my $Patches = CreatePatches();
@@ -514,15 +514,17 @@ sub HandleWinePatchWebSubmission
   return @ErrMessages ? "0". join("; ", @ErrMessages) : "1OK";
 }
 
-sub HandleGetScreenshot
+sub HandleGetScreenshot($)
 {
+  my ($VMName) = @_;
+
   # Validate VM name
-  if ($_[0] !~ m/^(\w+)$/)
+  if ($VMName !~ m/^(\w+)$/)
   {
     LogMsg "Invalid VM name for screenshot\n";
     return "0Invalid VM name";
   }
-  my $VMName = $1;
+  $VMName = $1;
 
   my $VM = CreateVMs()->GetItem($VMName);
   if (! defined($VM))
@@ -554,7 +556,7 @@ my %Handlers=(
     "winepatchwebsubmission"   => \&HandleWinePatchWebSubmission,
     );
 
-sub HandleClientCmd
+sub HandleClientCmd(@)
 {
   my $Cmd = shift;
 
@@ -565,9 +567,9 @@ sub HandleClientCmd
   return "0Unknown command $Cmd\n";
 }
 
-sub ClientRead
+sub ClientRead($)
 {
-  my $Client = shift;
+  my ($Client) = @_;
 
   my $Buf;
   my $GotSomething = !1;
@@ -596,7 +598,7 @@ checks whether any pending patchsets are now complete and thus can be scheduled.
 =back
 =cut
 
-sub SafetyNet
+sub SafetyNet()
 {
   CheckJobs();
   ScheduleJobs();
@@ -610,9 +612,9 @@ sub SafetyNet
   }
 }
 
-sub PrepareSocket
+sub PrepareSocket($)
 {
-  my $Socket = $_[0];
+  my ($Socket) = @_;
 
   my $Flags = 0;
   if (fcntl($Socket, F_GETFL, $Flags))
@@ -663,7 +665,7 @@ sub REAPER
   $SIG{CHLD} = \&REAPER; # still loathe SysV
 }
 
-sub main 
+sub main()
 {
   my ($Shutdown, $KillTasks, $KillVMs);
   while (@ARGV)

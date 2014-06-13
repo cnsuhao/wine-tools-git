@@ -39,9 +39,9 @@ require Exporter;
 @EXPORT_OK = qw($RunningInEngine);
 
 
-sub SendCmdReceiveReply
+sub SendCmdReceiveReply($)
 {
-  my $Cmd = shift;
+  my ($Cmd) = @_;
 
   if (defined($RunningInEngine))
   {
@@ -74,7 +74,7 @@ sub SendCmdReceiveReply
   return $Reply;
 }
 
-sub Shutdown
+sub Shutdown($$)
 {
   my ($KillTasks, $KillVMs) = @_;
 
@@ -93,13 +93,13 @@ sub Shutdown
   return substr($Reply, 1);
 }
 
-sub PingEngine
+sub PingEngine()
 {
   my $Reply = SendCmdReceiveReply("ping\n");
   return 1 <= length($Reply) && substr($Reply, 0, 1) eq "1";
 }
 
-sub JobStatusChange
+sub JobStatusChange($$$)
 {
   my ($JobKey, $OldStatus, $NewStatus) = @_;
 
@@ -116,9 +116,9 @@ sub JobStatusChange
   return substr($Reply, 1);
 }
 
-sub JobCancel
+sub JobCancel($)
 {
-  my $JobKey = $_[0];
+  my ($JobKey) = @_;
 
   my $Reply = SendCmdReceiveReply("jobcancel $JobKey\n");
   if (length($Reply) < 1)
@@ -133,9 +133,9 @@ sub JobCancel
   return substr($Reply, 1);
 }
 
-sub JobRestart
+sub JobRestart($)
 {
-  my $JobKey = $_[0];
+  my ($JobKey) = @_;
 
   my $Reply = SendCmdReceiveReply("jobrestart $JobKey\n");
   if (length($Reply) < 1)
@@ -150,7 +150,7 @@ sub JobRestart
   return substr($Reply, 1);
 }
 
-sub RescheduleJobs
+sub RescheduleJobs()
 {
   my $Reply = SendCmdReceiveReply("reschedulejobs\n");
   if (length($Reply) < 1)
@@ -165,7 +165,7 @@ sub RescheduleJobs
   return substr($Reply, 1);
 }
 
-sub VMStatusChange
+sub VMStatusChange($$$)
 {
   my ($VMKey, $OldStatus, $NewStatus) = @_;
 
@@ -182,7 +182,7 @@ sub VMStatusChange
   return substr($Reply, 1);
 }
 
-sub WinePatchMLSubmission
+sub WinePatchMLSubmission()
 {
   my $Reply = SendCmdReceiveReply("winepatchmlsubmission\n");
   if (length($Reply) < 1)
@@ -197,7 +197,7 @@ sub WinePatchMLSubmission
   return substr($Reply, 1);
 }
 
-sub WinePatchWebSubmission
+sub WinePatchWebSubmission()
 {
   my $Reply = SendCmdReceiveReply("winepatchwebsubmission\n");
   if (length($Reply) < 1)
@@ -212,9 +212,9 @@ sub WinePatchWebSubmission
   return substr($Reply, 1);
 }
 
-sub GetScreenshot
+sub GetScreenshot($)
 {
-  my $VMName = $_[0];
+  my ($VMName) = @_;
 
   my $Reply = SendCmdReceiveReply("getscreenshot $VMName\n");
   if (length($Reply) < 1)

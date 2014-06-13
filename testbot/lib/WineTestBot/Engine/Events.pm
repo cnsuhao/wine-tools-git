@@ -34,7 +34,7 @@ require Exporter;
 
 my %Events;
 
-sub AddEvent
+sub AddEvent($$$$)
 {
   my ($Name, $Timeout, $Repeat, $HandlerFunc) = @_;
 
@@ -44,21 +44,21 @@ sub AddEvent
                     HandlerFunc => $HandlerFunc};
 }
 
-sub DeleteEvent
+sub DeleteEvent($)
 {
-  my $Name = $_[0];
+  my ($Name) = @_;
 
   delete $Events{$Name};
 }
 
-sub EventScheduled
+sub EventScheduled($)
 {
-  my $Name = $_[0];
+  my ($Name) = @_;
 
   return defined($Events{$Name});
 }
 
-sub RunEvents
+sub RunEvents()
 {
   my $Now = time();
   my $Next = undef;
