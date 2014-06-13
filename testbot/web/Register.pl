@@ -21,6 +21,8 @@ use strict;
 package RegisterPage;
 
 use URI::Escape;
+
+use ObjectModel::BasicPropertyDescriptor;
 use ObjectModel::CGI::ItemPage;
 use WineTestBot::Config;
 use WineTestBot::Users;
@@ -33,6 +35,11 @@ sub _initialize($$$)
   my ($self, $Request, $RequiredRole) = @_;
 
   $self->SUPER::_initialize($Request, $RequiredRole, CreateUsers());
+
+  $self->GetParam("Remarks", "") if (!defined $self->GetParam("Remarks"));
+  $self->{ExtraProperties} = [
+    CreateBasicPropertyDescriptor("Remarks", "Remarks", !1, !1, "textarea", 200)
+  ];
 }
 
 sub GetTitle($)
@@ -81,8 +88,10 @@ sub GenerateFields($)
   my ($self) = @_;
 
   print "<div><input type='hidden' name='Status' value='active'></div>\n";
+
   $self->SUPER::GenerateFields();
-  print "<div class='DetailProperty'><label>Remarks</label><textarea name='Remarks' cols='40' rows='4'></textarea></div>\n";
+  map { $self->GenerateField($_, "rw") } @{$self->{ExtraProperties}};
+
   $self->GenerateRequiredLegend();
   $self->{HasRequired} = !1;
 }
