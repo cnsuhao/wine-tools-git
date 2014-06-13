@@ -191,7 +191,7 @@ h2
 {
   width: 45%;
   display: inline-block;
-  vertical-align: center;
+  vertical-align: middle;
   text-align: right;
   padding-right: 6px;
 }
@@ -199,6 +199,7 @@ h2
 .ItemValue
 {
   display: inline-block;
+  vertical-align: middle;
   /* The joys of IE. Got the following 2 lines from
      http://blog.mozilla.com/webdev/2009/02/20/cross-browser-inline-block/ */
   zoom: 1;
