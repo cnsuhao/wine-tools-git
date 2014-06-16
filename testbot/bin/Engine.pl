@@ -412,12 +412,7 @@ sub HandleWinePatchMLSubmission()
     my $FullMessageFileName = "$DataDir/staging/$1";
 
     # Create a work directory
-    my $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
-    while (-e $WorkDir)
-    {
-      $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
-    }
-    mkdir $WorkDir;
+    my $WorkDir = CreateNewDir("$DataDir/staging", "_work");
 
     # Process the patch
     my $Parser = new MIME::Parser;
@@ -489,12 +484,7 @@ sub HandleWinePatchWebSubmission()
   foreach my $WebPatchId (sort { $a <=> $b } @WebPatchIds)
   {
     # Create a working dir
-    my $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
-    while (-e $WorkDir)
-    {
-      $WorkDir = "$DataDir/staging/" . GenerateRandomString(32) . "_work";
-    }
-    mkdir $WorkDir;
+    my $WorkDir = CreateNewDir("$DataDir/staging", "_work");
 
     # Process the patch
     my $Parser = new MIME::Parser;

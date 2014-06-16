@@ -33,7 +33,8 @@ use vars qw (@ISA @EXPORT);
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(&MakeSecureURL &SecureConnection &GenerateRandomString
-             &OpenNewFile &CreateNewFile &CreateNewLink &BuildEMailRecipient);
+             &OpenNewFile &CreateNewFile &CreateNewLink &CreateNewDir
+             &BuildEMailRecipient);
 
 sub MakeSecureURL($)
 {
@@ -99,6 +100,20 @@ sub CreateNewLink($$$)
   {
     my $Link = "$Dir/" . GenerateRandomString(32) . $Suffix;
     return $Link if (link $OldFileName, $Link);
+
+    # This is not an error that will be fixed by trying a different path
+    return undef if (!$!{EEXIST});
+  }
+}
+
+sub CreateNewDir($$)
+{
+  my ($Dir, $Suffix) = @_;
+
+  while (1)
+  {
+    my $Path = "$Dir/" . GenerateRandomString(32) . $Suffix;
+    return $Path if (mkdir $Path);
 
     # This is not an error that will be fixed by trying a different path
     return undef if (!$!{EEXIST});
