@@ -33,7 +33,7 @@ use vars qw (@ISA @EXPORT);
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(&MakeSecureURL &SecureConnection &GenerateRandomString
-             &OpenNewFile &CreateNewFile &BuildEMailRecipient);
+             &OpenNewFile &CreateNewFile &CreateNewLink &BuildEMailRecipient);
 
 sub MakeSecureURL($)
 {
@@ -89,6 +89,20 @@ sub CreateNewFile($$)
   my ($fh, $FileName) = OpenNewFile($Dir, $Suffix);
   close($fh) if ($fh);
   return $FileName;
+}
+
+sub CreateNewLink($$$)
+{
+  my ($OldFileName, $Dir, $Suffix) = @_;
+
+  while (1)
+  {
+    my $Link = "$Dir/" . GenerateRandomString(32) . $Suffix;
+    return $Link if (link $OldFileName, $Link);
+
+    # This is not an error that will be fixed by trying a different path
+    return undef if (!$!{EEXIST});
+  }
 }
 
 sub DateTimeToString($)

@@ -33,6 +33,8 @@ linked to this patch through a WineTestBot::PendingPatch object.
 =cut
 
 use Encode qw/decode/;
+use File::Basename;
+
 use WineTestBot::Config;
 use WineTestBot::PendingPatchSets;
 use WineTestBot::Jobs;
@@ -206,13 +208,8 @@ sub Submit
     my $Steps = $NewJob->Steps;
     my $NewStep = $Steps->Add();
     # Create a link to the patch file in the staging dir
-    my $FileNameRandomPart = GenerateRandomString(32);
-    while (-e ("$DataDir/staging/${FileNameRandomPart}_patch.diff"))
-    {
-      $FileNameRandomPart = GenerateRandomString(32);
-    }
-    link $PatchFileName, "$DataDir/staging/${FileNameRandomPart}_patch.diff";
-    $NewStep->FileName($FileNameRandomPart . "_patch.diff");
+    my $StagingFileName = CreateNewLink($PatchFileName, "$DataDir/staging", "_patch.diff");
+    $NewStep->FileName(basename($StagingFileName));
     my @Keys = keys %{$Targets{$BaseName}};
     $NewStep->FileType($Targets{$BaseName}{$Keys[0]});
     $NewStep->InStaging(1);
