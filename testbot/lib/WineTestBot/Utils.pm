@@ -24,6 +24,8 @@ WineTestBot::Utils - Utility functions
 
 =cut
 
+use Fcntl;
+
 use WineTestBot::Config;
 
 use vars qw (@ISA @EXPORT);
@@ -31,7 +33,7 @@ use vars qw (@ISA @EXPORT);
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(&MakeSecureURL &SecureConnection &GenerateRandomString
-             &BuildEMailRecipient);
+             &OpenNewFile &CreateNewFile &BuildEMailRecipient);
 
 sub MakeSecureURL($)
 {
@@ -63,6 +65,30 @@ sub GenerateRandomString($)
   }
 
   return substr($RandomString, 0, $Len);
+}
+
+sub OpenNewFile($$)
+{
+  my ($Dir, $Suffix) = @_;
+
+  while (1)
+  {
+    my $fh;
+    my $FileName = "$Dir/" . GenerateRandomString(32) . $Suffix;
+    return ($fh, $FileName) if (sysopen($fh, $FileName, O_CREAT | O_EXCL | O_WRONLY));
+
+    # This is not an error that will be fixed by trying a different filename
+    return (undef, undef) if (!$!{EEXIST});
+  }
+}
+
+sub CreateNewFile($$)
+{
+  my ($Dir, $Suffix) = @_;
+
+  my ($fh, $FileName) = OpenNewFile($Dir, $Suffix);
+  close($fh) if ($fh);
+  return $FileName;
 }
 
 sub DateTimeToString($)

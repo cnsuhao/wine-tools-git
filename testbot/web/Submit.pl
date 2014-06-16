@@ -792,20 +792,17 @@ sub OnSubmit($)
   # it so it does not get overwritten if the user submits another one before
   # the Engine gets around to doing so.
   my $BaseName = $self->GetParam("FileName");
-  my $FileNameRandomPart = GenerateRandomString(32);
-  while (-e "$DataDir/staging/${FileNameRandomPart}_$BaseName")
-  {
-    $FileNameRandomPart = GenerateRandomString(32);
-  }
-  my $StagingFileName = "${FileNameRandomPart}_$BaseName";
+  my $StagingFileName = CreateNewFile("$DataDir/staging", "_$BaseName");
 
   my $TmpStagingFullPath = $self->GetTmpStagingFullPath($BaseName);
-  if (!rename($TmpStagingFullPath, "$DataDir/staging/$StagingFileName"))
+  if ($StagingFileName and !rename($TmpStagingFullPath, $StagingFileName))
   {
-    # Use the existing staging file and hope for the best.
-    $self->{ErrMessage} = "Could not rename '$TmpStagingFullPath' to '$DataDir/staging/$StagingFileName': $!";
-    $StagingFileName = basename($TmpStagingFullPath);
+    $self->{ErrMessage} = "Could not rename '$TmpStagingFullPath' to '$StagingFileName': $!\n";
+    unlink($StagingFileName);
+    $StagingFileName = undef;
   }
+  # If needed fall back to the existing staging file and hope for the best.
+  $StagingFileName = basename($StagingFileName || $TmpStagingFullPath);
 
   # See also Patches::Submit() in lib/WineTestBot/Patches.pm
 

@@ -38,6 +38,7 @@ sub BEGIN
 }
 
 use Fcntl;
+use File::Basename;
 use File::Compare;
 use File::Copy;
 use LWP::UserAgent;
@@ -65,17 +66,20 @@ sub AddJob($$$)
   my ($BaseJob, $LatestBaseName, $Bits) = @_;
 
   # Create a copy in staging so it can then be moved into the job directory
-  my $FileNameRandomPart = GenerateRandomString(32);
-  while (-e "$DataDir/staging/${FileNameRandomPart}_$LatestBaseName")
+  my ($fh, $StagingFileName) = OpenNewFile("$DataDir/staging", "_$LatestBaseName");
+  if (!$fh)
   {
-    $FileNameRandomPart = GenerateRandomString(32);
-  }
-  my $StagingFileName = "$DataDir/staging/${FileNameRandomPart}_$LatestBaseName";
-  if (!copy("$DataDir/latest/$LatestBaseName", $StagingFileName))
-  {
-    LogMsg "Could not copy '$DataDir/latest/$LatestBaseName' to '$StagingFileName': $!\n";
+    LogMsg "Could not create the staging file: $!\n";
     return 0;
   }
+  if (!copy("$DataDir/latest/$LatestBaseName", $fh))
+  {
+    LogMsg "Could not copy '$DataDir/latest/$LatestBaseName' to '$StagingFileName': $!\n";
+    close($fh);
+    unlink($StagingFileName);
+    return 0;
+  }
+  close($fh);
 
   # First create a new job
   my $Jobs = CreateJobs();
@@ -91,7 +95,7 @@ sub AddJob($$$)
   my $NewStep = $Steps->Add();
   my $BitsSuffix = ($Bits == 64 ? "64" : "");
   $NewStep->Type("suite");
-  $NewStep->FileName("${FileNameRandomPart}_$LatestBaseName");
+  $NewStep->FileName(basename($StagingFileName));
   $NewStep->FileType($Bits == 64 ? "exe64" : "exe32");
   $NewStep->InStaging(1);
 
@@ -219,24 +223,16 @@ if ($Response->code != RC_OK)
 #   put it in the jobs directory tree.
 umask 002;
 mkdir "$DataDir/staging";
-my $FileNameRandomPart = GenerateRandomString(32);
-while (-e "$DataDir/staging/${FileNameRandomPart}_winetest${BitsSuffix}-latest.exe")
+my ($fh, $StagingFileName) = OpenNewFile("$DataDir/staging", "_$LatestBaseName");
+if (!$fh)
 {
-  $FileNameRandomPart = GenerateRandomString(32);
-}
-my $StagingFileName = "$DataDir/staging/${FileNameRandomPart}_winetest${BitsSuffix}-latest.exe";
-
-my $NewFile = 1;
-if (open(my $fh, ">", $StagingFileName))
-{
-  print $fh $Response->decoded_content();
-  close($fh);
-}
-else
-{
-  LogMsg "Could not create staging file '$StagingFileName': $!\n";
+  LogMsg "Could not create staging file: $!\n";
   exit 1;
 }
+print $fh $Response->decoded_content();
+close($fh);
+
+my $NewFile = 1;
 if (-r $LatestFileName)
 {
   $NewFile = compare($StagingFileName, $LatestFileName) != 0;

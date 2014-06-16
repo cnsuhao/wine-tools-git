@@ -107,34 +107,21 @@ sub SubmitSubset
   my $self = shift;
   my ($MaxPart, $FinalPatch) = @_;
 
-  my $CombinedFileName = "$DataDir/staging/" . GenerateRandomString(32) .
-                         "_patch";
-  while (-e $CombinedFileName)
-  {
-    $CombinedFileName = "$DataDir/staging/" . GenerateRandomString(32) .
-                        "_patch";
-  }
-
-  if (! open(COMBINED, ">$CombinedFileName"))
-  {
-    return "Can't create combined patch file";
-  }
+  my ($CombinedFile, $CombinedFileName) = OpenNewFile("$DataDir/staging", "_patch");
+  return "Could not create a combined patch file: $!" if (!$CombinedFile);
 
   my $Parts = $self->Parts;
   for (my $PartNo = 1; $PartNo <= $MaxPart; $PartNo++)
   {
     my $Part = $Parts->GetItem($PartNo);
-    if (defined($Part))
+    if (defined $Part and
+        open(my $PartFile, "<" , "$DataDir/patches/" . $Part->Patch->Id))
     {
-      if (open(PART, "<$DataDir/patches/" . $Part->Patch->Id))
-      {
-        print COMBINED <PART>;
-        close(PART);
-      }
+      map { print $CombinedFile $_; } <$PartFile>;
+      close($PartFile);
     }
   }
-
-  close(COMBINED);
+  close($CombinedFile);
 
   my $ErrMessage = $FinalPatch->Submit($CombinedFileName, 1);
   unlink($CombinedFileName);

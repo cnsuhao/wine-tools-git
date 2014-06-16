@@ -44,17 +44,19 @@ use WineTestBot::Engine::Notify;
 use WineTestBot::Log;
 
 # Store the message in the staging dir
-my $FileName = GenerateRandomString(32) . "_wine-patches";
-while (-e ("$DataDir/staging/$FileName"))
+my ($fh, $FileName) = OpenNewFile("$DataDir/staging", "_wine-patches");
+if (!$fh)
 {
-  $FileName = GenerateRandomString(32);
-}
-if (!copy(\*STDIN, "$DataDir/staging/$FileName"))
-{
-  LogMsg "Unable to copy the email to '$FileName': $!\n";
+  LogMsg "Could not create a staging file: $!\n";
   exit 1;
 }
-
+if (!copy(\*STDIN, $fh))
+{
+  LogMsg "Could not copy the email to '$FileName': $!\n";
+  close($fh);
+  exit 1;
+}
+close($fh);
 
 # Notify the Engine of the new message
 my $ErrMessage = WinePatchMLSubmission();
