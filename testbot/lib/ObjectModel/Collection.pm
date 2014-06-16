@@ -63,7 +63,7 @@ sub ComputeMasterKey($)
   return $MasterKey;
 }
 
-sub new
+sub new($$$$$;$$@)
 {
   my $class = shift;
   my $TableName = shift;
@@ -71,7 +71,7 @@ sub new
   my $ItemName = shift;
   my $PropertyDescriptors = shift;
   my $ScopeObject = shift;
-  my $MasterObject = $_[0];
+  my ($MasterObject) = @_;
 
   my $MasterKey = "";
   my ($AllScopeItems, $MasterColNames, $MasterColValues);
@@ -100,26 +100,25 @@ sub new
   return $self;
 }
 
-sub _initialize
+sub _initialize($;$)
 {
   # $MasterObject may be required for some Collections.
-  my ($self, $MasterObject) = @_;
+  my ($self, $_MasterObject) = @_;
 
   $self->{AllScopeItems}->{ref($self)} ||= {};
 }
 
-sub GetPropertyDescriptors
+sub GetPropertyDescriptors($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{PropertyDescriptors};
 }
 
-sub GetPropertyDescriptorByName
+sub GetPropertyDescriptorByName($$)
 {
-  my $self = shift;
+  my ($self, $Name) = @_;
 
-  my $Name = shift;
   foreach my $PropertyDescriptor (@{$self->{PropertyDescriptors}})
   {
     if ($PropertyDescriptor->GetName() eq $Name)
@@ -131,39 +130,39 @@ sub GetPropertyDescriptorByName
   return undef;
 }
 
-sub GetTableName
+sub GetTableName($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{TableName};
 }
 
-sub GetCollectionName
+sub GetCollectionName($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{CollectionName};
 }
 
-sub GetItemName
+sub GetItemName($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{ItemName};
 }
 
-sub Load
+sub Load($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->GetBackEnd()->LoadCollection($self);
 
   $self->{Loaded} = 1;
 }
 
-sub Add
+sub Add($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $NewItem = $self->CreateItem();
   $NewItem->InitializeNew($self);
@@ -184,17 +183,17 @@ sub Add
   return $NewItem;
 }
 
-sub GetKeysNoLoad
+sub GetKeysNoLoad($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my @Keys = keys %{$self->{Items}};
   return \@Keys;
 }
 
-sub GetKeys
+sub GetKeys($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (! $self->{Loaded})
   {
@@ -221,7 +220,7 @@ collections.
 =back
 =cut
 
-sub GetFullKey
+sub GetFullKey($$)
 {
   my ($self, $Key) = @_;
 
@@ -242,7 +241,7 @@ Item is returned.
 =back
 =cut
 
-sub GetScopeItem
+sub GetScopeItem($$$)
 {
   my ($self, $Key, $NewItem) = @_;
 
@@ -269,7 +268,7 @@ gets loaded and added even if it does not match the Collection's filters.
 =back
 =cut
 
-sub GetItem
+sub GetItem($$)
 {
   my ($self, $Key) = @_;
 
@@ -310,10 +309,9 @@ GetItem().
 =back
 =cut
 
-sub ItemExists
+sub ItemExists($$)
 {
-  my $self = shift;
-  my $Key = $_[0];
+  my ($self, $Key) = @_;
 
   if (! defined($Key))
   {
@@ -340,9 +338,9 @@ through GetItem().
 =back
 =cut
 
-sub GetItems
+sub GetItems($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (! $self->{Loaded})
   {
@@ -363,9 +361,9 @@ Returns true if the Collection contains no Item.
 =back
 =cut
 
-sub IsEmpty
+sub IsEmpty($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (! $self->{Loaded})
   {
@@ -375,7 +373,7 @@ sub IsEmpty
   return scalar(keys %{$self->{Items}}) == 0;
 }
 
-sub CombineKey
+sub CombineKey($@)
 {
   my $self = shift;
 
@@ -383,19 +381,34 @@ sub CombineKey
   return $CombinedKey;
 }
 
-sub SplitKey
+sub SplitKey($$)
 {
-  my $self = shift;
+  my ($self, $CombinedKey) = @_;
 
-  my $CombinedKey = $_[0];
   my @KeyComponents = split /#@#/, $CombinedKey;
 
   return @KeyComponents;
 }
 
-sub Validate
+=pod
+=over 12
+
+=item C<Validate()>
+
+Validates all the new and modified Item objects present in the Collection.
+
+In case of an error this returns a triplet containing the invalid Item's key,
+the invalid property name and the error message. The property name may be undef
+if no specific property is invalid.
+
+If no Item is invalid then (undef, undef, undef) is returned.
+
+=back
+=cut
+
+sub Validate($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   foreach my $Item (values %{$self->{Items}})
   {
@@ -437,9 +450,9 @@ sub Validate
   return (undef, undef, undef);
 }
 
-sub SaveNoValidate
+sub SaveNoValidate($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->GetBackEnd()->SaveCollection($self);
 
@@ -459,9 +472,9 @@ sub SaveNoValidate
   }
 }
 
-sub Save
+sub Save($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my ($ErrKey, $ErrProperty, $ErrMessage) = $self->Validate();
   if (! defined($ErrMessage))
@@ -473,10 +486,9 @@ sub Save
   return ($ErrKey, $ErrProperty, $ErrMessage);
 }
 
-sub KeyChanged
+sub KeyChanged($$$)
 {
-  my $self = shift;
-  my ($OldKey, $NewKey) = @_;
+  my ($self, $OldKey, $NewKey) = @_;
 
   my $Item = $self->{Items}{$OldKey};
   if (! defined($Item))
@@ -499,10 +511,9 @@ sub KeyChanged
   $Item->KeyChanged();
 }
 
-sub MasterKeyChanged
+sub MasterKeyChanged($$)
 {
-  my $self = shift;
-  my $MasterColValues = shift;
+  my ($self, $MasterColValues) = @_;
 
   $self->{MasterColValues} = $MasterColValues;
   $self->{MasterKey} = ComputeMasterKey($MasterColValues);
@@ -513,17 +524,16 @@ sub MasterKeyChanged
   }
 }
 
-sub GetMasterCols
+sub GetMasterCols($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return ($self->{MasterColNames}, $self->{MasterColValues});
 }
 
-sub DeleteItem
+sub DeleteItem($$)
 {
-  my $self = shift;
-  my $Item = shift;
+  my ($self, $Item) = @_;
 
   my $ErrMessage = $Item->OnDelete();
   if (defined($ErrMessage))
@@ -548,9 +558,9 @@ sub DeleteItem
   return undef;
 }
 
-sub DeleteAll
+sub DeleteAll($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (! $self->{Loaded})
   {
@@ -582,17 +592,16 @@ sub DeleteAll
   return undef;
 }
 
-sub AddFilter
+sub AddFilter($$$)
 {
-  my $self = shift;
-  my ($PropertyName, $Value) = @_;
+  my ($self, $PropertyName, $Value) = @_;
 
   $self->{Filters}{$PropertyName} = $Value;
 }
 
-sub GetFilters
+sub GetFilters($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{Filters};
 }

@@ -35,10 +35,10 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(&new);
 
-sub new
+sub new($$@)
 {
   my $class = shift;
-  my $Collection = $_[0];
+  my ($Collection) = @_;
 
   my $self = {};
   $self->{TableName} = $Collection->{TableName};
@@ -70,30 +70,29 @@ sub new
   return $self;
 }
 
-sub _initialize
+sub _initialize($$)
 {
   #my ($self, $Collection) = @_;
 }
 
-sub InitializeNew
+sub InitializeNew($$)
 {
   my ($self, $_Collection) = @_;
 
   $self->{IsModified} = !1;
 }
 
-sub GetPropertyDescriptors
+sub GetPropertyDescriptors($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{PropertyDescriptors};
 }
 
-sub GetPropertyDescriptorByName
+sub GetPropertyDescriptorByName($$)
 {
-  my $self = shift;
+  my ($self, $Name) = @_;
 
-  my $Name = $_[0];
   foreach my $PropertyDescriptor (@{$self->{PropertyDescriptors}})
   {
     if ($PropertyDescriptor->GetName() eq $Name)
@@ -105,31 +104,30 @@ sub GetPropertyDescriptorByName
   return undef;
 }
 
-sub GetTableName
+sub GetTableName($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{TableName};
 }
 
-sub GetIsNew
+sub GetIsNew($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{IsNew};
 }
 
-sub GetIsModified
+sub GetIsModified($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->{IsModified};
 }
 
-sub GetColValue
+sub GetColValue($$)
 {
-  my $self = shift;
-  my $ColName = shift;
+  my ($self, $ColName) = @_;
 
   if (! exists($self->{ColValues}{$ColName}))
   {
@@ -139,10 +137,9 @@ sub GetColValue
   return $self->{ColValues}{$ColName};
 }
 
-sub PutColValue
+sub PutColValue($$$)
 {
-  my $self = shift;
-  my ($ColName, $Value) = @_;
+  my ($self, $ColName, $Value) = @_;
 
   if (! exists($self->{ColValues}{$ColName}))
   {
@@ -156,10 +153,9 @@ sub PutColValue
   }
 }
 
-sub ValuesDiffer
+sub ValuesDiffer($$$)
 {
-  my $self = shift;
-  my ($Val1, $Val2) = @_;
+  my ($self, $Val1, $Val2) = @_;
 
   if (defined($Val1))
   {
@@ -258,9 +254,9 @@ sub AUTOLOAD
   die "Unknown property or method $PropertyName";
 }
 
-sub GetMasterKey
+sub GetMasterKey($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $ColNamePrefix = ref($self);
   $ColNamePrefix =~ s/.*://;
@@ -285,17 +281,17 @@ sub GetMasterKey
   return (\@MasterColNames, \@MasterColValues);
 }
 
-sub ResetModified
+sub ResetModified($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->{IsNew} = !1;
   $self->{IsModified} = !1;
 }
 
-sub GetKey
+sub GetKey($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Key = undef;
   foreach my $PropertyDescriptor (@{$self->{PropertyDescriptors}})
@@ -332,9 +328,9 @@ sub GetFullKey($)
   return $self->{MasterKey} . $self->GetKey();
 }
 
-sub GetKeyComponents
+sub GetKeyComponents($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my @KeyComponents;
   foreach my $PropertyDescriptor (@{$self->{PropertyDescriptors}})
@@ -351,19 +347,18 @@ sub GetKeyComponents
   return @KeyComponents;
 }
 
-sub ValidateProperty
+sub ValidateProperty($$)
 {
-  my $self = shift;
+  my ($self, $PropertyDescriptor) = @_;
 
-  my $PropertyDescriptor = shift;
   my $PropertyName = $PropertyDescriptor->GetName();
   return $PropertyDescriptor->ValidateValue($self->$PropertyName,
                                             $self->GetIsNew());
 }
 
-sub Validate
+sub Validate($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   foreach my $PropertyDescriptor (@{$self->{PropertyDescriptors}})
   {
@@ -390,9 +385,10 @@ sub Validate
   return (undef, undef);
 }
 
-sub OnDelete
+sub OnDelete($)
 {
-  my $self = shift;
+  my ($self) = @_;
+
   foreach my $PropertyDescriptor (@{$self->{PropertyDescriptors}})
   {
     if ($PropertyDescriptor->GetClass() eq "Detailref")
@@ -410,16 +406,16 @@ sub OnDelete
   return undef;
 }
 
-sub OnSaved
+sub OnSaved($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->ResetModified();
 }
 
-sub Save
+sub Save($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my ($ErrProperty, $ErrMessage) = $self->Validate();
   if (defined($ErrMessage))
@@ -446,9 +442,9 @@ sub Save
   return (undef, undef);
 }
 
-sub KeyChanged
+sub KeyChanged($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my ($MasterColNames, $MasterColValues);
   foreach my $PropertyDescriptor (@{$self->GetPropertyDescriptors()})
@@ -465,7 +461,7 @@ sub KeyChanged
   }
 }
 
-sub MasterKeyChanged
+sub MasterKeyChanged($$)
 {
   my ($self, $MasterColValues) = @_;
 
@@ -481,9 +477,9 @@ sub MasterKeyChanged
   $self->KeyChanged();
 }
 
-sub GetMasterCols
+sub GetMasterCols($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return ($self->{MasterColNames}, $self->{MasterColValues});
 }
