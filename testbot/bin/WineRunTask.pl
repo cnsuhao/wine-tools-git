@@ -88,7 +88,7 @@ sub FatalError($$$$$)
   exit 1;
 }
 
-sub TakeScreenshot
+sub TakeScreenshot($$)
 {
   my ($VM, $FullScreenshotFileName) = @_;
 
@@ -111,9 +111,9 @@ sub TakeScreenshot
   }
 }
 
-sub CountFailures
+sub CountFailures($)
 {
-  my $ReportFileName = $_[0];
+  my ($ReportFileName) = @_;
 
   if (! open REPORTFILE, "<$ReportFileName")
   {
