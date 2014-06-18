@@ -49,7 +49,7 @@ use vars qw(@ISA @EXPORT);
 require Exporter;
 @ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
-sub InitializeNew
+sub InitializeNew($$)
 {
   my ($self, $Collection) = @_;
 
@@ -68,10 +68,9 @@ Initializes a WineTestBot::Patch object from the given message.
 =back
 =cut
 
-sub FromSubmission
+sub FromSubmission($$)
 {
-  my $self = shift;
-  my $MsgEntity = $_[0];
+  my ($self, $MsgEntity) = @_;
 
   my $Head = $MsgEntity->head;
   my @From = Mail::Address->parse($Head->get("From"));
@@ -121,10 +120,9 @@ WineTestBot::PendingPatchSet::SubmitSubset().
 =back
 =cut
 
-sub Submit
+sub Submit($$$)
 {
-  my $self = shift;
-  my ($PatchFileName, $IsSet) = @_;
+  my ($self, $PatchFileName, $IsSet) = @_;
 
   # See also OnSubmit() in web/Submit.pl
   my %Targets;
@@ -284,9 +282,9 @@ sub Submit
   return undef;
 }
 
-sub GetEMailRecipient
+sub GetEMailRecipient($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return BuildEMailRecipient($self->FromEMail, $self->FromName);
 }
@@ -326,17 +324,16 @@ BEGIN
   );
 }
 
-sub CreateItem
+sub CreateItem($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return WineTestBot::Patch->new($self);
 }
 
-sub IsPatch
+sub IsPatch($$)
 {
-  my $self = shift;
-  my $Body = $_[0];
+  my ($self, $Body) = @_;
 
   if (open(BODY, "<" . $Body->path))
   {
@@ -355,10 +352,9 @@ sub IsPatch
   return !1;
 }
 
-sub IsTestPatch
+sub IsTestPatch($$)
 {
-  my $self = shift;
-  my $Body = $_[0];
+  my ($self, $Body) = @_;
 
   if (open(BODY, "<" . $Body->path))
   {
@@ -392,10 +388,9 @@ others, then C<WineTestBot::Patch::Submit()> is called right away.
 =back
 =cut
 
-sub NewPatch
+sub NewPatch($$$)
 {
-  my $self = shift;
-  my ($MsgEntity, $WebPatchId) = @_;
+  my ($self, $MsgEntity, $WebPatchId) = @_;
 
   my $Patch = $self->Add();
   $Patch->WebPatchId($WebPatchId) if (defined $WebPatchId);

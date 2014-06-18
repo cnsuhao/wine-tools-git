@@ -38,9 +38,9 @@ use vars qw(@ISA @EXPORT);
 require Exporter;
 @ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
-sub GetTitle
+sub GetTitle($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Title = "";
   if ($self->Type eq "single")
@@ -115,10 +115,9 @@ BEGIN
    );
 }
 
-sub _initialize
+sub _initialize($$)
 {
-  my $self = shift;
-  my $Job = $_[0];
+  my ($self, $Job) = @_;
 
   $self->SUPER::_initialize($Job);
 
@@ -164,9 +163,9 @@ sub _initialize
   $self->{Loaded} = 1;
 }
 
-sub CreateItem
+sub CreateItem($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return WineTestBot::StepTask->new($self);
 }

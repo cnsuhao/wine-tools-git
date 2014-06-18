@@ -65,9 +65,9 @@ BEGIN
   );
 }
 
-sub CreateItem
+sub CreateItem($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return WineTestBot::PendingPatch->new($self);
 }

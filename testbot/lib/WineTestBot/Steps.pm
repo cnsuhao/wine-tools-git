@@ -40,10 +40,9 @@ use vars qw(@ISA @EXPORT);
 require Exporter;
 @ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
-sub InitializeNew
+sub InitializeNew($$)
 {
-  my $self = shift;
-  my $Collection = $_[0];
+  my ($self, $Collection) = @_;
 
   $self->Status("queued");
   my $Keys = $Collection->GetKeys();
@@ -56,10 +55,9 @@ sub InitializeNew
   $self->SUPER::InitializeNew($Collection);
 }
 
-sub HandleStaging
+sub HandleStaging($$)
 {
-  my $self = shift;
-  my $JobKey = $_[0];
+  my ($self, $JobKey) = @_;
 
   if (! $self->InStaging)
   {
@@ -168,9 +166,9 @@ BEGIN
   );
 }
 
-sub CreateItem
+sub CreateItem($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return WineTestBot::Step->new($self);
 }

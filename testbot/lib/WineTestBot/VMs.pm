@@ -231,7 +231,7 @@ sub _initialize($$)
   $self->{OldStatus} = undef;
 }
 
-sub InitializeNew
+sub InitializeNew($$)
 {
   my ($self, $Collection) = @_;
 
@@ -360,7 +360,7 @@ sub IsPoweredOn($)
   return $IsActive;
 }
 
-sub PowerOn
+sub PowerOn($)
 {
   my ($self) = @_;
 
@@ -466,17 +466,13 @@ sub CaptureScreenImage($)
   return (undef, $Image->{Size}, $Image->{Bytes});
 }
 
-sub Status
+sub Status($;$)
 {
-  my $self = shift;
+  my ($self, $NewStatus) = @_;
 
   my $CurrentStatus = $self->SUPER::Status;
-  if (! @_)
-  {
-    return $CurrentStatus;
-  }
+  return $CurrentStatus if (!defined $NewStatus);
 
-  my $NewStatus = $_[0];
   if ($NewStatus ne $CurrentStatus)
   {
     $self->SUPER::Status($NewStatus);
@@ -505,23 +501,23 @@ sub HasEnabledRole($)
          $Role eq "winetest";
 }
 
-sub Validate
+sub Validate($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if ($self->Type ne "win32" && $self->Type ne "win64" &&
       ($self->Role eq "winetest" || $self->Role eq "extra"))
   {
     return ("Role", "Only win32 and win64 VMs can have a role of '" . $self->Role . "'");
   }
-  return $self->SUPER::Validate(@_);
+  return $self->SUPER::Validate();
 }
 
-sub OnSaved
+sub OnSaved($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
-  $self->SUPER::OnSaved(@_);
+  $self->SUPER::OnSaved();
 
   if (defined($self->{OldStatus}))
   {
@@ -533,9 +529,9 @@ sub OnSaved
   }
 }
 
-sub RunRevert
+sub RunRevert($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->Status("reverting");
   my ($ErrProperty, $ErrMessage) = $self->Save();
@@ -594,11 +590,11 @@ require Exporter;
 @ISA = qw(WineTestBot::WineTestBotCollection Exporter);
 @EXPORT = qw(&CreateVMs);
 
-sub _initialize
+sub _initialize($)
 {
-  my $self = shift;
+  my ($self) = @_;
   $self->{Hypervisors} = WineTestBot::VM::Hypervisors->new();
-  $self->SUPER::_initialize(@_);
+  $self->SUPER::_initialize();
 }
 
 BEGIN
@@ -620,9 +616,9 @@ BEGIN
   );
 }
 
-sub CreateItem
+sub CreateItem($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return WineTestBot::VM->new($self);
 }
@@ -634,9 +630,9 @@ sub CreateVMs(;$)
                                  \@PropertyDescriptors, $ScopeObject);
 }
 
-sub CountRevertingRunningVMs
+sub CountRevertingRunningVMs($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $RevertingVMs = 0;
   my $RunningVMs = 0;
@@ -657,9 +653,9 @@ sub CountRevertingRunningVMs
   return ($RevertingVMs, $RunningVMs);
 }
 
-sub CountPoweredOnNonBaseVMs
+sub CountPoweredOnNonBaseVMs($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $PoweredOnVMs = 0;
   foreach my $VM (@{$self->GetItems()})
@@ -674,10 +670,9 @@ sub CountPoweredOnNonBaseVMs
   return $PoweredOnVMs;
 }
 
-sub SortKeysBySortOrder
+sub SortKeysBySortOrder($$)
 {
-  my $self = shift;
-  my $Keys = $_[0];
+  my ($self, $Keys) = @_;
 
   # Sort retired and deleted VMs last
   my %RoleOrders = ("retired" => 1, "deleted" => 2);
@@ -712,8 +707,7 @@ sub FilterEnabledStatus($)
 
 sub FilterHypervisors($$)
 {
-  my $self = shift;
-  my $Hypervisors = $_[0];
+  my ($self, $Hypervisors) = @_;
 
   $self->AddFilter("VirtURI", $Hypervisors);
 }

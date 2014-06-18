@@ -60,7 +60,7 @@ use vars qw(@ISA @EXPORT);
 require Exporter;
 @ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
-sub _initialize
+sub _initialize($$)
 {
   my ($self, $Collection) = @_;
 
@@ -69,7 +69,7 @@ sub _initialize
   $self->{OldStatus} = undef;
 }
 
-sub InitializeNew
+sub InitializeNew($$)
 {
   my ($self, $Collection) = @_;
 
@@ -81,17 +81,13 @@ sub InitializeNew
   $self->SUPER::InitializeNew($Collection);
 }
 
-sub Status
+sub Status($;$)
 {
-  my $self = shift;
+  my ($self, $NewStatus) = @_;
 
   my $CurrentStatus = $self->SUPER::Status;
-  if (! @_)
-  {
-    return $CurrentStatus;
-  }
+  return $CurrentStatus if (!defined $NewStatus);
 
-  my $NewStatus = $_[0];
   if (! defined($CurrentStatus) || $NewStatus ne $CurrentStatus)
   {
     $self->SUPER::Status($NewStatus);
@@ -101,11 +97,11 @@ sub Status
   return $NewStatus;
 }
 
-sub OnSaved
+sub OnSaved($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
-  $self->SUPER::OnSaved(@_);
+  $self->SUPER::OnSaved();
 
   if (defined($self->{OldStatus}))
   {
@@ -131,7 +127,7 @@ dead child processes.
 
 sub UpdateStatus($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Status = $self->Status;
   return $Status if ($Status ne "queued" && $Status ne "running");
@@ -186,9 +182,9 @@ sub UpdateStatus($)
   return $Status;
 }
 
-sub Cancel
+sub Cancel($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $Steps = $self->Steps;
   $Steps->AddFilter("Status", ["queued", "running"]);
@@ -224,9 +220,9 @@ sub Cancel
   return undef;
 }
 
-sub Restart
+sub Restart($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if ($self->Status eq "queued" || $self->Status eq "running")
   {
@@ -267,9 +263,9 @@ sub Restart
   return undef;
 }
 
-sub GetEMailRecipient
+sub GetEMailRecipient($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (defined($self->Patch) && defined($self->Patch->FromEMail))
   {
@@ -284,9 +280,9 @@ sub GetEMailRecipient
   return $self->User->GetEMailRecipient();
 }
 
-sub GetDescription
+sub GetDescription($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (defined($self->Patch) && defined($self->Patch->FromEMail))
   {
@@ -348,9 +344,9 @@ BEGIN
   );
 }
 
-sub CreateItem
+sub CreateItem($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return WineTestBot::Job->new($self);
 }
@@ -710,9 +706,9 @@ sub CheckJobs()
   return undef;
 }
 
-sub FilterNotArchived
+sub FilterNotArchived($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->AddFilter("Archived", [!1]);
 }

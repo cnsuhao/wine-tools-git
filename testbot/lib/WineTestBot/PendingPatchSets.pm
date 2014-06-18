@@ -58,10 +58,9 @@ have been received.
 =back
 =cut
 
-sub CheckSubsetComplete
+sub CheckSubsetComplete($$)
 {
-  my $self = shift;
-  my $MaxPart = $_[0];
+  my ($self, $MaxPart) = @_;
 
   my $Parts = $self->Parts;
   my $MissingPart = !1;
@@ -84,9 +83,9 @@ Returns true if all the patches of the patchset have been received.
 =back
 =cut
 
-sub CheckComplete
+sub CheckComplete($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->CheckSubsetComplete($self->TotalParts)
 }
@@ -102,10 +101,9 @@ calls WineTestBot::Patch::Submit() so it gets scheduled for testing.
 =back
 =cut
 
-sub SubmitSubset
+sub SubmitSubset($$$)
 {
-  my $self = shift;
-  my ($MaxPart, $FinalPatch) = @_;
+  my ($self, $MaxPart, $FinalPatch) = @_;
 
   my ($CombinedFile, $CombinedFileName) = OpenNewFile("$DataDir/staging", "_patch");
   return "Could not create a combined patch file: $!" if (!$CombinedFile);
@@ -139,10 +137,9 @@ Submits the last patch in the patchset.
 =back
 =cut
 
-sub Submit
+sub Submit($$)
 {
-  my $self = shift;
-  my $FinalPatch = $_[0];
+  my ($self, $FinalPatch) = @_;
 
   return $self->SubmitSubset($self->TotalParts, $FinalPatch);
 }
@@ -180,9 +177,9 @@ BEGIN
   );
 }
 
-sub CreateItem
+sub CreateItem($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return WineTestBot::PendingPatchSet->new($self);
 }
@@ -199,11 +196,9 @@ makes the patchset complete, then the patchset itself is deleted.
 =back
 =cut
 
-sub NewSubmission
+sub NewSubmission($$)
 {
-  my $self = shift;
-
-  my $Patch = $_[0];
+  my ($self, $Patch) = @_;
   if (! defined($Patch->FromEMail))
   {
     $Patch->Disposition("Unable to determine series author");
@@ -298,9 +293,9 @@ to have been submitted already.
 =back
 =cut
 
-sub CheckForCompleteSet
+sub CheckForCompleteSet($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $ErrMessage;
   foreach my $Set (@{$self->GetItems()})

@@ -45,10 +45,9 @@ use vars qw(@ISA @EXPORT);
 require Exporter;
 @ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
-sub InitializeNew
+sub InitializeNew($$)
 {
-  my $self = shift;
-  my ($Collection) = @_;
+  my ($self, $Collection) = @_;
 
   $self->Status("queued");
   my $Keys = $Collection->GetKeys();
@@ -140,7 +139,7 @@ sub Run($$)
   return $ErrMessage;
 }
 
-sub UpdateStatus
+sub UpdateStatus($$)
 {
   my ($self, $Skip) = @_;
 
@@ -220,9 +219,9 @@ BEGIN
   );
 }
 
-sub CreateItem
+sub CreateItem($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return WineTestBot::Task->new($self);
 }

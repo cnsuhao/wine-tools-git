@@ -38,7 +38,7 @@ use vars qw (@ISA @EXPORT);
 require Exporter;
 @ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
-sub InitializeNew
+sub InitializeNew($$)
 {
   my ($self, $Collection) = @_;
 
@@ -47,15 +47,14 @@ sub InitializeNew
   $self->SUPER::InitializeNew($Collection);
 }
 
-sub GeneratePasswordHash
+sub GeneratePasswordHash($$;$)
 {
-  my $self = shift;
-  my $PlaintextPassword = shift;
+  my ($self, $PlaintextPassword, $HashedPassword) = @_;
 
   my $Salt;
-  if (defined($_[0]))
+  if (defined $HashedPassword)
   {
-    $Salt = substr($_[0], 0, 9);
+    $Salt = substr($HashedPassword, 0, 9);
   }
   else
   {
@@ -71,31 +70,31 @@ sub GeneratePasswordHash
   return $Salt . sha1_hex($Salt . $PlaintextPassword);
 }
 
-sub GetEMailRecipient
+sub GetEMailRecipient($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return BuildEMailRecipient($self->EMail, $self->RealName);
 }
 
-sub Activated
+sub Activated($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $HashedPassword = $self->Password;
   return defined($HashedPassword) && length($HashedPassword) == 49;
 }
 
-sub WaitingForApproval
+sub WaitingForApproval($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return $self->Status eq 'active' && !$self->Activated() && !$self->ResetCode;
 }
 
-sub GenerateResetCode
+sub GenerateResetCode($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if (! $self->ResetCode)
   {
@@ -109,9 +108,9 @@ sub GenerateResetCode
   }
 }
 
-sub AddDefaultRoles
+sub AddDefaultRoles($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   my $UserRoles = $self->Roles;
   my $DefaultRoles = CreateRoles();
@@ -128,9 +127,9 @@ sub AddDefaultRoles
   }
 }
 
-sub Approve
+sub Approve($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   $self->GenerateResetCode();
   $self->AddDefaultRoles();
@@ -159,9 +158,9 @@ EOF
   return undef;
 }
 
-sub SendResetCode
+sub SendResetCode($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   if ($self->Status ne 'active')
   {
@@ -199,10 +198,9 @@ EOF
   return undef;
 }
 
-sub ResetPassword
+sub ResetPassword($$$)
 {
-  my $self = shift;
-  my ($ResetCode, $NewPassword) = @_;
+  my ($self, $ResetCode, $NewPassword) = @_;
 
   my $CorrectResetCode = $self->ResetCode;
   if (! defined($ResetCode) || ! defined($CorrectResetCode) ||
@@ -218,10 +216,9 @@ sub ResetPassword
   return $ErrMessage;
 }
 
-sub Authenticate
+sub Authenticate($$)
 {
-  my $self = shift;
-  my $PlaintextPassword = $_[0];
+  my ($self, $PlaintextPassword) = @_;
 
   if (! $self->Activated())
   {
@@ -252,10 +249,9 @@ sub Authenticate
   return (undef, $self);
 }
 
-sub FromLDAP
+sub FromLDAP($$$)
 {
-  my $self = shift;
-  my ($LDAP, $UserName) = @_;
+  my ($self, $LDAP, $UserName) = @_;
 
   $self->Name($UserName);
   $self->Password("*");
@@ -283,10 +279,9 @@ sub FromLDAP
   return undef;
 }
 
-sub HasRole
+sub HasRole($$)
 {
-  my $self = shift;
-  my $RoleName = shift;
+  my ($self, $RoleName) = @_;
 
   return defined($self->Roles->GetItem($RoleName));
 }
@@ -327,9 +322,9 @@ BEGIN
   );
 }
 
-sub CreateItem
+sub CreateItem($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return WineTestBot::User->new($self);
 }
@@ -341,10 +336,9 @@ sub CreateUsers(;$)
                                    \@PropertyDescriptors, $ScopeObject);
 }
 
-sub AuthenticateLDAP
+sub AuthenticateLDAP($$$)
 {
-  my $self = shift;
-  my ($Name, $Password) = @_;
+  my ($self, $Name, $Password) = @_;
 
   my $LDAP = Net::LDAP->new($LDAPServer);
   if (! defined($LDAP))
@@ -384,10 +378,9 @@ sub AuthenticateLDAP
   return (undef, $User);
 }
 
-sub AuthenticateBuiltin
+sub AuthenticateBuiltin($$$)
 {
-  my $self = shift;
-  my ($Name, $Password) = @_;
+  my ($self, $Name, $Password) = @_;
 
   my $User = $self->GetItem($Name);
   if (! defined($User))
@@ -398,12 +391,12 @@ sub AuthenticateBuiltin
   return $User->Authenticate($Password);
 }
 
-sub Authenticate
+sub Authenticate($$$)
 {
-  my $self = shift;
+  my ($self, $Name, $Password) = @_;
 
-  return defined($LDAPServer) ? $self->AuthenticateLDAP(@_) :
-                                $self->AuthenticateBuiltin(@_);
+  return defined($LDAPServer) ? $self->AuthenticateLDAP($Name, $Password) :
+                                $self->AuthenticateBuiltin($Name, $Password);
 }
 
 sub GetBatchUser()

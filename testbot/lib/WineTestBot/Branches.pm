@@ -33,7 +33,7 @@ use vars qw (@ISA @EXPORT);
 require Exporter;
 @ISA = qw(WineTestBot::WineTestBotItem Exporter);
 
-sub InitializeNew
+sub InitializeNew($$)
 {
   my ($self, $Collection) = @_;
 
@@ -59,9 +59,9 @@ require Exporter;
 @ISA = qw(WineTestBot::WineTestBotCollection Exporter);
 @EXPORT = qw(&CreateBranches);
 
-sub GetDefaultBranch
+sub GetDefaultBranch($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   foreach my $Branch (@{$self->GetItems()})
   {
@@ -79,16 +79,16 @@ BEGIN
   );
 }
 
-sub MultipleBranchesPresent()
+sub MultipleBranchesPresent($)
 {
-  my $self = shift;
+  my ($self) = @_;
   
   return 1 < scalar(@{$self->GetKeys()});
 }
 
-sub CreateItem
+sub CreateItem($)
 {
-  my $self = shift;
+  my ($self) = @_;
 
   return WineTestBot::Branch->new($self);
 }

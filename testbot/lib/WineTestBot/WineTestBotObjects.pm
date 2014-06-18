@@ -33,8 +33,9 @@ use vars qw (@ISA @EXPORT);
 require Exporter;
 @ISA = qw(ObjectModel::Item Exporter);
 
-sub GetBackEnd
+sub GetBackEnd($)
 {
+  #my ($self) = @_;
   return $ActiveBackEnds{'WineTestBot'};
 }
 
@@ -56,8 +57,9 @@ use vars qw (@ISA @EXPORT);
 require Exporter;
 @ISA = qw(ObjectModel::Collection Exporter);
 
-sub GetBackEnd
+sub GetBackEnd($)
 {
+  #my ($self) = @_;
   return $ActiveBackEnds{'WineTestBot'};
 }
 
