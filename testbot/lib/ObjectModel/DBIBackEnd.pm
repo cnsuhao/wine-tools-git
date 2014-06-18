@@ -38,7 +38,7 @@ use vars qw(@ISA @EXPORT);
 
 require Exporter;
 @ISA = qw(ObjectModel::BackEnd Exporter);
-@EXPORT = qw(&UseDBIBackend);
+@EXPORT = qw(&UseDBIBackEnd);
 
 sub GetDb($)
 {
