@@ -1,0 +1,10 @@
+Hacking LXR
+-----------
+
+The internals of LXR are described in the Developer's Manual
+separately downloadable.
+
+Information can also be grabbed from the comments in the source code
+or from embedded POD, aka. Perl's Plain Old Documentation
+(see http://lxr.sourceforge.net/lxr_internal_doc for a copy of this
+documentation).
