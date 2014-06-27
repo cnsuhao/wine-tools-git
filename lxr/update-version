@@ -1,0 +1,25 @@
+#!/bin/sh
+#
+# Update the LXR index after a new release of Wine.
+#
+# usage: update-version <version>
+#
+
+set -e
+umask 002
+
+if [ $# -lt 1 ]
+then
+  echo "Usage: $0 version"
+  exit 1
+fi
+
+version=$1
+
+tools_dir="/home/winehq/opt/git-tools"
+
+cd /home/winehq/opt/source
+
+(echo "wine-$version"; cat wine-versions) | uniq > wine-versions.new && mv -f wine-versions.new wine-versions
+
+$tools_dir/lxr/genxref --url=http://source.winehq.org --version=wine-$version

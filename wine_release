@@ -28,37 +28,14 @@ cd /home/winehq/opt/source
 sed "s/^${branch}_release:.*$/${branch}_release: $version/" $website_dir/include/globals.conf >globals.conf
 mv -f globals.conf $website_dir/include/globals.conf
 
-# nuke old attempt (if any)
-rm -rf wine-$version
-
-git clone -l -s -n git/wine.git wine-$version
-(cd wine-$version && git checkout wine-$version)
-
-# move wine link
-rm -f wine
-ln -s wine-$version wine
-
-# make cross reference database for LXR
-# note that we must have write permission in this directory
-echo "==== UPDATING LXR ===="
-cd db
-rm -rf wine-$version
-mkdir wine-$version
-cd wine-$version
-../../bin/genxref ../../wine-$version
-chmod +r fileidx xref
-
-# make Glimpse index
-glimpseindex -n -H . ../../wine-$version
-chmod +r .glimpse*
-cd ../..
-
-(echo "wine-$version"; cat wine-versions) | uniq > wine-versions.new && mv -f wine-versions.new wine-versions
-
-cd wine-$version
-
 if [ "$branch" = "master" ]
 then
+  # nuke old attempt (if any)
+  rm -rf wine-$version
+  git clone -l -s -n git/wine.git wine-$version
+  cd wine-$version
+  git checkout wine-$version
+
   # update man page and documentation
   echo "==== UPDATING DOCUMENTATION ===="
   ./configure --quiet --without-x --without-freetype
@@ -101,13 +78,15 @@ then
   echo "==== UPDATING WINE API STATS PAGE ===="
   $tools_dir/winapi_stats > winapi_stats.template && mv -f winapi_stats.template $templates_dir/en/winapi_stats.template
 
-  # cleanup source tree
-  git clean -q -d -x -f
+  cd ..
+  rm -rf wine-$version
 fi
-
-rm -rf .git
 
 # add version to bugzilla table
 echo "INSERT INTO bugs.versions (value, product_id) VALUES(\"$version\",1)" | mysql
+
+# make cross reference database for LXR
+echo "==== UPDATING LXR ===="
+$tools_dir/lxr/update-version $version
 
 # end
