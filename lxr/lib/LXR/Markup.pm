@@ -111,7 +111,7 @@ sub markupstring {
 	$string =~ s/(&lt;)(.*@.*)(&gt;)/$1<a class='offshore' href=\"mailto:$2\">$2<\/a>$3/g;
 
 	# HTMLify file names, assuming file is in the directory defined by $virtp.
-	$string =~ s{\b([\w\-_\/]+\.\w{1,5}|README)\b}
+	$string =~ s{\s([\w\-_\/]+\.\w{1,5}|README)\s}
 				{fileref($1, '', $virtp . $1);}ge;
 
 	return ($string);
