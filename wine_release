@@ -86,7 +86,6 @@ fi
 echo "INSERT INTO bugs.versions (value, product_id) VALUES(\"$version\",1)" | mysql
 
 # make cross reference database for LXR
-echo "==== UPDATING LXR ===="
-$tools_dir/lxr/update-version $version
+$tools_dir/lxr/update-version $version &
 
 # end
