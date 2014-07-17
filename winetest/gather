@@ -1,15 +1,5 @@
 #!/usr/bin/perl -w
 #
-# Searches for a $datadir/*/outdated, updates the corresponding
-# index.html and removes the outdated.
-#
-# Files: winetest.conf
-#
-# Exit: 0 - successfully processed a build, call again
-#       1 - should not happen
-#       2 - there was nothing to do
-#       3 - fatal error, something went utterly wrong
-#
 # Copyright (C) 2004 Ferenc Wagner
 #
 # This library is free software; you can redistribute it and/or
@@ -25,6 +15,20 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+# This program looks for builds that have received new reports. These are
+# identified by the presence of a file matching $datadir/*/outdated. It then
+# creates an index.html file in the same directory and removes the outdated
+# file.
+#
+# It is thus intended to run as a second stage invoked by the winetest.cron
+# script. Races and concurrency problems must be dealt with on that higher
+# level.
+#
+# Exit: 0 - successfully processed a build, call again
+#       1 - should not happen
+#       2 - there was nothing to do
+#       3 - fatal error, something went utterly wrong
 
 use strict;
 use CGI qw(:standard);
