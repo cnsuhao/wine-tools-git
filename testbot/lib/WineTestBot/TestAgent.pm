@@ -39,6 +39,7 @@ my $RPC_WAIT2 = 6;
 my $RPC_SETTIME = 7;
 my $RPC_GETPROPERTIES = 8;
 my $RPC_UPGRADE = 9;
+my $RPC_RMCHILDPROC = 10;
 
 my %RpcNames=(
     $RPC_PING => 'ping',
@@ -51,6 +52,7 @@ my %RpcNames=(
     $RPC_SETTIME => 'settime',
     $RPC_GETPROPERTIES => 'getproperties',
     $RPC_UPGRADE => 'upgrade',
+    $RPC_RMCHILDPROC => 'rmchildproc',
 );
 
 my $Debug = 0;
@@ -1379,6 +1381,30 @@ sub Upgrade($$)
   $self->Disconnect();
 
   return $rc;
+}
+
+sub RemoveChildProcess($$)
+{
+  my ($self, $Pid) = @_;
+  debug("RmChildProcess $Pid\n");
+
+  # Make sure we have the server version
+  return undef if (!$self->{agentversion} and !$self->_Connect());
+
+  # Up to 1.5 a seemingly successful Wait RPC automatically removes child
+  # processes.
+  return 1 if ($self->{agentversion} =~ / 1\.[0-5]$/);
+
+  # Send the command
+  if (!$self->_StartRPC($RPC_RMCHILDPROC) or
+      !$self->_SendListSize('ArgC', 1) or
+      !$self->_SendUInt64('Pid', $Pid))
+  {
+      return undef;
+  }
+
+  # Get the reply
+  return $self->_RecvList('');
 }
 
 1;

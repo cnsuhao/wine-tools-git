@@ -194,6 +194,23 @@ int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *child
     }
     debug("process " U64FMT " returned status %u\n", pid, child->status);
     *childstatus = child->status;
+    return 1;
+}
+
+int platform_rmchildproc(SOCKET client, uint64_t pid)
+{
+    struct child_t *child;
+
+    LIST_FOR_EACH_ENTRY(child, &children, struct child_t, entry)
+    {
+        if (child->pid == pid)
+            break;
+    }
+    if (!child || child->pid != pid)
+    {
+        set_status(ST_ERROR, "the " U64FMT " process does not exist or is not a child process", pid);
+        return 0;
+    }
     list_remove(&child->entry);
     free(child);
     return 1;

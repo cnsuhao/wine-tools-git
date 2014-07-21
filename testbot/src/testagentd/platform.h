@@ -74,10 +74,18 @@ uint64_t platform_run(char** argv, uint32_t flags, char** redirects);
 /* If a command was started in the background, waits until either that command
  * terminates, the specified timeout (in seconds) expires, or the client
  * disconnects (typically because it got tired of waiting).
+ * Note that this does not cause the child process to be forgotten, even if it
+ * did exit. This is so that the client can retrieve the information again if
+ * needed (e.g. in case it did not receive it due to a network issue).
  * If no command was started in the background, then reports an error
  * immediately.
  */
 int platform_wait(SOCKET client, uint64_t pid, uint32_t timeout, uint32_t *childstatus);
+
+/* Causes the given child process to be forgotten, which means it will no longer
+ * be possible to wait for it or retrieve its exit status.
+ */
+int platform_rmchildproc(SOCKET client, uint64_t pid);
 
 /* Sets the system time to the specified Unix epoch. If the system time is
  * already within leeway seconds of the specified time, then consider that

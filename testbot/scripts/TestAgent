@@ -376,14 +376,22 @@ elsif ($Cmd eq "run")
         if (!($RunFlags & $TestAgent::RUN_DNT))
         {
             $Result = $TA->Wait($Pid, $Timeout, $Keepalive);
-            print "Child exit status: $Result\n" if (defined $Result);
+            if (defined $Result)
+            {
+                print "Child exit status: $Result\n";
+                $TA->RemoveChildProcess($Pid);
+            }
         }
     }
 }
 elsif ($Cmd eq "wait")
 {
     $Result = $TA->Wait($WaitPid, $Timeout, $Keepalive);
-    print "Child exit status: $Result\n" if (defined $Result);
+    if (defined $Result)
+    {
+        print "Child exit status: $Result\n";
+        $TA->RemoveChildProcess($WaitPid);
+    }
 }
 elsif ($Cmd eq "rm")
 {
