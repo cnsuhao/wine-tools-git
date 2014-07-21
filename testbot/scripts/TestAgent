@@ -198,6 +198,10 @@ while (@ARGV)
         @Rm = @ARGV;
         last;
     }
+    elsif ($arg eq "getcwd")
+    {
+        $Cmd = $arg;
+    }
     elsif ($arg eq "getversion")
     {
         set_cmd($arg);
@@ -296,7 +300,7 @@ if (defined $Usage)
     print "or     $name0 [options] <hostname> wait <pid>\n";
     print "or     $name0 [options] <hostname> settime\n";
     print "or     $name0 [options] <hostname> rm <serverfiles>\n";
-    print "or     $name0 [options] <hostname> [ping|version]\n";
+    print "or     $name0 [options] <hostname> [getcwd|ping|version]\n";
     print "\n";
     print "This is a testagentd client. It can be used to send/receive files and to run commands on the server.\n";
     print "\n";
@@ -323,6 +327,7 @@ if (defined $Usage)
     print "  getproperty <name> Retrieves and prints the specified server property, for\n";
     print "                instance its architecture, 'server.arch'. One can print all the\n";
     print "                properties at once by omitting the name or setting it to '*'.\n";
+    print "  getcwd        Returns the server's current working directory.\n";
     print "  ping          Makes sure the server is still alive.\n";
     print "  upgrade       Replaces the server executable with the specified file and\n";
     print "                restarts it.\n";
@@ -439,6 +444,11 @@ elsif ($Cmd eq "getproperty")
 elsif ($Cmd eq "upgrade")
 {
     $Result = $TA->Upgrade($LocalFilename);
+}
+elsif ($Cmd eq "getcwd")
+{
+    $Result = $TA->GetCwd();
+    print "Current directory: $Result\n" if (defined $Result);
 }
 elsif ($Cmd eq "getversion")
 {

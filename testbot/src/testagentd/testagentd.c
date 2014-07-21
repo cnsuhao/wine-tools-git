@@ -37,7 +37,7 @@
  * 1.3:  Fix the zero / infinite timeouts in the wait2 RPC.
  * 1.4:  Add the settime RPC.
  * 1.5:  Add support for upgrading the server.
- * 1.6:  Add support for the rmchildproc RPC.
+ * 1.6:  Add support for the rmchildproc and getcwd RPC.
  */
 #define PROTOCOL_VERSION "testagentd 1.6"
 
@@ -90,6 +90,7 @@ enum rpc_ids_t
     RPCID_GETPROPERTIES,
     RPCID_UPGRADE,
     RPCID_RMCHILDPROC,
+    RPCID_GETCWD,
 };
 
 /* This is the RPC currently being processed */
@@ -111,6 +112,7 @@ static const char* rpc_name(uint32_t id)
         "getproperties",
         "upgrade",
         "rmchildproc",
+        "getcwd",
     };
 
     if (id < sizeof(names) / sizeof(*names))
@@ -1037,7 +1039,19 @@ static void do_upgrade(SOCKET client)
     }
     else
         send_error(client);
+}
 
+static void do_getcwd(SOCKET client)
+{
+    char curdir[261];
+
+    if (expect_list_size(client, 0))
+    {
+        send_list_size(client, 1);
+        send_string(client, getcwd(curdir, sizeof(curdir)));
+    }
+    else
+        send_error(client);
 }
 
 static void do_unknown(SOCKET client, uint32_t id)
@@ -1109,6 +1123,8 @@ static void process_rpc(SOCKET client)
         break;
     case RPCID_UPGRADE:
         do_upgrade(client);
+    case RPCID_GETCWD:
+        do_getcwd(client);
         break;
     case RPCID_RMCHILDPROC:
         do_rmchildproc(client);

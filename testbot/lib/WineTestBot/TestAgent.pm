@@ -40,6 +40,7 @@ my $RPC_SETTIME = 7;
 my $RPC_GETPROPERTIES = 8;
 my $RPC_UPGRADE = 9;
 my $RPC_RMCHILDPROC = 10;
+my $RPC_GETCWD = 11;
 
 my %RpcNames=(
     $RPC_PING => 'ping',
@@ -53,6 +54,7 @@ my %RpcNames=(
     $RPC_GETPROPERTIES => 'getproperties',
     $RPC_UPGRADE => 'upgrade',
     $RPC_RMCHILDPROC => 'rmchildproc',
+    $RPC_GETCWD => 'getcwd',
 );
 
 my $Debug = 0;
@@ -1405,6 +1407,22 @@ sub RemoveChildProcess($$)
 
   # Get the reply
   return $self->_RecvList('');
+}
+
+sub GetCwd($)
+{
+  my ($self) = @_;
+  debug("GetCwd\n");
+
+  # Send the command
+  if (!$self->_StartRPC($RPC_GETCWD) or
+      !$self->_SendListSize('ArgC', 0))
+  {
+    return undef;
+  }
+
+  # Get the reply
+  return $self->_RecvList('s');
 }
 
 1;
