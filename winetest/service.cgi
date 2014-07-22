@@ -290,7 +290,7 @@ sub write_file {
     open(GENERIC_FH, $filename)
         or ( &debug("Can't open $filename for writing.") && die ); 
     print GENERIC_FH $content;
-    close(URL_FH);
+    close(GENERIC_FH);
 }
 
 # read the content of a file
