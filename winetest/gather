@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 #
 # Copyright (C) 2004 Ferenc Wagner
 #
@@ -31,6 +31,7 @@
 #       3 - fatal error, something went utterly wrong
 
 use strict;
+use warnings;
 use CGI qw(:standard);
 charset("utf-8");
 

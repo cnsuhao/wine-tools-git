@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 #
 # Copyright 2008 Alexandre Julliard <julliard@winehq.org>
 #
@@ -20,6 +20,7 @@
 # WineTest result data.
 
 use strict;
+use warnings;
 use open ':utf8';
 use CGI qw(:standard);
 
