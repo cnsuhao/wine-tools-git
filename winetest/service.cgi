@@ -49,7 +49,7 @@ $lynx="/usr/bin/lynx";
 &main;
 
 sub main {
-    my $build, $urls, $cookies;
+    my ($build, $urls, $cookies);
 
     print "Content-type: text/plain\n\n";
 
@@ -121,12 +121,12 @@ sub releases_purge {
 # where the two maps are keyed by the full file name of the release
 sub releases_read {
     my ($project) = @_;
-    my %urls, %cookies, $thisrelease;
+    my (%urls, %cookies, $thisrelease);
 
     @files = split(/\n/, `ls $data_root/*/$project/*.url`);
     foreach $file (@files) {
 	if (open(GENERIC_FH, $file)) {
-    	    my $cookiefile, $key, $url, $this_line;
+	    my ($cookiefile, $key, $url, $this_line);
 	    $this_line = <GENERIC_FH>;
 	    close(GENERIC_FH);
 	    chomp $this_line;
@@ -135,7 +135,7 @@ sub releases_read {
 	    $key = $2;
 	    $url = $this_line;
 	    if (open(GENERIC_FH, $cookiefile)) {
-	        my $program, $release, @other;
+	        my ($program, $release, @other);
 		$this_line = <GENERIC_FH>;
 		close(GENERIC_FH);
 		chomp $this_line;
@@ -156,9 +156,9 @@ sub releases_read {
 # try to add a new release to our portfolio
 sub releases_make {
     my ($url) = @_;
-    my $name, $program, $build, $publisher;
-    my $urls, $cookies, $current_build, @other;
-    my $build_path, $cookie, $program_ok;
+    my ($name, $program, $build, $publisher);
+    my ($urls, $cookies, $current_build, @other);
+    my ($build_path, $cookie, $program_ok);
 
     # parse out this release's information
     $url =~ /.*\/(.*)/;
@@ -224,8 +224,8 @@ sub releases_make {
 
 sub send_upgrade {
     my ($urls, $history) = @_;
-    my @names, $name, $url, $program;
-    my $build, $publisher, $id, @other;
+    my (@names, $name, $url, $program);
+    my ($build, $publisher, $id, @other);
 
     # pick a release to send, the first will do
     @names = keys %$urls;
