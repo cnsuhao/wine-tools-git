@@ -82,7 +82,7 @@ sub create_box($$$)
     return $box;
 }
 
-($report,undef) = glob "$queuedir/rep*/report";
+($report, undef) = glob "$queuedir/rep*/report";
 exit 2 unless defined $report;
 
 ($tmpdir = $report) =~ s|^(.+)/report$|$1|;
@@ -206,7 +206,7 @@ if ($plid==1 && $major==4) {
         } elsif ($minor == 2) {
             $version = "win8";
         }
-    } 
+    }
 } elsif ($plid==3) {
     #$version = "ce$major$minor";
 }
@@ -340,9 +340,9 @@ while (<IN>) {
 if (defined $dll) {
     # Either winetest crashed or the report file was cut off
     if ($filesize == $maxfilesize) {
-        mydie "report reached file limit (runaway test?)\n"; 
+        mydie "report reached file limit (runaway test?)\n";
     } else {
-        mydie "report truncated (winetest crash?)\n"; 
+        mydie "report truncated (winetest crash?)\n";
     }
 }
 close SUM or mydie "error writing to '$tmpdir/summary.txt': $!\n";

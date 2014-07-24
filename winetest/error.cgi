@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# 
+#
 # This script replays errors to the wine-tests-results mailing list
 #
 # Copyright (C) 2004 Brian Vincent
@@ -43,4 +43,3 @@ if ($error) {
 
     print "OK\n";
 }
-

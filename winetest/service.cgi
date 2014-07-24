@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# 
+#
 # This script acts as the middle man between people who build
 # tests to be distributed to Windows clients and the actual
 # Windows clients
@@ -32,8 +32,8 @@
 #   winetest/
 #            <name>.url	contains url to find latest winetests at, must be
 #			writable
-#            url.mask	contains a reg ex to match against, only needs to 
-#                       be read-only, in the above example it might be 
+#            url.mask	contains a reg ex to match against, only needs to
+#                       be read-only, in the above example it might be
 #			something like: http://myserver/com/path/to
 #            <name>.cookie contains a unique identifier of a program that
 #			winrash clients can download, must be writable
@@ -99,7 +99,7 @@ sub read_one_line($)
 ##########################################################################
 #
 # When we publish, we:
-# 1) Look for <publish key value>/url.mask that had to have been 
+# 1) Look for <publish key value>/url.mask that had to have been
 #    created by a web server admin thus ensuring this program is
 #    approved for testing
 # 2) Download the cookie for the program from that web server

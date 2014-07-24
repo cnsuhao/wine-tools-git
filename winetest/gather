@@ -513,7 +513,7 @@ sub singletest($$$) {
     else
     {
         my $report = $group->{reports} ? $group->{reports}->[0] : $group;
-        $label = "$groupname $report->{tag}"; 
+        $label = "$groupname $report->{tag}";
         if (-r "$datadir/$build/$report->{dir}/$testname.html")
         {
             $href = "$report->{dir}/$testname.html";
