@@ -46,56 +46,55 @@ $data_root="/home/winehq/opt/winetest";
 $lynx="/usr/bin/lynx";
 @valid_programs=("winrash", "winetest");
 
-&main;
 
-sub main {
-    my ($build, $urls, $cookies);
+##########################################################################
+#
+# Some convenience functions.  Debug gives us output if debug=1. &read_one_line
+# just opens files and returns one line, with trailing new lines removed.
+#
+##########################################################################
 
-    print "Content-type: text/plain\n\n";
-
-    # first check for errors
-    my $error = cgi_error ();
-    if ($error) {
-	print $error;
-        exit;
+# print a message if debugging is enabled
+sub debug($)
+{
+    my ($msg) = @_;
+    if (param('debug')) {
+        print "$msg\n";
     }
-
-    my $publish = param('publish');
-    if ($publish) {
-        my $response = &releases_make($publish);
-        print "$response\n";
-        exit;
-    }
-
-    # for each of the programs we know about, see if they need an update
-    foreach $program (@valid_programs) {
-        ($build, $urls, $cookies) = &releases_read($program);
-        if (param($program)) {
-	    my @history = split(/,/, param("$program" . "_history"));
-	    push (@history, param($program));
-	    my @newhist = ();
-	    foreach (@history) {
-		my ($prg, $rel) = split(/-/, $_);
-		if (($prg eq $program) and ($rel eq $build)) {
-	            delete $$urls{$_};
-	            delete $$cookies{$_};
-		    push (@newhist, $_);
-		}
-	    }
-	    $winetest_history = join ',', @newhist;
-        }
-	if (scalar(%$urls)) {
-            &send_upgrade($urls, $winetest_history);
-	    $update_sent = 1;
-	    last;
-	}
-    }
-    if (!$update_sent) {
-        print "sleep 3600\n";
-        return;
-    }
-
 }
+
+# computes the MD5 sum of the arument
+sub md5sum($)
+{
+    my ($string) = @_;
+    local $md5 = Digest::MD5->new;
+    $md5->add($string);
+    return $md5->hexdigest;
+}
+
+# write a string to a file
+sub write_file($$)
+{
+    my ($filename, $content) = @_;
+    open(GENERIC_FH, $filename)
+        or ( debug("Can't open $filename for writing.") && die );
+    print GENERIC_FH $content;
+    close(GENERIC_FH);
+}
+
+# read the content of a file
+sub read_one_line($)
+{
+    my ($filename) = @_;
+    open(GENERIC_FH, $filename)
+       or ( debug("Can't open $filename."), die );
+    $this_line = <GENERIC_FH>;
+    close(GENERIC_FH);
+    chomp $this_line;
+
+    return $this_line;
+}
+
 
 ##########################################################################
 #
@@ -110,7 +109,8 @@ sub main {
 ##########################################################################
 
 # removes the current release from disk
-sub releases_purge {
+sub releases_purge($)
+{
     my ($project) = @_;
     system("rm -f $data_root/*/$project/*.cookie");
     system("rm -f $data_root/*/$project/*.url");
@@ -119,7 +119,8 @@ sub releases_purge {
 # this function reads the current release information from disk
 # and returns ($thisrelease, %url, %cookies)
 # where the two maps are keyed by the full file name of the release
-sub releases_read {
+sub releases_read($)
+{
     my ($project) = @_;
     my (%urls, %cookies, $thisrelease);
 
@@ -143,7 +144,7 @@ sub releases_read {
 		if (scalar(%urls) == 0) {
 		    $thisrelease = $release;
 		} elsif ($thisrelease ne $release) {
-		    &debug("Invalid release state!") && die;
+		    debug("Invalid release state!") && die;
 		}
 	        $urls{$key} = $url;
 		$cookies{$key} = $this_line;
@@ -154,7 +155,8 @@ sub releases_read {
 }
 
 # try to add a new release to our portfolio
-sub releases_make {
+sub releases_make($)
+{
     my ($url) = @_;
     my ($name, $program, $build, $publisher);
     my ($urls, $cookies, $current_build, @other);
@@ -186,43 +188,43 @@ sub releases_make {
     }
 
     # get current release info
-    ($current_build, $urls, $cookies) = &releases_read($program);
+    ($current_build, $urls, $cookies) = releases_read($program);
 
     # check to see how we should handle it
     if ($build lt $current_build) {
 	return "Build is old, current build is $current_build";
     }
     if ($build ne $current_build) {
-	&releases_purge($program);
+	releases_purge($program);
     }
 
     # check to see that the URL has the right format
     $base_path = "$data_root/$publisher/$program";
 
-    $url_mask = &read_one_line("<$base_path/url.mask");
+    $url_mask = read_one_line("<$base_path/url.mask");
     if (!($url =~ $url_mask)) {
 	return "Unrecognized URL format";
     }
 
     # get the cookie now
-    $cookie = &read_one_line("$lynx -source $url.sig |");
+    $cookie = read_one_line("$lynx -source $url.sig |");
 
     # all is good, store the cookie, and URL now, this activetes the release
-    &write_file(">$base_path/$name.cookie", &md5sum($cookie));
-    &write_file(">$base_path/$name.url", $url);
+    write_file(">$base_path/$name.cookie", md5sum($cookie));
+    write_file(">$base_path/$name.url", $url);
 
     return "OK";
 }
 
-
 ##########################################################################
-# 
+#
 # Issue commands understood by winrash.  Try to be somewhat intelligent
-# in figuring out what needs to be sent.  
+# in figuring out what needs to be sent.
 #
 ##########################################################################
 
-sub send_upgrade {
+sub send_upgrade($$)
+{
     my ($urls, $history) = @_;
     my (@names, $name, $url, $program);
     my ($build, $publisher, $id, @other);
@@ -235,7 +237,7 @@ sub send_upgrade {
     $url = $$urls{$name};
     ($program, $build, $publisher, @other) = split(/-/, $name);
 
-    &debug("Send upgrade received: $url");
+    debug("Send upgrade received: $url");
 
     print "error_url http://test.winehq.org/error\n";
     print "error_sleep 3600\n";
@@ -262,45 +264,61 @@ sub send_upgrade {
     print "sleep 300\n";
 }
 
+
 ##########################################################################
 #
-# Some convenience functions.  Debug gives us output if debug=1. &read_one_line 
-# just opens files and returns one line, with trailing new lines removed.
-#  
+# Main
+#
 ##########################################################################
 
-# print a message if debugging is enabled
-sub debug {
-    if (param('debug')) {
-        print "$_[0]\n";
+sub main()
+{
+    my ($build, $urls, $cookies);
+
+    print "Content-type: text/plain\n\n";
+
+    # first check for errors
+    my $error = cgi_error ();
+    if ($error) {
+	print $error;
+        exit;
     }
+
+    my $publish = param('publish');
+    if ($publish) {
+        my $response = releases_make($publish);
+        print "$response\n";
+        exit;
+    }
+
+    # for each of the programs we know about, see if they need an update
+    foreach $program (@valid_programs) {
+        ($build, $urls, $cookies) = releases_read($program);
+        if (param($program)) {
+	    my @history = split(/,/, param("$program" . "_history"));
+	    push (@history, param($program));
+	    my @newhist = ();
+	    foreach (@history) {
+		my ($prg, $rel) = split(/-/, $_);
+		if (($prg eq $program) and ($rel eq $build)) {
+	            delete $$urls{$_};
+	            delete $$cookies{$_};
+		    push (@newhist, $_);
+		}
+	    }
+	    $winetest_history = join ',', @newhist;
+        }
+	if (scalar(%$urls)) {
+            send_upgrade($urls, $winetest_history);
+	    $update_sent = 1;
+	    last;
+	}
+    }
+    if (!$update_sent) {
+        print "sleep 3600\n";
+        return;
+    }
+
 }
 
-# computes the MD5 sum of the arument
-sub md5sum {
-
-    local $md5 = Digest::MD5->new;
-    $md5->add($_[0]);
-    return $md5->hexdigest; 
-}
-
-# write a string to a file
-sub write_file {
-    my ($filename, $content) = @_;
-    open(GENERIC_FH, $filename)
-        or ( &debug("Can't open $filename for writing.") && die ); 
-    print GENERIC_FH $content;
-    close(GENERIC_FH);
-}
-
-# read the content of a file
-sub read_one_line {
-    open(GENERIC_FH, $_[0])
-       or ( &debug("Can't open $_[0]."), die );
-    $this_line = <GENERIC_FH>;
-    close(GENERIC_FH);
-    chomp $this_line;
-
-    return $this_line;
-}
-
+main();
