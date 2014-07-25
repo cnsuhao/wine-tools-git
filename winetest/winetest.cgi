@@ -33,7 +33,8 @@ $CGI::POST_MAX = $maxfilesize + 1024;
 my $name = param ("reportfile");
 my $error = cgi_error ();
 
-sub test_reportfile {
+sub test_reportfile()
+{
     my $buffer;
     my $fh = upload "reportfile";
     read $fh, $buffer, 1024;
@@ -41,15 +42,17 @@ sub test_reportfile {
     return $1;
 }
 
-sub move_file {
-    my $orig = tmpFileName (shift);
+sub move_file($)
+{
+    my ($filename) = @_;
+    my $orig = tmpFileName($filename);
     my $tmpdir = tempdir ("repXXXXX", DIR=>$ENV{TMPDIR});
     chmod 0777, $tmpdir;
     chmod 0666&~umask, $orig;
     my $size = -s $orig;
     (rename $orig, "$tmpdir/report")?
-      "Received $name ($size bytes).\n":
-      "Error: can't store $name: $!\n";
+      "Received $filename ($size bytes).\n":
+      "Error: can't store $filename: $!\n";
 }
 
 # Invoked by winetest
@@ -59,13 +62,13 @@ if (user_agent ("Winetest Shell")) {
     if ($error) {
         print "Error: $error\n";
     } elsif ($name) {
-        my $build = test_reportfile $name;
+        my $build = test_reportfile();
         if (!defined $build) {
             print "Error: submission corrupted";
         } elsif ($build eq "-") {
             print "Error: build ID unset";
         } else {
-            print move_file $name;
+            print move_file($name);
         }
     } else {
         print "Error: empty request\n";
@@ -90,13 +93,13 @@ if ($error) {
     print h2 ("Error during file upload ($name)"),
       strong ($error);
 } elsif ($name) {
-    my $build = test_reportfile $name;
+    my $build = test_reportfile();
     if (!defined $build) {
         print h2 ("Error: submission corrupted");
     } elsif ($build eq "-") {
         print h2 ("Error: build ID unset");
     } else {
-        print h2 (move_file $name);
+        print h2 (move_file($name));
     }
 }
 print end_html;
