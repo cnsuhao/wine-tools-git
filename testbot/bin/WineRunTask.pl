@@ -100,13 +100,16 @@ sub TakeScreenshot($$)
   my ($ErrMessage, $ImageSize, $ImageBytes) = $VM->CaptureScreenImage();
   if (! defined($ErrMessage))
   {
+    my $OldUMask = umask(002);
     if (open SCREENSHOT, ">$FullScreenshotFileName")
     {
+      umask($OldUMask);
       print SCREENSHOT $ImageBytes;
       close SCREENSHOT;
     }
     else
     {
+      umask($OldUMask);
       LogMsg "Can't save screenshot: $!\n";
     }
   }
@@ -201,11 +204,11 @@ if (!defined $Task)
   exit 1;
 }
 
-my $oldumask = umask(002);
+my $OldUMask = umask(002);
 mkdir "$DataDir/jobs/$JobId";
 mkdir "$DataDir/jobs/$JobId/$StepNo";
 mkdir "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
-umask($oldumask);
+umask($OldUMask);
 
 my $VM = $Task->VM;
 my $TA = $VM->GetAgent();

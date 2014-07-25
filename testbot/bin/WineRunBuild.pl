@@ -46,13 +46,16 @@ use WineTestBot::Engine::Notify;
 sub LogTaskError($$)
 {
   my ($ErrMessage, $FullErrFileName) = @_;
+  my $OldUMask = umask(002);
   if (open(my $ErrFile, ">>", $FullErrFileName))
   {
+    umask($OldUMask);
     print $ErrFile $ErrMessage;
     close($ErrFile);
   }
   else
   {
+    umask($OldUMask);
     LogMsg "Unable to open '$FullErrFileName' for writing: $!\n";
   }
 }
@@ -182,10 +185,11 @@ if (!defined $Task)
   exit 1;
 }
 
-umask(002);
+my $OldUMask = umask(002);
 mkdir "$DataDir/jobs/$JobId";
 mkdir "$DataDir/jobs/$JobId/$StepNo";
 mkdir "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
+umask($OldUMask);
 
 my $VM = $Task->VM;
 my $TA = $VM->GetAgent();

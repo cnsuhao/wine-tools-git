@@ -42,24 +42,24 @@ use WineTestBot::Config;
 
 sub InfoMsg(@)
 {
-  my $oldumask = umask(002);
+  my $OldUMask = umask(002);
   if (open LOGFILE, ">>$LogDir/Build.log")
   {
     print LOGFILE @_;
     close LOGFILE;
   }
-  umask($oldumask);
+  umask($OldUMask);
 }
 
 sub LogMsg(@)
 {
-  my $oldumask = umask(002);
+  my $OldUMask = umask(002);
   if (open LOGFILE, ">>$LogDir/Build.log")
   {
     print LOGFILE "Build: ", @_;
     close LOGFILE;
   }
-  umask($oldumask);
+  umask($OldUMask);
 }
 
 sub FatalError(@)

@@ -42,13 +42,13 @@ use WineTestBot::Config;
 
 sub LogMsg(@)
 {
-  my $oldumask = umask(002);
+  my $OldUMask = umask(002);
   if (open LOGFILE, ">>$LogDir/Reconfig.log")
   {
     print LOGFILE "Reconfig: ", @_;
     close LOGFILE;
   }
-  umask($oldumask);
+  umask($OldUMask);
 }
 
 sub FatalError(@)
