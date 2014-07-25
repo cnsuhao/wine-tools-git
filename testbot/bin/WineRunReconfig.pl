@@ -39,6 +39,7 @@ sub BEGIN
 
 use WineTestBot::Config;
 use WineTestBot::Jobs;
+use WineTestBot::VMs;
 use WineTestBot::Log;
 use WineTestBot::Engine::Notify;
 
@@ -69,14 +70,15 @@ sub FatalError($$$$)
   $Task->Save();
   $Job->UpdateStatus();
 
-  my $VM = $Task->VM;
+  # Get the up-to-date VM status and update it if nobody else changed it
+  my $VM = CreateVMs()->GetItem($Task->VM->GetKey());
   if ($VM->Status eq 'running')
   {
     $VM->Status('dirty');
     $VM->Save();
+    RescheduleJobs();
   }
 
-  RescheduleJobs();
   exit 1;
 }
 
@@ -272,12 +274,6 @@ if ($NewStatus eq "completed")
     FatalError "Can't take snapshot: $ErrMessage\n",
                $FullErrFileName, $Job, $Task;
   }
-
-  $VM->Status("idle");
-}
-else
-{
-  $VM->Status("dirty");
 }
 
 $Task->Status($NewStatus);
@@ -285,13 +281,15 @@ $Task->ChildPid(undef);
 $Task->Ended(time);
 $Task->Save();
 $Job->UpdateStatus();
-$VM->Save();
 
-$Task = undef;
-$Step = undef;
-$Job = undef;
-
-RescheduleJobs();
+# Get the up-to-date VM status and update it if nobody else changed it
+$VM = CreateVMs()->GetItem($VM->GetKey());
+if ($VM->Status eq 'running')
+{
+  $VM->Status($NewStatus eq 'completed' ? 'idle' : 'dirty');
+  $VM->Save();
+  RescheduleJobs();
+}
 
 LogMsg "Task $JobId/$StepNo/$TaskNo completed\n";
 exit 0;

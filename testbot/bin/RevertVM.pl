@@ -48,11 +48,16 @@ sub FatalError($$)
 
   LogMsg $ErrMessage, "\n";
 
-  $VM->Status("offline");
-  $VM->ChildPid(undef);
-  $VM->Save();
-
+  # Get the up-to-date VM status and update it if nobody else changed it
   my $VMKey = $VM->GetKey();
+  $VM = CreateVMs()->GetItem($VMKey);
+  if ($VM->Status eq "reverting" or $VM->Status eq "sleeping")
+  {
+    $VM->Status("offline");
+    $VM->ChildPid(undef);
+    $VM->Save();
+  }
+
   my $VMSnapshot = $VM->IdleSnapshot;
   open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
   print SENDMAIL <<"EOF";
@@ -110,6 +115,9 @@ if (defined($ErrMessage))
              $VM;
 }
 
+# Get the up-to-date VM status and exit if someone else changed it
+$VM = CreateVMs()->GetItem($VMKey);
+exit 1 if ($VM->Status ne "reverting");
 $VM->Status("sleeping");
 ($ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
@@ -134,6 +142,9 @@ if ($SleepAfterRevert != 0)
   sleep($SleepAfterRevert);
 }
 
+# Get the up-to-date VM status and exit if someone else changed it
+$VM = CreateVMs()->GetItem($VMKey);
+exit 1 if ($VM->Status ne "sleeping");
 $VM->Status("idle");
 $VM->ChildPid(undef);
 ($ErrProperty, $ErrMessage) = $VM->Save();
