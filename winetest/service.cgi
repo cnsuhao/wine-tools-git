@@ -38,13 +38,16 @@
 #            <name>.cookie contains a unique identifier of a program that
 #			winrash clients can download, must be writable
 
+use strict;
+use warnings;
+
 use Digest::MD5;
 use CGI qw(:standard);
 $CGI::POST_MAX = 50 * 1024;
 
-$data_root="/home/winehq/opt/winetest";
-$lynx="/usr/bin/lynx";
-@valid_programs=("winrash", "winetest");
+my $data_root="/home/winehq/opt/winetest";
+my $lynx="/usr/bin/lynx";
+my @valid_programs=("winrash", "winetest");
 
 
 ##########################################################################
@@ -67,7 +70,7 @@ sub debug($)
 sub md5sum($)
 {
     my ($string) = @_;
-    local $md5 = Digest::MD5->new;
+    my $md5 = Digest::MD5->new;
     $md5->add($string);
     return $md5->hexdigest;
 }
@@ -88,7 +91,7 @@ sub read_one_line($)
     my ($filename) = @_;
     open(GENERIC_FH, $filename)
        or ( debug("Can't open $filename."), die );
-    $this_line = <GENERIC_FH>;
+    my $this_line = <GENERIC_FH>;
     close(GENERIC_FH);
     chomp $this_line;
 
@@ -124,8 +127,8 @@ sub releases_read($)
     my ($project) = @_;
     my (%urls, %cookies, $thisrelease);
 
-    @files = split(/\n/, `ls $data_root/*/$project/*.url`);
-    foreach $file (@files) {
+    my @files = split(/\n/, `ls $data_root/*/$project/*.url`);
+    foreach my $file (@files) {
 	if (open(GENERIC_FH, $file)) {
 	    my ($cookiefile, $key, $url, $this_line);
 	    $this_line = <GENERIC_FH>;
@@ -168,7 +171,7 @@ sub releases_make($)
     ($program, $build, $publisher, @other) = split(/-/, $name);
 
     # check that it's a recognized program
-    foreach $prg (@valid_programs) {
+    foreach my $prg (@valid_programs) {
 	if ($prg eq $program) {
 	    $program_ok = 1;
 	    last;
@@ -199,9 +202,9 @@ sub releases_make($)
     }
 
     # check to see that the URL has the right format
-    $base_path = "$data_root/$publisher/$program";
+    my $base_path = "$data_root/$publisher/$program";
 
-    $url_mask = read_one_line("<$base_path/url.mask");
+    my $url_mask = read_one_line("<$base_path/url.mask");
     if (!($url =~ $url_mask)) {
 	return "Unrecognized URL format";
     }
@@ -292,7 +295,8 @@ sub main()
     }
 
     # for each of the programs we know about, see if they need an update
-    foreach $program (@valid_programs) {
+    my ($winetest_history, $update_sent);
+    foreach my $program (@valid_programs) {
         ($build, $urls, $cookies) = releases_read($program);
         if (param($program)) {
 	    my @history = split(/,/, param("$program" . "_history"));
