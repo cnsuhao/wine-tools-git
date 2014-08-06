@@ -340,7 +340,7 @@ sub GenerateErrorDiv($$)
   if ($ErrMessage)
   {
     print "<noscript>\n";
-    print "<div id='errormessage'>", $ErrMessage, "</div>\n";
+    print "<div id='errormessage'>", $Page->CGI->escapeHTML($ErrMessage), "</div>\n";
     print "</noscript>\n";
   }
 }
