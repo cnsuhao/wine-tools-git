@@ -30,7 +30,7 @@ use vars qw (@ISA @EXPORT);
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(&LogMsg);
+@EXPORT = qw(&LogMsg &Time &Elapsed);
 
 my $logfile;
 my $logprefix;
@@ -73,6 +73,21 @@ sub SetupRedirects()
       LogMsg "unable to redirect stderr to '$logfile': $!\n";
     }
   }
+}
+
+my $HiResTime;
+sub Time()
+{
+  local $@;
+  $HiResTime = eval { require Time::HiRes } if (!defined $HiResTime);
+  return eval { Time::HiRes::time() } if ($HiResTime);
+  return time();
+}
+
+sub Elapsed($)
+{
+    my ($Start) = @_;
+    return sprintf("%0.2f", Time()-$Start);
 }
 
 1;

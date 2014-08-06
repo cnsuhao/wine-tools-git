@@ -36,6 +36,8 @@ sub BEGIN
     unshift @INC, "$::RootDir/lib";
   }
 }
+my $Name0 = $0;
+$Name0 =~ s+^.*/++;
 
 use WineTestBot::Config;
 use WineTestBot::Jobs;
@@ -43,9 +45,24 @@ use WineTestBot::VMs;
 use WineTestBot::Log;
 use WineTestBot::Engine::Notify;
 
+
+my $Debug;
+sub Debug(@)
+{
+  print STDERR @_ if ($Debug);
+}
+
+sub Error(@)
+{
+  Debug("$Name0:error: ", @_);
+  LogMsg @_;
+}
+
 sub LogTaskError($$)
 {
   my ($ErrMessage, $FullErrFileName) = @_;
+  Debug("$Name0:error: $ErrMessage");
+
   my $OldUMask = umask(002);
   if (open(my $ErrFile, ">>", $FullErrFileName))
   {
@@ -56,13 +73,14 @@ sub LogTaskError($$)
   else
   {
     umask($OldUMask);
-    LogMsg "Unable to open '$FullErrFileName' for writing: $!\n";
+    Error "Unable to open '$FullErrFileName' for writing: $!\n";
   }
 }
 
 sub FatalError($$$$)
 {
   my ($ErrMessage, $FullErrFileName, $Job, $Task) = @_;
+  Debug("$Name0:error: $ErrMessage");
 
   my ($JobKey, $StepKey, $TaskKey) = @{$Task->GetMasterKey()};
   LogMsg "$JobKey/$StepKey/$TaskKey $ErrMessage";
@@ -120,7 +138,7 @@ sub ProcessLog($$)
   {
     $Status = "boterror";
     $Errors = "Unable to open the log file\n";
-    LogMsg "Unable to open '$FullLogFileName' for reading: $!\n";
+    Error "Unable to open '$FullLogFileName' for reading: $!\n";
   }
 
   LogTaskError($Errors, $FullErrFileName) if ($Errors);
@@ -131,57 +149,90 @@ sub ProcessLog($$)
 $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
 
-my ($JobId, $StepNo, $TaskNo) = @ARGV;
-if (! $JobId || ! $StepNo || ! $TaskNo)
+
+# Grab the command line options
+my $Usage;
+sub ValidateNumber($$)
 {
-  die "Usage: WineRunBuild.pl JobId StepNo TaskNo";
+  my ($Name, $Value) = @_;
+
+  # Validate and untaint the value
+  return $1 if ($Value =~ /^(\d+)$/);
+  Error "$Value is not a valid $Name\n";
+  $Usage = 2;
+  return undef;
 }
 
-# Untaint parameters
-if ($JobId =~ /^(\d+)$/)
+my ($JobId, $StepNo, $TaskNo);
+while (@ARGV)
 {
-  $JobId = $1;
+  my $Arg = shift @ARGV;
+  if ($Arg eq "--debug")
+  {
+    $Debug = 1;
+  }
+  elsif ($Arg =~ /^(?:-\?|-h|--help)$/)
+  {
+    $Usage = 0;
+    last;
+  }
+  elsif ($Arg =~ /^???/)
+  {
+    Error "unknown option '$Arg'\n";
+    $Usage = 2;
+    last;
+  }
+  elsif (!defined $JobId)
+  {
+    $JobId = ValidateNumber('job id', $Arg);
+  }
+  elsif (!defined $StepNo)
+  {
+    $StepNo = ValidateNumber('step number', $Arg);
+  }
+  elsif (!defined $TaskNo)
+  {
+    $TaskNo = ValidateNumber('task number', $Arg);
+  }
+  else
+  {
+    Error "unexpected argument '$Arg'\n";
+    $Usage = 2;
+    last;
+  }
 }
-else
+
+# Check parameters
+if (!defined $Usage)
 {
-  LogMsg "Invalid JobId $JobId\n";
-  exit 1;
+  if (!defined $JobId || !defined $StepNo || !defined $TaskNo)
+  {
+    Error "you must specify the job id, step number and task number\n";
+    $Usage = 2;
+  }
 }
-if ($StepNo =~ /^(\d+)$/)
+if (defined $Usage)
 {
-  $StepNo = $1;
-}
-else
-{
-  LogMsg "Invalid StepNo $StepNo\n";
-  exit 1;
-}
-if ($TaskNo =~ /^(\d+)$/)
-{
-  $TaskNo = $1;
-}
-else
-{
-  LogMsg "Invalid TaskNo $TaskNo\n";
-  exit 1;
+    print "Usage: $Name0 [--debug] [--help] JobId StepNo TaskNo\n";
+    exit $Usage;
 }
 
 my $Job = CreateJobs()->GetItem($JobId);
 if (!defined $Job)
 {
-  LogMsg "Job $JobId doesn't exist\n";
+  Error "Job $JobId does not exist\n";
   exit 1;
 }
 my $Step = $Job->Steps->GetItem($StepNo);
 if (!defined $Step)
 {
-  LogMsg "Step $StepNo of job $JobId doesn't exist\n";
+  Error "Step $StepNo of job $JobId does not exist\n";
   exit 1;
 }
 my $Task = $Step->Tasks->GetItem($TaskNo);
 if (!defined $Task)
 {
-  LogMsg "Step $StepNo task $TaskNo of job $JobId doesn't exist\n";
+  Error "Step $StepNo task $TaskNo of job $JobId does not exist\n";
   exit 1;
 }
 
@@ -191,15 +242,23 @@ mkdir "$DataDir/jobs/$JobId/$StepNo";
 mkdir "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
 umask($OldUMask);
 
-my $VM = $Task->VM;
-my $TA = $VM->GetAgent();
-
-LogMsg "Task $JobId/$StepNo/$TaskNo started\n";
-
 my $StepDir = "$DataDir/jobs/$JobId/$StepNo";
 my $TaskDir = "$StepDir/$TaskNo";
 my $FullLogFileName = "$TaskDir/log";
 my $FullErrFileName = "$TaskDir/err";
+
+my $VM = $Task->VM;
+if (!$Debug and $VM->Status ne "running")
+{
+  FatalError "The VM is not ready for use (" . $VM->Status . ")\n",
+             $FullErrFileName, $Job, $Task;
+}
+elsif ($Debug and !$VM->IsPoweredOn)
+{
+  FatalError "The VM is not powered on\n", $FullErrFileName, $Job, $Task;
+}
+my $Start = Time();
+LogMsg "Task $JobId/$StepNo/$TaskNo started\n";
 
 my ($Run64, $BaseName);
 foreach my $OtherStep (@{$Job->Steps->GetItems()})
@@ -225,22 +284,10 @@ if (!defined $BaseName)
   FatalError "Can't determine base name\n", $FullErrFileName, $Job, $Task;
 }
 
-# Normally the Engine has already set the VM status to 'running'.
-# Do it anyway in case we're called manually from the command line.
-if ($VM->Status ne "idle" and $VM->Status ne "running")
-{
-  FatalError "The VM is not ready for use (" . $VM->Status . ")\n",
-             $FullErrFileName, $Job, $Task;
-}
-$VM->Status('running');
-my ($ErrProperty, $ErrMessage) = $VM->Save();
-if (defined $ErrMessage)
-{
-  FatalError "Can't set VM status to running: $ErrMessage\n",
-             $FullErrFileName, $Job, $Task;
-}
-
+my $ErrMessage;
 my $FileName = $Step->FileName;
+my $TA = $VM->GetAgent();
+Debug(Elapsed($Start), " Sending '$StepDir/$FileName'\n");
 if (!$TA->SendFile("$StepDir/$FileName", "staging/$FileName", 0))
 {
   $ErrMessage = $TA->GetLastError();
@@ -253,12 +300,14 @@ my $Script = "#!/bin/sh\n" .
              " $BaseName 32";
 $Script .= ",64"if ($Run64);
 $Script .= " >>Build.log 2>&1\n";
+Debug(Elapsed($Start), " Sending the script: [$Script]\n");
 if (!$TA->SendFileFromString($Script, "task", $TestAgent::SENDFILE_EXE))
 {
   $ErrMessage = $TA->GetLastError();
   FatalError "Can't send the build script to the VM: $ErrMessage\n",
              $FullErrFileName, $Job, $Task;
 }
+Debug(Elapsed($Start), " Running the script\n");
 my $Pid = $TA->Run(["./task"], 0);
 if (!$Pid or !defined $TA->Wait($Pid, $Task->Timeout, 60))
 {
@@ -266,6 +315,7 @@ if (!$Pid or !defined $TA->Wait($Pid, $Task->Timeout, 60))
   # Try to grab the build log before reporting the failure
 }
 my $NewStatus;
+Debug(Elapsed($Start), " Retrieving the build log '$FullLogFileName'\n");
 if ($TA->GetFile("Build.log", $FullLogFileName))
 {
   $NewStatus = ProcessLog($FullLogFileName, $FullErrFileName);
@@ -324,9 +374,9 @@ if ($NewStatus eq "completed")
     chmod 0664, "$OtherStepDir/$OtherFileName";
   }
 }
-
 $TA->Disconnect();
 
+Debug(Elapsed($Start), " Done. New task status: $NewStatus\n");
 $Task->Status($NewStatus);
 $Task->ChildPid(undef);
 $Task->Ended(time);

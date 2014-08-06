@@ -34,6 +34,8 @@ sub BEGIN
     unshift @INC, "$::RootDir/lib";
   }
 }
+my $Name0 = $0;
+$Name0 =~ s+^.*/++;
 
 use WineTestBot::Config;
 use WineTestBot::Jobs;
@@ -41,9 +43,24 @@ use WineTestBot::VMs;
 use WineTestBot::Log;
 use WineTestBot::Engine::Notify;
 
+
+my $Debug;
+sub Debug(@)
+{
+  print STDERR @_ if ($Debug);
+}
+
+sub Error(@)
+{
+  Debug("$Name0:error: ", @_);
+  LogMsg @_;
+}
+
 sub LogTaskError($$)
 {
   my ($ErrMessage, $FullErrFileName) = @_;
+  Debug("$Name0:error: $ErrMessage");
+
   my $OldUMask = umask(002);
   if (open(my $ErrFile, ">>", $FullErrFileName))
   {
@@ -54,13 +71,14 @@ sub LogTaskError($$)
   else
   {
     umask($OldUMask);
-    LogMsg "Unable to open '$FullErrFileName' for writing: $!\n";
+    Error "Unable to open '$FullErrFileName' for writing: $!\n";
   }
 }
 
 sub FatalError($$$$$)
 {
   my ($ErrMessage, $FullErrFileName, $Job, $Step, $Task) = @_;
+  Debug("$Name0:error: $ErrMessage");
 
   my ($JobKey, $StepKey, $TaskKey) = @{$Task->GetMasterKey()};
   LogMsg "$JobKey/$StepKey/$TaskKey $ErrMessage";
@@ -109,12 +127,12 @@ sub TakeScreenshot($$)
     else
     {
       umask($OldUMask);
-      LogMsg "Can't save screenshot: $!\n";
+      Error "Can't save screenshot: $!\n";
     }
   }
   else
   {
-    LogMsg "Can't capture screenshot: $ErrMessage\n";
+    Error "Can't capture screenshot: $ErrMessage\n";
   }
 }
 
@@ -149,57 +167,89 @@ sub CountFailures($)
 $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
 
-my ($JobId, $StepNo, $TaskNo) = @ARGV;
-if (! $JobId || ! $StepNo || ! $TaskNo)
+# Grab the command line options
+my $Usage;
+sub ValidateNumber($$)
 {
-  die "Usage: WineRunTask.pl JobId StepNo TaskNo";
+  my ($Name, $Value) = @_;
+
+  # Validate and untaint the value
+  return $1 if ($Value =~ /^(\d+)$/);
+  Error "$Value is not a valid $Name\n";
+  $Usage = 2;
+  return undef;
 }
 
-# Untaint parameters
-if ($JobId =~ /^(\d+)$/)
+my ($JobId, $StepNo, $TaskNo);
+while (@ARGV)
 {
-  $JobId = $1;
+  my $Arg = shift @ARGV;
+  if ($Arg eq "--debug")
+  {
+    $Debug = 1;
+  }
+  elsif ($Arg =~ /^(?:-\?|-h|--help)$/)
+  {
+    $Usage = 0;
+    last;
+  }
+  elsif ($Arg =~ /^???/)
+  {
+    Error "unknown option '$Arg'\n";
+    $Usage = 2;
+    last;
+  }
+  elsif (!defined $JobId)
+  {
+    $JobId = ValidateNumber('job id', $Arg);
+  }
+  elsif (!defined $StepNo)
+  {
+    $StepNo = ValidateNumber('step number', $Arg);
+  }
+  elsif (!defined $TaskNo)
+  {
+    $TaskNo = ValidateNumber('task number', $Arg);
+  }
+  else
+  {
+    Error "unexpected argument '$Arg'\n";
+    $Usage = 2;
+    last;
+  }
 }
-else
+
+# Check parameters
+if (!defined $Usage)
 {
-  LogMsg "Invalid JobId $JobId\n";
-  exit 1;
+  if (!defined $JobId || !defined $StepNo || !defined $TaskNo)
+  {
+    Error "you must specify the job id, step number and task number\n";
+    $Usage = 2;
+  }
 }
-if ($StepNo =~ /^(\d+)$/)
+if (defined $Usage)
 {
-  $StepNo = $1;
-}
-else
-{
-  LogMsg "Invalid StepNo $StepNo\n";
-  exit 1;
-}
-if ($TaskNo =~ /^(\d+)$/)
-{
-  $TaskNo = $1;
-}
-else
-{
-  LogMsg "Invalid TaskNo $TaskNo\n";
-  exit 1;
+    print "Usage: $Name0 [--debug] [--help] JobId StepNo TaskNo\n";
+    exit $Usage;
 }
 
 my $Job = CreateJobs()->GetItem($JobId);
 if (!defined $Job)
 {
-  LogMsg "Job $JobId doesn't exist\n";
+  Error "Job $JobId does not exist\n";
   exit 1;
 }
 my $Step = $Job->Steps->GetItem($StepNo);
 if (!defined $Step)
 {
-  LogMsg "Step $StepNo of job $JobId doesn't exist\n";
+  Error "Step $StepNo of job $JobId does not exist\n";
   exit 1;
 }
 my $Task = $Step->Tasks->GetItem($TaskNo);
 if (!defined $Task)
 {
-  LogMsg "Step $StepNo task $TaskNo of job $JobId doesn't exist\n";
+  Error "Step $StepNo task $TaskNo of job $JobId does not exist\n";
   exit 1;
 }
 
@@ -210,10 +260,6 @@ mkdir "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
 umask($OldUMask);
 
 my $VM = $Task->VM;
-my $TA = $VM->GetAgent();
-
-LogMsg "Task $JobId/$StepNo/$TaskNo (" . $VM->Name . ") started\n";
-
 my $RptFileName = $VM->Name . ".rpt";
 my $StepDir = "$DataDir/jobs/$JobId/$StepNo";
 my $TaskDir = "$StepDir/$TaskNo";
@@ -221,26 +267,27 @@ my $FullLogFileName = "$TaskDir/log";
 my $FullErrFileName = "$TaskDir/err";
 my $FullScreenshotFileName = "$TaskDir/screenshot.png";
 
-# Normally the Engine has already set the VM status to 'running'.
-# Do it anyway in case we're called manually from the command line.
-if ($VM->Status ne "idle" and $VM->Status ne "running")
+if (!$Debug and $VM->Status ne "running")
 {
   FatalError "The VM is not ready for use (" . $VM->Status . ")\n",
              $FullErrFileName, $Job, $Step, $Task;
 }
-$VM->Status('running');
-my ($ErrProperty, $ErrMessage) = $VM->Save();
-if (defined $ErrMessage)
+elsif ($Debug and !$VM->IsPoweredOn)
 {
-  FatalError "Can't set VM status to running: $ErrMessage\n",
-             $FullErrFileName, $Job, $Step, $Task;
+  FatalError "The VM is not powered on\n", $FullErrFileName, $Job, $Step, $Task;
 }
+LogMsg "Task $JobId/$StepNo/$TaskNo (" . $VM->Name . ") started\n";
+
+my $Start = Time();
+Debug("0.00 Setting the time\n");
+my $TA = $VM->GetAgent();
 if (!$TA->SetTime())
 {
-    # Not a fatal error
-    LogTaskError("Unable to set the VM system time: ". $TA->GetLastError() ."\n", $FullErrFileName);
+  # Not a fatal error
+  LogTaskError("Unable to set the VM system time: ". $TA->GetLastError() ."\n", $FullErrFileName);
 }
 
+my $ErrMessage;
 my $FileType = $Step->FileType;
 if ($FileType ne "exe32" && $FileType ne "exe64")
 {
@@ -248,6 +295,7 @@ if ($FileType ne "exe32" && $FileType ne "exe64")
              $FullErrFileName, $Job, $Step, $Task;
 }
 my $FileName = $Step->FileName;
+Debug(Elapsed($Start), " Sending '$StepDir/$FileName'\n");
 if (!$TA->SendFile("$StepDir/$FileName", $FileName, 0))
 {
   $ErrMessage = $TA->GetLastError();
@@ -257,6 +305,7 @@ if (!$TA->SendFile("$StepDir/$FileName", $FileName, 0))
 my $TestLauncher = "TestLauncher" . 
                    ($FileType eq "exe64" ? "64" : "32") .
                    ".exe";
+Debug(Elapsed($Start), " Sending '$BinDir/windows/$TestLauncher'\n");
 if (!$TA->SendFile("$BinDir/windows/$TestLauncher", $TestLauncher, 0))
 {
   $ErrMessage = $TA->GetLastError();
@@ -319,6 +368,7 @@ elsif ($Step->Type eq "suite")
   $Script .= "-q -o $RptFileName -t $Tag -m \"$EMail\" -i \"$Info\"\r\n" .
              "$FileName -q -s $RptFileName\r\n";
 }
+Debug(Elapsed($Start), " Sending the script: [$Script]\n");
 if (!$TA->SendFileFromString($Script, "script.bat", $TestAgent::SENDFILE_EXE))
 {
   $ErrMessage = $TA->GetLastError();
@@ -326,6 +376,7 @@ if (!$TA->SendFileFromString($Script, "script.bat", $TestAgent::SENDFILE_EXE))
              $FullErrFileName, $Job, $Step, $Task;
 }
 
+Debug(Elapsed($Start), " Running the script\n");
 my $Pid = $TA->Run(["./script.bat"], 0);
 if (!$Pid or !defined $TA->Wait($Pid, $Timeout, $Keepalive))
 {
@@ -333,6 +384,7 @@ if (!$Pid or !defined $TA->Wait($Pid, $Timeout, $Keepalive))
 }
 
 my $NewStatus = "boterror";
+Debug(Elapsed($Start), " Retrieving the report file '$FullLogFileName'\n");
 if ($TA->GetFile($RptFileName, $FullLogFileName))
 {
   my $TestFailures = CountFailures($FullLogFileName);
@@ -369,6 +421,7 @@ elsif (!defined $ErrMessage)
   $ErrMessage = "Can't copy log from VM: " . $TA->GetLastError();
 }
 
+Debug(Elapsed($Start), " Taking a screenshot\n");
 TakeScreenshot $VM, $FullScreenshotFileName;
 if (defined $ErrMessage)
 {
@@ -376,6 +429,7 @@ if (defined $ErrMessage)
 }
 $TA->Disconnect();
 
+Debug(Elapsed($Start), " Done. New task status: $NewStatus\n");
 $Task->Status($NewStatus);
 $Task->ChildPid(undef);
 $Task->Ended(time);

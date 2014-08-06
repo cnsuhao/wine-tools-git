@@ -37,16 +37,29 @@ sub BEGIN
     unshift @INC, "$::RootDir/lib";
   }
 }
+my $Name0 = $0;
+$Name0 =~ s+^.*/++;
 
 use WineTestBot::Config;
 use WineTestBot::Log;
 use WineTestBot::VMs;
 
+my $Debug;
+sub Debug(@)
+{
+  print STDERR @_ if ($Debug);
+}
+
+sub Error(@)
+{
+  Debug("$Name0:error: ", @_);
+  LogMsg @_;
+}
+
 sub FatalError($$)
 {
   my ($ErrMessage, $VM) = @_;
-
-  LogMsg $ErrMessage, "\n";
+  Error "$Name0:error: $ErrMessage";
 
   # Get the up-to-date VM status and update it if nobody else changed it
   my $VMKey = $VM->GetKey();
@@ -79,35 +92,87 @@ EOF
 $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
 
-my ($VMKey) = @ARGV;
-if (! $VMKey)
+
+# Grab the command line options
+my ($Usage, $VMKey);
+while (@ARGV)
 {
-  die "Usage: RevertVM.pl VMName";
+  my $Arg = shift @ARGV;
+  if ($Arg eq "--debug")
+  {
+    $Debug = 1;
+  }
+  elsif ($Arg =~ /^(?:-\?|-h|--help)$/)
+  {
+    $Usage = 0;
+    last;
+  }
+  elsif ($Arg =~ /^???/)
+  {
+    Error "unknown option '$Arg'\n";
+    $Usage = 2;
+    last;
+  }
+  elsif (!defined $VMKey)
+  {
+    $VMKey = $Arg;
+  }
+  else
+  {
+    Error "unexpected argument '$Arg'\n";
+    $Usage = 2;
+    last;
+  }
+}
+
+# Check parameters
+if (!defined $Usage)
+{
+  if (!defined $VMKey)
+  {
+    Error "you must specify the VM name\n";
+    $Usage = 2;
+  }
+  elsif ($VMKey =~ /^([a-zA-Z0-9_]+)$/)
+  {
+    $VMKey = $1;
+  }
+  else
+  {
+    Error "'$VMKey' is not a valid VM name\n";
+    $Usage = 2;
+  }
+
+}
+if (defined $Usage)
+{
+    print "Usage: $Name0 [--debug] [--help] VMName\n";
+    exit $Usage;
 }
 
 my $VM = CreateVMs()->GetItem($VMKey);
-if (! defined($VM))
+if (!defined $VM)
 {
-  LogMsg "VM $VMKey doesn't exist\n";
+  Error "VM $VMKey does not exist\n";
   exit 1;
 }
-
-LogMsg "Reverting $VMKey to ", $VM->IdleSnapshot, "\n";
-$VM->Status("reverting");
-my ($ErrProperty, $ErrMessage) = $VM->Save();
-if (defined($ErrMessage))
+if (!$Debug and $VM->Status ne "reverting")
 {
-  FatalError "Can't change status for VM $VMKey: $ErrMessage", $VM;
+  FatalError "The VM is not ready to be reverted (" . $VM->Status . ")\n", $VM;
 }
+my $Start = Time();
+LogMsg "Reverting $VMKey to ", $VM->IdleSnapshot, "\n";
 
 # Some QEmu/KVM versions are buggy and cannot revert a running VM
-$ErrMessage = $VM->PowerOff(1);
+Debug(Elapsed($Start), " Powering off the VM\n");
+my $ErrMessage = $VM->PowerOff(1);
 if (defined $ErrMessage)
 {
-  LogMsg "$ErrMessage\n";
+  Error "$ErrMessage\n";
   LogMsg "Trying the revert anyway\n";
 }
 
+Debug(Elapsed($Start), " Reverting $VMKey to ", $VM->IdleSnapshot, "\n");
 $ErrMessage = $VM->RevertToSnapshot($VM->IdleSnapshot);
 if (defined($ErrMessage))
 {
@@ -119,12 +184,13 @@ if (defined($ErrMessage))
 $VM = CreateVMs()->GetItem($VMKey);
 exit 1 if ($VM->Status ne "reverting");
 $VM->Status("sleeping");
-($ErrProperty, $ErrMessage) = $VM->Save();
+(my $ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
 {
   FatalError "Can't change status for VM $VMKey: $ErrMessage", $VM;
 }
 
+Debug(Elapsed($Start), " Trying the TestAgent connection\n");
 LogMsg "Waiting for ", $VM->Name, " (up to ${WaitForToolsInVM}s per attempt)\n";
 my $TA = $VM->GetAgent();
 $TA->SetConnectTimeout($WaitForToolsInVM);
@@ -138,9 +204,11 @@ if (!$Success)
 
 if ($SleepAfterRevert != 0)
 {
+  Debug(Elapsed($Start), " Sleeping\n");
   LogMsg "Letting ", $VM->Name, " settle for ${SleepAfterRevert}s\n";
   sleep($SleepAfterRevert);
 }
+Debug(Elapsed($Start), " Done\n");
 
 # Get the up-to-date VM status and exit if someone else changed it
 $VM = CreateVMs()->GetItem($VMKey);
