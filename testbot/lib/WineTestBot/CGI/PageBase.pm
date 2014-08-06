@@ -404,7 +404,7 @@ sub Redirect($$$)
       $Location = $URI . $Location;
     }
     my $Server = $self->{Request}->server;
-    $Location = $Protocol . "://" . $Server->server_hostname . $Location; 
+    $Location = $Protocol . "://" . $ENV{"HTTP_HOST"} . $Location;
   }
   $self->{Request}->headers_out->set("Location", $Location);
   $self->{Request}->status(Apache2::Const::REDIRECT);
