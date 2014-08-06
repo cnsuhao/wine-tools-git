@@ -92,17 +92,8 @@ sub GetTitle($)
 {
   my ($self) = @_;
 
-  my $Title;
-  if ($self->GetParam("Key"))
-  {
-    $Title = $self->GetParam("Key");
-  }
-  else
-  {
-    $Title = "Add " . $self->{Collection}->GetItemName();
-  }
-
-  return $self->escapeHTML($Title);
+  return $self->GetParam("Key") ? $self->GetParam("Key") :
+             "Add " . $self->{Collection}->GetItemName();
 }
 
 sub DisplayProperty($$)

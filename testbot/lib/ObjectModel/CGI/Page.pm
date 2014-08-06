@@ -113,12 +113,34 @@ sub SetCookies($)
   $self->{PageBase}->SetCookies($self);
 }
 
+=pod
+=over 12
+
+=head1 C<GetPageTitle()>
+
+This returns the page title as put in the HTML header.
+Note that this may not be valid HTML and thus need escaping.
+
+=back
+=cut
+
 sub GetPageTitle($)
 {
   my ($self) = @_;
 
   return $self->{PageBase}->GetPageTitle($self);
 }
+
+=pod
+=over 12
+
+=head1 C<GetTitle()>
+
+This returns the title for the current web page or email section.
+Note that this may not be valid HTML and thus need escaping.
+
+=back
+=cut
 
 sub GetTitle($)
 {
