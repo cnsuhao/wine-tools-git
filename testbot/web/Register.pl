@@ -58,7 +58,8 @@ sub GetHeaderText($)
   return "Since an account will allow you to run code on this system, your " .
          "request for an account will have to be manually approved. That " .
          "should be no problem if you're a well-known member of the Wine " .
-         "community.<br>\n" .
+         "community. Otherwise please explain in a few words why you need an " .
+         "account in the Remarks field.<br>\n" .
          "When your request has been approved, you'll receive a link via " .
          "email to activate your account and choose a password. Usually, " .
          "you should receive that email within a couple of hours.";
