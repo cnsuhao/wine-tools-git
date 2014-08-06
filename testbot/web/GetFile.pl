@@ -20,7 +20,7 @@ use strict;
 
 use Apache2::Const -compile => qw(REDIRECT);
 use CGI;
-use Fcntl;
+use Fcntl; # For O_XXX
 use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::Steps;

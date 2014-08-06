@@ -35,7 +35,6 @@ sub BEGIN
   }
 }
 
-use POSIX qw(:fcntl_h);
 use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::VMs;

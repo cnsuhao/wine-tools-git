@@ -21,9 +21,9 @@ use strict;
 package SubmitPage;
 
 use CGI qw(:standard);
-use Fcntl;
+use Fcntl; # For O_XXX
 use IO::Handle;
-use POSIX qw(:fcntl_h);
+use POSIX qw(:fcntl_h); # For SEEK_XXX
 use File::Basename;
 
 use ObjectModel::BasicPropertyDescriptor;

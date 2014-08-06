@@ -37,7 +37,6 @@ sub BEGIN
   }
 }
 
-use Fcntl;
 use File::Basename;
 use File::Compare;
 use File::Copy;
