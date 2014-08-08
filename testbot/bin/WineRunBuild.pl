@@ -288,7 +288,7 @@ my $ErrMessage;
 my $FileName = $Step->FileName;
 my $TA = $VM->GetAgent();
 Debug(Elapsed($Start), " Sending '$StepDir/$FileName'\n");
-if (!$TA->SendFile("$StepDir/$FileName", "staging/$FileName", 0))
+if (!$TA->SendFile("$StepDir/$FileName", "staging/patch.diff", 0))
 {
   $ErrMessage = $TA->GetLastError();
   FatalError "Could not copy the patch to the VM: $ErrMessage\n",
@@ -296,7 +296,7 @@ if (!$TA->SendFile("$StepDir/$FileName", "staging/$FileName", 0))
 }
 my $Script = "#!/bin/sh\n" .
              "rm -f Build.log\n" .
-             "../bin/build/Build.pl $FileName " . $Step->FileType .
+             "../bin/build/Build.pl patch.diff " . $Step->FileType .
              " $BaseName 32";
 $Script .= ",64"if ($Run64);
 $Script .= " >>Build.log 2>&1\n";
