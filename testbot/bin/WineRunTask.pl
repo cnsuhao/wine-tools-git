@@ -193,7 +193,7 @@ while (@ARGV)
     $Usage = 0;
     last;
   }
-  elsif ($Arg =~ /^???/)
+  elsif ($Arg =~ /^-/)
   {
     Error "unknown option '$Arg'\n";
     $Usage = 2;
