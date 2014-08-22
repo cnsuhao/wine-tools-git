@@ -1,23 +1,35 @@
 #!/bin/sh
 #
 # Update the LXR index after a new release of Wine.
+# This should normally be run from a cron job.
 #
-# usage: update-version <version>
+# usage: update-version [<version>]
 #
 
 set -e
 umask 002
 
-if [ $# -lt 1 ]
-then
-  echo "Usage: $0 version"
-  exit 1
-fi
+gitdir=/home/winehq/opt/source/git/wine.git
 
-version=$1
+if test -z "$1"
+then
+    version=$(git --git-dir=$gitdir tag --contains HEAD)
+    if test -z "$version"
+    then
+        exit 0  # not a release tag
+    fi
+else
+    version="wine-$1"
+fi
 
 cd /home/winehq/opt/source
 
-(echo "wine-$version"; cat wine-versions) | uniq > wine-versions.new && mv -f wine-versions.new wine-versions
+(echo "$version"; cat wine-versions) | uniq > wine-versions.new
+if cmp wine-versions wine-versions.new >/dev/null
+then
+    rm -f wine-versions.new
+    exit 0  # already updated
+fi
 
-./genxref --url=http://source.winehq.org --version=wine-$version
+mv -f wine-versions.new wine-versions
+./genxref --url=http://source.winehq.org --version="$version"

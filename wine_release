@@ -85,7 +85,4 @@ fi
 # add version to bugzilla table
 echo "INSERT INTO bugs.versions (value, product_id) VALUES(\"$version\",1)" | mysql
 
-# make cross reference database for LXR
-$tools_dir/lxr/update-version $version &
-
 # end
