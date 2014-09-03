@@ -10,6 +10,11 @@ AddType application/winetest .winetest
   SetHandler cgi-script
 </Files>
 
+<Files gzip.php>
+  SetOutputFilter DEFLATE
+  UnsetEnv no-gzip
+</Files>
+
 <FilesMatch "\.php$">
 FileETag None
 <ifModule mod_headers.c>
