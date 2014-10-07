@@ -203,7 +203,7 @@ if ($plid==1 && $major==4) {
             } elsif ($product==3) {
                 $version = "2008";
             }
-        } elsif ($minor == 2) {
+        } elsif ($minor == 2 || $minor == 3) {
             $version = "win8";
         }
     }
