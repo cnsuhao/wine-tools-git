@@ -252,7 +252,7 @@ while ($_ = <IN>) {
     last if (!/^\s+([^ =]+)=(.*)\r?$/);
     my $module = $1;
     $dllinfo{$module} = { version => $2 };
-    if ($2 eq "dll is missing" || $2 =~ /^load error/)
+    if ($2 eq "dll is missing" || $2 =~ /^load error/ || $2 eq "dll is a stub")
     {
         print SUM "- $module - missing - - - - -\n";
     }
@@ -364,6 +364,10 @@ foreach my $dll (sort keys %dllinfo)
     elsif ($dllinfo{$dll}->{version} eq "load error 1157")
     {
         $box->{data} .= sprintf "<tr><td>%s</td><td class=\"skipped\">missing dependencies</td></tr>\n", escapeHTML($dll);
+    }
+    elsif ($dllinfo{$dll}->{version} eq "dll is a stub")
+    {
+        $box->{data} .= sprintf "<tr><td>%s</td><td class=\"skipped\">dll is a stub</td></tr>\n", escapeHTML($dll);
     }
     elsif ($dllinfo{$dll}->{version} =~ /^load error/)
     {
