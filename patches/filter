@@ -61,24 +61,23 @@ sub filter_patch(@)
     my @diff_lines = ();
     my $p_option = -1;
     my $use_index = 0;
+    my $git_patch = 0;
 
     foreach $_ (@_)
     {
         chomp;
         s/\r$//;
         if (/^Index: (\S*)/) { $use_index = 1; }
-        elsif (/^\+\+\+ b\//) { $p_option = 1; }
-        elsif (/^diff --git/) { $p_option = 1; }
+        elsif (/^\+\+\+ b\//) { $git_patch = 1; }
+        elsif (/^diff --git/) { $git_patch = 1; }
         elsif (/ (\/dev\/null)/) { push @diff_lines, $1; }
         elsif (/^--- (\S*)\//) { push @diff_lines, $1; }
         elsif (/^\+\+\+ (\S*)\//) { push @diff_lines, $1; }
     }
 
-    if ($p_option == -1)
-    {
-        if ($use_index) { $p_option = 0; }
-        else { $p_option = find_p_option( @diff_lines ); }
-    }
+    if ($git_patch) { $p_option = 1; }
+    elsif ($use_index) { $p_option = 0; }
+    else { $p_option = find_p_option( @diff_lines ); }
 
     # now patch the diff lines
     my $file = "";
@@ -106,6 +105,10 @@ sub filter_patch(@)
             }
             $f = add_prefix( $file, $p_option, "b/" );
             s/^\+\+\+ .*/\+\+\+ $f/;
+        }
+        elsif ($git_patch && /^-- $/)
+        {
+            $_ = "\n" . $_;
         }
     }
 
