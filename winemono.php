@@ -4,7 +4,7 @@
  */
 
 // Default version if none given
-$sVersion = '4.5.4';
+$sVersion = '4.5.6';
 
 // Suffix appended to base name of file
 $sFileSuffix = '';
@@ -30,7 +30,8 @@ $aFileSizes = array(
 	'0.0.4'=>44408320,
 	'0.0.8'=>46967296,
 	'4.5.2'=>52502528,
-	'4.5.4'=>53706752
+	'4.5.4'=>53706752,
+	'4.5.6'=>53705216
 );
 
 // Exact size of the file:
