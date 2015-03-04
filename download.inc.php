@@ -5,6 +5,21 @@
  * Copyright (c) 2006 Jonathan Ernst
  */
 
+// SourceForge can do better job at redirecting to the mirror than us. However,
+// it redirects to HTML page by default for web browser user agents. New enough
+// Wine set user agent to 'Wine Addon Downloader', so redirect them directly
+// to SourceForge. For older Wine and other user agents, fallback to random
+// known mirror.
+if(strcmp($_SERVER['HTTP_USER_AGENT'], 'Wine Addon Downloader') === 0) {
+    header("Location: http://sourceforge.net/projects/wine/files/".$sFileName);
+    exit;
+}
+
+if(!$iFileSize) {
+    header("HTTP/1.0 404 Not Found");
+    exit;
+}
+
 // List of common locations for files
 $aList += array("http://freefr.dl.sourceforge.net/project/wine/",
                 "http://heanet.dl.sourceforge.net/project/wine/",

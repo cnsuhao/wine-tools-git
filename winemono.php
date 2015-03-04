@@ -36,10 +36,6 @@ $aFileSizes = array(
 
 // Exact size of the file:
 $iFileSize = $aFileSizes[$sFileSuffix];
-if(!$iFileSize) {
-	header("HTTP/1.0 404 Not Found");
-	exit;
-}
 
 // List of additional locations (commonly used locations are already in download.inc.php)
 $aList = array();
