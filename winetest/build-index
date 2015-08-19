@@ -44,6 +44,7 @@ my %vista   = (name => "Vista");
 my %w2k8    = (name => "2008");
 my %win7    = (name => "Win7");
 my %win8    = (name => "Win8");
+my %win10   = (name => "Win10");
 my %unknown = (name => "Other");
 my %linux   = (name => "Linux");
 my %mac     = (name => "Mac");
@@ -52,7 +53,7 @@ my %solaris = (name => "Solaris");
 my %wine    = (name => "Wine");
 
 # Define the order of version groups in the summary
-my @groups = (\%w95, \%w98, \%me, \%nt3, \%nt4, \%w2k, \%xp, \%w2k3, \%vista, \%w2k8, \%win7, \%win8,
+my @groups = (\%w95, \%w98, \%me, \%nt3, \%nt4, \%w2k, \%xp, \%w2k3, \%vista, \%w2k8, \%win7, \%win8, \%win10,
               \%unknown, \%linux, \%mac, \%bsd, \%solaris, \%wine);
 
 my @months = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");

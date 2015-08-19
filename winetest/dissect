@@ -206,6 +206,12 @@ if ($plid==1 && $major==4) {
         } elsif ($minor == 2 || $minor == 3) {
             $version = "win8";
         }
+    } elsif ($major==10) {
+        if      ($minor == 0) {
+            if      ($product==1) {
+                $version = "win10";
+            }
+        }
     }
 } elsif ($plid==3) {
     #$version = "ce$major$minor";
