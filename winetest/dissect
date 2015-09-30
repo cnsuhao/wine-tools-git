@@ -181,6 +181,7 @@ if ($plid==1 && $major==4) {
     } elsif ($major==5) {
         if      ($minor==0) {
             $version = "2000";
+            $prediluvian = 1;
         } elsif ($minor==1) {
             $version = "xp";
         } elsif ($minor==2) {
