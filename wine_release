@@ -83,6 +83,6 @@ then
 fi
 
 # add version to bugzilla table
-echo "INSERT INTO bugs.versions (value, product_id) VALUES(\"$version\",1)" | mysql
+echo "INSERT INTO bugs.versions (value, product_id) VALUES(\"$version\",1),(\"$version\",7)" | mysql
 
 # end
