@@ -140,6 +140,7 @@ tr.odd { background-color: #f8e8e8; }
 
 .id, .status, .testbot { text-align: center; }
 .id, .status, .author { white-space: nowrap; padding: 0 3px; }
+.checkmark { text-align: center; color:green; }
 .sha1 { white-space: nowrap; font-family: monospace; padding: 2px 12px; }
 
 .id :link, .sha1 :link, .subject :link { color: #A50D0D; text-decoration: none; }

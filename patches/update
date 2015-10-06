@@ -92,9 +92,9 @@ my %patches;
 
 sub format_author($)
 {
-    my $_ = shift;
-    if (/\s*((\"(.*)\")|(.*))\s*<(\S+\@\S+)>/) { return $3 || $4 || $5; }
-    return $_;
+    my $str = shift;
+    if ($str =~ /\s*((\"(.*)\")|(.*))\s*<(\S+\@\S+)>/) { return $3 || $4 || $5; }
+    return $str;
 }
 
 open INDEX, "> $dest/index.html.new" or die "cannot create $dest/index.html.new";
@@ -117,6 +117,7 @@ print INDEX "<table class=\"main\"><tr><th class=\"id\">ID</th>",
     "<th class=\"status\">Status</th>",
     "<th class=\"author\">Author</th>",
     "<th class=\"subject\">Subject</th>",
+    "<th class=\"status\">Sign</th>",
     "<th class=\"status\">Testbot</th>",
     "<th class=\"status\">Job ID</th></tr>\n";
 
@@ -130,7 +131,8 @@ foreach my $file (readdir DIR)
     {
         if (/^Subject: (.*)$/) { $patch{"subject"} = $1; }
         elsif (/^From: (.*)$/) { $patch{"author"} = format_author($1); }
-        last if (defined $patch{"subject"} && defined $patch{"author"});
+        elsif (/^Signed-off-by: (.*)$/) { push @{$patch{"signoff"}}, format_author($1); }
+        last if (/^---$/);
     }
     close PATCH;
 
@@ -147,6 +149,15 @@ foreach my $file (readdir DIR)
     {
         $patch{"order"} = <ORDER>;
         close ORDER;
+    }
+    if (open SIGNOFF, "<$dir/$file.signoff")
+    {
+        while (<SIGNOFF>)
+        {
+            chomp;
+            push @{$patch{"signoff"}}, format_author($_);
+        }
+        close SIGNOFF;
     }
     $patch{"testbot"} = "";
     $patch{"testjob"} = "";
@@ -182,6 +193,14 @@ foreach my $file (sort { $patches{$b}->{"order"} <=> $patches{$a}->{"order"} } k
            escapeHTML($patch->{"author"});
     printf INDEX "<td class=\"subject\"><a href=\"data/$file\">%s</a></td>",
            escapeHTML($patch->{"subject"});
+    if (defined($patch->{"signoff"}))
+    {
+        printf INDEX "<td class=\"checkmark\"><a title=\"%s\">&#10003;</a></td>", join("\n",@{$patch->{"signoff"}});
+    }
+    else
+    {
+        printf INDEX "<td></td>";
+    }
     if ($patch->{"testbot"} eq "Failed")
     {
         print INDEX "<td class=\"testbot botfail\"><a href=\"data/$file.testfail\">Failed</a></td>";
