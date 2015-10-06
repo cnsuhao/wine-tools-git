@@ -37,6 +37,7 @@ my %status_expiry =
  "split"      => 7,
  "depend"     => 7,
  "sequence"   => 7,
+ "signoff"    => 1,
  "superseded" => 1,
  "testcase"   => 7,
  "testfail"   => 7,
