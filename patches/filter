@@ -165,5 +165,7 @@ printf "From: %s\n", encode_utf8($message->Email::Simple::header("from") || "(un
 printf "Subject: %s\n", encode_utf8($message->Email::Simple::header("subject") || "(none)");
 printf "Message-Id: %s\n", $message->header("message-id");
 printf "Date: %s\n", $message->header("date");
+printf "In-Reply-To: %s\n", $message->header("in-reply-to") if $message->header("in-reply-to");
+printf "References: %s\n", $message->header("references") if $message->header("references");
 print "\n";
 print join("\n",decode_parts($message->parts)), "\n";
