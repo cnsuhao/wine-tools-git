@@ -131,7 +131,11 @@ foreach my $file (readdir DIR)
     {
         if (/^Subject: (.*)$/) { $patch{"subject"} = $1; }
         elsif (/^From: (.*)$/) { $patch{"author"} = format_author($1); }
-        elsif (/^Signed-off-by: (.*)$/) { push @{$patch{"signoff"}}, format_author($1); }
+        last if (/^$/);
+    }
+    while (<PATCH>)
+    {
+        if (/^\s*Signed-off-by: (.*)$/) { push @{$patch{"signoff"}}, format_author($1); }
         last if (/^---$/);
     }
     close PATCH;
