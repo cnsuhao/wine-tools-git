@@ -43,6 +43,94 @@ my %status_expiry =
  "testfail"   => 7,
 );
 
+my %status_descr =
+(
+ "nil"        => "New",
+ "pending"    => "Pending",
+ "applied"    => "Applied",
+ "committed"  => "Committed",
+ "applyfail"  => "Apply failure",
+ "buildfail"  => "Build failure",
+ "deferred"   => "Deferred",
+ "formatting" => "Formatting",
+ "other"      => "Other project",
+ "nopatch"    => "No patch",
+ "rejected"   => "Rejected",
+ "split"      => "Needs splitting",
+ "depend"     => "Dependency",
+ "sequence"   => "Bad sequence",
+ "signoff"    => "Sign-off",
+ "superseded" => "Superseded",
+ "testcase"   => "Needs tests",
+ "testfail"   => "Test failure",
+);
+
+my %status_explanation =
+(
+ "pending"    =>
+"This means that the patch is not necessarily wrong, but its
+correctness is not obvious. You should either write a test case
+demonstrating that it is correct, try to fix the problem in a more
+straightforward way, or better explain why you are doing things this
+way.",
+ "committed"  =>
+"This means that your patch has been approved, and committed to the
+main git tree. Congratulations!",
+ "applyfail"  =>
+"This means that git-apply refused to apply the patch. This could be
+either because it got mangled in transit, it's not relative to the
+latest git, or it conflicts with someone else's patch in the same
+area. You need to resend an updated patch.",
+ "buildfail"  =>
+"This means that the patched code doesn't compile. It could also be
+because you forgot to include some changes or new files required for
+compilation, or that the patch causes compiler warnings (maintainer
+mode implies -Werror). You need to resend a fixed patch.",
+ "deferred"   =>
+"This means that the patch is deferred because of code freeze for an
+upcoming release. You need to either resend after the release, make
+the patch less intrusive, or make a convincing argument that it needs
+to be included in the release.",
+ "formatting" =>
+"This means that there are some formatting issues with your
+patch. Either the author's full name, email address, or Signed-off-by
+headers are missing, indentation is messed up (usually from editing
+with a non-standard tab size), or there are gratuitous formatting
+changes to the code. You need to resend a fixed patch.",
+ "other"      =>
+"This means that the patch belongs to another WineHQ project (website,
+appdb, etc.) and will be applied by the respective maintainer.",
+ "nopatch"    =>
+"This means that no patch was found in your mail.",
+ "rejected"   =>
+"This means that the patch has been rejected by a reviewer. You should
+have received a mail explaining why it was rejected. You need to fix
+the issue and resend the patch, or if you are convinced that your
+patch is good as is, you should reply to the rejection message with
+your counterarguments.",
+ "split"      =>
+"This means that the patch needs to be split, either because it
+contains unrelated changes that should be their own separate patch, or
+because it's too large for review. You need to find a way to resend
+the changes in smaller chunks.",
+ "depend"     =>
+"This means that the patch is part of a series in which a previous
+patch hasn't been applied. You need to resend when the dependent patch
+is fixed.",
+ "sequence"   =>
+"This means that the patch is part of a series but it's not correctly
+numbered. You need to resend the series with correct sequence numbers
+to enable the Testbot to figure it out.",
+ "testcase"   =>
+"This means that you need to write some test cases demonstrating that
+the patch is correct.",
+# No notifications are sent for the following:
+# "nil"
+# "signoff"
+# "superseded"
+# "testfail"
+);
+
 sub usage()
 {
     print STDERR "Usage: $0 [-n] [-v] [directory]\n";
@@ -53,6 +141,7 @@ my $dir = ".";
 my $dry_run = 0;
 my $quiet = 1;
 my $now = time();
+my $email_from = "Marvin <testbot\@winehq.org>";
 
 foreach my $arg (@ARGV)
 {
@@ -100,14 +189,111 @@ sub get_patch_state($)
     return ($status, $mtime);
 }
 
+sub get_previous_state($)
+{
+    my $file = shift;
+    my $prev_status = "nil";
+
+    if (open PREVSTATUS, "<$dir/OLD/$file.status")
+    {
+        $prev_status = <PREVSTATUS>;
+        chomp $prev_status;
+        close PREVSTATUS;
+    }
+    return $prev_status;
+}
+
+sub get_notify_headers($$)
+{
+    my $file = shift;
+    my $status = shift;
+    my @headers;
+
+    return () unless open PATCH, "<$dir/$file";
+
+    push @headers, "From: $email_from";
+
+    while (<PATCH>)
+    {
+        if (/^Subject: (.*)$/)
+        {
+            my $subject = $1;
+            $subject = "Re: " . $subject unless $subject =~ /^[Rr][Ee]: /;
+            push @headers, "Subject: $subject";
+        }
+        elsif (/^From: (.*)$/)
+        {
+            push @headers, "To: $1";
+        }
+        elsif (/^Message-Id: (.*)$/)
+        {
+            push @headers, "In-Reply-To: $1";
+            push @headers, "References: $1";
+        }
+        last if (/^$/);
+    }
+    close PATCH;
+
+    push @headers, "X-Patch-Status: $status_descr{$status}";
+    push @headers, "X-Patch-URL: https://source.winehq.org/patches/data/$file";
+    push @headers, "Reply-To: wine-devel\@winehq.org";
+    return @headers;
+}
+
+sub notify_state_change($$$)
+{
+    my $file = shift;
+    my $prev_status = shift;
+    my $status = shift;
+
+    return if $prev_status eq $status;
+
+    printf "file %s status changed %s -> %s\n", $file, $prev_status, $status unless $quiet;
+
+    # if there's no available explanation, don't notify
+    return unless defined $status_explanation{$status};
+
+    my @headers = get_notify_headers( $file, $status );
+    return unless @headers;
+
+    open PREVSTATUS, ">$dir/OLD/$file.status" or return;
+    printf PREVSTATUS "%s\n", $status;
+    close PREVSTATUS;
+
+    open SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq" or return;
+    print SENDMAIL join("\n", @headers), "\n\n";
+    print SENDMAIL <<"EOF";
+Thank you for your contribution to Wine!
+
+This is an automated notification to let you know that your patch has
+been reviewed and its status set to "$status_descr{$status}".
+
+$status_explanation{$status}
+EOF
+
+    if ($status ne "committed")
+    {
+        print SENDMAIL <<"EOF";
+
+If you do not understand the reason for this status, disagree with our
+assessment, or are simply not sure how to proceed next, please ask for
+clarification by replying to this email.
+EOF
+    }
+    close SENDMAIL;
+}
+
 # expire current patches
 
 opendir DIR, $dir or die "cannot open '$dir': $!\n";
 foreach my $file (sort readdir DIR)
 {
     next unless $file =~ /^[0-9]+$/;
-    my ($status, $mtime) = get_patch_state( "$file" );
+    my ($status, $mtime) = get_patch_state( $file );
+    my $prev_status = get_previous_state( $file );
     my $limit = $status_expiry{$status} || 7;
+
+    notify_state_change( $file, $prev_status, $status );
 
     if (($now - $mtime - 12*60*60) / (24*60*60) > $limit)
     {
@@ -136,6 +322,7 @@ foreach my $file (sort readdir DIR)
                 unlink "$dir/$file.signoff";
                 unlink "$dir/$file.testbot";
                 unlink "$dir/$file.testfail";
+                unlink "$dir/OLD/$file.status";
             }
         }
     }
