@@ -20,8 +20,6 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 use CGI qw(:standard);
-use open ':utf8';
-binmode STDOUT, ':utf8';
 
 my %status_descr =
 (
@@ -97,7 +95,7 @@ sub format_author($)
     return $str;
 }
 
-open INDEX, "> $dest/index.html.new" or die "cannot create $dest/index.html.new";
+open INDEX, ">:utf8", "$dest/index.html.new" or die "cannot create $dest/index.html.new";
 
 print INDEX start_html(-title=>"Patches list",
                        -encoding=>"utf-8",
@@ -126,15 +124,17 @@ foreach my $file (readdir DIR)
 {
     next unless $file =~ /^[0-9]+$/;
     my %patch;
-    next unless open PATCH, "<$dir/$file";
+    next unless open PATCH, "<:raw", "$dir/$file";
     while (<PATCH>)
     {
+        utf8::decode($_);
         if (/^Subject: (.*)$/) { $patch{"subject"} = $1; }
         elsif (/^From: (.*)$/) { $patch{"author"} = format_author($1); }
         last if (/^$/);
     }
     while (<PATCH>)
     {
+        utf8::decode($_);
         if (/^\s*Signed-off-by: (.*)$/) { push @{$patch{"signoff"}}, format_author($1); }
         last if (/^---$/);
     }
@@ -154,11 +154,12 @@ foreach my $file (readdir DIR)
         $patch{"order"} = <ORDER>;
         close ORDER;
     }
-    if (open SIGNOFF, "<$dir/$file.signoff")
+    if (open SIGNOFF, "<:raw", "$dir/$file.signoff")
     {
         while (<SIGNOFF>)
         {
             chomp;
+            utf8::decode($_);
             push @{$patch{"signoff"}}, format_author($_);
         }
         close SIGNOFF;
@@ -169,10 +170,11 @@ foreach my $file (readdir DIR)
     if (-f "$dir/$file.testbot")
     {
         $patch{"testbot"} = "OK";
-        if (open LOG, "<$dir/$file.testbot")
+        if (open LOG, "<:raw", "$dir/$file.testbot")
         {
             while (<LOG>)
             {
+                utf8::decode($_);
                 last if /^$/;
                 if (/^Job-ID: (.*)$/) { $patch{"testjob"} = $1; }
                 elsif (/^URL: (.*)$/) { $patch{"testurl"} = $1; }
