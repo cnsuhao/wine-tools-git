@@ -96,10 +96,20 @@ sub format_author($)
     return $str;
 }
 
+my $js = <<END;
+function toggle_display(id)
+{
+    var e = document.getElementById(id);
+    var display = e.style.display;
+    e.style.display = display == "none" ? "" : "none";
+}
+END
+
 open INDEX, ">:utf8", "$dest/index.html.new" or die "cannot create $dest/index.html.new";
 
 print INDEX start_html(-title=>"Patches list",
                        -encoding=>"utf-8",
+                       -script=>$js,
                        -style=>{src=>"patches.css"});
 
 print INDEX "<div id=\"logo_glass\"><a href=\"/patches/\"><img src=\"//winehq.org/images/winehq_logo_glass_sm.png\"></a></div>\n";
@@ -219,7 +229,7 @@ foreach my $file (sort { $patches{$b}->{"order"} <=> $patches{$a}->{"order"} } k
     }
     if (defined($patch->{"signoff"}))
     {
-        printf INDEX "<td class=\"checkmark\"><a title=\"%s\">&#10003;</a></td>", join("\n",@{$patch->{"signoff"}});
+        printf INDEX "<td class=\"checkmark\" onclick=\"toggle_display('$file.signoff')\">&#10003;</td>";
     }
     else
     {
@@ -244,6 +254,12 @@ foreach my $file (sort { $patches{$b}->{"order"} <=> $patches{$a}->{"order"} } k
         print INDEX "<td></td>";
     }
     print INDEX "</tr>\n";
+    if (defined($patch->{"signoff"}))
+    {
+        printf INDEX "<tr class=\"%s\" id=\"$file.signoff\" style=\"display: none;\" onclick=\"toggle_display('$file.signoff')\">" .
+                     "<td colspan=\"4\" /><td colspan=\"4\" class=\"signoffextra author\">%s</td></tr>\n",
+               $row & 1 ? "odd" : "even", join("", map { "Signed-off-by: " . escapeHTML($_) . "<br/>"; } @{$patch->{"signoff"}});
+    }
     $row++;
 }
 print INDEX "</table></div>\n";
