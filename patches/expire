@@ -25,6 +25,7 @@ my %status_expiry =
 (
  "nil"        => 30,
  "pending"    => 30,
+ "assigned"   => 30,
  "applied"    => 30,
  "committed"  => 1,
  "applyfail"  => 7,
@@ -47,6 +48,7 @@ my %status_descr =
 (
  "nil"        => "New",
  "pending"    => "Pending",
+ "assigned"   => "Assigned",
  "applied"    => "Applied",
  "committed"  => "Committed",
  "applyfail"  => "Apply failure",
@@ -73,6 +75,11 @@ correctness is not obvious. You should either write a test case
 demonstrating that it is correct, try to fix the problem in a more
 straightforward way, or better explain why you are doing things this
 way.",
+ "assigned"    =>
+"This means that the patch has been assigned to a reviewer. If the
+reviewer signs off on the patch, it will be committed, otherwise
+you'll receive advice on how to improve it. If you don't hear anything
+after a couple of weeks, please resend the patch.",
  "committed"  =>
 "This means that your patch has been approved, and committed to the
 main git tree. Congratulations!",
@@ -271,7 +278,7 @@ been reviewed and its status set to "$status_descr{$status}".
 $status_explanation{$status}
 EOF
 
-    if ($status ne "committed")
+    if ($status ne "committed" && $status ne "assigned")
     {
         print SENDMAIL <<"EOF";
 
@@ -306,6 +313,7 @@ foreach my $file (sort readdir DIR)
                 rename "$dir/$file",        "$dir/OLD/$file";
                 rename "$dir/$file.status", "$dir/OLD/$file.status";
                 rename "$dir/$file.order",  "$dir/OLD/$file.order";
+                rename "$dir/$file.review", "$dir/OLD/$file.review";
                 rename "$dir/$file.signoff", "$dir/OLD/$file.signoff";
                 rename "$dir/$file.testbot", "$dir/OLD/$file.testbot";
                 rename "$dir/$file.testfail", "$dir/OLD/$file.testfail";
@@ -320,6 +328,7 @@ foreach my $file (sort readdir DIR)
                 unlink "$dir/$file.status";
                 unlink "$dir/$file.order";
                 unlink "$dir/$file.signoff";
+                unlink "$dir/$file.review";
                 unlink "$dir/$file.testbot";
                 unlink "$dir/$file.testfail";
                 unlink "$dir/OLD/$file.status";
@@ -351,6 +360,7 @@ foreach my $file (sort readdir DIR)
             unlink "$dir/OLD/$file";
             unlink "$dir/OLD/$file.status";
             unlink "$dir/OLD/$file.order";
+            unlink "$dir/OLD/$file.review";
             unlink "$dir/OLD/$file.signoff";
             unlink "$dir/OLD/$file.testbot";
             unlink "$dir/OLD/$file.testfail";

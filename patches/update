@@ -25,6 +25,7 @@ my %status_descr =
 (
  "nil"        => "New",
  "pending"    => "Pending",
+ "assigned"   => "Assigned",
  "applied"    => "Applied",
  "committed"  => "Committed",
  "applyfail"  => "Apply failure",
@@ -46,8 +47,8 @@ my %status_descr =
 my @legend =
 (
  [ "nil",        "<ul><li>Patch not even looked at yet, there's still hope...</li></ul>" ],
- [ "pending",    "<ul><li>The patch is not obviously correct at first glance. Making a more convincing argument, preferably in the form of a test case, may help.</li>" .
-                 "<li>Waiting for feedback from the main developer in that area.</li></ul>" ],
+ [ "pending",    "<ul><li>The patch is not obviously correct at first glance. Making a more convincing argument, preferably in the form of a test case, may help.</li></ul>" ],
+ [ "assigned",   "<ul><li>Waiting for sign-off or feedback from the assigned reviewer. If you don't hear anything after a couple of weeks, please resend the patch.</li></ul>" ],
  [ "committed",  "<ul><li>You have done everything right; congratulations!</li>" .
                  "<li>You screwed up but AJ missed it, send a fix before someone notices ;-)</li></ul>" ],
  [ "depend",     "<ul><li>The patch is part of a series in which a previous patch hasn't been applied. Resend when the dependent patch is fixed.</li></ul>" ],
@@ -91,7 +92,7 @@ my %patches;
 sub format_author($)
 {
     my $str = shift;
-    if ($str =~ /\s*((\"(.*)\")|(.*))\s*<(\S+\@\S+)>/) { return $3 || $4 || $5; }
+    if ($str =~ /\s*((\"(.*)\")|(.*?))\s*<(\S+\@\S+)>/) { return $3 || $4 || $5; }
     return $str;
 }
 
@@ -115,6 +116,7 @@ print INDEX "<table class=\"main\"><tr><th class=\"id\">ID</th>",
     "<th class=\"status\">Status</th>",
     "<th class=\"author\">Author</th>",
     "<th class=\"subject\">Subject</th>",
+    "<th class=\"author\">Reviewer</th>",
     "<th class=\"status\">Sign</th>",
     "<th class=\"status\">Testbot</th>",
     "<th class=\"status\">Job ID</th></tr>\n";
@@ -153,6 +155,14 @@ foreach my $file (readdir DIR)
     {
         $patch{"order"} = <ORDER>;
         close ORDER;
+    }
+    if (open REVIEW, "<:raw", "$dir/$file.review")
+    {
+        $_ = <REVIEW>;
+        chomp;
+        utf8::decode($_);
+        $patch{"review"} = format_author($_);
+        close REVIEW;
     }
     if (open SIGNOFF, "<:raw", "$dir/$file.signoff")
     {
@@ -199,6 +209,14 @@ foreach my $file (sort { $patches{$b}->{"order"} <=> $patches{$a}->{"order"} } k
            escapeHTML($patch->{"author"});
     printf INDEX "<td class=\"subject\"><a href=\"data/$file\">%s</a></td>",
            escapeHTML($patch->{"subject"});
+    if ($patch->{"review"})
+    {
+        printf INDEX "<td class=\"author\">%s</td>", escapeHTML($patch->{"review"});
+    }
+    else
+    {
+        printf INDEX "<td></td>";
+    }
     if (defined($patch->{"signoff"}))
     {
         printf INDEX "<td class=\"checkmark\"><a title=\"%s\">&#10003;</a></td>", join("\n",@{$patch->{"signoff"}});
