@@ -66,7 +66,7 @@ $MaxRevertingVMs = 1;
 $MaxRevertsWhileRunningVMs = 1;
 $MaxActiveVMs = 2;
 $MaxVMsWhenIdle = undef;
-$SleepAfterRevert = 30;
+$SleepAfterRevert = 0;
 $WaitForToolsInVM = 30;
 
 $SuiteTimeout = 30 * 60;
