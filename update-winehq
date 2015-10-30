@@ -131,7 +131,7 @@ if (system("git", "add", $newsfile))
     die "git add $newsfile failed";
 }
 
-if (system("git", "commit", "-m", "Wine release $rel", $newsfile))
+if (system("git", "commit", "-s", "-m", "Wine release $rel", $newsfile))
 {
     system("git", "rm", "-f", $newsfile);
     die "git commit failed";
