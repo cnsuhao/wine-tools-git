@@ -49,9 +49,9 @@ then
     server/wineserver.man \
     server/wineserver.de.UTF-8.man \
     server/wineserver.fr.UTF-8.man \
-    tools/winemaker.man \
-    tools/winemaker.de.UTF-8.man \
-    tools/winemaker.fr.UTF-8.man \
+    tools/winemaker/winemaker.man \
+    tools/winemaker/winemaker.de.UTF-8.man \
+    tools/winemaker/winemaker.fr.UTF-8.man \
     tools/widl/widl.man \
     tools/winebuild/winebuild.man \
     tools/winedump/winedump.man \
