@@ -90,7 +90,9 @@ while (<ANNOUNCE>)
     }
 }
 
-push @text, "<p>The source is <a href=\"http://prdownloads.sourceforge.net/wine/wine-$rel.tar.bz2\">available now</a>.\n";
+(my $dir = $rel) =~ s/^([0-9]+\.[0-9]+).*/$1/;
+
+push @text, "<p>The source is <a href=\"//dl.winehq.org/wine/source/$dir/wine-$rel.tar.bz2\">available now</a>.\n";
 push @text, "Binary packages are in the process of being built, and will appear soon at their respective <a href=\"{\$root}/download\">download locations</a>.\n";
 push @text, "</p></body></news>\n";
 close ANNOUNCE;
