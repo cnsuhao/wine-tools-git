@@ -10,7 +10,7 @@ $sVersion = '4.5.6';
 $sFileSuffix = '';
 
 // Folder which contains files
-$sFolder = 'Wine%20Mono';
+$sFolder = 'wine-mono';
 
 // Check if a specific version was passed
 if(isset($_GET['v'])) {
@@ -24,21 +24,6 @@ $sExt = 'msi';
 
 // Name of the file
 $sFileName = sprintf('%s/%s/wine-mono-%s.%s', $sFolder, $sVersion, $sFileSuffix, $sExt);
-
-// Size array
-$aFileSizes = array(
-	'0.0.4'=>44408320,
-	'0.0.8'=>46967296,
-	'4.5.2'=>52502528,
-	'4.5.4'=>53706752,
-	'4.5.6'=>53705216
-);
-
-// Exact size of the file:
-$iFileSize = $aFileSizes[$sFileSuffix];
-
-// List of additional locations (commonly used locations are already in download.inc.php)
-$aList = array();
 
 // Common code for Wine downloader scripts
 require("download.inc.php");
