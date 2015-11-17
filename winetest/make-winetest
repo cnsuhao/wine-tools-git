@@ -81,7 +81,7 @@ umask 022
      cd build-native &&
      ../wine/configure --enable-win64 --without-x --without-freetype) || exit
 
-    (cd build-native && make depend && make __tooldeps__ include) || exit
+    (cd build-native && make depend && make __builddeps__) || exit
 
     # update the translations status
 
