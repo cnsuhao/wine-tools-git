@@ -93,7 +93,7 @@ function validate_type($type)
 
 function validate_resfile($resfile)
 {
-    if (!preg_match("*^[a-zA-Z0-9/.-_]+(#locale[0-9a-f]{3}:[0-9a-f]{2})?$*", $resfile))
+    if (!preg_match("*^[-_a-zA-Z0-9/.]+(#locale[0-9a-f]{3}:[0-9a-f]{2})?$*", $resfile))
         die("Invalid resource file");
     return $resfile;
 }
@@ -179,7 +179,7 @@ function get_res_path($resfile)
 
 function get_resfile_name($resfile)
 {
-    if (preg_match("*^([a-zA-Z0-9/.-_]+)#locale([0-9a-f]{3}:[0-9a-f]{2})$*", $resfile, $m))
+    if (preg_match("*^([-_a-zA-Z0-9/.]+)#locale([0-9a-f]{3}:[0-9a-f]{2})$*", $resfile, $m))
     {
         return "Locale data for: ".get_locale_name($m[2])." (".$m[1].")";
     }
