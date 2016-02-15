@@ -233,7 +233,7 @@ foreach my $file (sort { $patches{$b}->{"order"} <=> $patches{$a}->{"order"} } k
     }
     else
     {
-        printf INDEX "<td></td>";
+        printf INDEX "<td class=\"failmark\">X</td>";
     }
     if ($patch->{"testbot"} eq "Failed")
     {

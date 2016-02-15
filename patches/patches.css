@@ -141,6 +141,7 @@ tr.odd { background-color: #f8e8e8; }
 .id, .status, .testbot { text-align: center; }
 .id, .status, .author { white-space: nowrap; padding: 0 3px; }
 .checkmark { text-align: center; color:green; }
+.failmark { text-align: center; color: red; }
 .signoffextra { color: #A50D0D; border: 1px solid #601919; }
 .sha1 { white-space: nowrap; font-family: monospace; padding: 2px 12px; }
 
