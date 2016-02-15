@@ -149,6 +149,8 @@ my $dry_run = 0;
 my $quiet = 1;
 my $now = time();
 my $email_from = "Marvin <testbot\@winehq.org>";
+my $base_url = "https://source.winehq.org/patches/data";
+my %reviews;
 
 foreach my $arg (@ARGV)
 {
@@ -210,6 +212,16 @@ sub get_previous_state($)
     return $prev_status;
 }
 
+sub get_patch_reviewer($)
+{
+    my $file = shift;
+
+    return undef unless open REVIEW, "<$dir/$file.review";
+    chomp( my $ret = <REVIEW> );
+    close REVIEW;
+    return $ret;
+}
+
 sub get_notify_headers($$)
 {
     my $file = shift;
@@ -242,7 +254,7 @@ sub get_notify_headers($$)
     close PATCH;
 
     push @headers, "X-Patch-Status: $status_descr{$status}";
-    push @headers, "X-Patch-URL: https://source.winehq.org/patches/data/$file";
+    push @headers, "X-Patch-URL: $base_url/$file";
     push @headers, "Reply-To: wine-devel\@winehq.org";
     return @headers;
 }
@@ -260,8 +272,16 @@ sub notify_state_change($$$)
     # if there's no available explanation, don't notify
     return unless defined $status_explanation{$status};
 
+    if ($status eq "assigned")
+    {
+        my $reviewer = get_patch_reviewer( $file );
+        push @{$reviews{$reviewer}}, $file if $reviewer;
+    }
+
     my @headers = get_notify_headers( $file, $status );
     return unless @headers;
+
+    return if $dry_run;
 
     open PREVSTATUS, ">$dir/OLD/$file.status" or return;
     printf PREVSTATUS "%s\n", $status;
@@ -288,6 +308,48 @@ clarification by replying to this email.
 EOF
     }
     close SENDMAIL;
+}
+
+sub notify_reviewers()
+{
+    while ((my $rev, $patches) = each( %reviews ))
+    {
+        my $patch_urls = join "\n    ", map({ "$base_url/$_"; } sort @{$patches});
+        my $patch_str = @{$patches} > 1 ? "patches" : "patch";
+
+        printf "notifying %s about %s\n", $rev, join ", ", sort @{$patches} unless $quiet;
+        next if $dry_run;
+
+        open SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq" or return;
+        print SENDMAIL <<"EOF";
+From: $email_from
+To: $rev
+Subject: Wine $patch_str assigned for review
+X-Patch-URL: $patch_urls
+Reply-To: wine-devel\@winehq.org
+
+This is an automated notification to let you know that you have been
+asked to review the following Wine $patch_str:
+
+    $patch_urls
+
+If you think that a patch is correct and can be committed, please send
+a mail to wine-patches with your Signed-off-by header, as a reply to
+the original patch email.
+
+If you find some issues in a patch, please send a mail to the patch
+author and CC wine-devel so that the patch status can be updated
+accordingly.
+
+If you feel that you don't have the time or the qualifications to
+review a patch, please send a mail to wine-devel or directly to
+julliard\@winehq.org so that the patch can be assigned to another
+reviewer.
+
+Thank you for your help!
+EOF
+        close SENDMAIL;
+    }
 }
 
 # expire current patches
@@ -368,3 +430,5 @@ foreach my $file (sort readdir DIR)
     }
 }
 closedir DIR;
+
+notify_reviewers();
