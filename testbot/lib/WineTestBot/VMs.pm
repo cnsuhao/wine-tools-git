@@ -486,19 +486,19 @@ sub HasPoweredOnStatus($)
 {
   my ($self) = @_;
   my $Status = $self->Status;
-  return $Status eq "reverting" or
-         $Status eq "sleeping" or
-         $Status eq "idle" or
-         $Status eq "running";
+  return ($Status eq "reverting" or
+          $Status eq "sleeping" or
+          $Status eq "idle" or
+          $Status eq "running");
 }
 
 sub HasEnabledRole($)
 {
   my ($self) = @_;
   my $Role = $self->Role;
-  return $Role eq "extra" or
-         $Role eq "base" or
-         $Role eq "winetest";
+  return ($Role eq "extra" or
+          $Role eq "base" or
+          $Role eq "winetest");
 }
 
 sub Validate($)
