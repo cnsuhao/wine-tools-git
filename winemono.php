@@ -4,7 +4,7 @@
  */
 
 // Default version if none given
-$sVersion = '4.5.6';
+$sVersion = '4.6.0';
 
 // Suffix appended to base name of file
 $sFileSuffix = '';
