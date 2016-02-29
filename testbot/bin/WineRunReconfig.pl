@@ -4,7 +4,7 @@
 # See the bin/build/Reconfig.pl script.
 #
 # Copyright 2009 Ge van Geldorp
-# Copyright 2013 Francois Gouget
+# Copyright 2013-2016 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,8 @@ sub BEGIN
 my $Name0 = $0;
 $Name0 =~ s+^.*/++;
 
+use File::Path;
+
 use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::VMs;
@@ -58,100 +60,14 @@ sub Error(@)
   LogMsg @_;
 }
 
-sub LogTaskError($$)
-{
-  my ($ErrMessage, $FullErrFileName) = @_;
-  Debug("$Name0:error: $ErrMessage");
 
-  my $OldUMask = umask(002);
-  if (open(my $ErrFile, ">>", $FullErrFileName))
-  {
-    umask($OldUMask);
-    print $ErrFile $ErrMessage;
-    close($ErrFile);
-  }
-  else
-  {
-    umask($OldUMask);
-    Error "Unable to open '$FullErrFileName' for writing: $!\n";
-  }
-}
-
-sub FatalError($$$$)
-{
-  my ($ErrMessage, $FullErrFileName, $Job, $Task) = @_;
-  Debug("$Name0:error: $ErrMessage");
-
-  my ($JobKey, $StepKey, $TaskKey) = @{$Task->GetMasterKey()};
-  LogMsg "$JobKey/$StepKey/$TaskKey $ErrMessage";
-
-  LogTaskError($ErrMessage, $FullErrFileName);
-  $Task->Status("boterror");
-  $Task->Ended(time);
-  $Task->Save();
-  $Job->UpdateStatus();
-
-  # Get the up-to-date VM status and update it if nobody else changed it
-  my $VM = CreateVMs()->GetItem($Task->VM->GetKey());
-  if ($VM->Status eq 'running')
-  {
-    $VM->Status('dirty');
-    $VM->Save();
-    RescheduleJobs();
-  }
-
-  exit 1;
-}
-
-sub ProcessLog($$)
-{
-  my ($FullLogFileName, $FullErrFileName) = @_;
-
-  my ($Status, $Errors);
-  if (open(my $LogFile, "<", $FullLogFileName))
-  {
-    # Collect and analyze the 'Reconfig:' status line(s)
-    $Errors = "";
-    foreach my $Line (<$LogFile>)
-    {
-      chomp($Line);
-      next if ($Line !~ /^Reconfig: (.*)$/);
-      if ($1 ne "ok")
-      {
-        $Errors .= "$1\n";
-        $Status = "badbuild";
-      }
-      elsif (!defined $Status)
-      {
-        $Status = "completed";
-      }
-    }
-    close($LogFile);
-
-    if (!defined $Status)
-    {
-      $Status = "boterror";
-      $Errors = "Missing reconfig status line\n";
-    }
-  }
-  else
-  {
-    $Status = "boterror";
-    $Errors = "Unable to open the log file\n";
-    Error "Unable to open '$FullLogFileName' for reading: $!\n";
-  }
-
-  LogTaskError($Errors, $FullErrFileName) if ($Errors);
-  return $Status;
-}
-
+#
+# Setup and command line processing
+#
 
 $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
 
-
-
-# Grab the command line options
 my $Usage;
 sub ValidateNumber($$)
 {
@@ -243,25 +159,130 @@ mkdir "$DataDir/jobs/$JobId/$StepNo";
 mkdir "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
 umask($OldUMask);
 
+my $VM = $Task->VM;
 my $StepDir = "$DataDir/jobs/$JobId/$StepNo";
 my $TaskDir = "$StepDir/$TaskNo";
 my $FullLogFileName = "$TaskDir/log";
 my $FullErrFileName = "$TaskDir/err";
 
-my $VM = $Task->VM;
-if (!$Debug and $VM->Status ne "running")
-{
-  FatalError "The VM is not ready for use (" . $VM->Status . ")\n",
-             $FullErrFileName, $Job, $Task;
-}
-elsif ($Debug and !$VM->IsPoweredOn)
-{
-  FatalError "The VM is not powered on\n", $FullErrFileName, $Job, $Task;
-}
 my $Start = Time();
 LogMsg "Task $JobId/$StepNo/$TaskNo started\n";
 
-my $ErrMessage;
+
+#
+# Error handling helpers
+#
+
+sub LogTaskError($)
+{
+  my ($ErrMessage) = @_;
+  Debug("$Name0:error: ", $ErrMessage);
+
+  my $OldUMask = umask(002);
+  if (open(my $ErrFile, ">>", $FullErrFileName))
+  {
+    umask($OldUMask);
+    print $ErrFile $ErrMessage;
+    close($ErrFile);
+  }
+  else
+  {
+    umask($OldUMask);
+    Error "Unable to open '$FullErrFileName' for writing: $!\n";
+  }
+}
+
+sub WrapUpAndExit($)
+{
+  my ($Status) = @_;
+
+  # Update the Task and Job
+  $Task->Status($Status);
+  $Task->ChildPid(undef);
+  if ($Status eq 'queued')
+  {
+    $Task->Started(undef);
+    $Task->Ended(undef);
+    Error "Unable to delete '$TaskDir': $!\n" if (!rmtree($TaskDir));
+  }
+  else
+  {
+    $Task->Ended(time());
+  }
+  $Task->Save();
+  $Job->UpdateStatus();
+
+  # Get the up-to-date VM status and update it if nobody else changed it
+  $VM = CreateVMs()->GetItem($VM->GetKey());
+  if ($VM->Status eq 'running')
+  {
+    $VM->Status($Status eq 'queued' ? 'offline' :
+                $Status eq 'completed' ? 'idle' : 'dirty');
+    $VM->Save();
+    RescheduleJobs();
+  }
+
+  my $Result = $VM->Name .": ". $VM->Status ." Task: $Status";
+  LogMsg "Task $JobId/$StepNo/$TaskNo done ($Result)\n";
+  Debug(Elapsed($Start), " Done. $Result\n");
+  exit($Status eq 'completed' ? 0 : 1);}
+
+sub FatalError($)
+{
+  my ($ErrMessage) = @_;
+
+  LogMsg "$JobId/$StepNo/$TaskNo $ErrMessage";
+  LogTaskError($ErrMessage);
+
+  WrapUpAndExit('boterror');
+}
+
+sub FatalTAError($$)
+{
+  my ($TA, $ErrMessage) = @_;
+  $ErrMessage .= ": ". $TA->GetLastError() if (defined $TA);
+
+  # A TestAgent operation failed, see if the VM is still accessible
+  my $IsPoweredOn = $VM->IsPoweredOn();
+  if (!defined $IsPoweredOn)
+  {
+    # The VM host is not accessible anymore so mark the VM as offline and
+    # requeue the task.
+    Error("$ErrMessage\n");
+    WrapUpAndExit('queued');
+  }
+
+  if ($IsPoweredOn)
+  {
+    $ErrMessage .= " The test VM has crashed, rebooted or lost connectivity (or the TestAgent server died)\n";
+  }
+  else
+  {
+    # Ignore the TestAgent error, it's irrelevant
+    $ErrMessage = "The test VM is powered off!\n";
+  }
+  FatalError($ErrMessage);
+}
+
+
+#
+# Check the VM
+#
+
+if (!$Debug and $VM->Status ne "running")
+{
+  FatalError("The VM is not ready for use (" . $VM->Status . ")\n");
+}
+elsif ($Debug and !$VM->IsPoweredOn)
+{
+  FatalError("The VM is not powered on\n");
+}
+
+
+#
+# Run the build
+#
+
 my $Script = "#!/bin/sh\n" .
              "rm -f Reconfig.log\n" .
              "../bin/build/Reconfig.pl >>Reconfig.log 2>&1\n";
@@ -269,84 +290,124 @@ my $TA = $VM->GetAgent();
 Debug(Elapsed($Start), " Sending the script: [$Script]\n");
 if (!$TA->SendFileFromString($Script, "task", $TestAgent::SENDFILE_EXE))
 {
-  $ErrMessage = $TA->GetLastError();
-  FatalError "Can't send the script to the VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Task;
+  FatalTAError($TA, "Could not send the reconfig script to the VM");
 }
-Debug(Elapsed($Start), " Running the script\n");
+
+Debug(Elapsed($Start), " Starting the script\n");
 my $Pid = $TA->Run(["./task"], 0);
-if (!$Pid or !defined $TA->Wait($Pid, $Task->Timeout, 60))
+if (!$Pid)
+{
+  FatalTAError($TA, "Failed to start the build VM update");
+}
+
+
+#
+# From that point on we want to at least try to grab the build
+# log before giving up
+#
+
+my ($NewStatus, $ErrMessage, $TAError);
+Debug(Elapsed($Start), " Waiting for the script (", $Task->Timeout, "s timeout)\n");
+if (!defined $TA->Wait($Pid, $Task->Timeout, 60))
 {
   $ErrMessage = $TA->GetLastError();
-  # Try to grab the reconfig log before reporting the failure
-}
-my $NewStatus;
-Debug(Elapsed($Start), " Retrieving the reconfig log '$FullLogFileName'\n");
-if ($TA->GetFile("Reconfig.log", $FullLogFileName))
-{
-  $NewStatus = ProcessLog($FullLogFileName, $FullErrFileName);
-}
-elsif (!defined $ErrMessage)
-{
-  # This GetFile() error is the first one so report it
-  $ErrMessage = $TA->GetLastError();
-  FatalError "Can't copy the reconfig log from the VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Task;
-}
-if (defined $ErrMessage)
-{
-  # Now we can report the previous Run() / Wait() error
   if ($ErrMessage =~ /timed out waiting for the child process/)
   {
+    $ErrMessage = "The build timed out\n";
     $NewStatus = "badbuild";
-    LogTaskError("The reconfig timed out\n", $FullErrFileName);
   }
   else
   {
-    FatalError "Could not run the reconfig script in the VM: $ErrMessage\n",
-               $FullErrFileName, $Job, $Task;
+    $TAError = "An error occurred while waiting for the build to complete: $ErrMessage";
+    $ErrMessage = undef;
   }
 }
 
+Debug(Elapsed($Start), " Retrieving the reconfig log to '$FullLogFileName'\n");
+if ($TA->GetFile("Reconfig.log", $FullLogFileName))
+{
+  if (open(my $LogFile, "<", $FullLogFileName))
+  {
+    # Collect and analyze the 'Reconfig:' status line(s).
+    my $LogErrors;
+    foreach my $Line (<$LogFile>)
+    {
+      chomp($Line);
+      next if ($Line !~ /^Reconfig: (.*)$/);
+      # Add the error message or an empty string for 'ok'
+      $LogErrors = ($LogErrors || "") . ($1 ne "ok" ? "$1\n" : "");
+    }
+    close($LogFile);
+
+    if (!defined $LogErrors)
+    {
+      if (!defined $ErrMessage)
+      {
+        $NewStatus = "badbuild";
+        $ErrMessage = "Missing reconfig status line\n";
+      }
+      # otherwise $ErrMessage probably already explains why the reconfig
+      # status line is missing
+    }
+    elsif ($LogErrors eq "")
+    {
+      # We must have gotten the full log and the build did succeed.
+      # So forget any prior error.
+      $NewStatus = "completed";
+      $TAError = $ErrMessage = undef;
+    }
+    else
+    {
+      $NewStatus = "badbuild";
+      $ErrMessage = $LogErrors . ($ErrMessage || "");
+    }
+  }
+  else
+  {
+    FatalError("Unable to open the build log for reading: $!\n");
+  }
+}
+elsif (!defined $TAError)
+{
+  $TAError = "An error occurred while retrieving the reconfig log: ". $TA->GetLastError();
+}
 $TA->Disconnect();
 
-if ($NewStatus eq "completed")
+# Report the reconfig errors even though they may have been caused by
+# TestAgent trouble.
+LogTaskError($ErrMessage) if (defined $ErrMessage);
+FatalTAError(undef, $TAError) if (defined $TAError);
+
+
+#
+# Update the build VM's snapshot
+#
+
+if ($NewStatus eq 'completed')
 {
   Debug(Elapsed($Start), " Deleting the old ", $VM->IdleSnapshot, " snapshot\n");
   $ErrMessage = $VM->RemoveSnapshot($VM->IdleSnapshot);
-  if (defined($ErrMessage))
+  if (defined $ErrMessage)
   {
-    FatalError "Can't remove snapshot: $ErrMessage\n",
-               $FullErrFileName, $Job, $Task;
+    # It's not clear if the snapshot is still usable. Rather than try to figure
+    # it out now, let the next task deal with it.
+    FatalError("Could not remove the ". $VM->IdleSnapshot ." snapshot: $ErrMessage\n");
   }
 
   Debug(Elapsed($Start), " Recreating the ", $VM->IdleSnapshot, " snapshot\n");
   $ErrMessage = $VM->CreateSnapshot($VM->IdleSnapshot);
-  if (defined($ErrMessage))
+  if (defined $ErrMessage)
   {
     # Without the snapshot the VM is not usable anymore but FatalError() will
     # just mark it as 'dirty'. It's only the next time it is used that the
     # problem will be noticed and that it will be taken offline.
-    FatalError "Can't take snapshot: $ErrMessage\n",
-               $FullErrFileName, $Job, $Task;
+    FatalError("Could not recreate the ". $VM->IdleSnapshot ." snapshot: $ErrMessage\n");
   }
 }
 
-Debug(Elapsed($Start), " Done. New task status: $NewStatus\n");
-$Task->Status($NewStatus);
-$Task->ChildPid(undef);
-$Task->Ended(time);
-$Task->Save();
-$Job->UpdateStatus();
 
-# Get the up-to-date VM status and update it if nobody else changed it
-$VM = CreateVMs()->GetItem($VM->GetKey());
-if ($VM->Status eq 'running')
-{
-  $VM->Status($NewStatus eq 'completed' ? 'idle' : 'dirty');
-  $VM->Save();
-  RescheduleJobs();
-}
+#
+# Wrap up
+#
 
-LogMsg "Task $JobId/$StepNo/$TaskNo completed\n";
-exit 0;
+WrapUpAndExit($NewStatus);

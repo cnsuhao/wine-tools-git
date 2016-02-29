@@ -3,6 +3,7 @@
 # Sends and runs the tasks in the Windows test VMs.
 #
 # Copyright 2009 Ge van Geldorp
+# Copyright 2013-2016 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -37,6 +38,8 @@ sub BEGIN
 my $Name0 = $0;
 $Name0 =~ s+^.*/++;
 
+use File::Path;
+
 use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::VMs;
@@ -54,60 +57,6 @@ sub Error(@)
 {
   Debug("$Name0:error: ", @_);
   LogMsg @_;
-}
-
-sub LogTaskError($$)
-{
-  my ($ErrMessage, $FullErrFileName) = @_;
-  Debug("$Name0:error: $ErrMessage");
-
-  my $OldUMask = umask(002);
-  if (open(my $ErrFile, ">>", $FullErrFileName))
-  {
-    umask($OldUMask);
-    print $ErrFile $ErrMessage;
-    close($ErrFile);
-  }
-  else
-  {
-    umask($OldUMask);
-    Error "Unable to open '$FullErrFileName' for writing: $!\n";
-  }
-}
-
-sub FatalError($$$$$)
-{
-  my ($ErrMessage, $FullErrFileName, $Job, $Step, $Task) = @_;
-  Debug("$Name0:error: $ErrMessage");
-
-  my ($JobKey, $StepKey, $TaskKey) = @{$Task->GetMasterKey()};
-  LogMsg "$JobKey/$StepKey/$TaskKey $ErrMessage";
-
-  LogTaskError($ErrMessage, $FullErrFileName);
-  if ($Step->Type eq "suite")
-  {
-    # Link the test suite's results for future use in WineSendLog.pl.
-    my $LatestName = "$DataDir/latest/" . $Task->VM->Name . "_" .
-                     ($Step->FileType eq "exe64" ? "64" : "32") . ".err";
-    unlink($LatestName);
-    link($FullErrFileName, $LatestName);
-  }
-
-  $Task->Status("boterror");
-  $Task->Ended(time);
-  $Task->Save();
-  $Job->UpdateStatus();
-
-  # Get the up-to-date VM status and update it if nobody else changed it
-  my $VM = CreateVMs()->GetItem($Task->VM->GetKey());
-  if ($VM->Status eq 'running')
-  {
-    $VM->Status('dirty');
-    $VM->Save();
-    RescheduleJobs();
-  }
-
-  exit 1;
 }
 
 sub TakeScreenshot($$)
@@ -136,38 +85,14 @@ sub TakeScreenshot($$)
   }
 }
 
-sub CountFailures($)
-{
-  my ($ReportFileName) = @_;
 
-  if (! open REPORTFILE, "<$ReportFileName")
-  {
-    return undef;
-  }
-
-  my $Failures;
-  my $Line;
-  while (defined($Line = <REPORTFILE>))
-  {
-    if ($Line =~ m/: \d+ tests? executed \(\d+ marked as todo, (\d+) failures?\), \d+ skipped\./)
-    {
-      $Failures += $1;
-    }
-    elsif ($Line =~ m/ done \(258\)/ ||
-           $Line =~ m/: unhandled exception [0-9a-fA-F]{8} at /)
-    {
-      $Failures++;
-    }
-  }
-  close REPORTFILE;
-
-  return $Failures;
-}
+#
+# Setup and command line processing
+#
 
 $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
 
-# Grab the command line options
 my $Usage;
 sub ValidateNumber($$)
 {
@@ -267,50 +192,164 @@ my $FullLogFileName = "$TaskDir/log";
 my $FullErrFileName = "$TaskDir/err";
 my $FullScreenshotFileName = "$TaskDir/screenshot.png";
 
+my $Start = Time();
+LogMsg "Task $JobId/$StepNo/$TaskNo started\n";
+
+
+#
+# Error handling helpers
+#
+
+sub LogTaskError($)
+{
+  my ($ErrMessage) = @_;
+  Debug("$Name0:error: ", $ErrMessage);
+
+  my $OldUMask = umask(002);
+  if (open(my $ErrFile, ">>", $FullErrFileName))
+  {
+    umask($OldUMask);
+    print $ErrFile $ErrMessage;
+    close($ErrFile);
+  }
+  else
+  {
+    umask($OldUMask);
+    Error "Unable to open '$FullErrFileName' for writing: $!\n";
+  }
+}
+
+sub WrapUpAndExit($;$)
+{
+  my ($Status, $TestFailures) = @_;
+
+  # Update the Task and Job
+  $Task->Status($Status);
+  $Task->TestFailures($TestFailures);
+  $Task->ChildPid(undef);
+  if ($Status eq 'queued')
+  {
+    $Task->Started(undef);
+    $Task->Ended(undef);
+    Error "Unable to delete '$TaskDir': $!\n" if (!rmtree($TaskDir));
+  }
+  else
+  {
+    $Task->Ended(time());
+  }
+  $Task->Save();
+  $Job->UpdateStatus();
+
+  # Get the up-to-date VM status and update it if nobody else changed it
+  $VM = CreateVMs()->GetItem($VM->GetKey());
+  if ($VM->Status eq 'running')
+  {
+    $VM->Status($Status eq 'queued' ? 'offline' : 'dirty');
+    $VM->Save();
+    RescheduleJobs();
+  }
+
+  if ($Status eq 'completed' and $Step->Type eq 'suite')
+  {
+    # Update the reference VM suite results for WineSendLog.pl
+    my $LatestBaseName = join("", "$DataDir/latest/", $Task->VM->Name, "_",
+                              $Step->FileType eq "exe64" ? "64" : "32");
+    unlink("$LatestBaseName.log");
+    link($FullLogFileName, "$LatestBaseName.log") if (-f $FullLogFileName);
+    unlink("$LatestBaseName.err");
+    link($FullErrFileName, "$LatestBaseName.err") if (-f $FullErrFileName);
+  }
+
+  my $Result = $VM->Name .": ". $VM->Status ." Task: $Status Failures: ". (defined $TestFailures ? $TestFailures : "unset");
+  LogMsg "Task $JobId/$StepNo/$TaskNo done ($Result)\n";
+  Debug(Elapsed($Start), " Done. $Result\n");
+  exit($Status eq 'completed' ? 0 : 1);
+}
+
+sub FatalError($)
+{
+  my ($ErrMessage) = @_;
+
+  LogMsg "$JobId/$StepNo/$TaskNo $ErrMessage";
+  LogTaskError($ErrMessage);
+
+  WrapUpAndExit('boterror');
+}
+
+sub FatalTAError($$;$)
+{
+  my ($TA, $ErrMessage, $PossibleCrash) = @_;
+  $ErrMessage .= ": ". $TA->GetLastError() if (defined $TA);
+
+  # A TestAgent operation failed, see if the VM is still accessible
+  my $IsPoweredOn = $VM->IsPoweredOn();
+  if (!defined $IsPoweredOn)
+  {
+    # The VM host is not accessible anymore so mark the VM as offline and
+    # requeue the task.
+    Error("$ErrMessage\n");
+    WrapUpAndExit('queued');
+  }
+
+  my $VMState;
+  if ($IsPoweredOn)
+  {
+    $VMState = "The test VM has crashed, rebooted or lost connectivity (or the TestAgent server died)\n";
+  }
+  else
+  {
+    $VMState = "The test VM is powered off! Did the test shut it down?\n";
+    # Ignore the TestAgent error, it's irrelevant
+    $ErrMessage = "";
+  }
+  if ($PossibleCrash)
+  {
+    # The test did it!
+    $ErrMessage .= "\n" if ($ErrMessage);
+    LogTaskError("$ErrMessage$VMState");
+    WrapUpAndExit('completed', 1);
+  }
+  $ErrMessage .= " " if ($ErrMessage);
+  FatalError("$ErrMessage$VMState");
+}
+
+
+#
+# Check the VM
+#
+
 if (!$Debug and $VM->Status ne "running")
 {
-  FatalError "The VM is not ready for use (" . $VM->Status . ")\n",
-             $FullErrFileName, $Job, $Step, $Task;
+  FatalError("The VM is not ready for use (" . $VM->Status . ")\n");
 }
 elsif ($Debug and !$VM->IsPoweredOn)
 {
-  FatalError "The VM is not powered on\n", $FullErrFileName, $Job, $Step, $Task;
+  FatalError("The VM is not powered on\n");
 }
-LogMsg "Task $JobId/$StepNo/$TaskNo (" . $VM->Name . ") started\n";
 
-my $Start = Time();
-Debug("0.00 Setting the time\n");
+
+#
+# Setup the VM
+#
+
 my $TA = $VM->GetAgent();
+Debug(Elapsed($Start), " Setting the time\n");
 if (!$TA->SetTime())
 {
   # Not a fatal error
-  LogTaskError("Unable to set the VM system time: ". $TA->GetLastError() ."\n", $FullErrFileName);
+  LogTaskError("Unable to set the VM system time: ". $TA->GetLastError() .". Maybe the TestAgentd process is missing the required privileges.\n");
 }
 
-my $ErrMessage;
 my $FileType = $Step->FileType;
 if ($FileType ne "exe32" && $FileType ne "exe64")
 {
-  FatalError "Unexpected file type $FileType found\n",
-             $FullErrFileName, $Job, $Step, $Task;
+  FatalError("Unexpected file type $FileType found\n");
 }
 my $FileName = $Step->FileName;
 Debug(Elapsed($Start), " Sending '$StepDir/$FileName'\n");
 if (!$TA->SendFile("$StepDir/$FileName", $FileName, 0))
 {
-  $ErrMessage = $TA->GetLastError();
-  FatalError "Can't copy exe to VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Step, $Task;
-}
-my $TestLauncher = "TestLauncher" . 
-                   ($FileType eq "exe64" ? "64" : "32") .
-                   ".exe";
-Debug(Elapsed($Start), " Sending '$BinDir/windows/$TestLauncher'\n");
-if (!$TA->SendFile("$BinDir/windows/$TestLauncher", $TestLauncher, 0))
-{
-  $ErrMessage = $TA->GetLastError();
-  FatalError "Can't copy TestLauncher to VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Step, $Task;
+  FatalTAError($TA, "Could not copy the test executable to the VM");
 }
 
 my $Keepalive;
@@ -323,6 +362,13 @@ if ($Step->ReportSuccessfulTests)
 }
 if ($Step->Type eq "single")
 {
+  my $TestLauncher = "TestLauncher" . ($FileType eq "exe64" ? "64" : "32") . ".exe";
+  Debug(Elapsed($Start), " Sending '$BinDir/windows/$TestLauncher'\n");
+  if (!$TA->SendFile("$BinDir/windows/$TestLauncher", $TestLauncher, 0))
+  {
+    FatalTAError($TA, "Could not copy TestLauncher to the VM");
+  }
+
   $Script .= "$TestLauncher -t $Timeout $FileName ";
   # Add 1 second to the timeout so the client-side Wait() does not time out
   # right before $TestLauncher does.
@@ -371,80 +417,102 @@ elsif ($Step->Type eq "suite")
 Debug(Elapsed($Start), " Sending the script: [$Script]\n");
 if (!$TA->SendFileFromString($Script, "script.bat", $TestAgent::SENDFILE_EXE))
 {
-  $ErrMessage = $TA->GetLastError();
-  FatalError "Can't send the script to VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Step, $Task;
+  FatalTAError($TA, "Could not send the script to the VM");
 }
 
-Debug(Elapsed($Start), " Running the script\n");
+
+#
+# Run the test
+#
+
+Debug(Elapsed($Start), " Starting the script\n");
 my $Pid = $TA->Run(["./script.bat"], 0);
-if (!$Pid or !defined $TA->Wait($Pid, $Timeout, $Keepalive))
+if (!$Pid)
 {
-  $ErrMessage = "Failure running script in VM: " . $TA->GetLastError();
+  FatalTAError($TA, "Failed to start the test");
 }
 
-my $NewStatus = "boterror";
-Debug(Elapsed($Start), " Retrieving the report file '$FullLogFileName'\n");
-if ($TA->GetFile($RptFileName, $FullLogFileName))
+
+#
+# From that point on we want to at least try to grab the test
+# log and a screenshot before giving up
+#
+
+my $NewStatus = 'completed';
+my ($TestFailures, $TAError, $PossibleCrash);
+Debug(Elapsed($Start), " Waiting for the script (", $Task->Timeout, "s timeout)\n");
+if (!defined $TA->Wait($Pid, $Timeout, $Keepalive))
 {
-  my $TestFailures = CountFailures($FullLogFileName);
-  if (!defined $TestFailures)
+  my $ErrMessage = $TA->GetLastError();
+  if ($ErrMessage =~ /timed out waiting for the child process/)
   {
-    if (($ErrMessage || "") =~ /timed out waiting for the child process/)
-    {
-      LogTaskError("The test timed out\n", $FullErrFileName);
-      $ErrMessage = undef;
-    }
-    else
-    {
-      LogTaskError("No test summary line found\n", $FullErrFileName);
-    }
+    LogTaskError("The test timed out\n");
     $TestFailures = 1;
   }
-  $Task->TestFailures($TestFailures);
-  $NewStatus = "completed";
-
-  chmod 0664, $FullLogFileName;
-  if ($Step->Type eq "suite")
+  else
   {
-    # Link the test suite's results for future use in WineSendLog.pl.
-    my $LatestNameBase = "$DataDir/latest/" . $VM->Name . "_" .
-                         ($Step->FileType eq "exe64" ? "64" : "32");
-    unlink("${LatestNameBase}.log");
-    unlink("${LatestNameBase}.err");
-    link("$DataDir/jobs/" . $Job->Id . "/" . $Step->No . "/" . $Task->No . "/log",
-         "${LatestNameBase}.log");
+    $PossibleCrash = 1;
+    $TAError = "An error occurred while waiting for the test to complete: $ErrMessage";
   }
 }
-elsif (!defined $ErrMessage)
-{
-  $ErrMessage = "Can't copy log from VM: " . $TA->GetLastError();
-}
 
-Debug(Elapsed($Start), " Taking a screenshot\n");
-TakeScreenshot $VM, $FullScreenshotFileName;
-if (defined $ErrMessage)
+Debug(Elapsed($Start), " Retrieving the report file to '$FullLogFileName'\n");
+if ($TA->GetFile($RptFileName, $FullLogFileName))
 {
-  FatalError "$ErrMessage\n", $FullErrFileName, $Job, $Step, $Task;
+  chmod 0664, $FullLogFileName;
+  if (open(my $LogFile, "<", $FullLogFileName))
+  {
+    my $LogFailures;
+    foreach my $Line (<$LogFile>)
+    {
+      # There may be more than one result line due to child processes
+      if ($Line =~ /: \d+ tests? executed \(\d+ marked as todo, (\d+) failures?\), \d+ skipped\./)
+      {
+        $LogFailures += $1;
+      }
+      elsif ($Line =~ / done \(258\)/ or
+             $Line =~ /: unhandled exception [0-9a-fA-F]{8} at /)
+      {
+        $LogFailures++;
+      }
+    }
+    close($LogFile);
+    if (defined $LogFailures)
+    {
+      $TestFailures += $LogFailures;
+      # The log file looks good so ignore the TestAgent error
+      # but still log it in case the log was in fact truncated.
+      LogTaskError($TAError) if (defined $TAError);
+      $TAError = undef;
+    }
+    elsif (!defined $LogFailures and !defined $TestFailures)
+    {
+      LogTaskError("Found no trace of the test summary line or of a crash\n");
+      $TestFailures = 1;
+    }
+  }
+  else
+  {
+    $NewStatus = 'boterror';
+    Error "Unable to open '$FullLogFileName' for reading: $!\n";
+    LogTaskError("Unable to open the log file for reading: $!\n");
+  }
+}
+elsif (!defined $TAError)
+{
+  $TAError = "An error occurred while retrieving the test report: ". $TA->GetLastError();
 }
 $TA->Disconnect();
 
-Debug(Elapsed($Start), " Done. New task status: $NewStatus\n");
-$Task->Status($NewStatus);
-$Task->ChildPid(undef);
-$Task->Ended(time);
 
-$Task->Save();
-$Job->UpdateStatus();
+Debug(Elapsed($Start), " Taking a screenshot\n");
+TakeScreenshot($VM, $FullScreenshotFileName);
 
-# Get the up-to-date VM status and update it if nobody else changed it
-$VM = CreateVMs()->GetItem($VM->GetKey());
-if ($VM->Status eq 'running')
-{
-  $VM->Status('dirty');
-  $VM->Save();
-  RescheduleJobs();
-}
+FatalTAError(undef, $TAError, $PossibleCrash) if (defined $TAError);
 
-LogMsg "Task $JobId/$StepNo/$TaskNo (" . $VM->Name . ") completed\n";
-exit 0;
+
+#
+# Wrap up
+#
+
+WrapUpAndExit($NewStatus, $TestFailures);

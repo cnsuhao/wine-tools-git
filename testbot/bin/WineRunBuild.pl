@@ -4,7 +4,7 @@
 # See the bin/build/Build.pl script.
 #
 # Copyright 2009 Ge van Geldorp
-# Copyright 2013 Francois Gouget
+# Copyright 2013-2016 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,8 @@ sub BEGIN
 my $Name0 = $0;
 $Name0 =~ s+^.*/++;
 
+use File::Path;
+
 use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::VMs;
@@ -58,99 +60,14 @@ sub Error(@)
   LogMsg @_;
 }
 
-sub LogTaskError($$)
-{
-  my ($ErrMessage, $FullErrFileName) = @_;
-  Debug("$Name0:error: $ErrMessage");
 
-  my $OldUMask = umask(002);
-  if (open(my $ErrFile, ">>", $FullErrFileName))
-  {
-    umask($OldUMask);
-    print $ErrFile $ErrMessage;
-    close($ErrFile);
-  }
-  else
-  {
-    umask($OldUMask);
-    Error "Unable to open '$FullErrFileName' for writing: $!\n";
-  }
-}
-
-sub FatalError($$$$)
-{
-  my ($ErrMessage, $FullErrFileName, $Job, $Task) = @_;
-  Debug("$Name0:error: $ErrMessage");
-
-  my ($JobKey, $StepKey, $TaskKey) = @{$Task->GetMasterKey()};
-  LogMsg "$JobKey/$StepKey/$TaskKey $ErrMessage";
-
-  LogTaskError($ErrMessage, $FullErrFileName);
-  $Task->Status("boterror");
-  $Task->Ended(time);
-  $Task->Save();
-  $Job->UpdateStatus();
-
-  # Get the up-to-date VM status and update it if nobody else changed it
-  my $VM = CreateVMs()->GetItem($Task->VM->GetKey());
-  if ($VM->Status eq 'running')
-  {
-    $VM->Status('dirty');
-    $VM->Save();
-    RescheduleJobs();
-  }
-
-  exit 1;
-}
-
-sub ProcessLog($$)
-{
-  my ($FullLogFileName, $FullErrFileName) = @_;
-
-  my ($Status, $Errors);
-  if (open(my $LogFile, "<", $FullLogFileName))
-  {
-    # Collect and analyze the 'Build:' status line(s)
-    $Errors = "";
-    foreach my $Line (<$LogFile>)
-    {
-      chomp($Line);
-      next if ($Line !~ /^Build: (.*)$/);
-      if ($1 ne "ok")
-      {
-        $Errors .= "$1\n";
-        $Status = ($1 eq "Patch failed to apply") ? "badpatch" : "badbuild";
-      }
-      elsif (!defined $Status)
-      {
-        $Status = "completed";
-      }
-    }
-    close($LogFile);
-
-    if (!defined $Status)
-    {
-      $Status = "boterror";
-      $Errors = "Missing build status line\n";
-    }
-  }
-  else
-  {
-    $Status = "boterror";
-    $Errors = "Unable to open the log file\n";
-    Error "Unable to open '$FullLogFileName' for reading: $!\n";
-  }
-
-  LogTaskError($Errors, $FullErrFileName) if ($Errors);
-  return $Status;
-}
-
+#
+# Setup and command line processing
+#
 
 $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
 
-
-# Grab the command line options
 my $Usage;
 sub ValidateNumber($$)
 {
@@ -242,23 +159,129 @@ mkdir "$DataDir/jobs/$JobId/$StepNo";
 mkdir "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
 umask($OldUMask);
 
+my $VM = $Task->VM;
 my $StepDir = "$DataDir/jobs/$JobId/$StepNo";
 my $TaskDir = "$StepDir/$TaskNo";
 my $FullLogFileName = "$TaskDir/log";
 my $FullErrFileName = "$TaskDir/err";
 
-my $VM = $Task->VM;
+my $Start = Time();
+LogMsg "Task $JobId/$StepNo/$TaskNo started\n";
+
+
+#
+# Error handling helpers
+#
+
+sub LogTaskError($)
+{
+  my ($ErrMessage) = @_;
+  Debug("$Name0:error: ", $ErrMessage);
+
+  my $OldUMask = umask(002);
+  if (open(my $ErrFile, ">>", $FullErrFileName))
+  {
+    umask($OldUMask);
+    print $ErrFile $ErrMessage;
+    close($ErrFile);
+  }
+  else
+  {
+    umask($OldUMask);
+    Error "Unable to open '$FullErrFileName' for writing: $!\n";
+  }
+}
+
+sub WrapUpAndExit($)
+{
+  my ($Status) = @_;
+
+  # Update the Task and Job
+  $Task->Status($Status);
+  $Task->ChildPid(undef);
+  if ($Status eq 'queued')
+  {
+    $Task->Started(undef);
+    $Task->Ended(undef);
+    Error "Unable to delete '$TaskDir': $!\n" if (!rmtree($TaskDir));
+  }
+  else
+  {
+    $Task->Ended(time());
+  }
+  $Task->Save();
+  $Job->UpdateStatus();
+
+  # Get the up-to-date VM status and update it if nobody else changed it
+  $VM = CreateVMs()->GetItem($VM->GetKey());
+  if ($VM->Status eq 'running')
+  {
+    $VM->Status($Status eq 'queued' ? 'offline' : 'dirty');
+    $VM->Save();
+    RescheduleJobs();
+  }
+
+  my $Result = $VM->Name .": ". $VM->Status ." Task: $Status";
+  LogMsg "Task $JobId/$StepNo/$TaskNo done ($Result)\n";
+  Debug(Elapsed($Start), " Done. $Result\n");
+  exit($Status eq 'completed' ? 0 : 1);
+}
+
+sub FatalError($)
+{
+  my ($ErrMessage) = @_;
+
+  LogMsg "$JobId/$StepNo/$TaskNo $ErrMessage";
+  LogTaskError($ErrMessage);
+
+  WrapUpAndExit('boterror');
+}
+
+sub FatalTAError($$)
+{
+  my ($TA, $ErrMessage) = @_;
+  $ErrMessage .= ": ". $TA->GetLastError() if (defined $TA);
+
+  # A TestAgent operation failed, see if the VM is still accessible
+  my $IsPoweredOn = $VM->IsPoweredOn();
+  if (!defined $IsPoweredOn)
+  {
+    # The VM host is not accessible anymore so mark the VM as offline and
+    # requeue the task.
+    Error("$ErrMessage\n");
+    WrapUpAndExit('queued');
+  }
+
+  if ($IsPoweredOn)
+  {
+    $ErrMessage .= " The test VM has crashed, rebooted or lost connectivity (or the TestAgent server died)\n";
+  }
+  else
+  {
+    # Ignore the TestAgent error, it's irrelevant
+    $ErrMessage = "The test VM is powered off!\n";
+  }
+  FatalError($ErrMessage);
+}
+
+
+#
+# Check the VM
+#
+
 if (!$Debug and $VM->Status ne "running")
 {
-  FatalError "The VM is not ready for use (" . $VM->Status . ")\n",
-             $FullErrFileName, $Job, $Task;
+  FatalError("The VM is not ready for use (" . $VM->Status . ")\n");
 }
 elsif ($Debug and !$VM->IsPoweredOn)
 {
-  FatalError "The VM is not powered on\n", $FullErrFileName, $Job, $Task;
+  FatalError("The VM is not powered on\n");
 }
-my $Start = Time();
-LogMsg "Task $JobId/$StepNo/$TaskNo started\n";
+
+
+#
+# Figure out what to build
+#
 
 my ($Run64, $BaseName);
 foreach my $OtherStep (@{$Job->Steps->GetItems()})
@@ -273,26 +296,27 @@ foreach my $OtherStep (@{$Job->Steps->GetItems()})
     $OtherBaseName =~ s/\.exe$//;
     if (defined $BaseName and $BaseName ne $OtherBaseName)
     {
-      FatalError "$OtherBaseName doesn't match previously found $BaseName\n",
-                 $FullErrFileName, $Job, $Task;
+      FatalError("$OtherBaseName doesn't match previously found $BaseName\n");
     }
     $BaseName = $OtherBaseName;
   }
 }
 if (!defined $BaseName)
 {
-  FatalError "Can't determine base name\n", $FullErrFileName, $Job, $Task;
+  FatalError("Could not determine the test executable's base name\n");
 }
 
-my $ErrMessage;
+
+#
+# Run the build
+#
+
 my $FileName = $Step->FileName;
 my $TA = $VM->GetAgent();
 Debug(Elapsed($Start), " Sending '$StepDir/$FileName'\n");
 if (!$TA->SendFile("$StepDir/$FileName", "staging/patch.diff", 0))
 {
-  $ErrMessage = $TA->GetLastError();
-  FatalError "Could not copy the patch to the VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Task;
+  FatalTAError($TA, "Could not copy the patch to the VM");
 }
 my $Script = "#!/bin/sh\n" .
              "rm -f Build.log\n" .
@@ -303,44 +327,91 @@ $Script .= " >>Build.log 2>&1\n";
 Debug(Elapsed($Start), " Sending the script: [$Script]\n");
 if (!$TA->SendFileFromString($Script, "task", $TestAgent::SENDFILE_EXE))
 {
-  $ErrMessage = $TA->GetLastError();
-  FatalError "Can't send the build script to the VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Task;
+  FatalTAError($TA, "Coud not send the build script to the VM");
 }
-Debug(Elapsed($Start), " Running the script\n");
+
+Debug(Elapsed($Start), " Starting the script\n");
 my $Pid = $TA->Run(["./task"], 0);
-if (!$Pid or !defined $TA->Wait($Pid, $Task->Timeout, 60))
+if (!$Pid)
+{
+  FatalTAError($TA, "Failed to start the build");
+}
+
+
+#
+# From that point on we want to at least try to grab the build
+# log before giving up
+#
+
+my ($NewStatus, $ErrMessage, $TAError);
+Debug(Elapsed($Start), " Waiting for the script (", $Task->Timeout, "s timeout)\n");
+if (!defined $TA->Wait($Pid, $Task->Timeout, 60))
 {
   $ErrMessage = $TA->GetLastError();
-  # Try to grab the build log before reporting the failure
-}
-my $NewStatus;
-Debug(Elapsed($Start), " Retrieving the build log '$FullLogFileName'\n");
-if ($TA->GetFile("Build.log", $FullLogFileName))
-{
-  $NewStatus = ProcessLog($FullLogFileName, $FullErrFileName);
-}
-elsif (!defined $ErrMessage)
-{
-  # This GetFile() error is the first one so report it
-  $ErrMessage = $TA->GetLastError();
-  FatalError "Can't copy the build log from the VM: $ErrMessage\n",
-             $FullErrFileName, $Job, $Task;
-}
-if (defined $ErrMessage)
-{
-  # Now we can report the previous Run() / Wait() error
   if ($ErrMessage =~ /timed out waiting for the child process/)
   {
+    $ErrMessage = "The build timed out\n";
     $NewStatus = "badbuild";
-    LogTaskError("The build timed out\n", $FullErrFileName);
   }
   else
   {
-    FatalError "Failure running the build script in the VM: $ErrMessage\n",
-               $FullErrFileName, $Job, $Task;
+    $TAError = "An error occurred while waiting for the build to complete: $ErrMessage";
+    $ErrMessage = undef;
   }
 }
+
+Debug(Elapsed($Start), " Retrieving the build log to '$FullLogFileName'\n");
+if ($TA->GetFile("Build.log", $FullLogFileName))
+{
+  if (open(my $LogFile, "<", $FullLogFileName))
+  {
+    # Collect and analyze the 'Build:' status line(s)
+    $ErrMessage ||= "";
+    foreach my $Line (<$LogFile>)
+    {
+      chomp($Line);
+      next if ($Line !~ /^Build: (.*)$/);
+      if ($1 eq "ok")
+      {
+        # We must have gotten the full log and the build did succeed.
+        # So forget any prior error.
+        $NewStatus = "completed";
+        $TAError = $ErrMessage = undef;
+      }
+      else
+      {
+        $NewStatus = ($1 eq "Patch failed to apply") ? "badpatch" : "badbuild";
+        # Collect all the build errors (32 bit, 64 bit, etc)
+        $ErrMessage .= "$1\n";
+      }
+    }
+    close($LogFile);
+
+    if (!defined $NewStatus)
+    {
+      $NewStatus = "badbuild";
+      $ErrMessage = "Missing build status line\n";
+    }
+  }
+  else
+  {
+    FatalError("Unable to open the build log for reading: $!\n");
+  }
+}
+elsif (!defined $TAError)
+{
+  $TAError = "An error occurred while retrieving the build log: ". $TA->GetLastError();
+}
+
+# Report the build errors even though they may have been caused by
+# TestAgent trouble.
+LogTaskError($ErrMessage) if (defined $ErrMessage);
+FatalTAError(undef, $TAError) if (defined $TAError);
+
+
+#
+# Grab the executables for the next steps
+#
 
 # Don't try copying the test executables if the build step failed
 if ($NewStatus eq "completed")
@@ -365,32 +436,19 @@ if ($NewStatus eq "completed")
     {
       $TestExecutable = "build-mingw$Bits/programs/$BaseName/tests/${BaseName}.exe_test.exe";
     }
+    Debug(Elapsed($Start), " Retrieving '$OtherFileName'\n");
     if (!$TA->GetFile($TestExecutable, "$OtherStepDir/$OtherFileName"))
     {
-      $ErrMessage = $TA->GetLastError();
-      FatalError "Can't copy the generated executable from the VM: $ErrMessage\n",
-                 $FullErrFileName, $Job, $Task;
+      FatalTAError($TA, "Could not retrieve '$OtherFileName'");
     }
     chmod 0664, "$OtherStepDir/$OtherFileName";
   }
 }
 $TA->Disconnect();
 
-Debug(Elapsed($Start), " Done. New task status: $NewStatus\n");
-$Task->Status($NewStatus);
-$Task->ChildPid(undef);
-$Task->Ended(time);
-$Task->Save();
-$Job->UpdateStatus();
 
-# Get the up-to-date VM status and update it if nobody else changed it
-$VM = CreateVMs()->GetItem($VM->GetKey());
-if ($VM->Status eq 'running')
-{
-  $VM->Status('dirty');
-  $VM->Save();
-  RescheduleJobs();
-}
+#
+# Wrap up
+#
 
-LogMsg "Task $JobId/$StepNo/$TaskNo completed\n";
-exit 0;
+WrapUpAndExit($NewStatus);
