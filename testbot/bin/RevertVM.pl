@@ -59,7 +59,7 @@ sub Error(@)
 sub FatalError($$)
 {
   my ($ErrMessage, $VM) = @_;
-  Error "$Name0:error: $ErrMessage";
+  Error $ErrMessage;
 
   # Get the up-to-date VM status and update it if nobody else changed it
   my $VMKey = $VM->GetKey();
@@ -176,7 +176,7 @@ Debug(Elapsed($Start), " Reverting $VMKey to ", $VM->IdleSnapshot, "\n");
 $ErrMessage = $VM->RevertToSnapshot($VM->IdleSnapshot);
 if (defined($ErrMessage))
 {
-  FatalError "Can't revert $VMKey to " . $VM->IdleSnapshot . ": $ErrMessage",
+  FatalError "Could not revert $VMKey to " . $VM->IdleSnapshot . ": $ErrMessage\n",
              $VM;
 }
 
@@ -187,7 +187,7 @@ $VM->Status("sleeping");
 (my $ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
 {
-  FatalError "Can't change status for VM $VMKey: $ErrMessage", $VM;
+  FatalError "Could not change status for VM $VMKey: $ErrMessage\n", $VM;
 }
 
 Debug(Elapsed($Start), " Trying the TestAgent connection\n");
@@ -199,7 +199,7 @@ $TA->Disconnect();
 if (!$Success)
 {
   $ErrMessage = $TA->GetLastError();
-  FatalError "Tools in $VMKey not responding: $ErrMessage", $VM;
+  FatalError "Tools in $VMKey not responding: $ErrMessage\n", $VM;
 }
 
 if ($SleepAfterRevert != 0)
@@ -218,7 +218,7 @@ $VM->ChildPid(undef);
 ($ErrProperty, $ErrMessage) = $VM->Save();
 if (defined($ErrMessage))
 {
-  FatalError "Can't change status for VM $VMKey: $ErrMessage", $VM;
+  FatalError "Could not change status for VM $VMKey: $ErrMessage\n", $VM;
 }
 
 LogMsg "Revert of $VMKey completed\n";
