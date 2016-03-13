@@ -860,7 +860,7 @@ sub _Connect($)
   my ($self) = @_;
 
   my $OldRPC = $self->{rpc};
-  $self->{rpc} = "Connect";
+  $self->{rpc} = ($self->{rpc} ? "$self->{rpc}/" : "") ."connect";
 
   my $Step;
   foreach my $Dummy (1..$self->{cattempts})
@@ -967,7 +967,7 @@ sub _Connect($)
         if (!$self->{fd}->exec($self->{nc}))
         {
           alarm(0);
-          $self->_SetError($FATAL, "Unable to start netcat: " . $self->_ssherror());
+          $self->_SetError($FATAL, "Unable to start netcat ($self->{rpc}): " . $self->_ssherror());
           return; # out of eval
         }
       }
