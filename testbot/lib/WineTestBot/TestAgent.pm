@@ -865,6 +865,7 @@ sub _Connect($)
   my $Step;
   foreach my $Dummy (1..$self->{cattempts})
   {
+    my $Step = "initializing";
     eval
     {
       local $SIG{ALRM} = sub { die "timeout" };
