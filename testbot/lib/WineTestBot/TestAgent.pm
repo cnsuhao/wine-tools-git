@@ -462,7 +462,7 @@ sub _RecvFile($$$$)
   return undef if (!defined $self->{fd});
   debug("  RecvFile('$Name', '$Filename')\n");
 
-  my $Size = $self->_ExpectEntryHeader($Name, 'd');
+  my $Size = $self->_ExpectEntryHeader("$Name/Size", 'd');
   return undef if (!defined $Size);
 
   my $Success;
@@ -784,7 +784,7 @@ sub _SendFile($$$$)
     local $SIG{ALRM} = sub { die "timeout" };
     $self->_SetAlarm();
 
-    return if (!$self->_SendEntryHeader($Name, 'd', $Size));
+    return if (!$self->_SendEntryHeader("$Name/Size", 'd', $Size));
     while ($Remaining)
     {
       my $Buffer;
@@ -1070,8 +1070,8 @@ sub _SendStringOrFile($$$$$$)
          $self->_SendListSize('ArgC', 3) &&
          $self->_SendString('ServerPathName', $ServerPathName) &&
          $self->_SendUInt32('Flags', $Flags || 0) &&
-         ($fh ? $self->_SendFile('FileData', $fh, $LocalPathName) :
-                $self->_SendString('Data', $Data, 'd')) &&
+         ($fh ? $self->_SendFile('File', $fh, $LocalPathName) :
+                $self->_SendString('String', $Data, 'd')) &&
          $self->_RecvList('');
 }
 
@@ -1098,18 +1098,17 @@ sub SendFileFromString($$$;$)
   return $self->_SendStringOrFile($Data, undef, undef, $ServerPathName, $Flags);
 }
 
-sub _GetFileOrString($$$)
+sub _GetStringOrFile($$$)
 {
   my ($self, $ServerPathName, $LocalPathName, $fh) = @_;
 
   # Send the RPC and get the reply
-  my $Success = $self->_StartRPC($RPC_GETFILE) &&
-                $self->_SendListSize('ArgC', 1) &&
-                $self->_SendString('ServerPathName', $ServerPathName) &&
-                $self->_RecvList('.');
-  return undef if (!$Success);
-  return $self->_RecvFile('FileData', $fh, $LocalPathName) if ($fh);
-  return $self->_RecvString('StringData', 'd');
+  return $self->_StartRPC($RPC_GETFILE) &&
+         $self->_SendListSize('ArgC', 1) &&
+         $self->_SendString('ServerPathName', $ServerPathName) &&
+         $self->_RecvList('.') &&
+         ($fh ? $self->_RecvFile('File', $fh, $LocalPathName) :
+                $self->_RecvString('String', 'd'));
 }
 
 sub GetFile($$$)
@@ -1119,7 +1118,7 @@ sub GetFile($$$)
 
   if (open(my $fh, ">", $LocalPathName))
   {
-    my $Success = $self->_GetFileOrString($ServerPathName, $LocalPathName, $fh);
+    my $Success = $self->_GetStringOrFile($ServerPathName, $LocalPathName, $fh);
     close($fh);
     unlink $LocalPathName if (!$Success);
     return $Success;
@@ -1133,7 +1132,7 @@ sub GetFileToString($$)
   my ($self, $ServerPathName) = @_;
   debug("GetFile $self->{agenthost} $ServerPathName -> String\n");
 
-  return $self->_GetFileOrString($ServerPathName, undef, undef);
+  return $self->_GetStringOrFile($ServerPathName, undef, undef);
 }
 
 $RUN_DNT = 1;
@@ -1368,7 +1367,7 @@ sub Upgrade($$)
   # Send the command
   if (!$self->_StartRPC($RPC_UPGRADE) or
       !$self->_SendListSize('ArgC', 1) or
-      !$self->_SendFile('FileData', $fh, $Filename))
+      !$self->_SendFile('File', $fh, $Filename))
   {
       close($fh);
       return undef;
