@@ -55,7 +55,7 @@ use Errno qw/ENOTEMPTY/;
 
 $ENV{GIT_DIR} = $gitdir;
 
-my ($report, $tmpdir);
+my ($report, $tmpdir, $tag);
 
 sub mydie(@) {
     my $errdir = tempdir ("errXXXXX", DIR => $queuedir);
@@ -63,12 +63,13 @@ sub mydie(@) {
         print STDERR "$name0:error: unable to rename '$tmpdir' to '$errdir': $!\n";
         exit 3;
     }
+    my $label = substr($tag,1) || "???";
     if (open ERR, ">$errdir/error")
     {
-        print ERR "$name0:error:$errdir: ", @_;
+        print ERR "$label: ", @_;
         close ERR;
     }
-    print STDERR "$name0:error:$errdir: ", @_;
+    print STDERR "$name0:error:$label: ", @_;
     exit 1;
 }
 
@@ -112,7 +113,7 @@ $_ = <IN>;
 if (/^Archive: /) { $_ = <IN>; }  # ignore Archive header
 
 /^Tag: ([-.0-9a-zA-Z]*)\r?$/ or mydie "no tag line: $_";
-my $tag = $1 eq ""?"":"_$1";
+$tag = $1 eq ""?"":"_$1";
 
 $_ = <IN>;
 /^Build info:\r?$/ or mydie "no Build info header: $_";
