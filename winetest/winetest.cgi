@@ -86,7 +86,7 @@ print header,
   filefield ("reportfile","c:\\temp\\res",45),
   p,
   reset, submit ("submit","Upload File"),
-  endform,
+  end_form(),
   hr;
 
 if ($error) {
