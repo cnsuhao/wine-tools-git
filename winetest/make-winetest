@@ -47,11 +47,11 @@ done
 destdir="/home/winehq/opt/winetest/builds"
 desturl="http://test.winehq.org/builds"
 servicedir="/home/winehq/opt/winetest/winehq-builds/winetest"
-toolsdir="/home/winehq/opt/git-tools"
+toolsdir="/home/winehq/opt/tools"
 transldir="/home/winehq/opt/source/transl"
 
-mingw32=i586-mingw32msvc
-mingw64=x86_64-pc-mingw32
+mingw32=i686-w64-mingw32
+mingw64=x86_64-w64-mingw32
 logfile=LOG
 
 # if the log file exists, either a build is in progress or one has failed
@@ -101,20 +101,20 @@ umask 022
 
     # then cross-compile the tests
 
-    test -d build-mingw ||
-    (mkdir build-mingw &&
-     cd build-mingw &&
+    test -d build-mingw32 ||
+    (mkdir build-mingw32 &&
+     cd build-mingw32 &&
      ../wine/configure --host=$mingw32 --with-wine-tools=../build-native --without-x --without-freetype) || exit
 
-    (cd build-mingw &&
+    (cd build-mingw32 &&
      make depend &&
      make programs/winetest &&
      upx -9 -qq programs/winetest/winetest.exe) || exit
 
     # install everything
 
-    chmod 644 build-mingw/programs/winetest/winetest.exe
-    mv -f build-mingw/programs/winetest/winetest.exe $destdir/winetest-$head.exe
+    chmod 644 build-mingw32/programs/winetest/winetest.exe
+    mv -f build-mingw32/programs/winetest/winetest.exe $destdir/winetest-$head.exe
     ln -sf winetest-$head.exe $destdir/winetest-latest.exe
     rm -f $servicedir/*.cookie $servicedir/*.url
     sha1sum $destdir/winetest-latest.exe | cut -c1-40 > $servicedir/winetest-$head.cookie
