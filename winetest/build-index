@@ -23,8 +23,9 @@ use strict;
 use warnings;
 use open ':utf8';
 use CGI qw(:standard);
+use POSIX qw(strftime);
 
-use vars qw/$gitdir $gitweb/;
+use vars qw/$gitdir $gitweb $queuedir/;
 require "winetest.conf";
 
 binmode STDIN, ':utf8';
@@ -193,9 +194,7 @@ EOF
         next unless defined $alltests{$test}->{$build->{name}};
         printf OUT "  <tr><td class=\"build\"><a href=\"../%s\" title=\"%s\">%s</a></td>\n",
                    $build->{name}, $build->{name}, substr($build->{name},0,12);
-        my @date = gmtime($build->{date});
-        printf OUT "  <td class=\"date\">%02d&nbsp;%s&nbsp;%04d</td>",
-                   $date[3], $months[$date[4]], $date[5] + 1900, $date[2];
+        printf OUT "  <td class=\"date\">%s</td>", strftime("%b&nbsp;%d", gmtime($build->{date}));
         foreach my $group (@groups)
         {
             next unless defined $used_group{$group->{name}};
@@ -243,8 +242,7 @@ print OUT "<th colspan=\"3\">Failures</th><th></th></tr></thead>\n";
 foreach my $build (@builds)
 {
     printf OUT "  <tr><td class=\"build\"><a href=\"%s\" title=\"%s\">%s</a></td>\n", $build->{name}, $build->{name}, substr($build->{name},0,12);
-    my @date = gmtime($build->{date});
-    printf OUT "  <td class=\"date\">%02d&nbsp;%s</td>", $date[3], $months[$date[4]];
+    printf OUT "  <td class=\"date\">%s</td>", strftime("%b&nbsp;%d", gmtime($build->{date}));
     my ($total_runs, $total_tests, $total_errors, $total_todos);
     foreach my $ver (@groups)
     {
@@ -299,4 +297,40 @@ EOF
 close OUT;
 
 rename "data/index.html.new", "data/index.html" or unlink "data/index.html.new";
+
+# generate a table of the errors encountered during processing
+
+my @errors;
+
+opendir DIR, $queuedir or die "cannot open $queuedir";
+foreach my $dir (readdir DIR)
+{
+    next unless $dir =~ /^err.....$/;
+    open ERR, "$queuedir/$dir/error" or next;
+    my $msg = <ERR>;
+    chomp $msg;
+    my $date = (stat ERR)[9];
+    close ERR;
+    push @errors, { msg => $msg, date => $date, url => "../queue/$dir/report" };
+}
+closedir DIR;
+
+open OUT, ">data/errors.html.new" or die "cannot create data/errors.html.new";
+
+print OUT start_html( -title => "Errors caught during Wine test report processing",
+                      -style => {src => "/summary.css"},
+                      -encoding => "utf-8" );
+print OUT "<div class=\"main\"><h2>Errors caught during Wine test report processing</h2>\n";
+print OUT "<table class=\"report\"><thead><tr><th class=\"date\">Date</th><th class=\"commitlink\">Error</th></thread>\n";
+
+foreach my $err (sort { $b->{date} <=> $a->{date}; } @errors)
+{
+    printf OUT "<tr><td class=\"date\">%s</td>\n", strftime("%b&nbsp;%d&nbsp;%H:%M:%S", gmtime($err->{date}));
+    printf OUT "<td class=\"commitlink\"><a href=\"%s\">%s</a></td></tr>\n", $err->{url}, escapeHTML($err->{msg});
+}
+print OUT "</table>", end_html();
+close OUT;
+
+rename "data/errors.html.new", "data/errors.html" or unlink "data/errors.html.new";
+
 exit 0;
