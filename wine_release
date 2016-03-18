@@ -19,7 +19,7 @@ branch=${2:-master}
 
 website_dir="/home/winehq/opt/website"
 templates_dir=$website_dir/templates
-tools_dir="/home/winehq/opt/git-tools"
+tools_dir="/home/winehq/opt/tools"
 
 cd /home/winehq/opt/source
 

@@ -17,7 +17,7 @@
 # Cron job for generating winetest reports.  Use it like
 # */5 * * * * apache winetest.cron
 
-tools=/home/winehq/opt/git-tools/winetest
+tools=/home/winehq/opt/tools/winetest
 workdir=/home/winehq/opt/winetest
 lock=/tmp/winetest.lock
 
