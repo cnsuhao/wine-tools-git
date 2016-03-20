@@ -523,7 +523,10 @@ sub HandleGetScreenshot($)
     return "0Unknown VM $VMName";
   }
 
-  my ($ErrMessage, $ImageSize, $ImageBytes) = $VM->CaptureScreenImage();
+  # FIXME: Taking a screenshot leaks libvirt connections, takes a long time and
+  # blocks the Engine during the whole operation. So live screenshots are
+  # disabled for now.
+  my ($ErrMessage, $ImageSize, $ImageBytes) = ("Screenshotting has been disabled for the time being", undef, undef); #$VM->CaptureScreenImage();
   if (defined($ErrMessage))
   {
     LogMsg "Failed to take screenshot of $VMName: $ErrMessage\n";
