@@ -777,6 +777,8 @@ sub _SendFile($$$$)
   debug("  SendFile('$Name', '$Filename')\n");
 
   my $Size = -s $Filename;
+  return undef if (!$self->_SendEntryHeader("$Name/Size", 'd', $Size));
+
   my ($Start, $Sent, $Remaining) = (now(), 0, $Size);
   my $Success;
   eval
@@ -784,7 +786,6 @@ sub _SendFile($$$$)
     local $SIG{ALRM} = sub { die "timeout" };
     $self->_SetAlarm();
 
-    return if (!$self->_SendEntryHeader("$Name/Size", 'd', $Size));
     while ($Remaining)
     {
       my $Buffer;
