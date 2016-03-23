@@ -266,13 +266,13 @@ sub _RecvRawData($$$)
       {
         alarm(0);
         $self->_SetError($FATAL, "network read error ($self->{rpc}:$Name:$Received/$Size): $!");
-        return;
+        return; # out of eval
       }
       if ($r == 0)
       {
         alarm(0);
         $self->_SetError($FATAL, "network read got a premature EOF ($self->{rpc}:$Name:$Received/$Size)");
-        return;
+        return; # out of eval
       }
       $Data .= $Buffer;
       $Received += $r;
@@ -310,13 +310,13 @@ sub _SkipRawData($$)
       {
         alarm(0);
         $self->_SetError($FATAL, "network skip failed ($self->{rpc}:$Name:$Received/$Size): $!");
-        return;
+        return; # out of eval
       }
       if ($n == 0)
       {
         alarm(0);
         $self->_SetError($FATAL, "network skip got a premature EOF ($self->{rpc}:$Name:$Received/$Size)");
-        return;
+        return; # out of eval
       }
       $Received += $n;
       $Remaining -= $n;
@@ -481,13 +481,13 @@ sub _RecvFile($$$$)
       {
         alarm(0);
         $self->_SetError($FATAL, "got a network error while receiving '$Filename' ($self->{rpc}:$Name:$Received/$Size): $!");
-        return;
+        return; # out of eval
       }
       if ($r == 0)
       {
         alarm(0);
         $self->_SetError($FATAL, "got a premature EOF while receiving '$Filename' ($self->{rpc}:$Name:$Received/$Size)");
-        return;
+        return; # out of eval
       }
       $Remaining -= $r;
       my $w = syswrite($Dst, $Buffer, $r, 0);
@@ -497,7 +497,7 @@ sub _RecvFile($$$$)
         alarm(0);
         $self->_SetError($ERROR, "an error occurred while writing to '$Filename' ($self->{rpc}:$Name:$Received/$Size): $!");
         $self->_SkipRawData($Name, $Remaining);
-        return;
+        return; # out of eval
       }
     }
     alarm(0);
@@ -795,13 +795,13 @@ sub _SendFile($$$$)
       {
         alarm(0);
         $self->_SetError($FATAL, "an error occurred while reading from '$Filename' ($self->{rpc}:$Name:$Sent/$Size): $!");
-        return;
+        return; # out of eval
       }
       if ($r == 0)
       {
         alarm(0);
         $self->_SetError($FATAL, "got a premature EOF while reading from '$Filename' ($self->{rpc}:$Name:$Sent/$Size)");
-        return;
+        return; # out of eval
       }
       $Remaining -= $r;
       my $w = $self->_Write($Name, $Buffer);
@@ -810,7 +810,7 @@ sub _SendFile($$$$)
       {
         alarm(0);
         $self->_SetError($FATAL, "got a network error while sending '$Filename' ($self->{rpc}:$Name:$Sent+$s/$Size): $!");
-        return;
+        return; # out of eval
       }
     }
     alarm(0);
