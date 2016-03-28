@@ -1184,46 +1184,38 @@ sub Wait($$$;$)
   debug("Wait $Pid, ", defined $Timeout ? $Timeout : "<undef>", ", ",
         defined $Keepalive ? $Keepalive : "<undef>", "\n");
 
-  # Make sure we have the server version
-  return undef if (!$self->{agentversion} and !$self->_Connect());
+  my $Result;
+  $Keepalive ||= 0xffffffff;
+  my $OldTimeout = $self->{timeout};
 
-  my ($OldTimeout, $Result);
-  if ($self->{agentversion} =~ / 1\.0$/)
+  my $Deadline = $Timeout ? time() + $Timeout : undef;
+  while (1)
   {
+    my $Remaining = $Keepalive;
+    if ($Deadline)
+    {
+      $Remaining = $Deadline - time();
+      last if ($Remaining < 0);
+      $Remaining = $Keepalive if ($Keepalive < $Remaining);
+    }
     # Add a 5 second leeway to take into account network transmission delays
-    $OldTimeout = $self->SetTimeout($Timeout + 5) if ($Timeout);
+    $self->SetTimeout($Remaining + 5);
+
+    # Make sure we have the server version
+    last if (!$self->{agentversion} and !$self->_Connect());
 
     # Send the command
-    if (!$self->_StartRPC($RPC_WAIT) or
-        !$self->_SendListSize('ArgC', 1) or
-        !$self->_SendUInt64('Pid', $Pid))
+    if ($self->{agentversion} =~ / 1\.0$/)
     {
-      last;
-    }
-
-    # Get the reply
-    $Result = $self->_RecvList('I');
-  }
-  else
-  {
-    $Keepalive ||= 0xffffffff;
-    $OldTimeout = $self->{timeout};
-
-    my $Deadline;
-    $Deadline = time() + $Timeout if ($Timeout);
-    while (1)
-    {
-      my $Remaining = $Keepalive;
-      if ($Deadline)
+      if (!$self->_StartRPC($RPC_WAIT) or
+          !$self->_SendListSize('ArgC', 1) or
+          !$self->_SendUInt64('Pid', $Pid))
       {
-        $Remaining = $Deadline - time();
-        last if ($Remaining < 0);
-        $Remaining = $Keepalive if ($Keepalive < $Remaining);
+        last;
       }
-      # Add a 5 second leeway to take into account network transmission delays
-      $self->SetTimeout($Remaining + 5);
-
-      # Send the command
+    }
+    else
+    {
       if (!$self->_StartRPC($RPC_WAIT2) or
           !$self->_SendListSize('ArgC', 2) or
           !$self->_SendUInt64('Pid', $Pid) or
@@ -1231,20 +1223,20 @@ sub Wait($$$;$)
       {
         last;
       }
-
-      # Get the reply
-      $Result = $self->_RecvList('I');
-
-      # The process has quit
-      last if (defined $Result);
-
-      # The only 'error' we should be getting here is the TestAgent server
-      # telling us it timed out waiting for the process. However flaky network
-      # connections like to break while we're waiting for the reply. So retry
-      # if that happens and let the automatic reconnection detect real network
-      # issues.
-      last if ($self->{err} !~ /(?:timed out waiting|network read timed out)/);
     }
+
+    # Get the reply
+    $Result = $self->_RecvList('I');
+
+    # The process has quit
+    last if (defined $Result);
+
+    # The only 'error' we should be getting here is the TestAgent server
+    # telling us it timed out waiting for the process. However flaky network
+    # connections like to break while we're waiting for the reply. So retry
+    # if that happens and let the automatic reconnection detect real network
+    # issues.
+    last if ($self->{err} !~ /(?:timed out waiting|network read timed out)/);
   }
   $self->SetTimeout($OldTimeout);
   return $Result;
