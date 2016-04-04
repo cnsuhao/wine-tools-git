@@ -1079,7 +1079,7 @@ sub _SendStringOrFile($$$$$$)
 sub SendFile($$$;$)
 {
   my ($self, $LocalPathName, $ServerPathName, $Flags) = @_;
-  debug("SendFile $LocalPathName -> $self->{agenthost} $ServerPathName\n");
+  debug("SendFile '$LocalPathName' -> $self->{agenthost} '$ServerPathName' Flags=", $Flags || 0, "\n");
 
   if (open(my $fh, "<", $LocalPathName))
   {
@@ -1095,7 +1095,7 @@ sub SendFile($$$;$)
 sub SendFileFromString($$$;$)
 {
   my ($self, $Data, $ServerPathName, $Flags) = @_;
-  debug("SendFile String -> $self->{agenthost} $ServerPathName\n");
+  debug("SendFile String -> $self->{agenthost} '$ServerPathName' Flags=", $Flags || 0, "\n");
   return $self->_SendStringOrFile($Data, undef, undef, $ServerPathName, $Flags);
 }
 
@@ -1115,7 +1115,7 @@ sub _GetStringOrFile($$$)
 sub GetFile($$$)
 {
   my ($self, $ServerPathName, $LocalPathName) = @_;
-  debug("GetFile $self->{agenthost} $ServerPathName -> $LocalPathName\n");
+  debug("GetFile $self->{agenthost} '$ServerPathName' -> '$LocalPathName'\n");
 
   if (open(my $fh, ">", $LocalPathName))
   {
@@ -1131,7 +1131,7 @@ sub GetFile($$$)
 sub GetFileToString($$)
 {
   my ($self, $ServerPathName) = @_;
-  debug("GetFile $self->{agenthost} $ServerPathName -> String\n");
+  debug("GetFile $self->{agenthost} '$ServerPathName' -> String\n");
 
   return $self->_GetStringOrFile($ServerPathName, undef, undef);
 }
@@ -1145,6 +1145,12 @@ sub Run($$$;$$$)
 {
   my ($self, $Argv, $Flags, $ServerInPath, $ServerOutPath, $ServerErrPath) = @_;
   debug("Run $self->{agenthost} '", join("' '", @$Argv), "'\n");
+  if ($Flags or $ServerInPath or $ServerOutPath or $ServerErrPath)
+  {
+    debug("  Flags=", $Flags || 0, " In='", $ServerInPath || "",
+          "' Out='", $ServerOutPath || "", "' Err='", $ServerErrPath || "",
+          "'\n");
+  }
 
   if (!$self->_StartRPC($RPC_RUN) or
       !$self->_SendListSize('ArgC', 4 + @$Argv) or
