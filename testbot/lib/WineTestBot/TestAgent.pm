@@ -1171,7 +1171,7 @@ sub Run($$$;$$$)
 
 =item C<Wait()>
 
-Waits at most Timeout seconds for the specified remote process to terminate.
+Waits at most WaitTimeout seconds for the specified remote process to terminate.
 The Keepalive specifies how often, in seconds, to check that the remote end
 is still alive and reachable.
 
@@ -1180,21 +1180,21 @@ is still alive and reachable.
 
 sub Wait($$$;$)
 {
-  my ($self, $Pid, $Timeout, $Keepalive) = @_;
-  debug("Wait $Pid, ", defined $Timeout ? $Timeout : "<undef>", ", ",
+  my ($self, $Pid, $WaitTimeout, $Keepalive) = @_;
+  debug("Wait $Pid, ", defined $WaitTimeout ? $WaitTimeout : "<undef>", ", ",
         defined $Keepalive ? $Keepalive : "<undef>", "\n");
 
   my $Result;
   $Keepalive ||= 0xffffffff;
   my $OldTimeout = $self->{timeout};
 
-  my $Deadline = $Timeout ? time() + $Timeout : undef;
+  my $WaitDeadline = $WaitTimeout ? time() + $WaitTimeout : undef;
   while (1)
   {
     my $Remaining = $Keepalive;
-    if ($Deadline)
+    if ($WaitDeadline)
     {
-      $Remaining = $Deadline - time();
+      $Remaining = $WaitDeadline - time();
       last if ($Remaining < 0);
       $Remaining = $Keepalive if ($Keepalive < $Remaining);
     }
