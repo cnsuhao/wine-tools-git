@@ -245,7 +245,7 @@ if (!defined $Usage)
         $Usage = 2;
     }
     elsif ($Cmd ne "run" and ($RunFlags or defined $RunIn or defined $RunOut or
-                           defined $RunErr or defined $Keepalive))
+                              defined $RunErr))
     {
         error("the --run-xxx options can only be used with the run command\n");
         $Usage = 2;
@@ -272,6 +272,11 @@ if (!defined $Usage)
     elsif ($Cmd eq "rm" and !@Rm)
     {
         error("you must specify the server files to delete\n");
+        $Usage = 2;
+    }
+    if (defined $Keepalive and $Cmd !~ /^(?:run|wait)$/)
+    {
+        error("--keepalive can only be used with the run or wait commands\n");
         $Usage = 2;
     }
     $Keepalive = 60 if (!defined $Keepalive);
