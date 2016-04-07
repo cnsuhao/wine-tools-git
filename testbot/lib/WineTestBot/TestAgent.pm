@@ -2,7 +2,7 @@
 # to run scripts.
 #
 # Copyright 2009 Ge van Geldorp
-# Copyright 2012-2014 Francois Gouget
+# Copyright 2012-2016 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -251,7 +251,7 @@ sub _RecvRawData($$$)
   return undef if (!defined $self->{fd});
 
   my $Result;
-  my ($Received, $Remaining) = (0, $Size);
+  my ($Pos, $Remaining) = (0, $Size);
   eval
   {
     local $SIG{ALRM} = sub { die "timeout" };
@@ -265,17 +265,17 @@ sub _RecvRawData($$$)
       if (!defined $r)
       {
         alarm(0);
-        $self->_SetError($FATAL, "network read error ($self->{rpc}:$Name:$Received/$Size): $!");
+        $self->_SetError($FATAL, "network read error ($self->{rpc}:$Name:$Pos/$Size): $!");
         return; # out of eval
       }
       if ($r == 0)
       {
         alarm(0);
-        $self->_SetError($FATAL, "network read got a premature EOF ($self->{rpc}:$Name:$Received/$Size)");
+        $self->_SetError($FATAL, "network read got a premature EOF ($self->{rpc}:$Name:$Pos/$Size)");
         return; # out of eval
       }
       $Data .= $Buffer;
-      $Received += $r;
+      $Pos += $r;
       $Remaining -= $r;
     }
     alarm(0);
@@ -283,7 +283,10 @@ sub _RecvRawData($$$)
   };
   if ($@)
   {
-    $@ = "network read timed out ($self->{rpc}:$Name:$Received/$Size)" if ($@ =~ /^timeout /);
+    if ($@ =~ /^timeout /)
+    {
+      $@ = "network read timed out ($self->{rpc}:$Name:$Pos/$Size)";
+    }
     $self->_SetError($FATAL, $@);
   }
   return $Result;
@@ -295,7 +298,7 @@ sub _SkipRawData($$)
   return undef if (!defined $self->{fd});
 
   my $Success;
-  my ($Received, $Remaining) = (0, $Size);
+  my ($Pos, $Remaining) = (0, $Size);
   eval
   {
     local $SIG{ALRM} = sub { die "timeout" };
@@ -309,16 +312,16 @@ sub _SkipRawData($$)
       if (!defined $n)
       {
         alarm(0);
-        $self->_SetError($FATAL, "network skip failed ($self->{rpc}:$Name:$Received/$Size): $!");
+        $self->_SetError($FATAL, "network skip failed ($self->{rpc}:$Name:$Pos/$Size): $!");
         return; # out of eval
       }
       if ($n == 0)
       {
         alarm(0);
-        $self->_SetError($FATAL, "network skip got a premature EOF ($self->{rpc}:$Name:$Received/$Size)");
+        $self->_SetError($FATAL, "network skip got a premature EOF ($self->{rpc}:$Name:$Pos/$Size)");
         return; # out of eval
       }
-      $Received += $n;
+      $Pos += $n;
       $Remaining -= $n;
     }
     alarm(0);
@@ -326,7 +329,10 @@ sub _SkipRawData($$)
   };
   if ($@)
   {
-    $@ = "network skip timed out ($self->{rpc}:$Name:$Received/$Size)" if ($@ =~ /^timeout /);
+    if ($@ =~ /^timeout /)
+    {
+      $@ = "network skip timed out ($self->{rpc}:$Name:$Pos/$Size)";
+    }
     $self->_SetError($FATAL, $@);
   }
   return $Success;
@@ -466,7 +472,7 @@ sub _RecvFile($$$$)
   return undef if (!defined $Size);
 
   my $Success;
-  my ($Start, $Received, $Remaining) = (now(), 0, $Size);
+  my ($Start, $Pos, $Remaining) = (now(), 0, $Size);
   eval
   {
     local $SIG{ALRM} = sub { die "timeout" };
@@ -480,22 +486,22 @@ sub _RecvFile($$$$)
       if (!defined $r)
       {
         alarm(0);
-        $self->_SetError($FATAL, "got a network error while receiving '$Filename' ($self->{rpc}:$Name:$Received/$Size): $!");
+        $self->_SetError($FATAL, "got a network error while receiving '$Filename' ($self->{rpc}:$Name:$Pos/$Size): $!");
         return; # out of eval
       }
       if ($r == 0)
       {
         alarm(0);
-        $self->_SetError($FATAL, "got a premature EOF while receiving '$Filename' ($self->{rpc}:$Name:$Received/$Size)");
+        $self->_SetError($FATAL, "got a premature EOF while receiving '$Filename' ($self->{rpc}:$Name:$Pos/$Size)");
         return; # out of eval
       }
       $Remaining -= $r;
       my $w = syswrite($Dst, $Buffer, $r, 0);
-      $Received += $w if (defined $w);
+      $Pos += $w if (defined $w);
       if (!defined $w or $w != $r)
       {
         alarm(0);
-        $self->_SetError($ERROR, "an error occurred while writing to '$Filename' ($self->{rpc}:$Name:$Received/$Size): $!");
+        $self->_SetError($ERROR, "an error occurred while writing to '$Filename' ($self->{rpc}:$Name:$Pos/$Size): $!");
         $self->_SkipRawData($Name, $Remaining);
         return; # out of eval
       }
@@ -505,11 +511,14 @@ sub _RecvFile($$$$)
   };
   if ($@)
   {
-    $@ = "timed out while receiving '$Filename' ($self->{rpc}:$Name:$Received/$Size)" if ($@ =~ /^timeout /);
+    if ($@ =~ /^timeout /)
+    {
+      $@ = "timed out while receiving '$Filename' ($self->{rpc}:$Name:$Pos/$Size)";
+    }
     $self->_SetError($FATAL, $@);
   }
 
-  trace_speed($Received, now() - $Start);
+  trace_speed($Pos, now() - $Start);
   return $Success;
 }
 
@@ -662,24 +671,24 @@ sub _Write($$$)
   return undef if (!defined $self->{fd});
 
   my $Size = length($Data);
-  my ($Sent, $Remaining) = (0, $Size);
+  my ($Pos, $Remaining) = (0, $Size);
   while ($Remaining)
   {
-    my $w = syswrite($self->{fd}, $Data, $Remaining, $Sent);
+    my $w = syswrite($self->{fd}, $Data, $Remaining, $Pos);
     if (!defined $w)
     {
-      $self->_SetError($FATAL, "network write error ($self->{rpc}:$Name:$Sent/$Size): $!");
+      $self->_SetError($FATAL, "network write error ($self->{rpc}:$Name:$Pos/$Size): $!");
       return undef;
     }
     if ($w == 0)
     {
-      $self->_SetError($FATAL, "unable to send more data ($self->{rpc}:$Name:$Sent/$Size)");
-      return $Sent;
+      $self->_SetError($FATAL, "unable to send more data ($self->{rpc}:$Name:$Pos/$Size)");
+      return $Pos;
     }
-    $Sent += $w;
+    $Pos += $w;
     $Remaining -= $w;
   }
-  return $Sent;
+  return $Pos;
 }
 
 sub _SendRawData($$$)
@@ -700,7 +709,10 @@ sub _SendRawData($$$)
   };
   if ($@)
   {
-    $@ = "network write timed out ($self->{rpc}:$Name)" if ($@ =~ /^timeout /);
+    if ($@ =~ /^timeout /)
+    {
+      $@ = "network write timed out ($self->{rpc}:$Name)";
+    }
     $self->_SetError($FATAL, $@);
   }
   return $Success;
@@ -779,8 +791,8 @@ sub _SendFile($$$$)
   my $Size = -s $Filename;
   return undef if (!$self->_SendEntryHeader("$Name/Size", 'd', $Size));
 
-  my ($Start, $Sent, $Remaining) = (now(), 0, $Size);
   my $Success;
+  my ($Start, $Pos, $Remaining) = (now(), 0, $Size);
   eval
   {
     local $SIG{ALRM} = sub { die "timeout" };
@@ -794,22 +806,22 @@ sub _SendFile($$$$)
       if (!defined $r)
       {
         alarm(0);
-        $self->_SetError($FATAL, "an error occurred while reading from '$Filename' ($self->{rpc}:$Name:$Sent/$Size): $!");
+        $self->_SetError($FATAL, "an error occurred while reading from '$Filename' ($self->{rpc}:$Name:$Pos/$Size): $!");
         return; # out of eval
       }
       if ($r == 0)
       {
         alarm(0);
-        $self->_SetError($FATAL, "got a premature EOF while reading from '$Filename' ($self->{rpc}:$Name:$Sent/$Size)");
+        $self->_SetError($FATAL, "got a premature EOF while reading from '$Filename' ($self->{rpc}:$Name:$Pos/$Size)");
         return; # out of eval
       }
       $Remaining -= $r;
       my $w = $self->_Write($Name, $Buffer);
-      $Sent += $w if (defined $w);
+      $Pos += $w if (defined $w);
       if (!defined $w or $w != $r)
       {
         alarm(0);
-        $self->_SetError($FATAL, "got a network error while sending '$Filename' ($self->{rpc}:$Name:$Sent+$s/$Size): $!");
+        $self->_SetError($FATAL, "got a network error while sending '$Filename' ($self->{rpc}:$Name:$Pos+$s/$Size): $!");
         return; # out of eval
       }
     }
@@ -818,11 +830,14 @@ sub _SendFile($$$$)
   };
   if ($@)
   {
-    $@ = "timed out while sending '$Filename' ($self->{rpc}:$Name:$Sent/$Size)" if ($@ =~ /^timeout /);
+    if ($@ =~ /^timeout /)
+    {
+      $@ = "timed out while sending '$Filename' ($self->{rpc}:$Name:$Pos/$Size)";
+    }
     $self->_SetError($FATAL, $@);
   }
 
-  trace_speed($Sent, now() - $Start);
+  trace_speed($Pos, now() - $Start);
   return $Success;
 }
 
