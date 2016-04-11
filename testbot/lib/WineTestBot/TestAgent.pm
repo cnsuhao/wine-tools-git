@@ -486,7 +486,7 @@ sub _RecvFile($$$$)
       if (!defined $r)
       {
         alarm(0);
-        $self->_SetError($FATAL, "got a network error while receiving '$Filename' ($self->{rpc}:$Name:$Pos/$Size): $!");
+        $self->_SetError($FATAL, "got a network error while receiving '$Filename' ($self->{rpc}:$Name:$Pos+$s/$Size): $!");
         return; # out of eval
       }
       if ($r == 0)
@@ -501,7 +501,7 @@ sub _RecvFile($$$$)
       if (!defined $w or $w != $r)
       {
         alarm(0);
-        $self->_SetError($ERROR, "an error occurred while writing to '$Filename' ($self->{rpc}:$Name:$Pos/$Size): $!");
+        $self->_SetError($ERROR, "an error occurred while writing to '$Filename' ($self->{rpc}:$Name:$Pos+$r/$Size): $!");
         $self->_SkipRawData($Name, $Remaining);
         return; # out of eval
       }
@@ -806,7 +806,7 @@ sub _SendFile($$$$)
       if (!defined $r)
       {
         alarm(0);
-        $self->_SetError($FATAL, "an error occurred while reading from '$Filename' ($self->{rpc}:$Name:$Pos/$Size): $!");
+        $self->_SetError($FATAL, "an error occurred while reading from '$Filename' ($self->{rpc}:$Name:$Pos+$s/$Size): $!");
         return; # out of eval
       }
       if ($r == 0)
@@ -821,7 +821,8 @@ sub _SendFile($$$$)
       if (!defined $w or $w != $r)
       {
         alarm(0);
-        $self->_SetError($FATAL, "got a network error while sending '$Filename' ($self->{rpc}:$Name:$Pos+$s/$Size): $!");
+        # Overwrite _Write()'s error message with a more appropriate one
+        $self->_SetError($FATAL, "got a network error while sending '$Filename' ($self->{rpc}:$Name:$Pos+$r/$Size): $!");
         return; # out of eval
       }
     }
