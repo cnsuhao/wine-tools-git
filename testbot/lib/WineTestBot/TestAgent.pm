@@ -220,7 +220,16 @@ sub _SetError($$$)
           };
           $ncerr = $rc if (!$ncerr);
           $ncerr = "the \"$self->{nc}\" command returned $ncerr";
-          $self->{err} = $self->{agentversion} ? "$self->{err}\n$ncerr" : $ncerr;
+          if ($self->{agentversion})
+          {
+            $self->{err} .= "\n$ncerr";
+          }
+          else
+          {
+            # The real issue is that we failed to connect so
+            # ignore the _RecvString('AgentVersion') error message
+            $self->{err} = "$ncerr ($self->{rpc})";
+          }
         }
       }
       $self->Disconnect();
@@ -231,7 +240,7 @@ sub _SetError($$$)
     # We did not even manage to connect but record the error anyway
     $self->{err} = $Msg;
   }
-  debug($self->{rpc} || "norpc", ": $self->{err}\n");
+  debug("$self->{err}\n");
 }
 
 sub GetLastError($)
