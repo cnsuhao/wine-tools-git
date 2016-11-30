@@ -214,6 +214,7 @@ sub _SetError($$$)
           my $ncerr;
           eval
           {
+            local $SIG{ALRM} = sub { die "timeout" };
             alarm(2);
             $self->{fd}->read($ncerr, 1024, 1);
             alarm(0);
