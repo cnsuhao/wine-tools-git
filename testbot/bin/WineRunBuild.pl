@@ -327,7 +327,7 @@ $Script .= " >>Build.log 2>&1\n";
 Debug(Elapsed($Start), " Sending the script: [$Script]\n");
 if (!$TA->SendFileFromString($Script, "task", $TestAgent::SENDFILE_EXE))
 {
-  FatalTAError($TA, "Coud not send the build script to the VM");
+  FatalTAError($TA, "Could not send the build script to the VM");
 }
 
 Debug(Elapsed($Start), " Starting the script\n");
