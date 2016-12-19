@@ -468,5 +468,11 @@ int platform_init(void)
     hdll = GetModuleHandle("ws2_32");
     pgetaddrinfo = (void*)GetProcAddress(hdll, "getaddrinfo");
     pfreeaddrinfo = (void*)GetProcAddress(hdll, "freeaddrinfo");
+
+    /* By default stderr is fully buffered and Windows does not support
+     * line buffering. So disable buffering altogether.
+     */
+    setvbuf(stderr, NULL, _IONBF, 0);
+
     return 1;
 }
