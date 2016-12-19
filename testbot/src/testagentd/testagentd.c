@@ -44,8 +44,8 @@
 #define BLOCK_SIZE       65536
 
 static char** server_argv;
-const char *name0;
-int opt_debug = 0;
+static const char *name0;
+static int opt_debug = 0;
 
 
 /*
