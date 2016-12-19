@@ -18,7 +18,7 @@
 
 
 /*
- * Compatiblity definitions.
+ * Compatibility definitions.
  */
 
 #ifdef WIN32
@@ -53,7 +53,7 @@ typedef int SOCKET;
 
 
 /*
- * Platform-specific unctions.
+ * Platform-specific functions.
  */
 
 int platform_init(void);

@@ -232,7 +232,7 @@ if (opendir(my $dh, "$DataDir/staging"))
     {
       if ($Age >= 1 and !unlink $FileName)
       {
-        # The user abandonned the submit procedure half-way
+        # The user abandoned the submit procedure half-way through
         LogMsg "Could not delete '$FileName': $!\n" if (!unlink($FileName));
       }
     }
