@@ -78,7 +78,7 @@ table.index td {
         background-color: #fff4f4;
 }
 
-/* used to mark resource parts that are not literaly in the string, like \0, \n etc*/
+/* used to mark resource parts that are not literally in the string, like \0, \n, etc */
 .resmeta
 {
     color: #c34b4b;
@@ -120,7 +120,7 @@ table.resource tr.subheader
     background-color: #f3dcdc;
 }
 
-/* rows are different (in resource comparision mode) */
+/* rows are different (in resource comparison mode) */
 table.resource tr.diff
 {
     background-color: #e3acac;
