@@ -23,7 +23,7 @@ Apache setup:
 - If you want to enable SSL, make sure you have your certificate set
   up. If you don't want SSL, edit lib/WineTestBot/Config.pm and set
   UseSSL to "!1".
-- On OpenSUSE, I had to add "perl" to APACHE_MODULES in
+- On openSUSE, I had to add "perl" to APACHE_MODULES in
   /etc/sysconfig/apache2.
 - On Debian you may have to install libapache2-mod-perl2 and create a
   perl.load symbolic link in /etc/apache2/mods-enabled.

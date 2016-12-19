@@ -20,7 +20,7 @@ use strict;
 
 =head1 NAME
 
-WineTestBot::Engine::Notify - Engine notifcation
+WineTestBot::Engine::Notify - Engine notification
 
 =cut
 
