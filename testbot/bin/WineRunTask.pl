@@ -66,14 +66,14 @@ sub TakeScreenshot($$)
   if (! defined($ErrMessage))
   {
     my $OldUMask = umask(002);
-    if (open SCREENSHOT, ">$FullScreenshotFileName")
+    if (open(my $Screenshot, ">", $FullScreenshotFileName))
     {
-      print SCREENSHOT $ImageBytes;
-      close SCREENSHOT;
+      print $Screenshot $ImageBytes;
+      close($Screenshot);
     }
     else
     {
-      Error "Can't save screenshot: $!\n";
+      Error "Could not open the screenshot file for writing: $!\n";
     }
     umask($OldUMask);
   }
