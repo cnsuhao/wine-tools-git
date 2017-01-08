@@ -33,6 +33,7 @@ virtual machine that the test must be performed in.
 =cut
 
 use POSIX qw(:errno_h);
+use File::Path;
 use ObjectModel::BackEnd;
 use WineTestBot::Config;
 use WineTestBot::Jobs;
@@ -108,8 +109,9 @@ sub Run($$)
     # Capture Perl errors in the task's generic error log
     my ($JobId, $StepNo, $TaskNo) = @{$self->GetMasterKey()};
     my $TaskDir = "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
+    # Remove the previous run's files if any
+    rmtree $TaskDir;
     mkdir $TaskDir;
-    unlink "$TaskDir/err"; # truncate the log since this is a new run
     if (open(STDERR, ">>", "$TaskDir/err"))
     {
       # Make sure stderr still flushes after each print

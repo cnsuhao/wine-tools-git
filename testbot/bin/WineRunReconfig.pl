@@ -39,7 +39,6 @@ sub BEGIN
 my $Name0 = $0;
 $Name0 =~ s+^.*/++;
 
-use File::Path;
 
 use WineTestBot::Config;
 use WineTestBot::Jobs;
@@ -203,7 +202,7 @@ sub WrapUpAndExit($)
   {
     $Task->Started(undef);
     $Task->Ended(undef);
-    Error "Unable to delete '$TaskDir': $!\n" if (!rmtree($TaskDir));
+    # Leave the Task files around so they can be seen until the next run
   }
   else
   {
