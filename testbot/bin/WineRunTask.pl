@@ -68,15 +68,14 @@ sub TakeScreenshot($$)
     my $OldUMask = umask(002);
     if (open SCREENSHOT, ">$FullScreenshotFileName")
     {
-      umask($OldUMask);
       print SCREENSHOT $ImageBytes;
       close SCREENSHOT;
     }
     else
     {
-      umask($OldUMask);
       Error "Can't save screenshot: $!\n";
     }
+    umask($OldUMask);
   }
   else
   {
@@ -207,15 +206,14 @@ sub LogTaskError($)
   my $OldUMask = umask(002);
   if (open(my $ErrFile, ">>", $FullErrFileName))
   {
-    umask($OldUMask);
     print $ErrFile $ErrMessage;
     close($ErrFile);
   }
   else
   {
-    umask($OldUMask);
     Error "Unable to open '$FullErrFileName' for writing: $!\n";
   }
+  umask($OldUMask);
 }
 
 sub WrapUpAndExit($;$)
