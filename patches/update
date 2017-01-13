@@ -69,7 +69,7 @@ my @legend =
  [ "formatting", "<ul><li>The patch author's full name, email address, or Signed-off-by headers are incorrect or missing.</li>" .
                  "<li>Whitespace got mangled in transit.</li>" .
                  "<li>Indentation is messed up (usually from editing with a non-standard tab size).</li>" .
-                 "<li>8-bit chars got mangled in transit (usually when sending patches to resource files).</li>" .
+                 "<li>8-bit chars got mangled in transit (usually when sending patches to translation files).</li>" .
                  "<li>You are making gratuitous formatting changes to the code.</li>" .
                  "<li>You are using C++ comments.</li></ul>" ],
  [ "nopatch",    "<ul><li>You hit 'send' before attaching the patch.</li>" .
