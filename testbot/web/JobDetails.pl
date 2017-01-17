@@ -213,7 +213,7 @@ sub SortKeys($$$)
 {
   my ($self, $CollectionBlock, $Keys) = @_;
 
-  my @SortedKeys = sort @$Keys;
+  my @SortedKeys = sort { $a <=> $b } @$Keys;
   return \@SortedKeys;
 }
 
