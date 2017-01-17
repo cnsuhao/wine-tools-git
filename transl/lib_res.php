@@ -17,7 +17,7 @@ $CONSTS["BS_MULTILINE"] = 0x2000;
 function get_byte(&$data)
 {
     if (strlen($data)  < 1)
-        die("not enough data");
+        die("not enough data\n");
     $cx = unpack("Cc", $data);
     $data = substr($data, 1);
     return $cx["c"];
@@ -26,7 +26,7 @@ function get_byte(&$data)
 function get_word(&$data)
 {
     if (strlen($data)  < 2)
-        die("not enough data");
+        die("not enough data\n");
     $cx = unpack("vc", $data);
     $data = substr($data, 2);
     return $cx["c"];
@@ -35,7 +35,7 @@ function get_word(&$data)
 function get_dword(&$data)
 {
     if (strlen($data)  < 4)
-        die("not enough data");
+        die("not enough data\n");
     $cx = unpack("Vc", $data);
     $data = substr($data, 4);
     return $cx["c"];
@@ -48,7 +48,7 @@ function get_stringorid_asascii($data, &$pos)
     if ((ord($data[$pos]) == 0xff) && (ord($data[$pos + 1]) == 0xff))
     {
         if ($len < 4)
-            die("not enough data");
+            die("not enough data\n");
         $pos += 4;
         return (ord($data[$pos - 2]) + (ord($data[$pos - 1]) << 8));
     }
@@ -65,7 +65,7 @@ function get_stringorid_asascii($data, &$pos)
     $pos = $i + 2;
 
     if ($pos >= $len)
-        die("not enough data");
+        die("not enough data\n");
 
     return $ret;
 }
@@ -78,7 +78,7 @@ function get_stringorid($data, &$pos, $magic = 0xffff)
     if ((ord($data[$pos]) == $magic >> 8) && (ord($data[$pos + 1]) == ($magic & 0xff)))
     {
         if ($len < 4)
-            die("not enough data");
+            die("not enough data\n");
         $pos += 4;
         return (ord($data[$pos - 2]) + (ord($data[$pos - 1]) << 8));
     }
@@ -92,7 +92,7 @@ function get_stringorid($data, &$pos, $magic = 0xffff)
     $pos = $i + 2;
 
     if ($pos >= $len)
-        die("not enough data");
+        die("not enough data\n");
 
     return $ret;
 }
@@ -284,7 +284,7 @@ function load_resource(&$resources, $type, $id, $langid, &$res)
             $res = new MessageTable($resdata[0], $resdata[1], $id);
             return TRUE;
         default:
-            die("Unhandled resource type $type");
+            die("Unhandled resource type $type\n");
     }
 }
 
@@ -296,7 +296,7 @@ class ResFile
     {
         $this->file = fopen("$path", "rb");
         if ($this->file == NULL)
-            die("Couldn't open resource file");
+            die("Couldn't open resource file\n");
     }
 
     function enumResources($callback, $lparam = 0)
@@ -311,7 +311,7 @@ class ResFile
             if ($len == 0)
                 break;
             if ($len < 8)
-                die("Couldn't read header");
+                die("Couldn't read header\n");
 
             $header = unpack("VresSize/VheaderSize", $data);
             assert($header["headerSize"] > 8);
@@ -319,7 +319,7 @@ class ResFile
             $len = $header["headerSize"] - 8;
             $data = fread($this->file, $len);
             if (strlen($data) < $len)
-                die("Couldn't read header");
+                die("Couldn't read header\n");
 
             $strpos = 0;
             $header["type"] = get_stringorid_asascii($data, $strpos);
@@ -351,7 +351,7 @@ class ResFile
             if ($len == 0)
                 break;
             if ($len < 8)
-                die("Couldn't read header");
+                die("Couldn't read header\n");
 
             $header = unpack("Va/Vb", $data);
             $resSize = $header["a"];
@@ -906,7 +906,7 @@ class DialogResource extends Resource
             $data = substr($data, $pos);
             $cbExtra = get_word($data);
             if ($cbExtra > strlen($data))
-                die("Not enough data to skip cbExtra");
+                die("Not enough data to skip cbExtra\n");
             $data = substr($data, $cbExtra);
             $this->items[] = $item;
         }
