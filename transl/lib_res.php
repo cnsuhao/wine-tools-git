@@ -270,6 +270,7 @@ function load_resource(&$resources, $type, $id, $langid, &$res)
     switch ($type)
     {
         case 4:   /* RT_MENU */
+        case 260: /* MENUEX */
             $res = new MenuResource($resdata[0], $resdata[1]);
             return TRUE;
         case 5:   /* RT_DIALOG */
@@ -611,6 +612,32 @@ class MenuResource extends Resource
         while (!($item["resinfo"] & $CONSTS["MF_END"]));
     }
 
+    function parse_menuex(&$data, $level)
+    {
+        global $CONSTS;
+        do
+        {
+            $item = array();
+            $item["level"] = $level;
+            $item["type"] = get_dword($data);
+            $item["state"] = get_dword($data);
+            $item["id"] = get_dword($data);
+            $len = strlen($data);
+            $item["resinfo"] = get_word($data);
+            $item["text"] = get_string_nul($data);
+            if (($len - strlen($data)) & 3)  /* DWORD padding */
+                $data = substr($data, 2);
+
+            $this->items[] = $item;
+            if ($item["resinfo"] & 0x01)
+            {
+                $dummy = get_dword($data);  /* HelpId */
+                $this->parse_menuex($data, $level + 1);
+            }
+        }
+        while (!($item["resinfo"] & $CONSTS["MF_END"]));
+    }
+
     function MenuResource($header, $data)
     {
         $this->Resource($header);
@@ -622,8 +649,10 @@ class MenuResource extends Resource
 
         if ($version == 0)
             $this->parse_menu($data, 0);
+        else if ($version == 1)
+            $this->parse_menuex($data, 0);
         else
-            die("Unsupported version $version");
+            die("Unsupported version $version\n");
 
 //        echo urlencode($data);
         if (strlen($data) > 0)
