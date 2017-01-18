@@ -104,7 +104,7 @@ commands in it. This part is used to start the tasks in the VM but is
 implemented independently from the VM's hypervisor since most do not provide
 this functionality.
 
-The VM type defines what the it can do:
+The VM type defines what it can do:
 
 =over 12
 
