@@ -229,7 +229,7 @@ foreach my $file (sort { $patches{$b}->{"order"} <=> $patches{$a}->{"order"} } k
     }
     if (defined($patch->{"signoff"}))
     {
-        printf INDEX "<td class=\"checkmark\" onclick=\"toggle_display('$file.signoff')\">&#10003;</td>";
+        printf INDEX "<td class=\"checkmark\" onclick=\"toggle_display('$file.signoff')\">%s</td>", "&#10003;" x @{$patch->{"signoff"}};
     }
     else
     {
