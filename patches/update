@@ -122,14 +122,14 @@ print INDEX "<div id=\"tabs\"><ul>",
     "<li><a href=\"//forum.winehq.org/\">Forums</a></li></ul></div>\n";
 print INDEX "<div id=\"logo_blurb\">Wine source repository &ndash; Patch status</div>\n";
 print INDEX "<div id=\"main_content\"><div id=\"content\"><div class=\"main\">\n";
-print INDEX "<table class=\"main\"><tr><th class=\"id\">ID</th>",
+print INDEX "<table id=\"main_table\" class=\"main\"><thead><tr><th class=\"id\">ID</th>",
     "<th class=\"status\">Status</th>",
     "<th class=\"author\">Author</th>",
     "<th class=\"subject\">Subject</th>",
     "<th class=\"author\">Reviewer</th>",
     "<th class=\"status\">Sign</th>",
     "<th class=\"status\">Testbot</th>",
-    "<th class=\"status\">Job ID</th></tr>\n";
+    "<th class=\"status\">Job ID</th></tr></thead><tbody>\n";
 
 opendir DIR, $dir;
 foreach my $file (readdir DIR)
@@ -262,7 +262,7 @@ foreach my $file (sort { $patches{$b}->{"order"} <=> $patches{$a}->{"order"} } k
     }
     $row++;
 }
-print INDEX "</table></div>\n";
+print INDEX "</tbody></table></div>\n";
 
 $row = 0;
 print INDEX "<div class=\"legend\"><h2 id=\"legend\">Legend</h2>\n";
@@ -274,6 +274,120 @@ foreach my $status (@legend)
     $row++;
 }
 print INDEX "</table></div></div></div>\n";
+
+my $sorter = <<END;
+<script>
+  var table = document.getElementById('main_table'),
+      thead = table.children[0],
+      tbody = table.children[1],
+      ths   = thead.getElementsByTagName('th'),
+      trs   = tbody.getElementsByTagName('tr'),
+      i, do_reverse, th, sort_func;
+
+  for (i = 0; i < ths.length; i++)
+    ths[i].onclick = sort_table;
+
+  function sort_table(event)
+  {
+    th = event.target;
+    var sort_type = text_content(th), clone_trs = [], sign_trs = {}, tr, j, k;
+
+    if (sort_type == 'ID' || sort_type == 'Job ID')
+      sort_func = int_sort;
+    else if(sort_type == 'Sign')
+      sort_func = sign_sort;
+    else
+      sort_func = text_sort;
+
+    if (th.getAttribute('data-order')==1)
+      do_reverse = 0;
+    else
+      do_reverse = 1;
+    th.setAttribute('data-order', do_reverse)
+
+    for (j = 0, i = trs.length - 1; i != -1; i--)
+    {
+      tr = tbody.removeChild(trs[i])
+      if (!tr.getAttribute('id'))
+        clone_trs[j++] = tr;
+      else
+        sign_trs[text_content(trs[i - 1].children[0])] = tr; /* based on the patch ID */
+    }
+    clone_trs.sort(sorter);
+
+    for (i = 0; i < clone_trs.length; i++)
+    {
+      odd_even(clone_trs[i], i & 1);
+      tbody.appendChild(clone_trs[i]);
+      j = text_content(clone_trs[i].children[0]);
+      if (sign_trs[j])
+        tbody.appendChild(sign_trs[j]);
+    }
+  }
+
+  function odd_even(tr, i)
+  {
+    var cl = tr.getAttribute('class').replace(/odd|even/gi,'');
+    tr.setAttribute('class', cl + (i & 1 ? ' odd ' : ' even '));
+  }
+
+  function sorter(a, b)
+  {
+    var r = sort_func(a.children[th.cellIndex], b.children[th.cellIndex]);
+
+    if (do_reverse)
+    {
+      if (r == 1) r = -1;
+      else if(r == -1) r = 1;
+    }
+    return r;
+  }
+
+  function text_content(ele)
+  {
+    if (typeof ele.textContent == 'string')
+      return ele.textContent;
+    else if (typeof ele.innerText == 'string')
+      return ele.innerText;
+    return ele.innerHTML;
+  }
+
+  function int_sort(a, b, r)
+  {
+    var ret, t1 = text_content(a), t2 = text_content(b);
+    if (!r) r = 1; //when R is set reverse_order is ignored
+
+    if (t1.length == 0 && t2.length == 0) return 0;
+    if (t1.length && !t2.length) return -1;
+    if (!t1.length && t2.length) return 1;
+    return parseInt(t1) - parseInt(t2) < 0 ? -1 * r : 1 * r;
+  }
+
+  function text_sort(a, b)
+  {
+    var t1 = text_content(a), t2 = text_content(b);
+
+    //if equal sort by patch id
+    return t1 === t2 ? int_sort(a.parentElement.children[0], b.parentElement.children[0], 2) : t1 > t2 ? -1 : 1;
+  }
+
+  function sign_sort(a, b)
+  {
+    var ret, t1 = text_content(a), t2 = text_content(b);
+
+    if (t1 == 'X') return -1;
+    if (t2 == 'X') return 1;
+    ret = t1.length - t2.length;
+
+    //if equal sort by patch id
+    return ret ? ret : int_sort(a.parentElement.children[0], b.parentElement.children[0], 2);
+  }
+
+</script>
+END
+
+print INDEX $sorter;
+
 print INDEX end_html;
 close INDEX;
 
