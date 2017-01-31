@@ -36,6 +36,7 @@ open ANNOUNCE, $ARGV[1] || "ANNOUNCE" or die "cannot open ANNOUNCE";
 my $whats_new = 0;
 my $release_notes = 0;
 my $first = 1;
+my $url;
 
 push @text, "<body>\n<p>";
 
@@ -90,9 +91,17 @@ while (<ANNOUNCE>)
     }
 }
 
-(my $dir = $rel) =~ s/^([0-9]+\.[0-9]+).*/$1/;
+while (<ANNOUNCE>)
+{
+    if (/https?:(\/\/dl.winehq.org\/wine\/source\/.*\/wine-$rel\..*)$/)
+    {
+        $url = $1;
+        last;
+    }
+}
+die "Download URL not found" unless $url;
 
-push @text, "<p>The source is <a href=\"//dl.winehq.org/wine/source/$dir/wine-$rel.tar.bz2\">available now</a>.\n";
+push @text, "<p>The source is <a href=\"$url\">available now</a>.\n";
 push @text, "Binary packages are in the process of being built, and will appear soon at their respective <a href=\"{\$root}/download\">download locations</a>.\n";
 push @text, "</p></body></news>\n";
 close ANNOUNCE;
