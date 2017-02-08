@@ -25,6 +25,7 @@ BEGIN {
     $ENV{TMPDIR} = $queuedir;
 }
 
+use File::Copy;
 use File::Temp qw(tempdir);
 use CGI qw(:standard);
 # Cater for some overhead
@@ -50,7 +51,9 @@ sub move_file($)
     chmod 0777, $tmpdir;
     chmod 0666&~umask, $orig;
     my $size = -s $orig;
-    (rename $orig, "$tmpdir/report")?
+    # Note that we are stealing CGI's temporary file which typically results
+    # in a warning in the web server's logs. Still seems to work though.
+    (move $orig, "$tmpdir/report")?
       "Received $filename ($size bytes).\n":
       "Error: can't store $filename: $!\n";
 }
