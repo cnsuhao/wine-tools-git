@@ -218,8 +218,6 @@ if ($plid==1 && $major==4) {
 } elsif ($plid==3) {
     #$version = "ce$major$minor";
 }
-# Give a little slack to the new platforms.
-$maxfailedtests += 20 if ($version eq "win8" || $version eq "win10");
 
 if ($prediluvian and not $acceptprediluvianwin) { mydie "platform $version not accepted\n"; }
 
