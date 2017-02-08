@@ -63,7 +63,7 @@ sub mydie(@) {
         print STDERR "$name0:error: unable to rename '$tmpdir' to '$errdir': $!\n";
         exit 3;
     }
-    my $label = substr($tag,1) || "???";
+    my $label = $tag ? substr($tag, 1) : "<notag>";
     if (open ERR, ">$errdir/error")
     {
         print ERR "$label: ", @_;
