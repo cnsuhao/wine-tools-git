@@ -22,7 +22,6 @@ use vars qw/$queuedir $maxfilesize/;
 
 BEGIN {
     require "winetest.conf";
-    $ENV{TMPDIR} = $queuedir;
 }
 
 use File::Copy;
@@ -30,6 +29,7 @@ use File::Temp qw(tempdir);
 use CGI qw(:standard);
 # Cater for some overhead
 $CGI::POST_MAX = $maxfilesize + 1024;
+$ENV{TMPDIR} = $queuedir;
 
 my $name = param ("reportfile");
 my $error = cgi_error ();
@@ -47,7 +47,7 @@ sub move_file($)
 {
     my ($filename) = @_;
     my $orig = tmpFileName($filename);
-    my $tmpdir = tempdir ("repXXXXX", DIR=>$ENV{TMPDIR});
+    my $tmpdir = tempdir ("repXXXXX", DIR => $queuedir);
     chmod 0777, $tmpdir;
     chmod 0666&~umask, $orig;
     my $size = -s $orig;
