@@ -38,6 +38,16 @@ use open ':utf8';
 use CGI qw(:standard);
 charset("utf-8");
 
+sub BEGIN
+{
+    if ($0 !~ m=^/=)
+    {
+        # Turn $0 into an absolute path so it can safely be used in @INC
+        require Cwd;
+        $0 = Cwd::cwd() . "/$0";
+    }
+    unshift @INC, $1 if ($0 =~ m=^(/.*)/[^/]+$=);
+}
 use vars qw/$gitdir $gitweb $queuedir $datadir $maxmult $maxuserskips $maxfailedtests $maxfilesize $acceptprediluvianwin/;
 require "winetest.conf";
 
