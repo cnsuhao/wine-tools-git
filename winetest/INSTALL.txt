@@ -1,0 +1,122 @@
+1. Purpose
+----------
+
+This machinery is for receiving and analysing the reports resulting
+from running Wine's test suite (see programs/winetest in Wine's
+source). The WineTest program is a single-executable version of all the
+DLL conformance test programs suitable for unattended testing and
+report submitting. This package provides the destination for that and
+presents the results in an ordered form.
+
+
+2. Dependencies
+---------------
+
+- Apache2 with mod_perl and mod_rewrite
+
+
+3. Web server setup
+-------------------
+
+The goal of the proposed web server configuration below is to ensure
+than any CGI script is read-only and that any writable location is
+non-executable.
+
+Read-only source code account:
+- Create a new user called 'wine' and log in as that user.
+- You will need an up-to-date Wine repository somewhere. Note that this
+  can be a bare repository and that this site only need read-only
+  access to it. For instance:
+    git clone --bare git://source.winehq.org/git/wine.git
+- Clone Wine's tools repository to $HOME/tools (so this document
+  should be available as $HOME/tools/winetest/INSTALL.txt).
+    git clone git://source.winehq.org/git/tools.git
+- Edit $HOME/tools/winetest/winetest.conf to set:
+    $root = "/home/winehq/sites/winetest"
+    $gitdir = "/home/wine/wine.git";
+
+Web site account:
+- Create a new user called 'winehq' and log in as that user.
+- Assuming all Wine's websites are placed in $HOME/sites, create the
+  $HOME/sites/winetest directory:
+    mkdir -p $HOME/sites/winetest
+- Then create symbolic links to the web site's scripts:
+    cd $HOME/sites/winetest
+    ln -s /home/wine/tools/winetest/report.css
+    ln -s /home/wine/tools/winetest/resultform.html
+    ln -s /home/wine/tools/winetest/summary.css
+    ln -s /home/wine/tools/winetest/summary.js
+    ln -s /home/wine/tools/winetest/winetest.cgi
+- Create the queue directory and make it writable by the web server
+  (i.e. replace wwwrun by the user your web server runs under):
+    mkdir queue
+    chmod g+w queue
+    sudo chown wwwrun queue
+
+Apache setup:
+- Create a new virtual host, use vhost_winetest.conf as a template.
+- On Debian you may have to install libapache2-mod-perl2 and create a
+  perl.load symbolic link in /etc/apache2/mods-enabled.
+- On Debian you may also need to create a rewrite.load symbolic link in
+  /etc/apache2/mods-enabled.
+
+FIXME Access to the /builds/ and /old-data/ URLs may not work.
+
+FIXME The purpose of error.cgi is unclear.
+      It looks like accessing the /error/ URL will send the WineTest
+      report to the wine-tests-results mailing list instead of adding
+      it to the site. However that mailing list has mostly been used
+      for the buildbot and has not seen meaningful traffic since
+      2012/04.
+
+FIXME The purpose of service.cgi is unclear.
+      It looks like it's meant to allow people to 'upload' WineTest-like
+      binaries to the web site. However I believe nowadays the site is
+      supposed to build its own test binaries.
+
+FIXME The site script looks like it's meant to redirect from / to
+      /data/ where the latter contains the real content of the website.
+      However this seems redundant with the ModRewrite rules in the
+      sample Apache configuration file.
+
+
+4. Cron job
+-----------
+
+The web site is essentially composed of static web pages that are
+refreshed by perl scripts that are run at regular intervals.
+
+The script that orchestrates this is winetest.cron and it needs to be
+modified so it knows where the tools and workdir directories are
+located. Typically this would be:
+
+  tools=/home/wine/tools/winetest
+  workdir=/home/winehq/sites/winetest
+
+Then set up a cron job in the winehq account to periodically update
+the pages:
+
+  */5 * * * * /home/wine/tools/winetest/winetest.cron
+
+Still in the winehq account, you should run winetest.cron at least once
+before accessing the web site so the initial set of web pages has been
+created.
+
+
+3. Building WineTest.exe
+------------------------
+
+make-winetest is the script that builds the official WineTest.exe
+binaries.
+
+FIXME Document how to set it up. Run it in yet another account since it
+      runs outside code? Link /home/winehq/site/winetest/builds to that
+      other account's build directory? Note that winetest.cron will
+      still need write access to it to remove old builds.
+
+
+5. Testing
+----------
+
+You can manually upload WineTest reports by accessing the following URL:
+http://test.example.com/submit
