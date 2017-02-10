@@ -28,8 +28,9 @@ if [ ! -f $lock ]; then
     touch $lock
     cd $workdir
     while $tools/dissect; [ $? -eq 0 -o $? -eq 1 ]; do true; done
-    while $tools/gather; do true; done
-    $tools/build-index
+    updated=0
+    while $tools/gather; do updated=1; done
+    [ $updated -eq 1 ] && $tools/build-index
 
     # archive old results
     (cd old-data && dir=`find . -maxdepth 1 -mtime +$expire -type d -print -quit` &&
