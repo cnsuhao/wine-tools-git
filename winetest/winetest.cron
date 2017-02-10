@@ -27,17 +27,35 @@ expire=120
 if [ ! -f $lock ]; then
     touch $lock
     cd $workdir
+
     while $tools/dissect; [ $? -eq 0 -o $? -eq 1 ]; do true; done
     updated=0
     while $tools/gather; do updated=1; done
-    [ $updated -eq 1 ] && $tools/build-index
+    if [ $updated -eq 1 -o ! -d data/tests -o ! -d old-data ]
+    then
+        mkdir -p data/tests old-data
+        $tools/build-index
+    fi
 
     # archive old results
-    (cd old-data && dir=`find . -maxdepth 1 -mtime +$expire -type d -print -quit` &&
-        test -n "$dir" && tar cfj $dir.tar.bz2 $dir && touch -r $dir $dir.tar.bz2 && rm -rf $dir)
+    (
+        set -e
+        cd old-data
+        dir=`find . -maxdepth 1 -mtime +$expire -type d -print -quit`
+        test -n "$dir"
+        tar cfj $dir.tar.bz2 $dir
+        touch -r $dir $dir.tar.bz2
+        rm -rf $dir
+    )
 
     # remove old test builds
-    (cd builds && find . -mtime +$expire -name winetest\*.exe -print0 | xargs -0 rm -f)
+    (
+        set -e
+        mkdir -p builds
+        cd builds
+        find . -mtime +$expire -name winetest\*.exe -print0 | \
+            xargs -0 rm -f
+    )
 
     # remove old queue files
     find queue -maxdepth 1 -mtime +30 -name err\* -print0 | xargs -0 rm -rf
