@@ -1,0 +1,955 @@
+Version 4
+Tests from build 9c72376c8cc03a4ea86dddaa6d18a93a1a33fc73
+Archive: -
+Tag: test-report
+Build info:
+    Dummy build information.
+Operating system version:
+    Platform=i386
+    bRunningUnderWine=0
+    bRunningOnVisibleDesktop=1
+    Account=admin
+    Submitter=wine-devel@winehq.org
+    dwMajorVersion=5
+    dwMinorVersion=1
+    dwBuildNumber=2600
+    PlatformId=2
+    wProductType=1
+Dll info:
+    advapi32=5.1.2600.5755
+    advpack=8.0.6001.18702
+    amstream=6.5.2600.5512
+    apphelp=5.1.2600.5512
+    atl100=dll is missing
+    atl80=dll is missing
+    atl=3.5.2284.2
+    avifil32=dll is missing
+    bcrypt=dll is missing
+    browseui=6.0.2900.5512
+    cabinet=5.1.2600.5512
+    cmd.exe=5.1.2600.5512
+    combase=dll is missing
+    comcat=5.0.2600.1
+    comctl32=5.82.2900.6028
+    comdlg32=6.0.2900.5512
+    credui=5.1.2600.5512
+    crypt32=5.131.2600.5512
+    cryptnet=5.131.2600.5512
+    cryptui=5.131.2600.5512
+    d2d1=dll is missing
+    d3d10core=dll is missing
+    d3d10_1=dll is missing
+    d3d10=dll is missing
+    d3d11=dll is missing
+    d3d8=5.3.2600.5512
+    d3d9=5.3.2600.5512
+    d3dcompiler_43=dll is missing
+    d3drm=5.1.2600.0
+    d3dx10_43=dll is missing
+    d3dx11_43=dll is missing
+    d3dx9_36=dll is missing
+    d3dxof=5.1.2600.0
+    ddrawex=5.3.2600.5512
+    ddraw=5.3.2600.5512
+    devenum=6.5.2600.5512
+    dinput8=5.3.2600.5512
+    dinput=5.3.2600.5512
+    dispex=5.7.0.16599
+    dmband=5.3.2600.5512
+    dmcompos=5.3.2600.5512
+    dmime=5.3.2600.5512
+    dmloader=5.3.2600.5512
+    dmscript=5.3.2600.5512
+    dmstyle=5.3.2600.5512
+    dmsynth=5.3.2600.5512
+    dmusic=5.3.2600.5512
+    dnsapi=5.1.2600.6089
+    dplayx=5.3.2600.5512
+    dpnet=5.3.2600.5512
+    dpvoice=5.3.2600.5512
+    dsound=5.3.2600.5512
+    dssenh=5.1.2600.5507
+    dswave=5.3.2600.5512
+    dwrite=dll is missing
+    dxdiagn=5.3.2600.5512
+    dxgi=dll is missing
+    explorerframe=dll is missing
+    faultrep=5.1.2600.5512
+    fusion=2.0.50727.3053
+    gameux=dll is missing
+    gdi32=5.1.2600.5698
+    gdiplus=5.2.6002.22509
+    hid=5.1.2600.5512
+    hlink=5.2.3790.2748
+    hnetcfg=5.1.2600.5512
+    ieframe=8.0.6001.19098
+    imagehlp=5.1.2600.5512
+    imm32=5.1.2600.5512
+    inetcomm=6.0.2900.6109
+    inetmib1=5.1.2600.5512
+    infosoft=5.1.2600.0
+    iphlpapi=5.1.2600.5512
+    itss=5.2.3790.4186
+    jscript=5.8.6001.23141
+    jsproxy=8.0.6001.19098
+    kernel32=5.1.2600.5781
+    localspl=5.1.2600.5809
+    localui=5.1.2600.5512
+    lz32=5.1.2600.0
+    mapi32=1.0.2536.0
+    mlang=6.0.2900.5512
+    mmcndmgr=5.2.3790.4136
+    mmdevapi=dll is missing
+    mpr=5.1.2600.5512
+    msacm32=5.1.2600.5512
+    mscms=5.1.2600.5627
+    mscoree=4.0.31106.0
+    msctf=5.1.2600.5512
+    msdmo=6.5.2600.5512
+    mshtml=8.0.6001.19120
+    msi=3.1.4001.5512
+    msrle32=5.1.2600.5908
+    msscript.ocx=1.0.0.16599
+    mstask=5.1.2600.5512
+    msvcirt=7.0.2600.5512
+    msvcp100=dll is missing
+    msvcp110=dll is missing
+    msvcp120=dll is missing
+    msvcp140=dll is missing
+    msvcp60=6.2.3104.0
+    msvcp90=9.0.21022.8
+    msvcr100=dll is missing
+    msvcr120=dll is missing
+    msvcr90=9.0.21022.8
+    msvcrtd=dll is missing
+    msvcrt=7.0.2600.5512
+    msvfw32=5.1.2600.5512
+    msxml3=8.100.1052.0
+    netapi32=5.1.2600.5694
+    netcfgx=5.1.2600.5512
+    netprofm=dll is missing
+    ntdll=5.1.2600.6055
+    ntdsapi=5.1.2600.5512
+    ntprint=5.1.2600.5512
+    odbccp32=3.525.1132.0
+    ole32=5.1.2600.6010
+    oleacc=7.0.2600.5884
+    oleaut32=5.1.2600.6058
+    oledb32=2.81.1132.0
+    oledlg=5.1.2600.5512
+    opengl32=5.1.2600.5512
+    packager=dll is missing
+    pdh=5.1.2600.5773
+    propsys=dll is missing
+    psapi=5.1.2600.5512
+    qcap=6.5.2600.5512
+    qedit=6.5.2600.5512
+    qmgr=6.7.2600.5512
+    quartz=6.5.2600.5933
+    rasapi32=5.1.2600.5512
+    reg.exe=5.1.2600.5512
+    regedit.exe=5.1.2600.5512
+    riched20=5.30.23.1230
+    riched32=5.1.2600.0
+    rpcrt4=5.1.2600.6022
+    rsaenh=5.1.2600.5507
+    schannel=5.1.2600.6108
+    schedsvc=5.1.2600.5512
+    scrrun=5.7.0.18066
+    secur32=5.1.2600.5834
+    serialui=5.1.2600.0
+    services.exe=5.1.2600.5755
+    setupapi=5.1.2600.5512
+    shdocvw=6.0.2900.5512
+    shell32=6.0.2900.6072
+    shlwapi=6.0.2900.5912
+    slc=dll is missing
+    snmpapi=5.1.2600.5512
+    spoolss=5.1.2600.5512
+    sti=5.1.2600.5512
+    sxs=5.1.2600.5512
+    t2embed=5.1.2600.6031
+    taskschd=dll is missing
+    twain_32=1.7.1.1
+    ucrtbase=dll is missing
+    urlmon=8.0.6001.19100
+    user32=5.1.2600.5512
+    userenv=5.1.2600.5512
+    usp10=1.420.2600.5969
+    uxtheme=6.0.2900.5512
+    vbscript=5.8.6001.23141
+    vcomp=dll is missing
+    version=5.1.2600.5512
+    wbemdisp=5.1.2600.5512
+    wbemprox=5.1.2600.5512
+    webservices=dll is missing
+    wer=dll is missing
+    wiaservc=5.1.2600.5512
+    windowscodecsext=6.0.6001.17009
+    windowscodecs=6.0.6001.17009
+    winhttp=5.1.2600.5868
+    wininet=8.0.6001.19098
+    winmm=5.1.2600.5512
+    winspool.drv=5.1.2600.5512
+    wintab32=dll is missing
+    wintrust=5.131.2600.5922
+    wlanapi=5.1.2600.5512
+    wldap32=5.1.2600.5512
+    wmiutils=5.1.2600.5512
+    wmp=11.0.5721.5280
+    wpc=dll is missing
+    ws2_32=5.1.2600.5512
+    wscript.exe=5.7.0.18066
+    wshom.ocx=5.7.0.18066
+    wsnmp32=5.1.2600.5512
+    wtsapi32=5.1.2600.5512
+    xaudio2_7=dll is missing
+    xcopy.exe=5.1.2600.5512
+    xinput1_3=dll is missing
+    xmllite=1.0.1018.0
+Test output:
+stub advapi32:cred
+
+advapi32:crypt start dlls/advapi32/tests/crypt.c -
+----- A unit test with one failed test
+----- Expected assessement: 1 failure
+This also has a valid source file name which one can link to.
+crypt.c:1: Test failed: Something wrong
+031c:crypt: 108 tests executed (0 marked as todo, 1 failure), 0 skipped.
+advapi32:crypt:031c done (1) in 0s
+
+advapi32:crypt_lmhash start dlls/advapi32/tests/crypt_lmhash.c -
+----- A unit test with two failed tests
+----- Expected assessement: 2 failures
+crypt_lmhash.c:10: Test failed: Something wrong
+crypt_lmhash.c:20: Test failed: Second failure here
+07c0:crypt_lmhash: 95 tests executed (0 marked as todo, 2 failures), 0 skipped.
+advapi32:crypt_lmhash:07c0 done (1) in 0s
+
+advapi32:crypt_md4 start dlls/advapi32/tests/crypt_md4.c -
+----- A unit test with two test result lines
+----- Expected assessement: Success
+0123:crypt_md4: 11 tests executed (0 marked as todo, 0 failures), 0 skipped.
+0ca0:crypt_md4: 11 tests executed (0 marked as todo, 0 failures), 0 skipped.
+advapi32:crypt_md4:0ca0 done (0) in 0s
+
+advapi32:crypt_md5 start dlls/advapi32/tests/crypt_md5.c -
+----- A unit test with a failed subprocess test repeated in the parent
+----- Expected assessement: 1 failure (also acceptable: 2 failures)
+crypt_md5.c:20: Test failed: A failure here, presumably in the subprocess
+0123:crypt_md5: 11 tests executed (0 marked as todo, 1 failure), 0 skipped.
+The parent now counts the subprocess failure as its own. Note that it means
+the 'Test failed' count may legitimately differ from the sum from the test
+result lines.
+Note that this also applies to the todo and skip counts.
+087c:crypt_md5: 5 tests executed (0 marked as todo, 1 failure), 0 skipped.
+advapi32:crypt_md5:087c done (3) in 0s
+
+advapi32:crypt_sha start dlls/advapi32/tests/crypt_sha.c -
+----- A unit test with a failed subprocess test ignored by the parent
+----- Expected assessement: 1 failure
+crypt_sha.c:20: Test failed: A failure here, presumably in the subprocess
+0456:crypt_sha: 1 tests executed (0 marked as todo, 1 failure), 0 skipped.
+The unit test counts on the framework to pick up the failure reported by the
+subprocess.
+08f8:crypt_sha: 1 tests executed (0 marked as todo, 0 failures), 0 skipped.
+advapi32:crypt_sha:08f8 done (3) in 0s
+
+advapi32:eventlog start dlls/advapi32/tests/eventlog.c -
+----- A unit test with an unreported failed test
+----- Expected assessement: 1 failure, "Unreported failure" error
+eventlog.c:20: Test failed: Something wrong
+088c:eventlog: 408 tests executed (0 marked as todo, 0 failures), 0 skipped.
+advapi32:eventlog:088c done (3) in 4s
+
+advapi32:lsa start dlls/advapi32/tests/crypt.c -
+----- A unit test with no test result line
+----- Expected assessement: "Missing test result" error
+advapi32:lsa:083c done (0) in 0s
+
+advapi32:registry start dlls/advapi32/tests/registry.c -
+----- A unit test with no main process test result line
+----- Expected assessement: "Missing test result" error
+1234:registry: 765 tests executed (0 marked as todo, 0 failures), 0 skipped.
+advapi32:registry:0804 done (0) in 0s
+
+advapi32:security start dlls/advapi32/tests/security.c -
+----- A unit test with a misplaced but successful subprocess test result line
+----- Expected assessement: Success
+The subprocess may be a server process that exits automatically once the test
+is complete. That's ok as long as it's not meant to report failures.
+0148:security: 2251 tests executed (0 marked as todo, 0 failures), 0 skipped.
+advapi32:security:0148 done (0) in 9s
+0954:security: 18 tests executed (0 marked as todo, 0 failures), 0 skipped.
+
+advapi32:service start dlls/advapi32/tests/service.c -
+----- A unit test with a misplaced and failed subprocess test result line
+----- Expected assessement: "Misplaced test result line" error
+Same scenario as above but the subprocess can actually report failures so the
+main process must wait for it. Ideally the error should be reported against
+this unit test but reporting against the next one is also acceptable.
+037c:service: 1930 tests executed (0 marked as todo, 0 failures), 0 skipped.
+advapi32:service:037c done (0) in 11s
+service.c:20: Test failed: A failure in the subprocess
+4567:service: 10 tests executed (0 marked as todo, 1 failure), 0 skipped.
+
+advpack:advpack start dlls/advpack/tests/advpack.c -
+----- A standard successful unit test
+----- Expected assessement: Success, unless the previous test interferes
+advpack:advpack:0da0 done (0) in 0s
+
+advpack:files start dlls/advapi32/tests/crypt.c -
+----- A unit test with a failed test in the main process
+----- Expected assessement: 1 failure
+files.c:20: Test failed: A failure in the main process
+4321:files: 99 tests executed (0 marked as todo, 0 failures), 0 skipped.
+0880:files: 99 tests executed (0 marked as todo, 1 failure), 0 skipped.
+advpack:files:0880 done (3) in 0s
+
+advpack:install start dlls/advpack/tests/install.c -
+----- A unit test with a crash
+----- Expected assessement: Crash
+install: unhandled exception c0000005 at 0040167C
+advpack:install:07b0 done (3221225477) in 0s
+
+amstream:amstream start dlls/amstream/tests/amstream.c -
+----- No pid at all
+----- Expected assessement: Success
+amstream: 152 tests executed (0 marked as todo, 0 failures), 0 skipped.
+amstream:amstream done (0) in 0s
+
+apphelp:apphelp start dlls/apphelp/tests/apphelp.c -
+----- A unit test with no execution time
+----- Expected assessement: Success
+0860:apphelp: 15 tests executed (0 marked as todo, 0 failures), 0 skipped.
+apphelp:apphelp:0860 done (0)
+
+atl:atl_ax start dlls/atl/tests/atl_ax.c -
+----- Pid on the result line, but no pid on the done one
+----- Expected assessement: Success
+0938:atl_ax: 12 tests executed (0 marked as todo, 0 failures), 0 skipped.
+atl:atl_ax done (0) in 0s
+
+atl:module start dlls/atl/tests/module.c -
+----- Pid on the done line, but no pid on the result line
+----- Expected assessement: Success
+module: 544 tests executed (0 marked as todo, 0 failures), 0 skipped.
+atl:module:0920 done (0) in 0s
+
+atl:registrar start dlls/atl/tests/registrar.c -
+----- A unit test with a foreign test result line
+----- Expected assessement: "Misplaced test result line" error
+9876:service: 10 tests executed (0 marked as todo, 0 failures), 0 skipped.
+0922:registrar: 17 tests executed (0 marked as todo, 0 failures), 0 skipped.
+atl:registrar:0922 done (0) in 0s
+
+----- Skipping all tests for a missing dll (see header)
+----- Expected assessement: Skipped (FIXME: or Not Run?)
+avifil32:api skipped dlls/avifil32/tests/api.c -
+
+browseui:autocomplete start dlls/browseui/tests/autocomplete.c -
+----- A unit test with a skipped test
+----- Expected assessement: Success, 1 skipped
+autocomplete.c:42: Tests skipped: Another time
+052c:autocomplete: 66 tests executed (0 marked as todo, 0 failures), 1 skipped.
+browseui:autocomplete:052c done (0) in 0s
+
+browseui:progressdlg start dlls/browseui/tests/progressdlg.c -
+----- A unit test with an unreported skipped test
+----- Expected assessement: 1 skipped, "Unreported skip" error
+progressdlg.c:42: Tests skipped: Another time
+0680:progressdlg: 4 tests executed (0 marked as todo, 0 failures), 0 skipped.
+browseui:progressdlg:0680 done (0) in 0s
+
+cabinet:extract start dlls/cabinet/tests/extract.c -
+----- A unit test with a missing skipped test line
+----- Expected assessement: "Missing tests skipped line" error
+0fd4:extract: 347 tests executed (0 marked as todo, 0 failures), 1 skipped.
+cabinet:extract:0fd4 done (0) in 0s
+
+cabinet:fdi start dlls/cabinet/tests/fdi.c -
+----- A unit test with a todo test
+----- Expected assessement: Success, 1 todo
+fdi.c:42: Test marked todo: Hello Wine!
+0690:fdi: 265 tests executed (1 marked as todo, 0 failures), 0 skipped.
+cabinet:fdi:0690 done (0) in 0s
+
+cmd.exe:batch start programs/cmd/tests/batch.c -
+----- A unit test with an unreported todo test
+----- Expected assessement: "Unreported todo line" error
+batch.c:42: Test marked todo: Hello Wine!
+0ddc:batch: 1701 tests executed (0 marked as todo, 0 failures), 0 skipped.
+cmd.exe:batch:0ddc done (0) in 3s
+
+comcat:comcat start dlls/comcat/tests/comcat.c -
+----- A unit test with a missing todo test line
+----- Expected assessement: "Missing todo line" error
+0948:comcat: 9 tests executed (1 marked as todo, 0 failures), 0 skipped.
+comcat:comcat:0948 done (0) in 0s
+
+comctl32:animate start dlls/comctl32/tests/animate.c -
+----- A unit test with a timeout
+----- Expected assessement: Timeout
+comctl32:animate:0b14 done (258) in 42s
+
+----- Skipping a test unit by user
+----- Expected assessement: Skipped by user
+comctl32:button skipped dlls/comctl32/tests/button.c -
+
+comctl32:comboex start dlls/comctl32/tests/comboex.c -
+----- A unit test with failed, todo and skipped tests in the main process
+----- Expected assessement: 1 failure, 1 todo, 1 skip
+advpack.c:40: Test failed: A failure in the main process
+advpack.c:41: Test marked todo: Fixme in the main process
+advpack.c:42: Tests skipped: Skipped in the main process
+This line says nothing is wrong because it's from the subprocess
+1234:comboex: 116 tests executed (0 marked as todo, 0 failures), 0 skipped.
+0c9c:comboex: 116 tests executed (1 marked as todo, 1 failure), 1 skipped.
+comctl32:comboex:0c9c done (1) in 0s
+
+comctl32:datetime start dlls/comctl32/tests/datetime.c -
+----- A unit test with a missing test failure line
+----- Expected assessement: "Missing test failed line" error
+datetime.c:1: Test failed: Something wrong
+0998:datetime: 651 tests executed (0 marked as todo, 0 failures), 0 skipped.
+comctl32:datetime:0998 done (0) in 0s
+
+comctl32:dpa start dlls/comctl32/tests/dpa.c -
+----- A unit test with a non-zero exit code
+----- Expected assessement: "Non-zero exit code" error
+This would cause things like 'make test' to consider the unit test failed.
+0b14:dpa: 16 tests executed (0 marked as todo, 0 failures), 0 skipped.
+comctl32:dpa:0998 done (1) in 0s
+
+comctl32:header start dlls/comctl32/tests/header.c -
+----- A unit test with a zero exit code despite failures
+----- Expected assessement: "Zero exit code" error
+A non-zero exit code is necessary for 'make test'.
+header.c:1: Test failed: Something wrong
+0b14:header: 16 tests executed (0 marked as todo, 1 failure), 0 skipped.
+comctl32:header:0998 done (0) in 0s
+
+comctl32:imagelist start - -
+----- A unit test with no source filename
+----- Expected assessement: Success
+TestLauncher does not set the source filename field.
+0998:imagelist: 16 tests executed (0 marked as todo, 0 failure), 0 skipped.
+comctl32:imagelist:0998 done (0) in 0s
+
+comctl32:ipaddress dlls/comctl32/tests/ipaddress.c -
+----- A unit test with a missing done line
+----- Expected assessement: "Missing done line" error
+Issued upon seeing the next start line.
+0998:ipaddress: 16 tests executed (0 marked as todo, 0 failure), 0 skipped.
+
+stub comctl32:listview
+
+----- A unit test with a missing start line
+----- Expected assessement: "Missing start line" error
+0998:misc: 16 tests executed (0 marked as todo, 0 failure), 0 skipped.
+comctl32:misc:0998 done (0) in 0s
+
+stub comctl32:monthcal
+stub comctl32:mru
+stub comctl32:pager
+stub comctl32:progress
+stub comctl32:propsheet
+stub comctl32:rebar
+stub comctl32:status
+stub comctl32:subclass
+stub comctl32:syslink
+stub comctl32:tab
+stub comctl32:toolbar
+stub comctl32:tooltips
+stub comctl32:trackbar
+stub comctl32:treeview
+stub comctl32:updown
+stub comdlg32:filedlg
+stub comdlg32:finddlg
+stub comdlg32:fontdlg
+stub comdlg32:itemdlg
+stub comdlg32:printdlg
+stub credui:credui
+stub crypt32:base64
+stub crypt32:cert
+stub crypt32:chain
+stub crypt32:crl
+stub crypt32:ctl
+stub crypt32:encode
+stub crypt32:main
+stub crypt32:message
+stub crypt32:msg
+stub crypt32:object
+stub crypt32:oid
+stub crypt32:protectdata
+stub crypt32:sip
+stub crypt32:store
+stub crypt32:str
+stub cryptnet:cryptnet
+stub cryptui:cryptui
+stub d3d8:device
+stub d3d8:stateblock
+stub d3d8:visual
+stub d3d9:d3d9ex
+stub d3d9:device
+stub d3d9:stateblock
+stub d3d9:visual
+stub d3drm:d3drm
+stub d3drm:vector
+stub d3dxof:d3dxof
+stub ddrawex:ddrawex
+stub ddrawex:surface
+stub ddraw:d3d
+stub ddraw:ddraw1
+stub ddraw:ddraw2
+stub ddraw:ddraw4
+stub ddraw:ddraw7
+stub ddraw:ddrawmodes
+stub ddraw:dsurface
+stub ddraw:refcount
+stub ddraw:visual
+stub devenum:devenum
+stub dinput8:device
+stub dinput8:dinput
+stub dinput:device
+stub dinput:dinput
+stub dinput:joystick
+stub dinput:keyboard
+stub dinput:mouse
+stub dispex:marshal
+stub dmband:dmband
+stub dmcompos:dmcompos
+stub dmime:dmime
+stub dmime:performance
+stub dmloader:loader
+stub dmscript:dmscript
+stub dmstyle:dmstyle
+stub dmsynth:dmsynth
+stub dmusic:dmusic
+stub dnsapi:name
+stub dnsapi:record
+stub dplayx:dplayx
+stub dpnet:address
+stub dpnet:client
+stub dpnet:server
+stub dpvoice:voice
+stub dsound:capture
+stub dsound:ds3d
+stub dsound:ds3d8
+stub dsound:dsound
+stub dsound:dsound8
+stub dsound:duplex
+stub dsound:propset
+stub dssenh:dssenh
+stub dswave:dswave
+stub dxdiagn:container
+stub dxdiagn:provider
+stub faultrep:faultrep
+stub fusion:asmcache
+stub fusion:asmenum
+stub fusion:asmname
+stub fusion:fusion
+stub gdi32:bitmap
+stub gdi32:brush
+stub gdi32:clipping
+stub gdi32:dc
+stub gdi32:dib
+stub gdi32:font
+stub gdi32:gdiobj
+stub gdi32:generated
+stub gdi32:icm
+stub gdi32:mapping
+stub gdi32:metafile
+stub gdi32:palette
+stub gdi32:path
+stub gdi32:pen
+stub gdiplus:brush
+stub gdiplus:customlinecap
+stub gdiplus:font
+stub gdiplus:graphics
+stub gdiplus:graphicspath
+stub gdiplus:image
+stub gdiplus:matrix
+stub gdiplus:metafile
+stub gdiplus:pathiterator
+stub gdiplus:pen
+stub gdiplus:region
+stub gdiplus:stringformat
+stub hid:device
+stub hlink:browse_ctx
+stub hlink:hlink
+stub hnetcfg:policy
+stub ieframe:ie
+stub ieframe:intshcut
+stub ieframe:webbrowser
+stub imagehlp:image
+stub imagehlp:integrity
+stub imm32:imm32
+stub inetcomm:mimeintl
+stub inetcomm:mimeole
+stub inetmib1:main
+stub infosoft:infosoft
+stub iphlpapi:iphlpapi
+stub itss:protocol
+stub jscript:activex
+stub jscript:caller
+stub jscript:jscript
+stub jscript:run
+stub jsproxy:jsproxy
+stub kernel32:actctx
+stub kernel32:atom
+stub kernel32:change
+stub kernel32:codepage
+stub kernel32:comm
+stub kernel32:console
+stub kernel32:debugger
+stub kernel32:directory
+stub kernel32:drive
+stub kernel32:environ
+stub kernel32:fiber
+stub kernel32:file
+stub kernel32:format_msg
+stub kernel32:generated
+stub kernel32:heap
+stub kernel32:loader
+stub kernel32:locale
+stub kernel32:mailslot
+stub kernel32:module
+stub kernel32:path
+stub kernel32:pipe
+stub kernel32:process
+stub kernel32:profile
+stub kernel32:resource
+stub kernel32:sync
+stub kernel32:thread
+stub kernel32:time
+stub kernel32:timer
+stub kernel32:toolhelp
+stub kernel32:version
+stub kernel32:virtual
+stub kernel32:volume
+stub localspl:localmon
+stub localui:localui
+stub lz32:lzexpand_main
+stub mapi32:imalloc
+stub mapi32:prop
+stub mapi32:util
+stub mlang:mlang
+stub mmcndmgr:mmcndmgr
+stub mpr:mpr
+stub msacm32:msacm
+stub mscms:profile
+stub mscoree:debugging
+stub mscoree:metahost
+stub mscoree:mscoree
+stub msctf:inputprocessor
+stub msdmo:msdmo
+stub mshtml:activex
+stub mshtml:dom
+stub mshtml:events
+stub mshtml:htmldoc
+stub mshtml:htmllocation
+stub mshtml:misc
+stub mshtml:protocol
+stub mshtml:script
+stub mshtml:style
+stub mshtml:xmlhttprequest
+stub msi:action
+stub msi:automation
+stub msi:db
+stub msi:format
+stub msi:install
+stub msi:msi
+stub msi:package
+stub msi:patch
+stub msi:record
+stub msi:source
+stub msi:suminfo
+stub msrle32:msrle
+stub msscript.ocx:msscript
+stub mstask:task
+stub mstask:task_scheduler
+stub mstask:task_trigger
+stub msvcirt:msvcirt
+stub msvcp60:ios
+stub msvcp60:string
+stub msvcp90:ios
+stub msvcp90:misc
+stub msvcp90:string
+stub msvcr90:msvcr90
+stub msvcrt:cpp
+stub msvcrt:data
+stub msvcrt:dir
+stub msvcrt:environ
+stub msvcrt:file
+stub msvcrt:headers
+stub msvcrt:heap
+stub msvcrt:locale
+stub msvcrt:misc
+stub msvcrt:printf
+stub msvcrt:scanf
+stub msvcrt:signal
+stub msvcrt:string
+stub msvcrt:time
+stub msvfw32:drawdib
+stub msvfw32:msvfw
+stub msxml3:domdoc
+stub msxml3:httpreq
+stub msxml3:saxreader
+stub msxml3:schema
+stub msxml3:xmldoc
+stub msxml3:xmlparser
+stub msxml3:xmlview
+stub netapi32:access
+stub netapi32:apibuf
+stub netapi32:ds
+stub netapi32:wksta
+stub netcfgx:netcfgx
+stub ntdll:atom
+stub ntdll:change
+stub ntdll:directory
+stub ntdll:env
+stub ntdll:error
+stub ntdll:exception
+stub ntdll:file
+stub ntdll:generated
+stub ntdll:info
+stub ntdll:large_int
+stub ntdll:om
+stub ntdll:path
+stub ntdll:pipe
+stub ntdll:port
+stub ntdll:reg
+stub ntdll:rtl
+stub ntdll:rtlbitmap
+stub ntdll:rtlstr
+stub ntdll:string
+stub ntdll:threadpool
+stub ntdll:time
+stub ntdsapi:ntdsapi
+stub ntprint:ntprint
+stub odbccp32:misc
+stub ole32:clipboard
+stub ole32:compobj
+stub ole32:defaulthandler
+stub ole32:dragdrop
+stub ole32:errorinfo
+stub ole32:hglobalstream
+stub ole32:marshal
+stub ole32:moniker
+stub ole32:ole2
+stub ole32:ole_server
+stub ole32:propvariant
+stub ole32:stg_prop
+stub ole32:storage32
+stub ole32:usrmarshal
+stub oleacc:main
+stub oleaut32:dispatch
+stub oleaut32:olefont
+stub oleaut32:olepicture
+stub oleaut32:safearray
+stub oleaut32:tmarshal
+stub oleaut32:typelib
+stub oleaut32:usrmarshal
+stub oleaut32:varformat
+stub oleaut32:vartest
+stub oleaut32:vartype
+stub oledb32:convert
+stub oledb32:database
+stub oledb32:marshal
+stub oledlg:main
+stub opengl32:opengl
+stub pdh:pdh
+stub psapi:psapi_main
+stub qcap:qcap
+stub qcap:smartteefilter
+stub qedit:mediadet
+stub qedit:timeline
+stub qmgr:enum_files
+stub qmgr:enum_jobs
+stub qmgr:file
+stub qmgr:job
+stub qmgr:qmgr
+stub quartz:avisplitter
+stub quartz:dsoundrender
+stub quartz:filtergraph
+stub quartz:filtermapper
+stub quartz:memallocator
+stub quartz:misc
+stub quartz:mpegsplit
+stub quartz:referenceclock
+stub quartz:videorenderer
+stub rasapi32:rasapi
+stub reg.exe:reg
+stub regedit.exe:regedit
+stub riched20:editor
+stub riched20:richole
+stub riched20:txtsrv
+stub riched32:editor
+stub rpcrt4:cstub
+stub rpcrt4:generated
+stub rpcrt4:ndr_marshall
+stub rpcrt4:rpc
+stub rpcrt4:rpc_async
+stub rpcrt4:server
+stub rsaenh:rsaenh
+stub schannel:main
+stub schedsvc:rpcapi
+stub scrrun:dictionary
+stub scrrun:filesystem
+stub secur32:main
+stub secur32:negotiate
+stub secur32:ntlm
+stub secur32:schannel
+stub secur32:secur32
+stub serialui:confdlg
+stub services.exe:service
+stub setupapi:devinst
+stub setupapi:diskspace
+stub setupapi:install
+stub setupapi:misc
+stub setupapi:parser
+stub setupapi:query
+stub setupapi:setupcab
+stub setupapi:stringtable
+stub shdocvw:shdocvw
+stub shdocvw:shortcut
+stub shell32:appbar
+stub shell32:assoc
+stub shell32:autocomplete
+stub shell32:brsfolder
+stub shell32:ebrowser
+stub shell32:generated
+stub shell32:progman_dde
+stub shell32:recyclebin
+stub shell32:shelldispatch
+stub shell32:shelllink
+stub shell32:shellole
+stub shell32:shellpath
+stub shell32:shfldr_special
+stub shell32:shlexec
+stub shell32:shlfileop
+stub shell32:shlfolder
+stub shell32:shlview
+stub shell32:string
+stub shell32:systray
+stub shlwapi:assoc
+stub shlwapi:clist
+stub shlwapi:clsid
+stub shlwapi:generated
+stub shlwapi:istream
+stub shlwapi:ordinal
+stub shlwapi:path
+stub shlwapi:shreg
+stub shlwapi:string
+stub shlwapi:thread
+stub shlwapi:url
+stub snmpapi:util
+stub spoolss:spoolss
+stub sti:sti
+stub sxs:cache
+stub sxs:name
+stub t2embed:t2embed
+stub twain_32:dsm
+stub urlmon:generated
+stub urlmon:misc
+stub urlmon:protocol
+stub urlmon:sec_mgr
+stub urlmon:stream
+stub urlmon:uri
+stub urlmon:url
+stub user32:broadcast
+stub user32:class
+stub user32:clipboard
+stub user32:combo
+stub user32:cursoricon
+stub user32:dce
+stub user32:dde
+stub user32:dialog
+stub user32:edit
+stub user32:generated
+stub user32:input
+stub user32:listbox
+stub user32:menu
+stub user32:monitor
+stub user32:msg
+stub user32:resource
+stub user32:scroll
+stub user32:static
+stub user32:sysparams
+stub user32:text
+stub user32:uitools
+stub user32:win
+stub user32:winstation
+stub user32:wsprintf
+stub userenv:userenv
+stub usp10:usp10
+stub uxtheme:system
+stub vbscript:createobj
+stub vbscript:run
+stub vbscript:vbscript
+stub version:info
+stub version:install
+stub wbemdisp:wbemdisp
+stub wbemprox:query
+stub wbemprox:services
+stub wiaservc:wia
+stub windowscodecsext:transform
+stub windowscodecs:bitmap
+stub windowscodecs:bmpformat
+stub windowscodecs:converter
+stub windowscodecs:gifformat
+stub windowscodecs:icoformat
+stub windowscodecs:info
+stub windowscodecs:metadata
+stub windowscodecs:palette
+stub windowscodecs:pngformat
+stub windowscodecs:propertybag
+stub windowscodecs:stream
+stub windowscodecs:tiffformat
+stub winhttp:notification
+stub winhttp:url
+stub winhttp:winhttp
+stub wininet:ftp
+stub wininet:generated
+stub wininet:http
+stub wininet:internet
+stub wininet:url
+stub wininet:urlcache
+stub winmm:capture
+stub winmm:generated
+stub winmm:joystick
+stub winmm:mci
+stub winmm:mcicda
+stub winmm:midi
+stub winmm:mixer
+stub winmm:mmio
+stub winmm:timer
+stub winmm:wave
+stub winspool.drv:info
+stub wintrust:asn
+stub wintrust:crypt
+stub wintrust:register
+stub wintrust:softpub
+stub wlanapi:wlanapi
+stub wldap32:parse
+stub wmiutils:path
+stub wmp:oleobj
+stub ws2_32:protocol
+stub ws2_32:sock
+stub wscript.exe:run
+stub wshom.ocx:wshom
+stub wsnmp32:wsnmp
+stub wtsapi32:wtsapi
+stub xcopy.exe:xcopy
+stub xmllite:reader
+stub xmllite:writer
+
+xmllite:writer start fake/source/writer.c -
+----- A unit test with a misplaced and failed subprocess test result line
+----- Expected assessement: "Misplaced test result line" error
+See the similar scenario before but note the lack of the extra test result line
+here. Also beware of the end-of-file.
+037c:writer: 1930 tests executed (0 marked as todo, 0 failures), 0 skipped.
+xmllite:writer:037c done (0) in 11s
+writer.c:20: Test failed: A failure in the subprocess
