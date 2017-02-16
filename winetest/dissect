@@ -306,7 +306,7 @@ while (<IN>) {
             $dll = undef;
             mydie "too many tests skipped by user request\n" if ++$user_skips > $maxuserskips;
         }
-    } elsif (/^(.*$unit.*: (\d+) tests executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\.)\r?$/) {
+    } elsif (/^((?:[0-9a-f]+:)?$unit: (\d+) tests executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\.)\r?$/) {
         $lines++;
         $total += $2;
         $todo += $3;
@@ -318,7 +318,7 @@ while (<IN>) {
         if ($failed) { $class .= " failed"; }
         elsif ($todo) { $class .= " todo"; }
         $testbox->{data} .= sprintf "<div class=\"%s\">%s</div>\n", $class, escapeHTML($_);
-    } elsif (/$dll:$unit done \((-?\d+)\)(?:\r?$| in)/) {
+    } elsif (/$dll:$unit(?::[0-9a-f]+)? done \((-?\d+)\)(?:\r?$| in)/) {
         chomp;                  # current test ended
         if ($lines==0 || $1 < 0) {
             $result = "failed $1 - -";
