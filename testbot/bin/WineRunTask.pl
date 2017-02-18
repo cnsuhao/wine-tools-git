@@ -459,34 +459,157 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
   chmod 0664, $FullLogFileName;
   if (open(my $LogFile, "<", $FullLogFileName))
   {
-    my $LogFailures;
+    # Note that for the TestBot we don't really care about the todos and skips
+    my ($CurrentDll, $CurrentUnit, $LineFailures, $SummaryFailures) = ("", "", 0, 0);
+    my ($CurrentIsPolluted, %CurrentPids, $LogFailures);
     foreach my $Line (<$LogFile>)
     {
-      # There may be more than one result line due to child processes
-      if ($Line =~ /: \d+ tests? executed \(\d+ marked as todo, (\d+) failures?\), \d+ skipped\./)
+      # There may be more than one summary line due to child processes
+      if ($Line =~ m%([_.a-z0-9]+):([_a-z0-9]+) start (?:-|[/_.a-z0-9]+) (?:-|[.0-9a-f]+)\r?$%)
       {
-        $LogFailures += $1;
+        my ($Dll, $Unit) = ($1, $2);
+        if ($CurrentDll ne "")
+        {
+          LogTaskError("The done line is missing for $CurrentDll:$CurrentUnit\n");
+          $LogFailures++;
+        }
+        ($CurrentDll, $CurrentUnit) = ($Dll, $Unit);
       }
-      elsif ($Line =~ / done \(258\)/ or
-             $Line =~ /: unhandled exception [0-9a-fA-F]{8} at /)
+      elsif ($Line =~ /^([_a-z0-9]+)\.c:\d+: Test failed: / or
+             ($CurrentUnit ne "" and
+              $Line =~ /($CurrentUnit)\.c:\d+: Test failed: /))
       {
-        $LogFailures++;
+        # If the failure is not for the current test unit we'll let its
+        # developer hash it out with the polluter ;-)
+        $CurrentIsPolluted = 1 if ($1 ne $CurrentUnit);
+        $LineFailures++;
+      }
+      elsif ($Line =~ /^(?:([0-9a-f]+):)?([_.a-z0-9]+): unhandled exception [0-9a-fA-F]{8} at / or
+             ($CurrentUnit ne "" and
+              $Line =~ /(?:([0-9a-f]+):)?($CurrentUnit): unhandled exception [0-9a-fA-F]{8} at /))
+      {
+        my ($Pid, $Unit) = ($1, $2);
+
+        if ($Unit eq $CurrentUnit)
+        {
+          # This also replaces a test summary line.
+          $CurrentPids{$Pid || 0} = 1;
+          $SummaryFailures++;
+        }
+        else
+        {
+          $CurrentIsPolluted = 1;
+        }
+        $LineFailures++;
+      }
+      elsif ($Line =~ /^(?:([0-9a-f]+):)?([_a-z0-9]+): \d+ tests? executed \((\d+) marked as todo, (\d+) failures?\), \d+ skipped\./ or
+             ($CurrentUnit ne "" and
+              $Line =~ /(?:([0-9a-f]+):)?($CurrentUnit): \d+ tests? executed \((\d+) marked as todo, (\d+) failures?\), \d+ skipped\./))
+      {
+        my ($Pid, $Unit, $Todo, $Failures) = ($1, $2, $3, $4);
+
+        if ($Unit eq $CurrentUnit)
+        {
+          $CurrentPids{$Pid || 0} = 1;
+          $SummaryFailures += $Failures;
+        }
+        else
+        {
+          $CurrentIsPolluted = 1;
+          if ($Todo or $Failures)
+          {
+            LogTaskError("Found a misplaced '$Unit' test summary line.\n");
+            $LogFailures++;
+          }
+        }
+      }
+      elsif ($Line =~ /^([_.a-z0-9]+):([_a-z0-9]+)(?::([0-9a-f]+))? done \((-?\d+)\)(?:\r?$| in)/)
+      {
+        my ($Dll, $Unit, $Pid, $Rc) = ($1, $2, $3, $4);
+
+        if ($Dll ne $CurrentDll or $Unit ne $CurrentUnit)
+        {
+          LogTaskError("The start line is missing for $Dll:$Unit\n");
+          $LogFailures++;
+          $CurrentIsPolluted = 1;
+        }
+
+        # Verify the summary lines
+        if (!$CurrentIsPolluted)
+        {
+          if ($LineFailures != 0 and $SummaryFailures == 0)
+          {
+            LogTaskError("$Dll:$Unit has unreported failures\n");
+            $LogFailures++;
+          }
+          elsif ($LineFailures == 0 and $SummaryFailures != 0)
+          {
+            LogTaskError("Some test failed messages are missing for $Dll:$Unit\n");
+            $LogFailures++;
+          }
+        }
+        # Note that $SummaryFailures may count some failures twice so only use
+        # it as a fallback for $LineFailures.
+        $LineFailures ||= $SummaryFailures;
+
+        if (!$CurrentIsPolluted)
+        {
+          # Verify the exit code
+          if ($LineFailures != 0 and $Rc == 0)
+          {
+            LogTaskError("$Dll:$Unit returned success despite having failures\n");
+            $LogFailures++;
+          }
+          elsif ($Rc == 258)
+          {
+            # This is a timeout
+            $LogFailures++;
+          }
+          elsif ($LineFailures == 0 and $Rc != 0)
+          {
+            LogTaskError("$Dll:$Unit returned an error ($Rc) despite having no failures\n");
+            $LogFailures++;
+          }
+        }
+
+        if ($Rc != 258 and
+            ((!$Pid and !%CurrentPids) or
+             ($Pid and !$CurrentPids{$Pid} and !$CurrentPids{0})))
+        {
+          LogTaskError("$Dll:$Unit has no test summary line (early exit of the main process?)\n");
+          $LogFailures++;
+        }
+
+        $LogFailures += $LineFailures;
+
+        $CurrentDll = $CurrentUnit = "";
+        %CurrentPids = ();
+        $CurrentIsPolluted = $LineFailures = $SummaryFailures = 0;
       }
     }
     close($LogFile);
-    if (defined $LogFailures)
+
+    if ($TimedOut)
     {
-      $TestFailures += $LogFailures;
-      # The log file looks good so ignore the TestAgent error
-      # but still log it in case the log was in fact truncated.
-      LogTaskError($TAError) if (defined $TAError);
-      $TAError = undef;
+      # The report got truncated due to the timeout so ignore the other checks
     }
-    elsif (!defined $LogFailures and !defined $TestFailures)
+    elsif (!defined $LogFailures)
     {
-      LogTaskError("Found no trace of the test summary line or of a crash\n");
-      $TestFailures = 1;
+      LogTaskError("Found no trace of a test summary line or of a crash\n");
+      $LogFailures = 1;
     }
+    elsif ($CurrentDll ne "")
+    {
+      LogTaskError("The report seems to have been truncated\n");
+      $LogFailures++;
+    }
+    elsif ($LineFailures or $SummaryFailures)
+    {
+      LogTaskError("Found a trailing test summary or test failed line.\n");
+      $LogFailures++;
+    }
+    # $LogFailures can legitimately be undefined in case of a timeout
+    $TestFailures += $LogFailures || 0;
   }
   else
   {
