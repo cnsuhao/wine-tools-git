@@ -296,6 +296,7 @@ service.c:20: Test failed: A failure in the subprocess
 advpack:advpack start dlls/advpack/tests/advpack.c -
 ----- A standard successful unit test
 ----- Expected assessement: Success, unless the previous test interferes
+0da0:advpack: 99 tests executed (0 marked as todo, 0 failures), 0 skipped.
 advpack:advpack:0da0 done (0) in 0s
 
 advpack:files start dlls/advapi32/tests/crypt.c -
@@ -309,7 +310,7 @@ advpack:files:0880 done (3) in 0s
 advpack:install start dlls/advpack/tests/install.c -
 ----- A unit test with a crash
 ----- Expected assessement: Crash
-install: unhandled exception c0000005 at 0040167C
+07b0:install: unhandled exception c0000005 at 0040167C
 advpack:install:07b0 done (3221225477) in 0s
 
 amstream:amstream start dlls/amstream/tests/amstream.c -
@@ -339,13 +340,14 @@ atl:module:0920 done (0) in 0s
 atl:registrar start dlls/atl/tests/registrar.c -
 ----- A unit test with a foreign test summary line
 ----- Expected assessement: "Misplaced test summary line" error
-9876:service: 10 tests executed (0 marked as todo, 0 failures), 0 skipped.
+9876:service: 10 tests executed (0 marked as todo, 1 failures), 0 skipped.
 0922:registrar: 17 tests executed (0 marked as todo, 0 failures), 0 skipped.
 atl:registrar:0922 done (0) in 0s
 
------ Skipping all tests for a missing dll (see header)
------ Expected assessement: Skipped (FIXME: or Not Run?)
-avifil32:api skipped dlls/avifil32/tests/api.c -
+----- Skipping all tests for a missing dll (see the "Dll info:" header)
+----- Expected assessement: Not available
+avifil32 is missing and thus no test will be run for it and no entry will be
+found in the test report.
 
 browseui:autocomplete start dlls/browseui/tests/autocomplete.c -
 ----- A unit test with a skipped test
@@ -408,17 +410,16 @@ This line says nothing is wrong because it's from the subprocess
 comctl32:comboex:0c9c done (1) in 0s
 
 comctl32:datetime start dlls/comctl32/tests/datetime.c -
------ A unit test with a missing test failure line
+----- A unit test reporting a failure but with no test failed line
 ----- Expected assessement: "Missing test failed line" error
-datetime.c:1: Test failed: Something wrong
-0998:datetime: 651 tests executed (0 marked as todo, 0 failures), 0 skipped.
-comctl32:datetime:0998 done (0) in 0s
+0998:datetime: 651 tests executed (0 marked as todo, 1 failures), 0 skipped.
+comctl32:datetime:0998 done (1) in 0s
 
 comctl32:dpa start dlls/comctl32/tests/dpa.c -
 ----- A unit test with a non-zero exit code
 ----- Expected assessement: "Non-zero exit code" error
 This would cause things like 'make test' to consider the unit test failed.
-0b14:dpa: 16 tests executed (0 marked as todo, 0 failures), 0 skipped.
+0998:dpa: 16 tests executed (0 marked as todo, 0 failures), 0 skipped.
 comctl32:dpa:0998 done (1) in 0s
 
 comctl32:header start dlls/comctl32/tests/header.c -
@@ -426,7 +427,7 @@ comctl32:header start dlls/comctl32/tests/header.c -
 ----- Expected assessement: "Zero exit code" error
 A non-zero exit code is necessary for 'make test'.
 header.c:1: Test failed: Something wrong
-0b14:header: 16 tests executed (0 marked as todo, 1 failure), 0 skipped.
+0998:header: 16 tests executed (0 marked as todo, 1 failure), 0 skipped.
 comctl32:header:0998 done (0) in 0s
 
 comctl32:imagelist start - -
@@ -449,16 +450,90 @@ stub comctl32:listview
 0998:misc: 16 tests executed (0 marked as todo, 0 failure), 0 skipped.
 comctl32:misc:0998 done (0) in 0s
 
-stub comctl32:monthcal
-stub comctl32:mru
-stub comctl32:pager
-stub comctl32:progress
-stub comctl32:propsheet
-stub comctl32:rebar
-stub comctl32:status
-stub comctl32:subclass
-stub comctl32:syslink
-stub comctl32:tab
+comctl32:monthcal start dlls/comctl32/tests/monthcal.c -
+----- A unit test with a misplaced todo subprocess test summary line
+----- Expected assessement: "Misplaced summary line" error
+See the previous misplaced test summary line scenarios.
+0148:monthcal: 2251 tests executed (0 marked as todo, 0 failures), 0 skipped.
+comctl32:monthcal:0148 done (0) in 9s
+security.c:41: Test marked todo: Hello Wine!
+0955:security: 18 tests executed (1 marked as todo, 0 failures), 0 skipped.
+
+comctl32:mru start dlls/comctl32/tests/mru.c -
+----- A standard successful unit test
+----- Expected assessement: Success, unless the previous test interferes
+0148:mru: 2251 tests executed (0 marked as todo, 0 failures), 0 skipped.
+comctl32:mru:0148 done (0) in 9s
+
+comctl32:pager start dlls/comctl32/tests/pager.c -
+----- A unit test with a misplaced subprocess skip test summary line
+----- Expected assessement: Success
+See the previous misplaced test summary line scenarios.
+0148:pager: 2251 tests executed (0 marked as todo, 0 failures), 0 skipped.
+comctl32:pager:0148 done (0) in 9s
+security.c:42: Tests skipped: Another time
+0956:security: 18 tests executed (0 marked as todo, 0 failures), 1 skipped.
+
+comctl32:progress start dlls/comctl32/tests/progress.c -
+----- A standard successful unit test
+----- Expected assessement: Success
+0148:progress: 2251 tests executed (0 marked as todo, 0 failures), 0 skipped.
+comctl32:progress:0148 done (0) in 9s
+
+comctl32:propsheet start dlls/comctl32/tests/propsheet.c -
+----- A unit test with no main process test summary line and no pid anywhere
+----- Expected assessement: "Missing test summary" error
+comctl32:propsheet done (0) in 9s
+
+comctl32:rebar start dlls/comctl32/tests/rebar.c -
+----- A unit test with an unreported crash in a subprocess
+----- Expected assessement: "Zero exit code" error
+Even in subprocesses crashes are equivalent to 'Test failed' errors and as
+such the main process cannot report success, i.e. it must have a non-zero exit
+code. Note also that since we don't require the main process to account for the
+subprocess failures in its test summary line, it's ok for it not to account for
+subprocess crashes either. This is why the error is "Zero exit code" and not
+"Unreported failure".
+1234:rebar: unhandled exception c0000005 at 0040167C
+07b0:rebar: 2251 tests executed (0 marked as todo, 0 failures), 0 skipped.
+comctl32:rebar:07b0 done (0) in 0s
+
+comctl32:status start dlls/comctl32/tests/status.c -
+----- A unit test with a subprocess crash but no pid
+----- Expected assessement: "Zero exit code" error
+See the comctl32:rebar comment.
+status: unhandled exception c0000005 at 0040167C
+status: 2251 tests executed (0 marked as todo, 0 failures), 0 skipped.
+comctl32:status:07b0 done (0) in 0s
+
+comctl32:subclass start dlls/comctl32/tests/subclass.c -
+----- A unit test with a subprocess crash, no pid and a non-zero exit code
+----- Expected assessement: 1 failure
+See the comctl32:rebar comment. Then note that here the main process does not
+claim success. Also note that the exit code does not correspond to that of a
+crashed process which makes sense since it did not crash.
+subclass: unhandled exception c0000005 at 0040167C
+subclass: 2251 tests executed (0 marked as todo, 0 failures), 0 skipped.
+comctl32:subclass:07b0 done (1) in 0s
+
+comctl32:syslink start dlls/comctl32/tests/syslink.c -
+----- A unit test with a garbled test failed line
+----- Expected assessement: 1 failure
+Multi-threaded and multi-process tests should really try to avoid races in
+the report. But analysis tools should also try to be resilient.
+Do not cut syslink.c:40: Test failed: Something wrong
+me off
+07b0:syslink: 2251 tests executed (0 marked as todo, 1 failures), 0 skipped.
+comctl32:syslink:07b0 done (1) in 0s
+
+comctl32:tab start dlls/comctl32/tests/tab.c -
+----- A unit test with a garbled test summary line
+----- Expected assessement: Success
+See previous comment.
+Do not cut 07b0:tab: 2251 tests executed (0 marked as todo, 0 failures), 0 skipped.
+me off
+comctl32:tab:07b0 done (0) in 0s
+
 stub comctl32:toolbar
 stub comctl32:tooltips
 stub comctl32:trackbar
@@ -946,8 +1021,8 @@ stub xmllite:reader
 stub xmllite:writer
 
 xmllite:writer start fake/source/writer.c -
------ A unit test with a misplaced and failed subprocess test summary line
------ Expected assessement: "Misplaced test summary line" error
+----- A unit test with a misplaced test failed line
+----- Expected assessement: "Misplaced test failed line" error
 See the similar scenario before but note the lack of the extra test summary line
 here. Also beware of the end-of-file.
 037c:writer: 1930 tests executed (0 marked as todo, 0 failures), 0 skipped.
