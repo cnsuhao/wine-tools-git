@@ -227,7 +227,7 @@ crypt_lmhash.c:20: Test failed: Second failure here
 advapi32:crypt_lmhash:07c0 done (1) in 0s
 
 advapi32:crypt_md4 start dlls/advapi32/tests/crypt_md4.c -
------ A unit test with two test result lines
+----- A unit test with two test summary lines
 ----- Expected assessement: Success
 0123:crypt_md4: 11 tests executed (0 marked as todo, 0 failures), 0 skipped.
 0ca0:crypt_md4: 11 tests executed (0 marked as todo, 0 failures), 0 skipped.
@@ -240,7 +240,7 @@ crypt_md5.c:20: Test failed: A failure here, presumably in the subprocess
 0123:crypt_md5: 11 tests executed (0 marked as todo, 1 failure), 0 skipped.
 The parent now counts the subprocess failure as its own. Note that it means
 the 'Test failed' count may legitimately differ from the sum from the test
-result lines.
+summary lines.
 Note that this also applies to the todo and skip counts.
 087c:crypt_md5: 5 tests executed (0 marked as todo, 1 failure), 0 skipped.
 advapi32:crypt_md5:087c done (3) in 0s
@@ -263,18 +263,18 @@ eventlog.c:20: Test failed: Something wrong
 advapi32:eventlog:088c done (3) in 4s
 
 advapi32:lsa start dlls/advapi32/tests/crypt.c -
------ A unit test with no test result line
------ Expected assessement: "Missing test result" error
+----- A unit test with no test summary line
+----- Expected assessement: "Missing test summary" error
 advapi32:lsa:083c done (0) in 0s
 
 advapi32:registry start dlls/advapi32/tests/registry.c -
------ A unit test with no main process test result line
------ Expected assessement: "Missing test result" error
+----- A unit test with no main process test summary line
+----- Expected assessement: "Missing test summary" error
 1234:registry: 765 tests executed (0 marked as todo, 0 failures), 0 skipped.
 advapi32:registry:0804 done (0) in 0s
 
 advapi32:security start dlls/advapi32/tests/security.c -
------ A unit test with a misplaced but successful subprocess test result line
+----- A unit test with a misplaced but successful subprocess test summary line
 ----- Expected assessement: Success
 The subprocess may be a server process that exits automatically once the test
 is complete. That's ok as long as it's not meant to report failures.
@@ -283,8 +283,8 @@ advapi32:security:0148 done (0) in 9s
 0954:security: 18 tests executed (0 marked as todo, 0 failures), 0 skipped.
 
 advapi32:service start dlls/advapi32/tests/service.c -
------ A unit test with a misplaced and failed subprocess test result line
------ Expected assessement: "Misplaced test result line" error
+----- A unit test with a misplaced and failed subprocess test summary line
+----- Expected assessement: "Misplaced test summary line" error
 Same scenario as above but the subprocess can actually report failures so the
 main process must wait for it. Ideally the error should be reported against
 this unit test but reporting against the next one is also acceptable.
@@ -325,20 +325,20 @@ apphelp:apphelp start dlls/apphelp/tests/apphelp.c -
 apphelp:apphelp:0860 done (0)
 
 atl:atl_ax start dlls/atl/tests/atl_ax.c -
------ Pid on the result line, but no pid on the done one
+----- Pid on the test summary line, but no pid on the done one
 ----- Expected assessement: Success
 0938:atl_ax: 12 tests executed (0 marked as todo, 0 failures), 0 skipped.
 atl:atl_ax done (0) in 0s
 
 atl:module start dlls/atl/tests/module.c -
------ Pid on the done line, but no pid on the result line
+----- Pid on the done line, but no pid on the test summary line
 ----- Expected assessement: Success
 module: 544 tests executed (0 marked as todo, 0 failures), 0 skipped.
 atl:module:0920 done (0) in 0s
 
 atl:registrar start dlls/atl/tests/registrar.c -
------ A unit test with a foreign test result line
------ Expected assessement: "Misplaced test result line" error
+----- A unit test with a foreign test summary line
+----- Expected assessement: "Misplaced test summary line" error
 9876:service: 10 tests executed (0 marked as todo, 0 failures), 0 skipped.
 0922:registrar: 17 tests executed (0 marked as todo, 0 failures), 0 skipped.
 atl:registrar:0922 done (0) in 0s
@@ -946,9 +946,9 @@ stub xmllite:reader
 stub xmllite:writer
 
 xmllite:writer start fake/source/writer.c -
------ A unit test with a misplaced and failed subprocess test result line
------ Expected assessement: "Misplaced test result line" error
-See the similar scenario before but note the lack of the extra test result line
+----- A unit test with a misplaced and failed subprocess test summary line
+----- Expected assessement: "Misplaced test summary line" error
+See the similar scenario before but note the lack of the extra test summary line
 here. Also beware of the end-of-file.
 037c:writer: 1930 tests executed (0 marked as todo, 0 failures), 0 skipped.
 xmllite:writer:037c done (0) in 11s
