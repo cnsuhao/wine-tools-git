@@ -436,7 +436,7 @@ if (!$Pid)
 #
 
 my $NewStatus = 'completed';
-my ($TestFailures, $TAError, $PossibleCrash);
+my ($TestFailures, $TimedOut, $TAError, $PossibleCrash);
 Debug(Elapsed($Start), " Waiting for the script (", $Task->Timeout, "s timeout)\n");
 if (!defined $TA->Wait($Pid, $Timeout, $Keepalive))
 {
@@ -445,6 +445,7 @@ if (!defined $TA->Wait($Pid, $Timeout, $Keepalive))
   {
     LogTaskError("The test timed out\n");
     $TestFailures = 1;
+    $TimedOut = 1;
   }
   else
   {
