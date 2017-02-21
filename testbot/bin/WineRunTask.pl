@@ -509,7 +509,8 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
       {
         my ($Pid, $Unit, $Todo, $Failures) = ($1, $2, $3, $4);
 
-        if ($Unit eq $CurrentUnit)
+        # TestLauncher uses the wrong name in its test summary line
+        if ($Unit eq $CurrentUnit or $Unit eq $CurrentDll)
         {
           $CurrentPids{$Pid || 0} = 1;
           $SummaryFailures += $Failures;
