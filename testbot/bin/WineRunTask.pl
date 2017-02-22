@@ -539,7 +539,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
         # Verify the summary lines
         if (!$CurrentIsPolluted)
         {
-          if ($LineFailures != 0 and $SummaryFailures == 0)
+          if ($LineFailures != 0 and $SummaryFailures == 0 and !$TimedOut)
           {
             LogTaskError("$Dll:$Unit has unreported failures\n");
             $LogFailures++;
