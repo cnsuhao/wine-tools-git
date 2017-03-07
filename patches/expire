@@ -31,6 +31,7 @@ my %status_expiry =
  "applyfail"  => 7,
  "buildfail"  => 7,
  "deferred"   => 7,
+ "authorship" => 7,
  "formatting" => 7,
  "other"      => 7,
  "nopatch"    => 3,
@@ -54,6 +55,7 @@ my %status_descr =
  "applyfail"  => "Apply failure",
  "buildfail"  => "Build failure",
  "deferred"   => "Deferred",
+ "authorship" => "Authorship",
  "formatting" => "Formatting",
  "other"      => "Other project",
  "nopatch"    => "No patch",
@@ -98,12 +100,17 @@ mode implies -Werror). You need to resend a fixed patch.",
 upcoming release. You need to either resend after the release, make
 the patch less intrusive, or make a convincing argument that it needs
 to be included in the release.",
+ "authorship" =>
+"This means that there are some authorship issues with your patch. The
+author's full name, email address, or Signed-off-by headers are
+missing or incorrectly formatted. You need to resend a patch with
+corrected author information.",
  "formatting" =>
 "This means that there are some formatting issues with your
-patch. Either the author's full name, email address, or Signed-off-by
-headers are missing, indentation is messed up (usually from editing
-with a non-standard tab size), or there are gratuitous formatting
-changes to the code. You need to resend a fixed patch.",
+patch. Either the indentation is messed up (usually from editing with
+a non-standard tab size), some characters got mangled in transit, or
+there are gratuitous formatting changes to the code. You need to
+resend a fixed patch.",
  "other"      =>
 "This means that the patch belongs to another WineHQ project (website,
 appdb, etc.) and will be applied by the respective maintainer.",

@@ -31,6 +31,7 @@ my %status_descr =
  "applyfail"  => "Apply failure",
  "buildfail"  => "Build failure",
  "deferred"   => "Deferred",
+ "authorship" => "Authorship",
  "formatting" => "Formatting",
  "other"      => "Other project",
  "nopatch"    => "No patch",
@@ -66,8 +67,8 @@ my @legend =
  [ "buildfail",  "<ul><li>Syntax error or other compile problem.</li>" .
                  "<li>You forgot to include some changes or new files required for compilation.</li>" .
                  "<li>The patch causes compiler warnings (maintainer mode implies -Werror).</li></ul>" ],
- [ "formatting", "<ul><li>The patch author's full name, email address, or Signed-off-by headers are incorrect or missing.</li>" .
-                 "<li>Whitespace got mangled in transit.</li>" .
+ [ "authorship", "<ul><li>The patch author's full name, email address, or Signed-off-by headers are incorrect or missing.</li></ul>" ],
+ [ "formatting", "<ul><li>Whitespace got mangled in transit.</li>" .
                  "<li>Indentation is messed up (usually from editing with a non-standard tab size).</li>" .
                  "<li>8-bit chars got mangled in transit (usually when sending patches to translation files).</li>" .
                  "<li>You are making gratuitous formatting changes to the code.</li>" .
