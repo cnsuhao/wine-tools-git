@@ -1,4 +1,5 @@
 #!/usr/bin/perl -Tw
+# -*- Mode: Perl; perl-indent-level: 2; indent-tabs-mode: nil -*-
 #
 # Retrieve the latest patches from the patches website and submit them for
 # testing.

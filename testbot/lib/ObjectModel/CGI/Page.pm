@@ -1,3 +1,4 @@
+# -*- Mode: Perl; perl-indent-level: 2; indent-tabs-mode: nil -*-
 # Base class for web pages
 #
 # Copyright 2009 Ge van Geldorp

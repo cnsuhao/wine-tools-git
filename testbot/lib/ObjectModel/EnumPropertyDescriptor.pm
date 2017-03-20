@@ -1,3 +1,4 @@
+# -*- Mode: Perl; perl-indent-level: 2; indent-tabs-mode: nil -*-
 # Copyright 2012 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or

@@ -1,3 +1,4 @@
+# -*- Mode: Perl; perl-indent-level: 2; indent-tabs-mode: nil -*-
 # Returns the specified Step/Task file.
 #
 # Copyright 2009 Ge van Geldorp

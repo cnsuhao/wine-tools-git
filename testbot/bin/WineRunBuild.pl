@@ -1,4 +1,5 @@
 #!/usr/bin/perl -Tw
+# -*- Mode: Perl; perl-indent-level: 2; indent-tabs-mode: nil -*-
 #
 # Communicates with the build machine to have it perform the 'build' task.
 # See the bin/build/Build.pl script.

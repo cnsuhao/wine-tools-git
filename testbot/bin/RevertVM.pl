@@ -1,4 +1,5 @@
 #!/usr/bin/perl -Tw
+# -*- Mode: Perl; perl-indent-level: 2; indent-tabs-mode: nil -*-
 #
 # Reverts a VM so that it is ready to run jobs. Note that in addition to the
 # hypervisor revert operation this implies letting the VM settle down and

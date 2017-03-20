@@ -1,3 +1,4 @@
+# -*- Mode: Perl; perl-indent-level: 2; indent-tabs-mode: nil -*-
 # Notification of WineTestBot engine
 #
 # Copyright 2009 Ge van Geldorp

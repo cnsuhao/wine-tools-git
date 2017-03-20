@@ -1,4 +1,5 @@
 #!/usr/bin/perl -Tw
+# -*- Mode: Perl; perl-indent-level: 2; indent-tabs-mode: nil -*-
 #
 # Checks if a new winetest binary is available on http://test.winehq.org/data/.
 # If so, triggers an update of the build VM to the latest Wine source and
