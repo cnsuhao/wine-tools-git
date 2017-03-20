@@ -218,7 +218,7 @@ EOF
             }
         }
         print OUT "  <td class=\"links\"><a href=\"$gitweb?a=shortlog;h=$build->{name}\">shortlog</a>";
-        print OUT "&nbsp;|&nbsp;<a href=\"../$build->{name}\">all&nbsp;tests</a></td></tr>\n";
+        print OUT "</td></tr>\n";
     }
     print OUT "</table></body></html>\n";
     close OUT;

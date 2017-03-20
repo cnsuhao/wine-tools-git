@@ -603,7 +603,7 @@ sub test_links($$)
     return "<td class=\"links\"><a href=\"$gitweb/?a=history;f=$source;hb=$build\" title=\"$source change history\">history</a>" .
            "&nbsp;|&nbsp;<a href=\"$gitweb/?a=blob;f=$source;hb=$build\" title=\"$source source code\">source</a>" .
            (defined($group) ? "&nbsp;|&nbsp;<a href=\"index.html#$testname\" title=\"summary of $testname results across platforms\">summary</a>" : "") .
-           "&nbsp;|&nbsp;<a href=\"../tests/$testname.html\" title=\"$testname results across all builds\">all&nbsp;builds</a></td>";
+           "</td>";
 }
 
 sub build_totals($)
