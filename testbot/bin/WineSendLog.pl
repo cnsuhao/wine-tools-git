@@ -104,8 +104,7 @@ sub ReadLog($$$)
         $Line =~ s/[\r\n]*$//;
         if ($Line =~ m/${BaseName}:${TestSet} done/)
         {
-          if ($Line =~ m/${BaseName}:${TestSet} done \((\d+)\)/ &&
-              $1 eq "258")
+          if ($Line =~ m/${BaseName}:${TestSet} done \(258\)/)
           {
             $Messages[@Messages] = "The test timed out";
           }
