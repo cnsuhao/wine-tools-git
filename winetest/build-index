@@ -62,7 +62,8 @@ sub get_build_info($)
     return ($date, $subject);
 }
 
-use POSIX qw(strftime);
+use POSIX qw(locale_h strftime);
+setlocale(LC_ALL, "C");
 
 sub short_date($)
 {
