@@ -556,7 +556,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
           }
           elsif ($LineFailures == 0 and $SummaryFailures != 0)
           {
-            LogTaskError("Some test failed messages are missing for $Dll:$Unit\n");
+            LogTaskError("$Dll:$Unit is missing some 'test failed' messages\n");
             $LogFailures++;
           }
         }
