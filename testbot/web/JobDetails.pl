@@ -350,6 +350,7 @@ sub GenerateBody($)
           $CurrentDll = $1;
         }
         if ($FullLog || $Line =~ m/: Test failed: / ||
+            $Line =~ m/Fatal: test '[^']+' does not exist/ ||
             $Line =~ m/ done \(258\)/ ||
             $Line =~ m/: unhandled exception [0-9a-fA-F]{8} at /)
         {

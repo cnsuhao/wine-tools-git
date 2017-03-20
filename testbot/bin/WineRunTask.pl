@@ -484,6 +484,15 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
         # If the failure is not for the current test unit we'll let its
         # developer hash it out with the polluter ;-)
         $CurrentIsPolluted = 1 if ($1 ne $CurrentUnit);
+
+        $LineFailures++;
+      }
+      elsif ($Line =~ /^Fatal: test '([_a-z0-9]+)' does not exist/)
+      {
+        # This also replaces a test summary line.
+        $CurrentPids{0} = 1;
+        $SummaryFailures++;
+
         $LineFailures++;
       }
       elsif ($Line =~ /^(?:([0-9a-f]+):)?([_.a-z0-9]+): unhandled exception [0-9a-fA-F]{8} at / or
