@@ -23,7 +23,6 @@ use strict;
 use warnings;
 use open ':utf8';
 use CGI qw(:standard);
-use POSIX qw(strftime);
 
 sub BEGIN
 {
@@ -42,6 +41,41 @@ binmode STDIN, ':utf8';
 binmode STDOUT, ':utf8';
 
 $ENV{GIT_DIR} = $gitdir;
+
+sub get_build_info($)
+{
+    my ($build) = @_;
+    my ($date, $subject);
+
+    my $commit = `git log --max-count=1 --pretty="format:%ct %s" "$build^0" 2>/dev/null` if ($build =~ /^[0-9a-f]{40}$/);
+    if ($commit && $commit =~ /^(\d+) (.*)$/)
+    {
+        ($date, $subject) = ($1, $2);
+        # Make sure the directory's mtime matches the commit time
+        utime $date, $date, "data/$build";
+    }
+    else
+    {
+        $date = (stat "./data/$build")[9];
+        $subject = "";
+    }
+    return ($date, $subject);
+}
+
+use POSIX qw(strftime);
+
+sub short_date($)
+{
+    my ($date) = @_;
+    return strftime("%b&nbsp;%d", gmtime($date));
+}
+
+sub long_date($)
+{
+    my ($date) = @_;
+    return strftime("%b&nbsp;%d&nbsp;%H:%M:%S", gmtime($date));
+}
+
 
 my %w95     = (name => "Win95");
 my %w98     = (name => "Win98");
@@ -81,23 +115,16 @@ foreach my $build (readdir(DIR))
     next unless $build =~ /^[-.0-9a-zA-Z]+$/;
     next unless -f "./data/$build/index.html";
 
-    my ($commit, $date, $subject);
-    $commit = `git log --max-count=1 --pretty="format:%ct %s" "$build^0" 2>/dev/null` if ($build =~ /^[0-9a-f]{40}$/);
-    if ($commit && $commit =~ /^(\d+) (.*)$/)
+    my ($date, $subject) = get_build_info($build);
+    if (time() - $date > 60 * 24 * 60 * 60)
     {
-        $date = $1;
-        $subject = $2;
-        # make sure the file mtime matches the commit time
-        utime $date, $date, "data/$build";
+        # Archive builds older than 60 days
+        push @too_old, $build;
     }
     else
     {
-        $date = (stat "./data/$build")[9];
-        $subject = "";
+        push @builds, { name => $build, date => $date, subj => $subject };
     }
-    # archive builds older than 2 months
-    if (time() - $date > 60 * 24 * 60 * 60) { push @too_old, $build; }
-    else { push @builds, { name => $build, date => $date, subj => $subject }; }
 }
 
 closedir(DIR);
@@ -204,7 +231,7 @@ EOF
         next unless defined $alltests{$test}->{$build->{name}};
         printf OUT "  <tr><td class=\"build\"><a href=\"../%s\" title=\"%s\">%s</a></td>\n",
                    $build->{name}, $build->{name}, substr($build->{name},0,12);
-        printf OUT "  <td class=\"date\">%s</td>", strftime("%b&nbsp;%d", gmtime($build->{date}));
+        printf OUT "  <td class=\"date\">%s</td>", short_date($build->{date});
         foreach my $group (@groups)
         {
             next unless defined $used_group{$group->{name}};
@@ -252,7 +279,7 @@ print OUT "<th colspan=\"3\">Failures</th><th></th></tr></thead>\n";
 foreach my $build (@builds)
 {
     printf OUT "  <tr><td class=\"build\"><a href=\"%s\" title=\"%s\">%s</a></td>\n", $build->{name}, $build->{name}, substr($build->{name},0,12);
-    printf OUT "  <td class=\"date\">%s</td>", strftime("%b&nbsp;%d", gmtime($build->{date}));
+    printf OUT "  <td class=\"date\">%s</td>", short_date($build->{date});
     my ($total_runs, $total_tests, $total_errors, $total_todos);
     foreach my $ver (@groups)
     {
@@ -336,7 +363,7 @@ print OUT "<table class=\"report\"><thead><tr><th class=\"date\">Date</th><th cl
 
 foreach my $err (sort { $b->{date} <=> $a->{date}; } @errors)
 {
-    printf OUT "<tr><td class=\"date\">%s</td>\n", strftime("%b&nbsp;%d&nbsp;%H:%M:%S", gmtime($err->{date}));
+    printf OUT "<tr><td class=\"date\">%s</td>\n", long_date($err->{date});
     printf OUT "<td class=\"commitlink\"><a href=\"%s\">%s</a></td></tr>\n", $err->{url}, escapeHTML($err->{msg});
 }
 print OUT "</table>", end_html();
