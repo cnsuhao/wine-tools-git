@@ -695,7 +695,7 @@ EOF
         print OUT "&nbsp;|&nbsp;<a href=\"..\">index</a>";
         print OUT "<script type=\"text/javascript\" src=\"/summary.js\"></script>\n</div>\n";
         print OUT "<div class=\"main\">\n";
-        print OUT "<h1>Main summary for build <a href=\"/builds/winetest-$short_build.exe\" title=\"$build\">$short_build</a></h1>\n";
+        print OUT "<h1>Main summary for build $short_build</h1>\n";
         print OUT "<table class=\"report\">\n$header_footer\n  <tbody onDblClick=\"clone();\">\n";
     }
 
@@ -725,7 +725,19 @@ EOF
         }
         printf OUT "      %s\n    </tr>\n", test_links($testname, $group);
     }
-    print OUT "  </tbody>\n</table>\n</div>\n$legend\n</body>\n</html>";
+    print OUT <<"EOF";
+  </tbody>
+</table>
+</div>
+$legend
+<div class="navbar">
+To run the tests on your Windows machine, download the <a href="/builds/winetest-$short_build.exe">32-bit winetest</a>.
+If you have a 64-bit Windows OS, you can also run the <a href="/builds/winetest64-$short_build.exe">64-bit winetest</a>.
+</div>
+</body>
+</html>
+EOF
+
     close OUT;
     rename "$idx_file.new", $idx_file or unlink "$idx_file.new";
 }
