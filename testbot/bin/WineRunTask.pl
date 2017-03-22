@@ -461,13 +461,14 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
   chmod 0664, $FullLogFileName;
   if (open(my $LogFile, "<", $FullLogFileName))
   {
-    # Note that for the TestBot we don't really care about the todos and skips
+    # There is more than one test unit when running the full test suite so keep
+    # track of the current one. Also note that for the TestBot we don't really
+    # care about the todos and skips
     my ($CurrentDll, $CurrentUnit, $LineFailures, $SummaryFailures) = ("", "", 0, 0);
     my ($CurrentIsPolluted, %CurrentPids, $LogFailures);
     foreach my $Line (<$LogFile>)
     {
-      # There may be more than one summary line due to child processes
-      if ($Line =~ m%([_.a-z0-9]+):([_a-z0-9]+) start (?:-|[/_.a-z0-9]+) (?:-|[.0-9a-f]+)\r?$%)
+      if ($Line =~ m%([_.a-z0-9]+):([_a-z0-9]*) start (?:-|[/_.a-z0-9]+) (?:-|[.0-9a-f]+)\r?$%)
       {
         my ($Dll, $Unit) = ($1, $2);
         if ($CurrentDll ne "")
@@ -519,9 +520,12 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
       {
         my ($Pid, $Unit, $Todo, $Failures) = ($1, $2, $3, $4);
 
-        # TestLauncher uses the wrong name in its test summary line
-        if ($Unit eq $CurrentUnit or $Unit eq $CurrentDll)
+        # Dlls that have only one test unit will run it even if there is
+        # no argument. Also TestLauncher uses the wrong name in its test
+        # summary line when skipping tests.
+        if ($Unit eq $CurrentUnit or $CurrentUnit eq "" or $Unit eq $CurrentDll)
         {
+          # There may be more than one summary line due to child processes
           $CurrentPids{$Pid || 0} = 1;
           $SummaryFailures += $Failures;
         }
@@ -535,7 +539,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
           }
         }
       }
-      elsif ($Line =~ /^([_.a-z0-9]+):([_a-z0-9]+)(?::([0-9a-f]+))? done \((-?\d+)\)(?:\r?$| in)/)
+      elsif ($Line =~ /^([_.a-z0-9]+):([_a-z0-9]*)(?::([0-9a-f]+))? done \((-?\d+)\)(?:\r?$| in)/)
       {
         my ($Dll, $Unit, $Pid, $Rc) = ($1, $2, $3, $4);
 
