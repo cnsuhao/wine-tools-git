@@ -444,7 +444,7 @@ if (!defined $TA->Wait($Pid, $Timeout, $Keepalive))
   my $ErrMessage = $TA->GetLastError();
   if ($ErrMessage =~ /timed out waiting for the child process/)
   {
-    LogTaskError("The test timed out\n");
+    LogTaskError("The task timed out\n");
     $TestFailures = 1;
     $TimedOut = 1;
   }
@@ -574,7 +574,8 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
           }
           elsif ($Rc == 258)
           {
-            # This is a timeout
+            # This is a timeout. Those are already reported based on the
+            # done line.
             $LogFailures++;
           }
           elsif ($LineFailures == 0 and $Rc != 0)
