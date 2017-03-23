@@ -100,8 +100,6 @@ my %wine    = (name => "Wine");
 my @groups = (\%w95, \%w98, \%me, \%nt3, \%nt4, \%w2k, \%xp, \%w2k3, \%vista, \%w2k8, \%win7, \%win8, \%win10,
               \%unknown, \%linux, \%mac, \%bsd, \%solaris, \%wine);
 
-my @months = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
-
 # read the test data dir
 
 my @builds;
