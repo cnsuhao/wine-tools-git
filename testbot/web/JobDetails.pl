@@ -372,9 +372,10 @@ sub GenerateBody($)
             print "<pre><code>";
             $First = !1;
           }
-          if (! $FullLog && $Line =~ m/^[^:]+:([^ ]+) done \(258\)/)
+          if (! $FullLog && $Line =~ m/^[^:]+:([^:]*)(?::[0-9a-f]+)? done \(258\)/)
           {
-            print "$1: Timeout\n";
+            my $Unit = $1 ne "" ? "$1: " : "";
+            print "${Unit}Timeout\n";
           }
           else
           {
