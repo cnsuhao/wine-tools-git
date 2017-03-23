@@ -37,8 +37,6 @@ sub BEGIN
 use vars qw/$gitdir $gitweb $queuedir/;
 require "winetest.conf";
 
-binmode STDIN, ':utf8';
-binmode STDOUT, ':utf8';
 
 $ENV{GIT_DIR} = $gitdir;
 
