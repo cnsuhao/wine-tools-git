@@ -130,9 +130,9 @@ $_ = <IN>;
 my $box = create_box( "version", "version", "Version information for $tag" );
 $box->{data} .= "<h2>Build version</h2>\n";
 $box->{data} .= "<table class=\"output\">\n";
-$box->{data} .= sprintf "<tr><td>Build</td><td><a title=\"%s\" href=\"$gitweb/?a=shortlog;h=%s\">%s</a></td></tr>\n", $testbuild, $testbuild, $shortbuild;
+$box->{data} .= "<tr><td>Build</td><td><a title=\"$testbuild\" href=\"$gitweb/?a=shortlog;h=$testbuild\">$shortbuild</a></td></tr>\n";
 $box->{data} .= "<tr><td>Tag</td><td><a title=\"Full report\" href=\"report.html\">$tag</a></td></tr></table>\n";
-$box->{data} .= sprintf "<div class=\"output\"> </div>\n";
+$box->{data} .= "<div class=\"output\"> </div>\n";
 while (($_ = <IN>) =~ s/^    //)
 {
     chomp;
@@ -301,7 +301,7 @@ while (<IN>) {
         }
         if ($3 eq "skipped")
         {
-            $testbox->{data} .= sprintf "<div class=\"test result skipped\">Skipped by user request.</div>\n";
+            $testbox->{data} .= "<div class=\"test result skipped\">Skipped by user request.</div>\n";
             print SUM "- $dll $unit skipped - - - $source $rev\n";
             $dll = undef;
             mydie "too many tests skipped by user request\n" if ++$user_skips > $maxuserskips;
@@ -428,7 +428,7 @@ for (my $i = 0; $i <= $#boxes; $i++)
     printf REPORT "<div class=\"updownbar\"><table><tr><td width=\"100%%\">%s</td>\n", $boxes[$i]->{title};
     printf REPORT "<td class=\"arrow\"><a href=\"#%s\">&uarr;</a></td>\n", $boxes[$i]->{prev} if defined $boxes[$i]->{prev};
     printf REPORT "<td class=\"arrow\"><a href=\"#%s\">&darr;</a></td>\n", $boxes[$i]->{next} if defined $boxes[$i]->{next};
-    printf REPORT "</tr></table></div>\n";
+    print REPORT "</tr></table></div>\n";
     print REPORT $boxes[$i]->{data}, "</div>\n";
 }
 print REPORT end_html();
