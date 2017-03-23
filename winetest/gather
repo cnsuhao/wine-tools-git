@@ -370,19 +370,10 @@ sub build_header_footer($)
         my $group = $report->{group};
 
         if (!defined $msg) {
-            if (-r "$datadir/$build/$report->{dir}/dllinfo.html") {
-                $msg = <<"EOF";
-        $group->{name}<br><small>
-        <a href=\"$report->{dir}/version.html\">$report->{tag}</a><br>
-        <a href=\"$report->{dir}/dllinfo.html\">[info]</a>
-        <a href=\"$report->{dir}/report.html\">[file]</a></small>
-EOF
-            } else {
-                $msg = <<"EOF";
+            $msg = <<"EOF";
         $group->{name}<br><small>
         <a href=\"$report->{dir}/version.html\">$report->{tag}</a></small>
 EOF
-            }
             chop $msg;
         }
         $title .=  <<"EOF";
