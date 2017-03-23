@@ -73,7 +73,7 @@ sub mydie(@) {
         print STDERR "$name0:error: unable to rename '$tmpdir' to '$errdir': $!\n";
         exit 3;
     }
-    my $label = $tag ? substr($tag, 1) : "<notag>";
+    my $label = $tag ? $tag : "<notag>";
     if (open ERR, ">$errdir/error")
     {
         print ERR "$label: ", @_;
@@ -123,15 +123,15 @@ $_ = <IN>;
 if (/^Archive: /) { $_ = <IN>; }  # ignore Archive header
 
 /^Tag: ([-.0-9a-zA-Z]*)\r?$/ or mydie "no tag line: $_";
-$tag = $1 eq ""?"":"_$1";
+$tag = $1;
 
 $_ = <IN>;
 /^Build info:\r?$/ or mydie "no Build info header: $_";
-my $box = create_box( "version", "version", sprintf "Version information for %s", substr($tag,1) );
+my $box = create_box( "version", "version", "Version information for $tag" );
 $box->{data} .= "<h2>Build version</h2>\n";
 $box->{data} .= "<table class=\"output\">\n";
 $box->{data} .= sprintf "<tr><td>Build</td><td><a title=\"%s\" href=\"$gitweb/?a=shortlog;h=%s\">%s</a></td></tr>\n", $testbuild, $testbuild, $shortbuild;
-$box->{data} .= sprintf "<tr><td>Tag</td><td><a title=\"Full report\" href=\"report.html\">%s</a></td></tr></table>\n", substr($tag,1);
+$box->{data} .= "<tr><td>Tag</td><td><a title=\"Full report\" href=\"report.html\">$tag</a></td></tr></table>\n";
 $box->{data} .= sprintf "<div class=\"output\"> </div>\n";
 while (($_ = <IN>) =~ s/^    //)
 {
@@ -464,7 +464,7 @@ foreach ($datadir, $builddir) {
 }
 
 my ($dir, $dirbase, $try);
-$dir = $dirbase = "$builddir/$version$tag";
+$dir = $dirbase = "$builddir/${version}_$tag";
 $try = 0;
 while (!rename $tmpdir, $dir) {
     $!{ENOTEMPTY} or mydie "unable to rename '$tmpdir' to '$dir': $!\n";
