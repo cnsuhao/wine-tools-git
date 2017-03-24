@@ -140,7 +140,7 @@ while (($_ = <IN>) =~ s/^    //)
     $box->{data} .= "<div class=\"output\">" . escapeHTML($_) . "</div>\n";
 }
 
-my ($wine, $wine_build, $version, $major, $minor, $plid, $product, $host);
+my ($wine, $wine_build, $major, $minor, $plid, $product, $host);
 /^Operating system version:\r?$/ or mydie "no OS header: $_";
 $box->{data} .= "<h2>Operating system version</h2>\n";
 $box->{data} .= "<table class=\"output\">\n";
@@ -170,66 +170,47 @@ while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
 }
 $box->{data} .= "</table>\n";
 
-my $prediluvian = 0;
-if ($plid != 2) { $prediluvian = 1; }
+my @idmatch = (
+    # Describes how to match a platform's version information
+    # with a dissect platform id:
+    # dissect id  plid  major  minor  product  prediluvian
+    [ "95",          1,     4,     0,  undef,  1 ],
+    [ "98",          1,     4,    10,  undef,  1 ],
+    [ "me",          1,     4,    90,  undef,  1 ],
+    [ "nt3",         2,     3,    51,  undef,  1 ],
+    [ "2000",        2,     5,     0,  undef,  1 ],
+    [ "xp",          2,     5,     1,      1,  0 ],
+    [ "2003",        2,     5,     1,  undef,  0 ],
+    [ "vista",       2,     6,     0,      1,  0 ],
+    [ "2008",        2,     6,     0,      3,  0 ],
+    [ "win7",        2,     6,     1,      1,  0 ],
+    [ "2008",        2,     6,     1,      3,  0 ],
+    [ "win8",        2,     6,     2,  undef,  0 ],
+    [ "win8",        2,     6,     3,  undef,  0 ],
+    [ "win10",       2,    10,     1,  undef,  0 ],
+#   [ "ce",          3, undef, undef,  undef,  0 ],
+    [ "unknown",     2, undef, undef,  undef,  0 ],
+    [ "unknown", undef, undef, undef,  undef,  1 ],
+);
 
-$version = "unknown";
-if ($plid==1 && $major==4) {
-    if      ($minor==0) {
-        $version = "95";
-    } elsif ($minor==10) {
-        $version = "98";
-    } elsif ($minor==90) {
-        $version = "me";
+my ($version, $prediluvian);
+foreach my $entry (@idmatch)
+{
+    if ((!defined $entry->[1] or $entry->[1] eq $plid) and
+        (!defined $entry->[2] or $entry->[2] eq $major) and
+        (!defined $entry->[3] or $entry->[3] eq $minor) and
+        (!defined $entry->[4] or $entry->[4] eq $product))
+    {
+        $version = $entry->[0];
+        $prediluvian = $entry->[5];
+        last;
     }
-} elsif ($plid==2) {
-    if      ($major==3 && $minor==51) {
-        $version = "nt3";
-        $prediluvian = 1;
-    } elsif ($major==4 && $minor== 0) {
-        $version = "nt4";
-        $prediluvian = 1;
-    } elsif ($major==5) {
-        if      ($minor==0) {
-            $version = "2000";
-            $prediluvian = 1;
-        } elsif ($minor==1) {
-            $version = "xp";
-        } elsif ($minor==2) {
-            if ($product==1) {
-                $version = "xp";
-            } else {
-                $version = "2003";
-            }
-        }
-    } elsif ($major==6) {
-        if      ($minor == 0) {
-            if      ($product==1) {
-                $version = "vista";
-            } elsif ($product==3) {
-                $version = "2008";
-            }
-        } elsif ($minor == 1) {
-            if      ($product==1) {
-                $version = "win7";
-            } elsif ($product==3) {
-                $version = "2008";
-            }
-        } elsif ($minor == 2 || $minor == 3) {
-            $version = "win8";
-        }
-    } elsif ($major==10) {
-        if      ($minor == 0) {
-            if      ($product==1) {
-                $version = "win10";
-            }
-        }
-    }
-} elsif ($plid==3) {
-    #$version = "ce$major$minor";
 }
 
-if ($prediluvian and not $acceptprediluvianwin) { mydie "platform $version not accepted\n"; }
+if ($prediluvian and not $acceptprediluvianwin)
+{
+    mydie "platform $version (platform $plid, type $product, $major.$minor) not accepted";
+}
 
 if ($wine) {
     my %known_hosts = ( "Linux" => "linux",
