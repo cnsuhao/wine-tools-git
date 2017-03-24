@@ -506,16 +506,17 @@ sub singletest($$$) {
     my ($group, $testname, $groupname) = @_;
     my $result = $group->{$testname};
 
-    my ($class, $msg, $title, $mouseover, $href, $label);
+    my ($msg, $prefix, $mouseover, $href, $label);
     if ($group->{reports} and @{$group->{reports}} > 1)
     {
         $href = $result->{omit} ? "" : "index_$group->{name}.html#$testname";
-        $label = $groupname;
+        $label = $prefix = $groupname;
     }
     else
     {
         my $report = $group->{reports} ? $group->{reports}->[0] : $group;
         $label = "$groupname $report->{tag}";
+        $prefix = "$testname | $report->{tag}";
         if (-r "$datadir/$build/$report->{dir}/$testname.html")
         {
             $href = "$report->{dir}/$testname.html";
@@ -526,8 +527,8 @@ sub singletest($$$) {
         }
     }
 
-    $class = get_result_class( $result );
-    $title = get_result_title( $testname, $result );
+    my $class = get_result_class( $result );
+    my $title = get_result_title( $testname, $result );
 
     my $status = $result->{status};
     if ($status eq "run")
@@ -576,14 +577,15 @@ sub singletest($$$) {
                $status =~ /^-/ ? "crashed" :
                $status eq "258" ? "timeout": "failed";
     }
+    $title = join(" | ", $prefix, $title);
     printf OUT "      <td class=\"%s\"><a %s %s %s>%s</a></td>\n",
                 $class, $href ? "href=\"$href\"" : "",
-                $title ? "title=\"$title\"" : "", $mouseover || "", $msg;
+                "title=\"$title\"", $mouseover || "", $msg;
     if ($group->{reports})
     {
         printf SUMMARY "%s %s <td class=\"%s\"><a %s %s %s>%s</a></td>\n",
                        $testname, $groupname, $class, $href ? "href=\"../$build/$href\"" : "",
-                       $title ? "title=\"$title\"" : "", $mouseover || "", $msg;
+                       "title=\"$title\"", $mouseover || "", $msg;
     }
 }
 
