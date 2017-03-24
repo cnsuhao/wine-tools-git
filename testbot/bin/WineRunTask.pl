@@ -358,6 +358,7 @@ if ($Step->ReportSuccessfulTests)
 {
   $Script .= "set WINETEST_REPORT_SUCCESS=1\r\n";
 }
+my $IsWineTest = 1;
 if ($Step->Type eq "single")
 {
   my $TestLauncher = "TestLauncher" . ($FileType eq "exe64" ? "64" : "32") . ".exe";
@@ -378,6 +379,10 @@ if ($Step->Type eq "single")
     $Script .= "$CmdLineArg ";
   }
   $Script .= "> $RptFileName\r\n";
+
+  # If StepNo is 1 then the user gave us an executable. Then there is no
+  # telling if it's going to follow the Wine test standards.
+  $IsWineTest = ($StepNo != 1);
 }
 elsif ($Step->Type eq "suite")
 {
@@ -482,10 +487,17 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
              ($CurrentUnit ne "" and
               $Line =~ /($CurrentUnit)\.c:\d+: Test failed: /))
       {
-        # If the failure is not for the current test unit we'll let its
-        # developer hash it out with the polluter ;-)
-        $CurrentIsPolluted = 1 if ($1 ne $CurrentUnit);
-
+        my $Unit = $1;
+        if ($Unit eq $CurrentUnit)
+        {
+          $IsWineTest = 1;
+        }
+        else
+        {
+          # If the failure is not for the current test unit we'll
+          # let its developer hash it out with the polluter ;-)
+          $CurrentIsPolluted = 1;
+        }
         $LineFailures++;
       }
       elsif ($Line =~ /^Fatal: test '([_a-z0-9]+)' does not exist/)
@@ -493,6 +505,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
         # This also replaces a test summary line.
         $CurrentPids{0} = 1;
         $SummaryFailures++;
+        $IsWineTest = 1;
 
         $LineFailures++;
       }
@@ -507,6 +520,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
           # This also replaces a test summary line.
           $CurrentPids{$Pid || 0} = 1;
           $SummaryFailures++;
+          $IsWineTest = 1;
         }
         else
         {
@@ -528,11 +542,12 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
           # There may be more than one summary line due to child processes
           $CurrentPids{$Pid || 0} = 1;
           $SummaryFailures += $Failures;
+          $IsWineTest = 1;
         }
         else
         {
           $CurrentIsPolluted = 1;
-          if ($Todo or $Failures)
+          if ($IsWineTest and ($Todo or $Failures))
           {
             LogTaskError("Found a misplaced '$Unit' test summary line.\n");
             $LogFailures++;
@@ -543,7 +558,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
       {
         my ($Dll, $Unit, $Pid, $Rc) = ($1, $2, $3, $4);
 
-        if ($Dll ne $CurrentDll or $Unit ne $CurrentUnit)
+        if ($IsWineTest and ($Dll ne $CurrentDll or $Unit ne $CurrentUnit))
         {
           LogTaskError("The start line is missing for $Dll:$Unit\n");
           $LogFailures++;
@@ -582,6 +597,11 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
             # done line.
             $LogFailures++;
           }
+          elsif (!$IsWineTest and $Rc != 0)
+          {
+            LogTaskError("The test returned a non-zero exit code\n");
+            $LogFailures++;
+          }
           elsif ($LineFailures == 0 and $Rc != 0)
           {
             LogTaskError("$Dll:$Unit returned an error ($Rc) despite having no failures\n");
@@ -589,7 +609,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
           }
         }
 
-        if ($Rc != 258 and
+        if ($IsWineTest and $Rc != 258 and
             ((!$Pid and !%CurrentPids) or
              ($Pid and !$CurrentPids{$Pid} and !$CurrentPids{0})))
         {
@@ -606,9 +626,11 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
     }
     close($LogFile);
 
-    if ($TimedOut)
+    if (!$IsWineTest or $TimedOut)
     {
-      # The report got truncated due to the timeout so ignore the other checks
+      # This is either not a Wine test, which means the report need not follow
+      # the Wine test standards, or the report got truncated due to the
+      # timeout. In either case ignore the other checks.
     }
     elsif (!defined $LogFailures)
     {
