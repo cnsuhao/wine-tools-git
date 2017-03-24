@@ -200,7 +200,6 @@ EOF
     print OUT defined($alltests{$test}->{next}) ? " | <a href=\"./$alltests{$test}->{next}\">next</a>" : " | next";
     print OUT <<EOF;
  | <a href="..">index</a>
-<script type="text/javascript" src="/summary.js"></script>
 </div>
 <div class="main">
 <h2>$test test runs</h2>

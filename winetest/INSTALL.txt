@@ -45,7 +45,6 @@ Web site account:
     ln -s /home/wine/tools/winetest/report.css
     ln -s /home/wine/tools/winetest/resultform.html
     ln -s /home/wine/tools/winetest/summary.css
-    ln -s /home/wine/tools/winetest/summary.js
     ln -s /home/wine/tools/winetest/winetest.cgi
 - Create the queue directory and make it writable by the web server
   (i.e. replace wwwrun by the user your web server runs under):
