@@ -86,17 +86,10 @@ FIXME The site script looks like it's meant to redirect from / to
 The web site is essentially composed of static web pages that are
 refreshed by perl scripts that are run at regular intervals.
 
-The script that orchestrates this is winetest.cron and it needs to be
-modified so it knows where the tools and workdir directories are
-located. Typically this would be:
+The script that orchestrates this is winetest.cron so set up a cron job
+in the winehq account to periodically update the pages:
 
-  tools=/home/wine/tools/winetest
-  workdir=/home/winehq/sites/winetest
-
-Then set up a cron job in the winehq account to periodically update
-the pages:
-
-  */5 * * * * /home/wine/tools/winetest/winetest.cron
+  */5 * * * * /home/wine/tools/winetest/winetest.cron /home/winehq/sites/winetest
 
 Still in the winehq account, you should run winetest.cron at least once
 before accessing the web site so the initial set of web pages has been
