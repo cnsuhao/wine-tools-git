@@ -262,7 +262,7 @@ eventlog.c:20: Test failed: Something wrong
 088c:eventlog: 408 tests executed (0 marked as todo, 0 failures), 0 skipped.
 advapi32:eventlog:088c done (3) in 4s
 
-advapi32:lsa start dlls/advapi32/tests/crypt.c -
+advapi32:lsa start dlls/advapi32/tests/lsa.c -
 ----- A unit test with no test summary line
 ----- Expected assessement: "Missing test summary" error
 advapi32:lsa:083c done (0) in 0s
@@ -299,7 +299,7 @@ advpack:advpack start dlls/advpack/tests/advpack.c -
 0da0:advpack: 99 tests executed (0 marked as todo, 0 failures), 0 skipped.
 advpack:advpack:0da0 done (0) in 0s
 
-advpack:files start dlls/advapi32/tests/crypt.c -
+advpack:files start dlls/advpack/tests/files.c -
 ----- A unit test with a failed test in the main process
 ----- Expected assessement: 1 failure
 files.c:20: Test failed: A failure in the main process
@@ -1020,7 +1020,7 @@ stub xcopy.exe:xcopy
 stub xmllite:reader
 stub xmllite:writer
 
-xmllite:writer start fake/source/writer.c -
+xmllite:writer start dlls/xmllite/tests/writer.c -
 ----- A unit test with a misplaced test failed line
 ----- Expected assessement: "Misplaced test failed line" error
 See the similar scenario before but note the lack of the extra test summary line

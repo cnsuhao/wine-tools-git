@@ -236,13 +236,14 @@ int main(int argc, char** argv)
                 fputs(line, stdout);
                 return 1;
             }
+            *unit = '\0';
             unit++;
-            line[strlen(line)-1] = '\0';
-            fprintf(logfile, "%s start fake/source/%s.c -\n", line+5, unit);
+            unit[strlen(unit)-1] = '\0';
+            fprintf(logfile, "%s:%s start fake/%s/%s.c -\n", line+5, unit, line+5, unit);
             fprintf(logfile, "----- A standard successful unit test\n");
             fprintf(logfile, "----- Expected assessement: Success\n");
             fprintf(logfile, "1234:%s: 2 tests executed (0 marked as todo, 0 failures), 0 skipped.\n", unit);
-            fprintf(logfile, "%s:1234 done (0) in 0s\n", line+5);
+            fprintf(logfile, "%s:%s:1234 done (0) in 0s\n", line+5, unit);
         }
         else
         {
