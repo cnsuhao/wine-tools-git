@@ -96,19 +96,22 @@ use File::Temp qw/tempdir/;
 use Errno qw/ENOTEMPTY/;
 
 
-my ($report, $tmpdir, $tag);
+my ($update, $tmpdir, $tag);
 
-sub mydie(@) {
-    my $errdir = tempdir ("errXXXXX", DIR => $queuedir);
-    if (!rename $tmpdir, $errdir) {
-        print STDERR "$name0:error: unable to rename '$tmpdir' to '$errdir': $!\n";
-        exit 3;
-    }
+sub mydie(@)
+{
     my $label = $tag ? $tag : "<notag>";
-    if (open ERR, ">$errdir/error")
-    {
-        print ERR "$label: ", @_;
-        close ERR;
+    if (!$update) {
+        my $errdir = tempdir ("errXXXXX", DIR => $queuedir);
+        if (!rename $tmpdir, $errdir) {
+            print STDERR "$name0:error: unable to rename '$tmpdir' to '$errdir': $!\n";
+            exit 3;
+        }
+        if (open ERR, ">$errdir/error")
+        {
+            print ERR "$label: ", @_;
+            close ERR;
+        }
     }
     print STDERR "$name0:error:$label: ", @_;
     exit 1;
@@ -124,8 +127,14 @@ sub create_box($$$)
     return $box;
 }
 
-($report, undef) = glob "$queuedir/rep*/report";
-exit 2 unless defined $report;
+my $report;
+if (defined $ARGV[0] and $ARGV[0] eq "--update") {
+    $report = $ARGV[1];
+    $update = 1;
+} else {
+    ($report, undef) = glob "$queuedir/rep*/report";
+}
+exit 2 unless (defined $report && -f $report);
 
 ($tmpdir = $report) =~ s|^(.+)/report$|$1|;
 
@@ -472,20 +481,22 @@ for (my $i = 0; $i <= $#boxes; $i++)
 }
 
 my $builddir = "$datadir/$testbuild";
-foreach ($datadir, $builddir) {
-    if (!(-d $_ || mkdir $_)) {
-        print STDERR "$name0:error: unable to create the '$_' directory: $!\n";
-        exit 3;
+if (!$update) {
+    foreach my $dir ($datadir, $builddir) {
+        if (!-d $dir && !mkdir $dir) {
+            print STDERR "$name0:error: unable to create the '$dir' directory: $!\n";
+            exit 3;
+        }
     }
-}
 
-my ($dir, $dirbase, $try);
-$dir = $dirbase = "$builddir/${version}_$tag";
-$try = 0;
-while (!rename $tmpdir, $dir) {
-    $!{ENOTEMPTY} or mydie "unable to rename '$tmpdir' to '$dir': $!\n";
-    ++$try < $maxmult or mydie "more than $maxmult submissions for $dirbase\n";
-    $dir = "${dirbase}_$try";
+    my ($dir, $dirbase, $try);
+    $dir = $dirbase = "$builddir/${version}_$tag";
+    $try = 0;
+    while (!rename $tmpdir, $dir) {
+        $!{ENOTEMPTY} or mydie "unable to rename '$tmpdir' to '$dir': $!\n";
+        ++$try < $maxmult or mydie "more than $maxmult submissions for $dirbase\n";
+        $dir = "${dirbase}_$try";
+    }
 }
 if (!-e "$builddir/outdated") {
     if (!open SIGN, ">$builddir/outdated") {
