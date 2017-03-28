@@ -60,10 +60,41 @@ my $minimum_report_version=4;
 my $summary_version=4;
 
 
+$ENV{GIT_DIR} = $gitdir;
+
+sub get_build_info($)
+{
+    my ($build) = @_;
+    my ($date, $subject);
+
+    my $commit = `git log --max-count=1 --pretty="format:%ct %s" "$build^0" 2>/dev/null` if ($build =~ /^[0-9a-f]{40}$/);
+    if ($commit && $commit =~ /^(\d+) (.*)$/)
+    {
+        ($date, $subject) = ($1, $2);
+        # Make sure the directory's mtime matches the commit time
+        utime $date, $date, "$datadir/$build";
+    }
+    else
+    {
+        $date = (stat "$datadir/$build")[9];
+        $subject = "";
+    }
+    return ($date, $subject);
+}
+
+use POSIX qw(locale_h strftime);
+setlocale(LC_ALL, "C");
+
+sub short_date($)
+{
+    my ($date) = @_;
+    return strftime("%b %d", gmtime($date));
+}
+
+
 use File::Temp qw/tempdir/;
 use Errno qw/ENOTEMPTY/;
 
-$ENV{GIT_DIR} = $gitdir;
 
 my ($report, $tmpdir, $tag);
 
@@ -119,6 +150,10 @@ $testbuild eq $commit or mydie "not an existing commit $testbuild\n";
 my $shortbuild = substr($testbuild,0,12);
 my $archive = "winetest-$shortbuild.exe";
 
+my ($date, $_subject) = get_build_info($testbuild);
+my $short_date = short_date($date);
+
+
 $_ = <IN>;
 if (/^Archive: /) { $_ = <IN>; }  # ignore Archive header
 
@@ -127,7 +162,7 @@ $tag = $1;
 
 $_ = <IN>;
 /^Build info:\r?$/ or mydie "no Build info header: $_";
-my $box = create_box( "version", "version", "Version information for $tag" );
+my $box = create_box( "version", "version", "$tag $short_date information" );
 $box->{data} .= "<h2>Build version</h2>\n";
 $box->{data} .= "<table class=\"output\">\n";
 $box->{data} .= "<tr><td>Build</td><td><a title=\"$testbuild\" href=\"$gitweb/?a=shortlog;h=$testbuild\">$shortbuild</a></td></tr>\n";
@@ -397,7 +432,7 @@ for (my $i = 0; $i <= $#boxes; $i++)
 
 open REPORT, ">$tmpdir/report.html" or mydie "unable to open '$tmpdir/report.html' for writing: $!\n";
 
-print REPORT start_html( -title => "Wine test run report", -style => {src=>"/report.css"} );
+print REPORT start_html( -title => "$short_date $tag report", -style => {src=>"/report.css"} );
 print REPORT "<div class=\"navbar\">";
 print REPORT "<a href=\"report\">raw report</a> | <a href=\"..\">summary</a> | <a href=\"../..\">index</a>";
 printf REPORT " | <a href=\"/builds/%s\">test binary</a>", escapeHTML($archive) if $archive;
@@ -420,7 +455,7 @@ close REPORT or mydie "error writing to '$tmpdir/report.html': $!\n";
 for (my $i = 0; $i <= $#boxes; $i++)
 {
     open FILE, ">$tmpdir/$boxes[$i]->{id}.html" or mydie "unable to open '$tmpdir/$boxes[$i]->{id}.html' for writing: $!\n";
-    print FILE start_html( -title => "Wine test run report", -style => {src=>"/report.css"} );
+    print FILE start_html( -title => "$short_date $boxes[$i]->{id} $tag", -style => {src=>"/report.css"} );
     print FILE "<div class=\"navbar\">";
     print FILE $boxes[$i]->{prev} ? "<a href=\"./$boxes[$i]->{prev}.html\">prev</a> | " : "prev | ";
     print FILE $boxes[$i]->{next} ? "<a href=\"./$boxes[$i]->{next}.html\">next</a> | " : "next | ";
