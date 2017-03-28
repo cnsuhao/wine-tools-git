@@ -45,7 +45,7 @@ sub BEGIN
     }
     unshift @INC, $1 if ($0 =~ m=^(/.*)/[^/]+$=);
 }
-use vars qw/$datadir $gitweb/;
+use vars qw/$datadir $gitdir $gitweb/;
 require "winetest.conf";
 
 my $name0=$0;
@@ -53,6 +53,38 @@ $name0 =~ s+^.*/++;
 
 # We support summary files version 4 and up
 my $summary_version=4;
+
+
+$ENV{GIT_DIR} = $gitdir;
+
+sub get_build_info($)
+{
+    my ($build) = @_;
+    my ($date, $subject);
+
+    my $commit = `git log --max-count=1 --pretty="format:%ct %s" "$build^0" 2>/dev/null` if ($build =~ /^[0-9a-f]{40}$/);
+    if ($commit && $commit =~ /^(\d+) (.*)$/)
+    {
+        ($date, $subject) = ($1, $2);
+        # Make sure the directory's mtime matches the commit time
+        utime $date, $date, "$datadir/$build";
+    }
+    else
+    {
+        $date = (stat "$datadir/$build")[9];
+        $subject = "";
+    }
+    return ($date, $subject);
+}
+
+use POSIX qw(locale_h strftime);
+setlocale(LC_ALL, "C");
+
+sub short_date($)
+{
+    my ($date) = @_;
+    return strftime("%b&nbsp;%d", gmtime($date));
+}
 
 
 # A test name is of the form 'dll:unit' where:
@@ -131,6 +163,7 @@ my ($outdated,undef) = glob "$datadir/*/outdated";
 exit 2 unless defined $outdated;
 (my $build = $outdated) =~ s|^\Q$datadir\E/(.*)/outdated$|$1|;
 (my $release = $build) =~ s/^(\d+).*$/$1/;
+my ($date, $_subject) = get_build_info($build);
 
 # Read in the data
 
@@ -420,6 +453,7 @@ EOF
 
 my $header_footer=build_header_footer(\@groups);
 my $short_build = substr($build,0,12);
+my $short_date = short_date($date);
 
 my $legend =
 "<div class=\"legend\">
@@ -616,14 +650,14 @@ sub output_table($)
     {
         $group_name = $group->{name};
         $header_footer = build_header_footer($group->{reports});
-        $title = "$group_name results for build $short_build";
+        $title = "$short_date: $group_name results";
         $filename = "index_$group_name.html";
     }
     else
     {
         $group_name = "global";
         $header_footer = build_header_footer(\@groups);
-        $title = "Summary for build $short_build";
+        $title = "$short_date: Summary";
         $filename = "index.html";
     }
 
@@ -657,7 +691,7 @@ EOF
         print OUT "&nbsp;|&nbsp;<a href=\"..\">index</a>\n";
         print OUT "</div>\n";
         print OUT "<div class=\"group\">\n";
-        print OUT "<h1>$group_name results for build <a href=\".\" title=\"$build\">$short_build</a></h1>\n";
+        print OUT "<h1>$short_date: $group_name results for build <a href=\".\" title=\"$build\">$short_build</a></h1>\n";
         print OUT "<table class=\"report\">\n$header_footer\n  <tbody>\n";
     }
     else
@@ -668,7 +702,7 @@ EOF
         print OUT "&nbsp;|&nbsp;<a href=\"..\">index</a>";
         print OUT "</div>\n";
         print OUT "<div class=\"main\">\n";
-        print OUT "<h1>Main summary for build $short_build</h1>\n";
+        print OUT "<h1>$short_date: Summary for build $short_build</h1>\n";
         print OUT "<table class=\"report\">\n$header_footer\n  <tbody>\n";
     }
 
