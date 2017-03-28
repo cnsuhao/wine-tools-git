@@ -455,16 +455,6 @@ my $header_footer=build_header_footer(\@groups);
 my $short_build = substr($build,0,12);
 my $short_date = short_date($date);
 
-my $legend =
-"<div class=\"legend\">
-<h3>Legend</h3>
-<p class=\"legend\">All tests <span class=\"result pass\">pass</span> in all reports.</p>
-<p class=\"legend\">Some tests <span class=\"result mixed\">fail</span> in some reports.</p>
-<p class=\"legend\">Some tests <span class=\"result fail\">fail</span> in all reports.</p>
-<p class=\"legend\">This <span class=\"result pass also-skip\">border</span> signals that some tests are skipped.</p>
-<p class=\"legend\">This <span class=\"result mixed also-todo\">border</span> and this <span class=\"result todo\">background</span> signal that the implementation needs some work.</p>
-</div>";
-
 sub min_to_max($)
 {
     my ($minmax)=@_;
@@ -736,7 +726,14 @@ EOF
   </tbody>
 </table>
 </div>
-$legend
+<div class="legend">
+<h3>Legend</h3>
+<p class="legend">All tests <span class="result pass">pass</span> in all reports.</p>
+<p class="legend">Some tests <span class="result mixed">fail</span> in some reports.</p>
+<p class="legend">Some tests <span class="result fail">fail</span> in all reports.</p>
+<p class="legend">This <span class="result pass also-skip">border</span> signals that some tests are skipped.</p>
+<p class="legend">This <span class="result mixed also-todo">border</span> and this <span class="result todo">background</span> signal that the implementation needs some work.</p>
+</div>
 <div class="navbar">
 To run the tests on your Windows machine, download the <a href="/builds/winetest-$short_build.exe">32-bit winetest</a>.
 If you have a 64-bit Windows OS, you can also run the <a href="/builds/winetest64-$short_build.exe">64-bit winetest</a>.
