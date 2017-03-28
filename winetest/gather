@@ -79,8 +79,6 @@ my $summary_version=4;
 #  dir           The directory containing the report data (log files, etc).
 #  group         A reference to the group the report belongs to.
 #  dllmissing    A hash of the missing dlls for that system.
-#  winetestcrash The name of the last test that was run before winetest
-#                  crashed.
 #  filelimit     The name of the last test that was run before the report file
 #                  size limit was reached.
 #  <testname>    Maps the test names to a structure containing the individual
@@ -179,10 +177,7 @@ foreach my $file (glob "$datadir/$build/*/summary.txt") {
         $alltests{$testname} = $source;
 
         if ($count eq "failed") {
-            if ($todos eq "crash") {
-                $report->{$testname} = { status => "winetest crash" };
-                $report->{winetestcrash} = $testname;
-            } elsif ($todos eq "filelimit") {
+            if ($todos eq "filelimit") {
                 $report->{$testname} = { status => "file limit" };
                 $report->{filelimit} = $testname;
             } else {
@@ -265,7 +260,6 @@ foreach my $group (@groups) {
         foreach my $report (@{$group->{reports}}) {
             if (!exists $report->{$testname}) {
                 my ($dll, $unit) = split(/:/, $testname);
-                my $crash = $report->{winetestcrash};
                 my $filelimit = $report->{filelimit};
                 if (exists $report->{dllmissing}->{$dll}) {
                     # Mark this test as missing because of a missing dll
@@ -273,9 +267,6 @@ foreach my $group (@groups) {
                                              count  => [ 1, 1 ],
                                              skips  => [ 1, 1 ]
                                            };
-                } elsif (defined $crash && $testname gt $crash) {
-                    # Mark this test as missing because of a winetest crash
-                    $report->{$testname}->{status} = "winetest crash";
                 } elsif (defined $filelimit && $testname gt $filelimit) {
                     # Mark this test as missing because of a partial report file
                     $report->{$testname}->{status} = "filelimit";
@@ -490,7 +481,6 @@ sub get_result_title($$)
         return "No tests run as $dll is not present on this system";
     }
     if ($result->{status} eq "skipped") { return "Test skipped by user request"; }
-    if ($result->{status} eq "winetest crash") { return "Test did not run as winetest crashed"; }
     if ($result->{status} eq "filelimit") { return "Test is missing because of a partial report file"; }
     if ($result->{status} eq "missing") { return "Test did not run for an unknown reason"; }
     if ($result->{status} eq "mixed") { return "Mixed results"; }
@@ -543,10 +533,6 @@ sub singletest($$$) {
     elsif ($status eq "dll missing")
     {
         $msg = "n/a";
-    }
-    elsif ($status eq "winetest crash")
-    {
-        $msg = "winetest";
     }
     elsif ($status eq "filelimit")
     {
