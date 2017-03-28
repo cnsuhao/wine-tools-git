@@ -349,7 +349,8 @@ sub GenerateBody($)
         {
           $CurrentDll = $1;
         }
-        if ($FullLog || $Line =~ m/: Test failed: / ||
+        if ($FullLog ||
+            $Line =~ m/: Test (?:failed|succeeded inside todo block): / ||
             $Line =~ m/Fatal: test '[^']+' does not exist/ ||
             $Line =~ m/ done \(258\)/ ||
             $Line =~ m/: unhandled exception [0-9a-fA-F]{8} at /)

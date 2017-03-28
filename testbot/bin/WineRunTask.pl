@@ -483,9 +483,9 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
         }
         ($CurrentDll, $CurrentUnit) = ($Dll, $Unit);
       }
-      elsif ($Line =~ /^([_a-z0-9]+)\.c:\d+: Test failed: / or
+      elsif ($Line =~ /^([_a-z0-9]+)\.c:\d+: Test (?:failed|succeeded inside todo block): / or
              ($CurrentUnit ne "" and
-              $Line =~ /($CurrentUnit)\.c:\d+: Test failed: /))
+              $Line =~ /($CurrentUnit)\.c:\d+: Test (?:failed|succeeded inside todo block): /))
       {
         my $Unit = $1;
         if ($Unit eq $CurrentUnit)
