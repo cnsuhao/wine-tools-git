@@ -43,7 +43,6 @@ Web site account:
 - Then create symbolic links to the web site's scripts:
     cd $HOME/sites/winetest
     ln -s /home/wine/tools/winetest/report.css
-    ln -s /home/wine/tools/winetest/resultform.html
     ln -s /home/wine/tools/winetest/summary.css
     ln -s /home/wine/tools/winetest/winetest.cgi
 - Create the queue directory and make it writable by the web server
