@@ -170,6 +170,8 @@ sub Submit($$$)
       elsif ($Line =~ m~^\+\+\+ .*/(dlls|programs)/([^/]+)/tests/([^/\s]+)~)
       {
         my ($FileType, $Module, $Unit) = ("patch$1", $2, $3);
+        # Assume makefile modifications may break the build but not the tests
+        next if ($Unit eq "Makefile.in");
         $Unit = "" if ($Unit !~ s/\.c$//);
         $Modules{$Module}{$Unit} = $FileType;
       }
