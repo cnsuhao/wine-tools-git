@@ -103,6 +103,37 @@ sub FromSubmission($$)
   $self->Disposition("Processing");
 }
 
+
+=pod
+=over 12
+
+=item C<GetTestList()>
+
+Returns a hashtable containing the list of the source files for a given module.
+This structure is built from the latest/testlist.txt file.
+
+=back
+=cut
+
+sub GetTestList()
+{
+  my $TestList = {};
+  if (open(my $File, "<", "$DataDir/latest/testlist.txt"))
+  {
+    while (my $TestFileName = <$File>)
+    {
+      chomp $TestFileName;
+      if ($TestFileName =~ m~^(?:dlls|programs)/([^/]+)/tests/[^/]+\.c$~)
+      {
+        my $Module = $1;
+        push @{$TestList->{$Module}}, $TestFileName;
+      }
+    }
+    close($File);
+  }
+  return $TestList;
+}
+
 =pod
 =over 12
 
@@ -126,28 +157,29 @@ sub Submit($$$)
   my ($self, $PatchFileName, $IsSet) = @_;
 
   # See also OnSubmit() in web/Submit.pl
-  my %Modules;
+  my (%Modules, %Deleted);
   if (open(BODY, "<$DataDir/patches/" . $self->Id))
   {
-    my $Line;
+    my ($Line, $Modified);
     while (defined($Line = <BODY>))
     {
-      if ($Line =~ m~^\+\+\+ .*/(dlls|programs)/([^/]+)/tests/([^/\s]+)~)
+      if ($Line =~ m~^\-\-\- .*/((?:dlls|programs)/[^/]+/tests/[^/\s]+)~)
+      {
+        $Modified = $1;
+      }
+      elsif ($Line =~ m~^\+\+\+ .*/(dlls|programs)/([^/]+)/tests/([^/\s]+)~)
       {
         my ($FileType, $Module, $Unit) = ("patch$1", $2, $3);
         $Unit = "" if ($Unit !~ s/\.c$//);
-        if ($Unit)
-        {
-          if (defined($Modules{$Module}{""}))
-          {
-            delete($Modules{$Module}{""});
-          }
-          $Modules{$Module}{$Unit} = $FileType;
-        }
-        elsif (! defined($Modules{$Module}))
-        {
-          $Modules{$Module}{""} = $FileType;
-        }
+        $Modules{$Module}{$Unit} = $FileType;
+      }
+      elsif ($Line =~ m~^\+\+\+ /dev/null~ and defined $Modified)
+      {
+        $Deleted{$Modified} = 1;
+      }
+      else
+      {
+        $Modified = undef;
       }
     }
     close BODY;
@@ -173,6 +205,31 @@ sub Submit($$$)
   if (! defined($User))
   {
     $User = GetBatchUser();
+  }
+
+  my $TestList;
+  foreach my $Module (keys %Modules)
+  {
+    next if (!defined $Modules{$Module}{""});
+
+    # The patch modifies non-C files so rerun all that module's test units
+    $TestList = GetTestList() if (!$TestList);
+    next if (!defined $TestList->{$Module});
+
+    # If we don't find which tests to rerun then run the module test
+    # executable without argument. It probably won't work but will make the
+    # issue clearer to the developer.
+    my $FileType = $Modules{$Module}{""};
+    foreach my $TestFileName (@{$TestList->{$Module}})
+    {
+      if (!$Deleted{$TestFileName} and
+          $TestFileName =~ m~^(?:dlls|programs)/\Q$Module\E/tests/([^/]+)\.c$~)
+      {
+        my $Unit = $1;
+        $Modules{$Module}{$Unit} = $FileType;
+        delete $Modules{$Module}{""};
+      }
+    }
   }
 
   my $Disposition = "Submitted job ";

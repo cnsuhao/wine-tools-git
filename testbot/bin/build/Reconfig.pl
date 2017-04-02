@@ -67,6 +67,11 @@ sub GitPull()
     return !1;
   }
 
+  system("( cd $DataDir/wine && ".
+         "  ls dlls/*/tests/*.c programs/*/tests/*.c | ".
+         "      egrep -v '/testlist.c\$' >../testlist.txt ".
+         ") >>$LogDir/Reconfig.log 2>&1");
+
   return 1;
 }
 

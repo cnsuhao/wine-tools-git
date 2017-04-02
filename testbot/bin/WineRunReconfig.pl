@@ -370,6 +370,18 @@ elsif (!defined $TAError)
 {
   $TAError = "An error occurred while retrieving the reconfig log: ". $TA->GetLastError();
 }
+
+Debug(Elapsed($Start), " Retrieving the updated test list '$TaskDir/testlist.txt'\n");
+if ($TA->GetFile("testlist.txt", "$TaskDir/testlist.txt"))
+{
+  use File::Copy;
+  copy "$TaskDir/testlist.txt", "$DataDir/latest/testlist.txt";
+}
+elsif (!defined $TAError)
+{
+  $TAError = "An error occurred while retrieving the test list: ". $TA->GetLastError();
+}
+
 $TA->Disconnect();
 
 # Report the reconfig errors even though they may have been caused by
