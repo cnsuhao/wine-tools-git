@@ -126,7 +126,7 @@ sub Submit($$$)
   my ($self, $PatchFileName, $IsSet) = @_;
 
   # See also OnSubmit() in web/Submit.pl
-  my %Targets;
+  my %Modules;
   if (open(BODY, "<$DataDir/patches/" . $self->Id))
   {
     my $Line;
@@ -134,35 +134,26 @@ sub Submit($$$)
     {
       if ($Line =~ m~^\+\+\+ .*/(dlls|programs)/([^/]+)/tests/([^/\s]+)~)
       {
-        my $FileType = "patch$1";
-        my $BaseName = $2;
-        my $TestSet = $3;
-        if ($TestSet =~ m/^(.*)\.c$/)
+        my ($FileType, $Module, $Unit) = ("patch$1", $2, $3);
+        $Unit = "" if ($Unit !~ s/\.c$//);
+        if ($Unit)
         {
-          $TestSet = $1;
-        }
-        else
-        {
-          $TestSet = "";
-        }
-        if ($TestSet)
-        {
-          if (defined($Targets{$BaseName}{""}))
+          if (defined($Modules{$Module}{""}))
           {
-            delete($Targets{$BaseName}{""});
+            delete($Modules{$Module}{""});
           }
-          $Targets{$BaseName}{$TestSet} = $FileType;
+          $Modules{$Module}{$Unit} = $FileType;
         }
-        elsif (! defined($Targets{$BaseName}))
+        elsif (! defined($Modules{$Module}))
         {
-          $Targets{$BaseName}{""} = $FileType;
+          $Modules{$Module}{""} = $FileType;
         }
       }
     }
     close BODY;
   }
 
-  if (! scalar(%Targets))
+  if (! scalar(%Modules))
   {
     $self->Disposition(($IsSet ? "Set" : "Patch") .
                        " doesn't affect tests");
@@ -186,7 +177,7 @@ sub Submit($$$)
 
   my $Disposition = "Submitted job ";
   my $First = 1;
-  foreach my $BaseName (keys %Targets)
+  foreach my $Module (keys %Modules)
   {
     my $Jobs = WineTestBot::Jobs::CreateJobs();
 
@@ -209,8 +200,8 @@ sub Submit($$$)
     # Create a link to the patch file in the staging dir
     my $StagingFileName = CreateNewLink($PatchFileName, "$DataDir/staging", "_patch.diff");
     $NewStep->FileName(basename($StagingFileName));
-    my @Keys = keys %{$Targets{$BaseName}};
-    $NewStep->FileType($Targets{$BaseName}{$Keys[0]});
+    my @Keys = keys %{$Modules{$Module}};
+    $NewStep->FileType($Modules{$Module}{$Keys[0]});
     $NewStep->InStaging(1);
     $NewStep->Type("build");
     $NewStep->DebugLevel(0);
@@ -224,7 +215,7 @@ sub Submit($$$)
     $Task->VM($BuildVM);
     $Task->Timeout($BuildTimeout);
   
-    foreach my $TestSet (keys %{$Targets{$BaseName}})
+    foreach my $Unit (keys %{$Modules{$Module}})
     {
       # Add 32 and 64-bit tasks
       foreach my $Bits ("32", "64")
@@ -236,8 +227,8 @@ sub Submit($$$)
         {
           # Create the corresponding Step
           $NewStep = $Steps->Add();
-          my $FileName = $BaseName;
-          $FileName .= ".exe" if ($Targets{$BaseName}{$TestSet} eq "patchprograms");
+          my $FileName = $Module;
+          $FileName .= ".exe" if ($Modules{$Module}{$Unit} eq "patchprograms");
           $FileName .= "_test";
           $FileName .= "64" if ($Bits eq "64");
           $NewStep->FileName("$FileName.exe");
@@ -253,7 +244,7 @@ sub Submit($$$)
             my $Task = $Tasks->Add();
             $Task->VM($VM);
             $Task->Timeout($SingleTimeout);
-            $Task->CmdLineArg($TestSet);
+            $Task->CmdLineArg($Unit);
           }
         }
       }
