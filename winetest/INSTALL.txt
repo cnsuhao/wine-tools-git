@@ -111,4 +111,8 @@ FIXME Document how to set it up. Run it in yet another account since it
 ----------
 
 You can manually upload WineTest reports by accessing the following URL:
-http://test.example.com/submit
+
+  http://test.example.com/submit
+
+Alternatively you can tell WineTest.exe to upload its report to your site using
+the above URL and the -S option.
