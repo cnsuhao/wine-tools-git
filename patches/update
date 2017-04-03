@@ -43,6 +43,7 @@ my %status_descr =
  "testcase"   => "Needs tests",
  "testfail"   => "Test failure",
  "signoff"    => "Sign-off",
+ "reply"      => "Reply",
 );
 
 my @legend =
@@ -59,6 +60,7 @@ my @legend =
  [ "testcase",   "<ul><li>You need to write some test cases demonstrating that the patch is correct.</li></ul>" ],
  [ "deferred",   "<ul><li>The patch is deferred because of code freeze for an upcoming release. Either resend after the release, make the patch less intrusive, or make a convincing argument that it needs to be included in the release.</li></ul>" ],
  [ "signoff",    "<ul><li>This is a Signed-off-by reply to another patch.</li></ul>" ],
+ [ "reply",      "<ul><li>The mail is a reply to another patch.</li></ul>" ],
  [ "other",      "<ul><li>The patch belongs to another WineHQ project (website, appdb, etc.) and will be applied by the respective maintainer.</li></ul>" ],
  [ "applyfail",  "<ul><li>The patch got mangled in transit.</li>" .
                  "<li>It's not relative to the latest git.</li>" .
@@ -73,8 +75,7 @@ my @legend =
                  "<li>8-bit chars got mangled in transit (usually when sending patches to translation files).</li>" .
                  "<li>You are making gratuitous formatting changes to the code.</li>" .
                  "<li>You are using C++ comments.</li></ul>" ],
- [ "nopatch",    "<ul><li>You hit 'send' before attaching the patch.</li>" .
-                 "<li>The mail is a reply to another patch, or spam.</li></ul>" ],
+ [ "nopatch",    "<ul><li>You hit 'send' before attaching the patch.</li></ul>" ],
  [ "rejected",   "<ul><li>The patch has been rejected with a comment on wine-devel or #winehackers.</li>" .
                  "<li>The patch contains an obvious error that you are expected to figure out yourself.</li></ul>" ],
  [ "split",      "<ul><li>A single mail contained multiple patch files.</li>" .

@@ -35,6 +35,7 @@ my %status_expiry =
  "formatting" => 7,
  "other"      => 7,
  "nopatch"    => 3,
+ "reply"      => 7,
  "rejected"   => 7,
  "split"      => 7,
  "depend"     => 7,
@@ -59,6 +60,7 @@ my %status_descr =
  "formatting" => "Formatting",
  "other"      => "Other project",
  "nopatch"    => "No patch",
+ "reply"      => "Reply",
  "rejected"   => "Rejected",
  "split"      => "Needs splitting",
  "depend"     => "Dependency",
@@ -141,6 +143,7 @@ the patch is correct.",
 # No notifications are sent for the following:
 # "nil"
 # "signoff"
+# "reply"
 # "superseded"
 # "testfail"
 );
