@@ -442,7 +442,7 @@ if (!$Pid)
 #
 
 my $NewStatus = 'completed';
-my ($TestFailures, $TimedOut, $TAError, $PossibleCrash);
+my ($TaskFailures, $TaskTimedOut, $TAError, $PossibleCrash);
 Debug(Elapsed($Start), " Waiting for the script (", $Task->Timeout, "s timeout)\n");
 if (!defined $TA->Wait($Pid, $Timeout, $Keepalive))
 {
@@ -450,8 +450,8 @@ if (!defined $TA->Wait($Pid, $Timeout, $Keepalive))
   if ($ErrMessage =~ /timed out waiting for the child process/)
   {
     LogTaskError("The task timed out\n");
-    $TestFailures = 1;
-    $TimedOut = 1;
+    $TaskFailures = 1;
+    $TaskTimedOut = 1;
   }
   else
   {
@@ -626,7 +626,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
     }
     close($LogFile);
 
-    if (!$IsWineTest or $TimedOut)
+    if (!$IsWineTest or $TaskTimedOut)
     {
       # This is either not a Wine test, which means the report need not follow
       # the Wine test standards, or the report got truncated due to the
@@ -648,7 +648,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
       $LogFailures++;
     }
     # $LogFailures can legitimately be undefined in case of a timeout
-    $TestFailures += $LogFailures || 0;
+    $TaskFailures += $LogFailures || 0;
   }
   else
   {
@@ -674,4 +674,4 @@ FatalTAError(undef, $TAError, $PossibleCrash) if (defined $TAError);
 # Wrap up
 #
 
-WrapUpAndExit($NewStatus, $TestFailures);
+WrapUpAndExit($NewStatus, $TaskFailures);
