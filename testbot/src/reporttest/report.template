@@ -400,14 +400,15 @@ comctl32:button skipped dlls/comctl32/tests/button.c -
 
 comctl32:comboex start dlls/comctl32/tests/comboex.c -
 ----- A unit test with failed, todo and skipped tests in the main process
------ Expected assessement: 1 failure, 1 todo, 1 skip
-advpack.c:40: Test failed: A failure in the main process
-advpack.c:41: Test marked todo: Fixme in the main process
-advpack.c:42: Tests skipped: Skipped in the main process
+----- Expected assessement: 2 failures, 1 todo, 1 skip
+comboex.c:40: Test failed: A failure in the main process
+comboex.c:41: Test succeeded inside todo block: Success in the main process
+comboex.c:42: Test marked todo: Fixme in the main process
+comboex.c:43: Tests skipped: Skipped in the main process
 This line says nothing is wrong because it's from the subprocess
 1234:comboex: 116 tests executed (0 marked as todo, 0 failures), 0 skipped.
-0c9c:comboex: 116 tests executed (1 marked as todo, 1 failure), 1 skipped.
-comctl32:comboex:0c9c done (1) in 0s
+0c9c:comboex: 116 tests executed (1 marked as todo, 2 failures), 1 skipped.
+comctl32:comboex:0c9c done (2) in 0s
 
 comctl32:datetime start dlls/comctl32/tests/datetime.c -
 ----- A unit test reporting a failure but with no test failed line
