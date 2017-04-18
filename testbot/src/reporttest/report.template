@@ -517,23 +517,23 @@ subclass: 2251 tests executed (0 marked as todo, 0 failures), 0 skipped.
 comctl32:subclass:07b0 done (1) in 0s
 
 comctl32:syslink start dlls/comctl32/tests/syslink.c -
------ A unit test with a garbled test failed line
------ Expected assessement: 1 failure
+----- A unit test with garbled test lines
+----- Expected assessement: 2 failures, 1 todo, 1 skip
 Multi-threaded and multi-process tests should really try to avoid races in
 the report. But analysis tools should also try to be resilient.
 Do not cut syslink.c:40: Test failed: Something wrong
 me off
-07b0:syslink: 2251 tests executed (0 marked as todo, 1 failures), 0 skipped.
-comctl32:syslink:07b0 done (1) in 0s
-
-comctl32:tab start dlls/comctl32/tests/tab.c -
------ A unit test with a garbled test summary line
------ Expected assessement: Success
-See previous comment.
-Do not cut 07b0:tab: 2251 tests executed (0 marked as todo, 0 failures), 0 skipped.
+Do not cut syslink.c:41: Test succeeded inside todo block: Something right!
 me off
-comctl32:tab:07b0 done (0) in 0s
+Do not cut syslink.c:42: Test marked todo: Hello Wine!
+me off
+Do not cut syslink.c:43: Tests skipped: Another time
+me off
+Do not cut 07b0:syslink: 2251 tests executed (1 marked as todo, 2 failures), 1 skipped.
+me off
+comctl32:syslink:07b0 done (2) in 0s
 
+stub comctl32:tab
 stub comctl32:toolbar
 stub comctl32:tooltips
 stub comctl32:trackbar
