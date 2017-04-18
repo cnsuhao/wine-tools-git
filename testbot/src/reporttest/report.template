@@ -311,7 +311,7 @@ advpack:install start dlls/advpack/tests/install.c -
 ----- A unit test with a crash
 ----- Expected assessement: Crash
 07b0:install: unhandled exception c0000005 at 0040167C
-advpack:install:07b0 done (3221225477) in 0s
+advpack:install:07b0 done (-1073741819) in 0s
 
 amstream:amstream start dlls/amstream/tests/amstream.c -
 ----- No pid at all
@@ -533,9 +533,29 @@ Do not cut 07b0:syslink: 2251 tests executed (1 marked as todo, 2 failures), 1 s
 me off
 comctl32:syslink:07b0 done (2) in 0s
 
-stub comctl32:tab
-stub comctl32:toolbar
-stub comctl32:tooltips
+comctl32:tab start dlls/comctl32/tests/tab.c -
+----- A unit test crash with no pid
+----- Expected assessement: crashed
+tab: unhandled exception c0000005 at 0040167C
+comctl32:tab done (-1073741819) in 0s
+
+comctl32:taskdialog start dlls/comctl32/tests/taskdialog.c -
+----- A unit test crash with unsigned exit code (TestLauncher)
+----- Expected assessement: crashed
+taskdialog: unhandled exception c0000005 at 0040167C
+comctl32:taskdialog done (3221225477) in 0s
+
+comctl32:toolbar start dlls/comctl32/tests/toolbar.c -
+----- A unit test crash with no unhandled exception line
+----- Expected assessement: crashed
+comctl32:toolbar done (-1073741819) in 0s
+
+comctl32:tooltips start dlls/comctl32/tests/toolbar.c -
+----- A unit test crash with no unhandled exception line
+----- and an unsigned exit code.
+----- Expected assessement: crashed
+comctl32:tooltips done (3221225477) in 0s
+
 stub comctl32:trackbar
 stub comctl32:treeview
 stub comctl32:updown
