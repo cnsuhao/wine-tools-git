@@ -34,7 +34,7 @@ sub BEGIN
     }
     unshift @INC, $1 if ($0 =~ m=^(/.*)/[^/]+$=);
 }
-use vars qw/$gitdir $gitweb $queuedir/;
+use vars qw/$workdir $gitdir $gitweb/;
 require "winetest.conf";
 
 
@@ -50,11 +50,11 @@ sub get_build_info($)
     {
         ($date, $subject) = ($1, $2);
         # Make sure the directory's mtime matches the commit time
-        utime $date, $date, "data/$build";
+        utime $date, $date, "$workdir/data/$build";
     }
     else
     {
-        $date = (stat "./data/$build")[9];
+        $date = (stat "$workdir/data/$build")[9];
         $subject = "";
     }
     return ($date, $subject);
@@ -100,17 +100,20 @@ my %wine    = (name => "Wine");
 my @groups = (\%w95, \%w98, \%me, \%nt3, \%nt4, \%w2k, \%xp, \%w2k3, \%vista, \%w2k8, \%win7, \%win8, \%win10,
               \%unknown, \%linux, \%mac, \%bsd, \%solaris, \%wine);
 
+
+chdir($workdir) or die "could not chdir to the work directory: $!";
+
 # read the test data dir
 
 my @builds;
 my @too_old;
 
-opendir(DIR, "./data/") or die "cannot open ./data";
+opendir(DIR, "data") or die "cannot open 'data'";
 foreach my $build (readdir(DIR))
 {
     next if $build =~ /^\./;
     next unless $build =~ /^[-.0-9a-zA-Z]+$/;
-    next unless -f "./data/$build/index.html";
+    next unless -f "data/$build/index.html";
 
     my ($date, $subject) = get_build_info($build);
     if (time() - $date > 60 * 24 * 60 * 60)
@@ -137,7 +140,7 @@ my %versions = ();
 foreach my $build (@builds)
 {
     my %build_ver = ();
-    if (open TOTAL, "./data/$build->{name}/total.txt" )
+    if (open TOTAL, "data/$build->{name}/total.txt" )
     {
         while (<TOTAL>)
         {
@@ -159,7 +162,7 @@ my %alltests = ();
 
 foreach my $build (@builds)
 {
-    open SUM, "./data/$build->{name}/summary.txt" or next;
+    open SUM, "data/$build->{name}/summary.txt" or next;
     while (<SUM>)
     {
         chomp;
@@ -183,7 +186,7 @@ foreach my $test (sort keys %alltests)
 
 foreach my $test (keys %alltests)
 {
-    open OUT, ">data/tests/$test.html.new" or die "cannot create data/tests/$test.html.new";
+    open OUT, ">data/tests/$test.html.new" or die "cannot create 'data/tests/$test.html.new'";
     print OUT <<EOF;
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
                       "http://www.w3.org/TR/html4/strict.dtd">
@@ -248,7 +251,7 @@ EOF
     rename "data/tests/$test.html.new", "data/tests/$test.html" or unlink "data/tests/$test.html.new";
 }
 
-open OUT, ">data/index.html.new" or die "cannot create data/index.html.new";
+open OUT, ">data/index.html.new" or die "cannot create 'data/index.html.new'";
 
 print OUT <<"EOF";
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
@@ -336,11 +339,11 @@ rename "data/index.html.new", "data/index.html" or unlink "data/index.html.new";
 
 my @errors;
 
-opendir DIR, $queuedir or die "cannot open $queuedir";
+opendir DIR, "queue" or die "cannot open 'queue'";
 foreach my $dir (readdir DIR)
 {
     next unless $dir =~ /^err.....$/;
-    open ERR, "$queuedir/$dir/error" or next;
+    open ERR, "queue/$dir/error" or next;
     my $msg = <ERR>;
     chomp $msg;
     my $date = (stat ERR)[9];
@@ -349,7 +352,7 @@ foreach my $dir (readdir DIR)
 }
 closedir DIR;
 
-open OUT, ">data/errors.html.new" or die "cannot create data/errors.html.new";
+open OUT, ">data/errors.html.new" or die "cannot create 'data/errors.html.new'";
 
 print OUT start_html( -title => "Errors caught during Wine test report processing",
                       -style => {src => "/summary.css"},

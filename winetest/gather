@@ -17,9 +17,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 # This program looks for builds that have received new reports. These are
-# identified by the presence of a file matching $datadir/*/outdated. It then
-# creates an index.html file in the same directory and removes the outdated
-# file.
+# identified by the presence of a file matching data/*/outdated.
+# It then creates an index.html file in the same directory and removes the
+# outdated file.
 #
 # It is thus intended to run as a second stage invoked by the winetest.cron
 # script. Races and concurrency problems must be dealt with on that higher
@@ -45,7 +45,7 @@ sub BEGIN
     }
     unshift @INC, $1 if ($0 =~ m=^(/.*)/[^/]+$=);
 }
-use vars qw/$datadir $gitdir $gitweb/;
+use vars qw/$workdir $gitdir $gitweb/;
 require "winetest.conf";
 
 my $name0=$0;
@@ -67,11 +67,11 @@ sub get_build_info($)
     {
         ($date, $subject) = ($1, $2);
         # Make sure the directory's mtime matches the commit time
-        utime $date, $date, "$datadir/$build";
+        utime $date, $date, "$workdir/data/$build";
     }
     else
     {
-        $date = (stat "$datadir/$build")[9];
+        $date = (stat "$workdir/data/$build")[9];
         $subject = "";
     }
     return ($date, $subject);
@@ -159,17 +159,20 @@ my %idmap = (95=>\%w95, 98=>\%w98, me=>\%me, nt3=>\%nt3, nt4=>\%nt4, 2000=>\%w2k
 my @groups = (\%w95, \%w98, \%me, \%nt3, \%nt4, \%w2k, \%xp, \%w2k3, \%vista, \%w2k8, \%win7, \%win8, \%win10,
               \%unknown, \%linux, \%mac, \%bsd, \%solaris, \%wine);
 
-my ($outdated,undef) = glob "$datadir/*/outdated";
+
+chdir($workdir) or die "could not chdir to the work directory: $!";
+
+my ($outdated,undef) = glob "data/*/outdated";
 exit 2 unless defined $outdated;
-(my $build = $outdated) =~ s|^\Q$datadir\E/(.*)/outdated$|$1|;
+(my $build = $outdated) =~ s|^data/(.*)/outdated$|$1|;
 (my $release = $build) =~ s/^(\d+).*$/$1/;
 my ($date, $_subject) = get_build_info($build);
 
 # Read in the data
 
 my %alltests;                   # union of test names
-foreach my $file (glob "$datadir/$build/*/summary.txt") {
-    (my $dir = $file) =~ s|^\Q$datadir/$build\E/(.*?)/summary.txt$|$1|;
+foreach my $file (glob "data/$build/*/summary.txt") {
+    (my $dir = $file) =~ s|^data/\Q$build\E/(.*?)/summary.txt$|$1|;
     (my $id, my @tag) = split /_/, $dir;
     my $group = $idmap{$id};
     if (!defined $group) {
@@ -530,7 +533,7 @@ sub singletest($$$) {
     {
         my $report = $group->{reports} ? $group->{reports}->[0] : $group;
         $prefix = "$testname | $report->{tag}";
-        if (-r "$datadir/$build/$report->{dir}/$testname.html")
+        if (-r "data/$build/$report->{dir}/$testname.html")
         {
             $href = "$report->{dir}/$testname.html";
         }
@@ -607,9 +610,9 @@ sub build_totals($)
 {
     my ($reports)=@_;
 
-    if (!open TOTAL, ">$datadir/$build/total.txt.new")
+    if (!open TOTAL, ">data/$build/total.txt.new")
     {
-        print STDERR "$name0:error: unable to open '$datadir/$build/total.txt.new' for writing: $!\n";
+        print STDERR "$name0:error: unable to open 'data/$build/total.txt.new' for writing: $!\n";
         return;
     }
     my $unit_count=scalar(keys %alltests);
@@ -628,7 +631,7 @@ sub build_totals($)
         printf TOTAL "%s %u %u %u %u %u\n", $report->{group}->{name}, $report_count, $unit_count, $report->{errors}, $report->{todos}, $report->{successes};
     }
     close TOTAL;
-    rename "$datadir/$build/total.txt.new", "$datadir/$build/total.txt" or unlink "$datadir/$build/total.txt.new";
+    rename "data/$build/total.txt.new", "data/$build/total.txt" or unlink "data/$build/total.txt.new";
 }
 
 sub output_table($)
@@ -651,7 +654,7 @@ sub output_table($)
         $filename = "index.html";
     }
 
-    my $idx_file = "$datadir/$build/$filename";
+    my $idx_file = "data/$build/$filename";
     if (!open OUT, ">$idx_file.new") {
         print STDERR "$name0:error: unable to open '$idx_file.new' for writing: $!\n";
         return;
@@ -747,9 +750,9 @@ EOF
 }
 
 
-if (!open SUMMARY, ">$datadir/$build/summary.txt.new")
+if (!open SUMMARY, ">data/$build/summary.txt.new")
 {
-  print STDERR "$name0:error: unable to open '$datadir/$build/summary.txt.new' for writing: $!\n";
+  print STDERR "$name0:error: unable to open 'data/$build/summary.txt.new' for writing: $!\n";
   goto DONE;
 }
 
@@ -762,7 +765,7 @@ foreach my $group (@groups) {
 output_table(undef);
 
 close SUMMARY;
-rename "$datadir/$build/summary.txt.new", "$datadir/$build/summary.txt" or unlink "$datadir/$build/summary.txt.new";
+rename "data/$build/summary.txt.new", "data/$build/summary.txt" or unlink "data/$build/summary.txt.new";
 
 build_totals(\@groups);
 
