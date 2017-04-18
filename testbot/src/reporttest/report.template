@@ -437,7 +437,7 @@ TestLauncher does not set the source filename field.
 0998:imagelist: 16 tests executed (0 marked as todo, 0 failure), 0 skipped.
 comctl32:imagelist:0998 done (0) in 0s
 
-comctl32:ipaddress dlls/comctl32/tests/ipaddress.c -
+comctl32:ipaddress start dlls/comctl32/tests/ipaddress.c -
 ----- A unit test with a missing done line
 ----- Expected assessement: "Missing done line" error
 Issued upon seeing the next start line.
