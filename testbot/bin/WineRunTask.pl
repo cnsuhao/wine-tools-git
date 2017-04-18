@@ -478,7 +478,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
         my ($Dll, $Unit) = ($1, $2);
         if ($CurrentDll ne "")
         {
-          LogTaskError("The done line is missing for $CurrentDll:$CurrentUnit\n");
+          LogTaskError("$CurrentDll:$CurrentUnit has no done line\n");
           $LogFailures++;
         }
         ($CurrentDll, $CurrentUnit) = ($Dll, $Unit);
@@ -549,7 +549,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
           $CurrentIsPolluted = 1;
           if ($IsWineTest and ($Todo or $Failures))
           {
-            LogTaskError("Found a misplaced '$Unit' test summary line.\n");
+            LogTaskError("$CurrentDll:$CurrentUnit contains a misplaced test summary line for $Unit\n");
             $LogFailures++;
           }
         }
@@ -560,7 +560,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
 
         if ($IsWineTest and ($Dll ne $CurrentDll or $Unit ne $CurrentUnit))
         {
-          LogTaskError("The start line is missing for $Dll:$Unit\n");
+          LogTaskError("$Dll:$Unit had no start line\n");
           $LogFailures++;
           $CurrentIsPolluted = 1;
         }
