@@ -300,7 +300,7 @@ advpack:advpack start dlls/advpack/tests/advpack.c -
 advpack:advpack:0da0 done (0) in 0s
 
 advpack:files start dlls/advpack/tests/files.c -
------ A unit test with a failed test in the main process
+----- A unit test with a failed test in the main process before a subprocess
 ----- Expected assessement: 1 failure
 files.c:20: Test failed: A failure in the main process
 4321:files: 99 tests executed (0 marked as todo, 0 failures), 0 skipped.
@@ -394,9 +394,9 @@ comctl32:animate start dlls/comctl32/tests/animate.c -
 ----- Expected assessement: Timeout
 comctl32:animate:0b14 done (258) in 42s
 
------ Skipping a test unit by user
------ Expected assessement: Skipped by user
 comctl32:button skipped dlls/comctl32/tests/button.c -
+----- Skipping a test unit by user request
+----- Expected assessement: Skipped by user
 
 comctl32:comboex start dlls/comctl32/tests/comboex.c -
 ----- A unit test with failed, todo and skipped tests in the main process
@@ -424,7 +424,7 @@ comctl32:dpa:0998 done (1) in 0s
 
 comctl32:header start dlls/comctl32/tests/header.c -
 ----- A unit test with a zero exit code despite failures
------ Expected assessement: "Zero exit code" error
+----- Expected assessement: 1 failure, "Zero exit code" error
 A non-zero exit code is necessary for 'make test'.
 header.c:1: Test failed: Something wrong
 0998:header: 16 tests executed (0 marked as todo, 1 failure), 0 skipped.
@@ -452,7 +452,7 @@ comctl32:misc:0998 done (0) in 0s
 
 comctl32:monthcal start dlls/comctl32/tests/monthcal.c -
 ----- A unit test with a misplaced todo subprocess test summary line
------ Expected assessement: "Misplaced summary line" error
+----- Expected assessement: 1 todo, "Misplaced summary line" error
 See the previous misplaced test summary line scenarios.
 0148:monthcal: 2251 tests executed (0 marked as todo, 0 failures), 0 skipped.
 comctl32:monthcal:0148 done (0) in 9s
