@@ -283,8 +283,10 @@ elsif ($Debug and !$VM->IsPoweredOn)
 #
 
 my $Script = "#!/bin/sh\n" .
-             "rm -f Reconfig.log\n" .
-             "../bin/build/Reconfig.pl >>Reconfig.log 2>&1\n";
+             "(" .
+             "  git pull &&\n" .
+             "  ../bin/build/Reconfig.pl\n" .
+             ") >Reconfig.log 2>&1\n";
 my $TA = $VM->GetAgent();
 Debug(Elapsed($Start), " Sending the script: [$Script]\n");
 if (!$TA->SendFileFromString($Script, "task", $TestAgent::SENDFILE_EXE))
