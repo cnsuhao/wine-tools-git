@@ -473,7 +473,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
     my ($CurrentIsPolluted, %CurrentPids, $LogFailures);
     foreach my $Line (<$LogFile>)
     {
-      if ($Line =~ m%([_.a-z0-9]+):([_a-z0-9]*) start (?:-|[/_.a-z0-9]+) (?:-|[.0-9a-f]+)\r?$%)
+      if ($Line =~ m%^([_.a-z0-9-]+):([_a-z0-9]*) start (?:-|[/_.a-z0-9]+) (?:-|[.0-9a-f]+)\r?$%)
       {
         my ($Dll, $Unit) = ($1, $2);
         if ($CurrentDll ne "")
@@ -554,7 +554,9 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
           }
         }
       }
-      elsif ($Line =~ /^([_.a-z0-9]+):([_a-z0-9]*)(?::([0-9a-f]+))? done \((-?\d+)\)(?:\r?$| in)/)
+      elsif ($Line =~ /^([_.a-z0-9-]+):([_a-z0-9]*)(?::([0-9a-f]+))? done \((-?\d+)\)(?:\r?$| in)/ or
+             ($CurrentDll ne "" and
+              $Line =~ /(\Q$CurrentDll\E):([_a-z0-9]*)(?::([0-9a-f]+))? done \((-?\d+)\)(?:\r?$| in)/))
       {
         my ($Dll, $Unit, $Pid, $Rc) = ($1, $2, $3, $4);
 
