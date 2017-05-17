@@ -39,15 +39,29 @@ if [ ! -f $lock ]; then
     touch $lock
     cd $workdir
 
-    while $tools/dissect; [ $? -eq 0 -o $? -eq 1 ]; do true; done
-    updated=0
-    while $tools/gather; do updated=1; done
-    if [ $updated -eq 1 -o ! -d data/tests -o ! -d old-data ]
+    refresh_index=""
+    refresh_errors=""
+    while true
+    do
+        $tools/dissect
+        case $? in
+            0) refresh_index=1 ;;
+            1) refresh_errors=1 ;;
+            *) break ;;
+        esac
+    done
+    if [ -n "$refresh_index" ]
+    then
+        while $tools/gather; do true; done
+    fi
+    if [ ! -d data/tests -o ! -d old-data ]
     then
         mkdir -p data/tests old-data
-        $tools/build-index
-        $tools/build-errors
+        refresh_index=1
+        refresh_errors=1
     fi
+    [ -n "$refresh_index" ] && $tools/build-index
+    [ -n "$refresh_errors" ] && $tools/build-errors
 
     # archive old results
     (
