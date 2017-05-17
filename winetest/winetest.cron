@@ -46,6 +46,7 @@ if [ ! -f $lock ]; then
     then
         mkdir -p data/tests old-data
         $tools/build-index
+        $tools/build-errors
     fi
 
     # archive old results

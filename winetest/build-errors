@@ -1,0 +1,87 @@
+#!/usr/bin/perl
+#
+# Copyright 2008 Alexandre Julliard <julliard@winehq.org>
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+# This program creates the global index of rejected reports.
+
+use strict;
+use warnings;
+use open ':utf8';
+use CGI qw(:standard);
+
+sub BEGIN
+{
+    if ($0 !~ m=^/=)
+    {
+        # Turn $0 into an absolute path so it can safely be used in @INC
+        require Cwd;
+        $0 = Cwd::cwd() . "/$0";
+    }
+    unshift @INC, $1 if ($0 =~ m=^(/.*)/[^/]+$=);
+}
+use vars qw/$workdir/;
+require "winetest.conf";
+
+
+use POSIX qw(locale_h strftime);
+setlocale(LC_ALL, "C");
+
+sub long_date($)
+{
+    my ($date) = @_;
+    return strftime("%b&nbsp;%d&nbsp;%H:%M:%S", gmtime($date));
+}
+
+
+# generate a table of the errors encountered during processing
+
+chdir($workdir) or die "could not chdir to the work directory: $!";
+
+my @errors;
+
+opendir DIR, "queue" or die "cannot open 'queue'";
+foreach my $dir (readdir DIR)
+{
+    next unless $dir =~ /^err.....$/;
+    open ERR, "queue/$dir/error" or next;
+    my $msg = <ERR>;
+    chomp $msg;
+    my $date = (stat ERR)[9];
+    close ERR;
+    push @errors, { msg => $msg, date => $date, url => "../queue/$dir/report" };
+}
+closedir DIR;
+
+open OUT, ">data/errors.html.new" or die "cannot create 'data/errors.html.new'";
+
+print OUT start_html( -title => "Errors caught during Wine test report processing",
+                      -style => {src => "/summary.css"},
+                      -encoding => "utf-8" );
+print OUT "<div class=\"main\"><h2>Errors caught during Wine test report processing</h2>\n";
+print OUT "<table class=\"report\"><thead><tr><th class=\"date\">Date</th><th class=\"commitlink\">Error</th></thread>\n";
+
+foreach my $err (sort { $b->{date} <=> $a->{date}; } @errors)
+{
+    printf OUT "<tr><td class=\"date\">%s</td>\n", long_date($err->{date});
+    printf OUT "<td class=\"commitlink\"><a href=\"%s\">%s</a></td></tr>\n", $err->{url}, escapeHTML($err->{msg});
+}
+print OUT "</table>", end_html();
+close OUT;
+
+rename "data/errors.html.new", "data/errors.html" or unlink "data/errors.html.new";
+
+exit 0;

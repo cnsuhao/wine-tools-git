@@ -69,12 +69,6 @@ sub short_date($)
     return strftime("%b&nbsp;%d", gmtime($date));
 }
 
-sub long_date($)
-{
-    my ($date) = @_;
-    return strftime("%b&nbsp;%d&nbsp;%H:%M:%S", gmtime($date));
-}
-
 
 my %w95     = (name => "Win95");
 my %w98     = (name => "Win98");
@@ -334,40 +328,5 @@ EOF
 close OUT;
 
 rename "data/index.html.new", "data/index.html" or unlink "data/index.html.new";
-
-# generate a table of the errors encountered during processing
-
-my @errors;
-
-opendir DIR, "queue" or die "cannot open 'queue'";
-foreach my $dir (readdir DIR)
-{
-    next unless $dir =~ /^err.....$/;
-    open ERR, "queue/$dir/error" or next;
-    my $msg = <ERR>;
-    chomp $msg;
-    my $date = (stat ERR)[9];
-    close ERR;
-    push @errors, { msg => $msg, date => $date, url => "../queue/$dir/report" };
-}
-closedir DIR;
-
-open OUT, ">data/errors.html.new" or die "cannot create 'data/errors.html.new'";
-
-print OUT start_html( -title => "Errors caught during Wine test report processing",
-                      -style => {src => "/summary.css"},
-                      -encoding => "utf-8" );
-print OUT "<div class=\"main\"><h2>Errors caught during Wine test report processing</h2>\n";
-print OUT "<table class=\"report\"><thead><tr><th class=\"date\">Date</th><th class=\"commitlink\">Error</th></thread>\n";
-
-foreach my $err (sort { $b->{date} <=> $a->{date}; } @errors)
-{
-    printf OUT "<tr><td class=\"date\">%s</td>\n", long_date($err->{date});
-    printf OUT "<td class=\"commitlink\"><a href=\"%s\">%s</a></td></tr>\n", $err->{url}, escapeHTML($err->{msg});
-}
-print OUT "</table>", end_html();
-close OUT;
-
-rename "data/errors.html.new", "data/errors.html" or unlink "data/errors.html.new";
 
 exit 0;
