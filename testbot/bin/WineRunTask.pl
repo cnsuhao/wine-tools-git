@@ -471,6 +471,24 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
     # care about the todos and skips
     my ($CurrentDll, $CurrentUnit, $LineFailures, $SummaryFailures) = ("", "", 0, 0);
     my ($CurrentIsPolluted, %CurrentPids, $LogFailures);
+
+    sub CheckUnit($$)
+    {
+      my ($Unit, $Type) = @_;
+      if ($Unit eq $CurrentUnit)
+      {
+        $IsWineTest = 1;
+      }
+      # To avoid issuing many duplicate errors,
+      # only report the first misplaced message.
+      elsif ($IsWineTest and !$CurrentIsPolluted)
+      {
+        LogTaskError("$CurrentDll:$CurrentUnit contains a misplaced $Type message for $Unit\n");
+        $LogFailures++;
+        $CurrentIsPolluted = 1;
+      }
+    }
+
     foreach my $Line (<$LogFile>)
     {
       if ($Line =~ m%^([_.a-z0-9-]+):([_a-z0-9]*) start (?:-|[/_.a-z0-9]+) (?:-|[.0-9a-f]+)\r?$%)
@@ -487,17 +505,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
              ($CurrentUnit ne "" and
               $Line =~ /($CurrentUnit)\.c:\d+: Test (?:failed|succeeded inside todo block): /))
       {
-        my $Unit = $1;
-        if ($Unit eq $CurrentUnit)
-        {
-          $IsWineTest = 1;
-        }
-        else
-        {
-          # If the failure is not for the current test unit we'll
-          # let its developer hash it out with the polluter ;-)
-          $CurrentIsPolluted = 1;
-        }
+        CheckUnit($1, "failure");
         $LineFailures++;
       }
       elsif ($Line =~ /^Fatal: test '([_a-z0-9]+)' does not exist/)
@@ -520,19 +528,15 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
           # This also replaces a test summary line.
           $CurrentPids{$Pid || 0} = 1;
           $SummaryFailures++;
-          $IsWineTest = 1;
         }
-        else
-        {
-          $CurrentIsPolluted = 1;
-        }
+        CheckUnit($Unit, "unhandled exception");
         $LineFailures++;
       }
       elsif ($Line =~ /^(?:([0-9a-f]+):)?([_a-z0-9]+): \d+ tests? executed \((\d+) marked as todo, (\d+) failures?\), \d+ skipped\./ or
              ($CurrentUnit ne "" and
               $Line =~ /(?:([0-9a-f]+):)?($CurrentUnit): \d+ tests? executed \((\d+) marked as todo, (\d+) failures?\), \d+ skipped\./))
       {
-        my ($Pid, $Unit, $Todo, $Failures) = ($1, $2, $3, $4);
+        my ($Pid, $Unit, $Todos, $Failures) = ($1, $2, $3, $4);
 
         # Dlls that have only one test unit will run it even if there is
         # no argument. Also TestLauncher uses the wrong name in its test
@@ -546,12 +550,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
         }
         else
         {
-          $CurrentIsPolluted = 1;
-          if ($IsWineTest and ($Todo or $Failures))
-          {
-            LogTaskError("$CurrentDll:$CurrentUnit contains a misplaced test summary line for $Unit\n");
-            $LogFailures++;
-          }
+          CheckUnit($Unit, "test summary") if ($Todos or $Failures);
         }
       }
       elsif ($Line =~ /^([_.a-z0-9-]+):([_a-z0-9]*)(?::([0-9a-f]+))? done \((-?\d+)\)(?:\r?$| in)/ or
