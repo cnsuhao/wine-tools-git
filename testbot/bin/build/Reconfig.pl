@@ -93,7 +93,7 @@ sub BuildTestAgentd()
   # so don't rebuild it.
   if (! -x "$BinDir/build/testagentd")
   {
-    system("( cd $BinDir/../src/testagentd && set -x && " .
+    system("( cd $::RootDir/src/testagentd && set -x && " .
            "  time make -j$ncpus build " .
            ") >>$LogDir/Reconfig.log 2>&1");
     if ($? != 0)
@@ -103,7 +103,7 @@ sub BuildTestAgentd()
     }
   }
 
-  system("( cd $BinDir/../src/testagentd && set -x && " .
+  system("( cd $::RootDir/src/testagentd && set -x && " .
          "  time make -j$ncpus iso " .
          ") >>$LogDir/Reconfig.log 2>&1");
   if ($? != 0)
