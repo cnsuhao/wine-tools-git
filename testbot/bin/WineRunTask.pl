@@ -470,7 +470,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
     # track of the current one. Also note that for the TestBot we don't really
     # care about the todos and skips
     my ($CurrentDll, $CurrentUnit, $LineFailures, $SummaryFailures) = ("", "", 0, 0);
-    my ($CurrentIsPolluted, %CurrentPids, $LogFailures);
+    my ($CurrentIsBroken, %CurrentPids, $CurrentRc, $LogFailures);
 
     sub CheckUnit($$)
     {
@@ -481,12 +481,85 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
       }
       # To avoid issuing many duplicate errors,
       # only report the first misplaced message.
-      elsif ($IsWineTest and !$CurrentIsPolluted)
+      elsif ($IsWineTest and !$CurrentIsBroken)
       {
         LogTaskError("$CurrentDll:$CurrentUnit contains a misplaced $Type message for $Unit\n");
         $LogFailures++;
-        $CurrentIsPolluted = 1;
+        $CurrentIsBroken = 1;
       }
+    }
+
+    sub CheckSummaryCounter($$$)
+    {
+      my ($Count, $SCount, $Type) = @_;
+
+      if ($Count != 0 and $SCount == 0)
+      {
+        LogTaskError("$CurrentDll:$CurrentUnit has unaccounted for $Type messages\n");
+        $LogFailures++;
+      }
+      elsif ($Count == 0 and $SCount != 0)
+      {
+        LogTaskError("$CurrentDll:$CurrentUnit is missing some $Type messages\n");
+        $LogFailures++;
+      }
+    }
+
+    sub CloseTestUnit($)
+    {
+      my ($Last) = @_;
+
+      # Verify the summary lines
+      if (!$CurrentIsBroken)
+      {
+        CheckSummaryCounter($LineFailures, $SummaryFailures, "failure");
+      }
+
+      # Note that the summary lines may count some failures twice
+      # so only use them as a fallback.
+      $LineFailures ||= $SummaryFailures;
+
+      if (!$CurrentIsBroken and defined $CurrentRc)
+      {
+        # Check the exit code, particularly against failures reported
+        # after the 'done' line (e.g. by subprocesses).
+        if ($LineFailures != 0 and $CurrentRc == 0)
+        {
+          LogTaskError("$CurrentDll:$CurrentUnit returned success despite having failures\n");
+          $LogFailures++;
+        }
+        elsif (!$IsWineTest and $CurrentRc != 0)
+        {
+          LogTaskError("The test returned a non-zero exit code\n");
+          $LogFailures++;
+        }
+        elsif ($IsWineTest and $LineFailures == 0 and $CurrentRc != 0)
+        {
+          LogTaskError("$CurrentDll:$CurrentUnit returned a non-zero exit code despite reporting no failures\n");
+          $LogFailures++;
+        }
+      }
+      # For executables TestLauncher's done line may not be recognizable.
+      elsif ($IsWineTest and !defined $CurrentRc)
+      {
+        if (!$Last)
+        {
+          LogTaskError("$CurrentDll:$CurrentUnit has no done line (or it is garbled)\n");
+        }
+        elsif ($Last and !$TaskTimedOut)
+        {
+          LogTaskError("The report seems to have been truncated\n");
+        }
+        $LogFailures++;
+      }
+
+      $LogFailures += $LineFailures;
+
+      $CurrentDll = $CurrentUnit = "";
+      $LineFailures = $SummaryFailures = 0;
+      $CurrentIsBroken = 0;
+      $CurrentRc = undef;
+      %CurrentPids = ();
     }
 
     foreach my $Line (<$LogFile>)
@@ -494,11 +567,10 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
       if ($Line =~ m%^([_.a-z0-9-]+):([_a-z0-9]*) start (?:-|[/_.a-z0-9]+) (?:-|[.0-9a-f]+)\r?$%)
       {
         my ($Dll, $Unit) = ($1, $2);
-        if ($CurrentDll ne "")
-        {
-          LogTaskError("$CurrentDll:$CurrentUnit has no done line\n");
-          $LogFailures++;
-        }
+
+        # Close the previous test unit
+        CloseTestUnit(0) if ($CurrentDll ne "");
+
         ($CurrentDll, $CurrentUnit) = ($Dll, $Unit);
       }
       elsif ($Line =~ /^([_a-z0-9]+)\.c:\d+: Test (?:failed|succeeded inside todo block): / or
@@ -561,93 +633,57 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
 
         if ($IsWineTest and ($Dll ne $CurrentDll or $Unit ne $CurrentUnit))
         {
-          LogTaskError("$Dll:$Unit had no start line\n");
+          # First close the current test unit taking into account
+          # it may have been polluted by the new one.
           $LogFailures++;
-          $CurrentIsPolluted = 1;
+          $CurrentIsBroken = 1;
+          CloseTestUnit(0);
+
+          # Then switch to the new one, warning it's missing a start line,
+          # and that its results may be inconsistent.
+          ($CurrentDll, $CurrentUnit) = ($Dll, $Unit);
+          LogTaskError("$Dll:$Unit had no start line (or it is garbled)\n");
+          $CurrentIsBroken = 1;
         }
 
-        # Verify the summary lines
-        if (!$CurrentIsPolluted)
+        if ($Rc == 258)
         {
-          if ($LineFailures != 0 and $SummaryFailures == 0 and $Rc != 258)
-          {
-            LogTaskError("$Dll:$Unit has unreported failures\n");
-            $LogFailures++;
-          }
-          elsif ($LineFailures == 0 and $SummaryFailures != 0)
-          {
-            LogTaskError("$Dll:$Unit is missing some 'test failed' messages\n");
-            $LogFailures++;
-          }
-        }
-        # Note that $SummaryFailures may count some failures twice so only use
-        # it as a fallback for $LineFailures.
-        $LineFailures ||= $SummaryFailures;
-
-        if (!$CurrentIsPolluted)
-        {
-          # Verify the exit code
-          if ($LineFailures != 0 and $Rc == 0)
-          {
-            LogTaskError("$Dll:$Unit returned success despite having failures\n");
-            $LogFailures++;
-          }
-          elsif ($Rc == 258)
-          {
-            # This is a timeout. Those are already reported based on the
-            # done line.
-            $LogFailures++;
-          }
-          elsif (!$IsWineTest and $Rc != 0)
-          {
-            LogTaskError("The test returned a non-zero exit code\n");
-            $LogFailures++;
-          }
-          elsif ($LineFailures == 0 and $Rc != 0)
-          {
-            LogTaskError("$Dll:$Unit returned an error ($Rc) despite having no failures\n");
-            $LogFailures++;
-          }
-        }
-
-        if ($IsWineTest and $Rc != 258 and
-            ((!$Pid and !%CurrentPids) or
-             ($Pid and !$CurrentPids{$Pid} and !$CurrentPids{0})))
-        {
-          LogTaskError("$Dll:$Unit has no test summary line (early exit of the main process?)\n");
+          # The done line will already be shown as a timeout (see JobDetails)
+          # so record the failure but don't add an error message.
           $LogFailures++;
+          $CurrentIsBroken = 1;
         }
-
-        $LogFailures += $LineFailures;
-
-        $CurrentDll = $CurrentUnit = "";
-        %CurrentPids = ();
-        $CurrentIsPolluted = $LineFailures = $SummaryFailures = 0;
+        elsif ((!$Pid and !%CurrentPids) or
+               ($Pid and !$CurrentPids{$Pid} and !$CurrentPids{0}))
+        {
+          # The main summary line is missing
+          if ($Rc & 0xc0000000)
+          {
+            LogTaskError(sprintf("%s:%s crashed (%08x)\n", $Dll, $Unit, $Rc & 0xffffffff));
+            $LogFailures++;
+            $CurrentIsBroken = 1;
+          }
+          elsif ($IsWineTest and !$CurrentIsBroken)
+          {
+            LogTaskError("$Dll:$Unit has no test summary line (early exit of the main process?)\n");
+            $LogFailures++;
+          }
+        }
+        elsif ($Rc & 0xc0000000)
+        {
+          # We know the crash happened in the main process which means we got
+          # an "unhandled exception" message. So there is no need to add an
+          # extra message or to increment the failure count. Still note that
+          # there may be inconsistencies (e.g. unreported todos or skips).
+          $CurrentIsBroken = 1;
+        }
+        $CurrentRc = $Rc;
       }
     }
+    $CurrentIsBroken = 1 if ($TaskTimedOut);
+    CloseTestUnit(1);
     close($LogFile);
 
-    if (!$IsWineTest or $TaskTimedOut)
-    {
-      # This is either not a Wine test, which means the report need not follow
-      # the Wine test standards, or the report got truncated due to the
-      # timeout. In either case ignore the other checks.
-    }
-    elsif (!defined $LogFailures)
-    {
-      LogTaskError("Found no trace of a test summary line or of a crash\n");
-      $LogFailures = 1;
-    }
-    elsif ($CurrentDll ne "")
-    {
-      LogTaskError("The report seems to have been truncated\n");
-      $LogFailures++;
-    }
-    elsif ($LineFailures or $SummaryFailures)
-    {
-      LogTaskError("Found a trailing test summary or test failed line.\n");
-      $LogFailures++;
-    }
     # $LogFailures can legitimately be undefined in case of a timeout
     $TaskFailures += $LogFailures || 0;
   }
