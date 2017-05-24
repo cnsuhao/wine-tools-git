@@ -564,14 +564,17 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
 
     foreach my $Line (<$LogFile>)
     {
-      if ($Line =~ m%^([_.a-z0-9-]+):([_a-z0-9]*) start (?:-|[/_.a-z0-9]+) (?:-|[.0-9a-f]+)\r?$%)
+      if ($Line =~ m%^([_.a-z0-9-]+):([_a-z0-9]*) (start|skipped) (?:-|[/_.a-z0-9]+) (?:-|[.0-9a-f]+)\r?$%)
       {
-        my ($Dll, $Unit) = ($1, $2);
+        my ($Dll, $Unit, $Type) = ($1, $2, $3);
 
         # Close the previous test unit
         CloseTestUnit(0) if ($CurrentDll ne "");
 
         ($CurrentDll, $CurrentUnit) = ($Dll, $Unit);
+
+        # Recognize skipped messages in case we need to skip tests in the VMs
+        $CurrentRc = 0 if ($Type eq "skipped");
       }
       elsif ($Line =~ /^([_a-z0-9]+)\.c:\d+: Test (?:failed|succeeded inside todo block): / or
              ($CurrentUnit ne "" and
