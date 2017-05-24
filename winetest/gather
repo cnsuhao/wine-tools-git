@@ -55,6 +55,10 @@ $name0 =~ s+^.*/++;
 my $summary_version=4;
 
 
+#
+# Common helpers
+#
+
 $ENV{GIT_DIR} = $gitdir;
 
 sub get_build_info($)
@@ -129,6 +133,8 @@ sub short_date($)
 #  errors        The number of unit tests with errors.
 #  todos         The number of unit tests with no error but todos.
 
+# This should match the definitions in build-index
+
 my %w95     = (name => "Win95");
 my %w98     = (name => "Win98");
 my %me      = (name => "Me");
@@ -149,15 +155,20 @@ my %bsd     = (name => "BSD");
 my %solaris = (name => "Solaris");
 my %wine    = (name => "Wine");
 
+# Define the order of version groups in the summary
+my @groups = (\%w95, \%w98, \%me, \%nt3, \%nt4, \%w2k, \%xp, \%w2k3, \%vista, \%w2k8, \%win7, \%win8, \%win10,
+              \%unknown, \%linux, \%mac, \%bsd, \%solaris, \%wine);
+
 # Map dissect's IDs to the above hashes
 my %idmap = (95=>\%w95, 98=>\%w98, me=>\%me, nt3=>\%nt3, nt4=>\%nt4, 2000=>\%w2k,
              xp=>\%xp, 2003=>\%w2k3, vista=>\%vista, 2008=>\%w2k8, win7=>\%win7, win8=>\%win8, win10=>\%win10,
              unknown=>\%unknown, wine=>\%wine, linux=>\%linux, mac=>\%mac, bsd=>\%bsd,
              solaris=>\%solaris);
 
-# Define the order of version groups in the summary
-my @groups = (\%w95, \%w98, \%me, \%nt3, \%nt4, \%w2k, \%xp, \%w2k3, \%vista, \%w2k8, \%win7, \%win8, \%win10,
-              \%unknown, \%linux, \%mac, \%bsd, \%solaris, \%wine);
+
+#
+# Pick a build to work on
+#
 
 
 chdir($workdir) or die "could not chdir to the work directory: $!";
@@ -168,7 +179,10 @@ exit 2 unless defined $outdated;
 (my $release = $build) =~ s/^(\d+).*$/$1/;
 my ($date, $_subject) = get_build_info($build);
 
-# Read in the data
+
+#
+# Read the summaries of all the build's reports
+#
 
 my %alltests;                   # union of test names
 foreach my $file (glob "data/$build/*/summary.txt") {
@@ -238,6 +252,11 @@ foreach my $file (glob "data/$build/*/summary.txt") {
 
     push @{$group->{reports}}, $report;
 }
+
+
+#
+# Merge the test results
+#
 
 sub merge_min_max($$$)
 {
@@ -366,7 +385,10 @@ foreach my $group (@groups) {
     }
 }
 
-# Write out the tables
+
+#
+# Write the data/BUILD/index*.html files
+#
 
 sub percent($$)
 {
@@ -458,13 +480,6 @@ my $header_footer=build_header_footer(\@groups);
 my $short_build = substr($build,0,12);
 my $short_date = short_date($date);
 
-sub min_to_max($)
-{
-    my ($minmax)=@_;
-    return $minmax->[0] if ($minmax->[0] == $minmax->[1]);
-    return "$minmax->[0] to $minmax->[1]";
-}
-
 sub get_result_class($)
 {
     my ($result) = @_;
@@ -484,6 +499,13 @@ sub get_result_class($)
         return "result pass also-skip";
     }
     return "note";
+}
+
+sub min_to_max($)
+{
+    my ($minmax)=@_;
+    return $minmax->[0] if ($minmax->[0] == $minmax->[1]);
+    return "$minmax->[0] to $minmax->[1]";
 }
 
 sub get_result_title($$)
@@ -606,35 +628,7 @@ sub test_links($$)
            "</td>";
 }
 
-sub build_totals($)
-{
-    my ($reports)=@_;
-
-    if (!open TOTAL, ">data/$build/total.txt.new")
-    {
-        print STDERR "$name0:error: unable to open 'data/$build/total.txt.new' for writing: $!\n";
-        return;
-    }
-    my $unit_count=scalar(keys %alltests);
-    foreach my $rep (@{$reports}) {
-        my $report=$rep;
-        my $report_count = 0;
-        if (exists $report->{reports}) {
-            $report_count = @{$report->{reports}};
-            if ($report_count == 1) {
-                $report = $report->{reports}->[0];
-            }
-        } elsif (exists $report->{name}) {
-            # Ignore groups with no reports
-            next;
-        }
-        printf TOTAL "%s %u %u %u %u %u\n", $report->{group}->{name}, $report_count, $unit_count, $report->{errors}, $report->{todos}, $report->{successes};
-    }
-    close TOTAL;
-    rename "data/$build/total.txt.new", "data/$build/total.txt" or unlink "data/$build/total.txt.new";
-}
-
-sub output_table($)
+sub write_build_index_and_summary($)
 {
     my ($group) = @_;
     my ($group_name, $header_footer, $title, $filename);
@@ -750,6 +744,44 @@ EOF
 }
 
 
+#
+# Write the data/BUILD/totals.txt file
+# This provides the statistics for the main index page.
+#
+
+sub write_totals($)
+{
+    my ($reports)=@_;
+
+    if (!open TOTAL, ">data/$build/total.txt.new")
+    {
+        print STDERR "$name0:error: unable to open 'data/$build/total.txt.new' for writing: $!\n";
+        return;
+    }
+    my $unit_count=scalar(keys %alltests);
+    foreach my $rep (@{$reports}) {
+        my $report=$rep;
+        my $report_count = 0;
+        if (exists $report->{reports}) {
+            $report_count = @{$report->{reports}};
+            if ($report_count == 1) {
+                $report = $report->{reports}->[0];
+            }
+        } elsif (exists $report->{name}) {
+            # Ignore groups with no reports
+            next;
+        }
+        printf TOTAL "%s %u %u %u %u %u\n", $report->{group}->{name}, $report_count, $unit_count, $report->{errors}, $report->{todos}, $report->{successes};
+    }
+    close TOTAL;
+    rename "data/$build/total.txt.new", "data/$build/total.txt" or unlink "data/$build/total.txt.new";
+}
+
+
+#
+# Actually generate the build's files
+#
+
 if (!open SUMMARY, ">data/$build/summary.txt.new")
 {
   print STDERR "$name0:error: unable to open 'data/$build/summary.txt.new' for writing: $!\n";
@@ -759,15 +791,15 @@ if (!open SUMMARY, ">data/$build/summary.txt.new")
 # Take the groups with multiple reports
 foreach my $group (@groups) {
     next unless exists $group->{reports} && @{$group->{reports}} > 1;
-    output_table( $group );
+    write_build_index_and_summary( $group );
 }
 
-output_table(undef);
+write_build_index_and_summary(undef);
 
 close SUMMARY;
 rename "data/$build/summary.txt.new", "data/$build/summary.txt" or unlink "data/$build/summary.txt.new";
 
-build_totals(\@groups);
+write_totals(\@groups);
 
 DONE:
 if (!unlink $outdated) {

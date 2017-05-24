@@ -60,6 +60,10 @@ my $minimum_report_version=4;
 my $summary_version=4;
 
 
+#
+# Common helpers
+#
+
 $ENV{GIT_DIR} = $gitdir;
 
 sub get_build_info($)
@@ -92,12 +96,32 @@ sub short_date($)
 }
 
 
+#
+# Command line processing
+#
+
+chdir($workdir) or die "could not chdir to the work directory: $!";
+
+my ($update, $report);
+if (defined $ARGV[0] and $ARGV[0] eq "--update") {
+    $report = $ARGV[1];
+    $update = 1;
+} else {
+    ($report, undef) = glob "queue/rep*/report";
+}
+exit 2 unless (defined $report && -f $report);
+
+my $tmpdir = $report;
+$tmpdir =~ s|^(.+)/report$|$1|;
+
+
+#
+# Check the report version, build id and tag
+#
+
 use File::Temp qw/tempdir/;
-use Errno qw/ENOTEMPTY/;
 
-
-my ($update, $tmpdir, $tag);
-
+my $tag;
 sub mydie(@)
 {
     my $label = $tag ? $tag : "<notag>";
@@ -116,29 +140,6 @@ sub mydie(@)
     print STDERR "$name0:error:$label: ", @_;
     exit 1;
 }
-
-my @boxes;
-
-sub create_box($$$)
-{
-    my ($id, $class, $title) = @_;
-    my $box = { id => $id, class => $class, title => $title, data => "" };
-    push @boxes, $box;
-    return $box;
-}
-
-chdir($workdir) or die "could not chdir to the work directory: $!";
-
-my $report;
-if (defined $ARGV[0] and $ARGV[0] eq "--update") {
-    $report = $ARGV[1];
-    $update = 1;
-} else {
-    ($report, undef) = glob "queue/rep*/report";
-}
-exit 2 unless (defined $report && -f $report);
-
-($tmpdir = $report) =~ s|^(.+)/report$|$1|;
 
 open IN, "<:raw", $report or mydie "unable to open '$report' for reading: $!\n";
 open SUM, ">$tmpdir/summary.txt" or mydie "unable to open '$tmpdir/summary.txt' for writing: $!\n";
@@ -164,12 +165,26 @@ my $archive = "winetest-$shortbuild.exe";
 my ($date, $_subject) = get_build_info($testbuild);
 my $short_date = short_date($date);
 
-
 $_ = <IN>;
 if (/^Archive: /) { $_ = <IN>; }  # ignore Archive header
 
 /^Tag: ([-.0-9a-zA-Z]*)\r?$/ or mydie "no tag line: $_";
 $tag = $1;
+
+
+#
+# Parse and check the report header
+#
+
+my @boxes;
+
+sub create_box($$$)
+{
+    my ($id, $class, $title) = @_;
+    my $box = { id => $id, class => $class, title => $title, data => "" };
+    push @boxes, $box;
+    return $box;
+}
 
 $_ = <IN>;
 /^Build info:\r?$/ or mydie "no Build info header: $_";
@@ -287,6 +302,11 @@ if ($wine_build) {
     $merge_base eq $testbuild or mydie "wine build '$wine_build' not a descendant of build $testbuild\n";
 }
 
+
+#
+# Parse the 'Dll info' section
+#
+
 my $user_skips = 0;
 my $failed_tests = 0;
 my %dllinfo;
@@ -308,6 +328,11 @@ while ($_ = <IN>) {
         mydie "too many dlls skipped by user request\n" if ++$user_skips > $maxuserskips;
     }
 }
+
+
+#
+# Parse the tests output
+#
 
 /^Test output:/ or mydie "no test header: $_";
 my ($dll, $unit, $source, $rev, $result);
@@ -394,7 +419,10 @@ if (defined $dll) {
 close SUM or mydie "error writing to '$tmpdir/summary.txt': $!\n";
 close IN;
 
-# fill the dllinfo box
+
+#
+# Generate the 'DLL version' section of the info box
+#
 
 $box->{data} .= "<table class=\"output\">\n";
 foreach my $dll (sort keys %dllinfo)
@@ -432,7 +460,10 @@ foreach my $dll (sort keys %dllinfo)
 }
 $box->{data} .= "</table>";
 
-# add the prev/next links to all the boxes
+
+#
+# Link the boxes together
+#
 
 for (my $i = 0; $i <= $#boxes; $i++)
 {
@@ -440,7 +471,10 @@ for (my $i = 0; $i <= $#boxes; $i++)
     $boxes[$i]->{next} = $boxes[$i+1]->{id} if $i < $#boxes;
 }
 
-# create the global report.html file
+
+#
+# Create the 'full report' page
+#
 
 open REPORT, ">$tmpdir/report.html" or mydie "unable to open '$tmpdir/report.html' for writing: $!\n";
 
@@ -462,7 +496,10 @@ for (my $i = 0; $i <= $#boxes; $i++)
 print REPORT end_html();
 close REPORT or mydie "error writing to '$tmpdir/report.html': $!\n";
 
-# create individual html files for all boxes
+
+#
+# Create the information and individual test unit pages
+#
 
 for (my $i = 0; $i <= $#boxes; $i++)
 {
@@ -482,6 +519,13 @@ for (my $i = 0; $i <= $#boxes; $i++)
     print FILE end_html();
     close FILE or mydie "error writing to '$tmpdir/$boxes[$i]->{id}.html': $!\n";
 }
+
+
+#
+# Move the files into place
+#
+
+use Errno qw/ENOTEMPTY/;
 
 my $builddir = "data/$testbuild";
 if (!$update) {

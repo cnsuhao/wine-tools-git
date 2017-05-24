@@ -38,6 +38,10 @@ use vars qw/$workdir $gitdir $gitweb/;
 require "winetest.conf";
 
 
+#
+# Common helpers
+#
+
 $ENV{GIT_DIR} = $gitdir;
 
 sub get_build_info($)
@@ -70,6 +74,8 @@ sub short_date($)
 }
 
 
+# This should match the definitions in gather
+
 my %w95     = (name => "Win95");
 my %w98     = (name => "Win98");
 my %me      = (name => "Me");
@@ -95,9 +101,11 @@ my @groups = (\%w95, \%w98, \%me, \%nt3, \%nt4, \%w2k, \%xp, \%w2k3, \%vista, \%
               \%unknown, \%linux, \%mac, \%bsd, \%solaris, \%wine);
 
 
-chdir($workdir) or die "could not chdir to the work directory: $!";
+#
+# Grab the build list and archive the old results
+#
 
-# read the test data dir
+chdir($workdir) or die "could not chdir to the work directory: $!";
 
 my @builds;
 my @too_old;
@@ -125,32 +133,16 @@ closedir(DIR);
 @builds = sort { $b->{date} <=> $a->{date} } @builds;
 
 # remove the too old results
-foreach my $build (@too_old) { rename "data/$build", "old-data/$build"; }
-
-# count how many test runs we have for each version
-
-my %versions = ();
-
-foreach my $build (@builds)
+foreach my $build (@too_old)
 {
-    my %build_ver = ();
-    if (open TOTAL, "data/$build->{name}/total.txt" )
-    {
-        while (<TOTAL>)
-        {
-            if (/^([A-Za-z0-9]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)(?:\s+(\d+))?/)
-            {
-                my ($name, $runs, $tests, $errors, $todos, $successes) = ($1, $2, $3, $4, $5, $6);
-                $versions{$name}++;
-                $build_ver{$name} = [ $runs, $tests, $errors, $todos, $successes ];
-            }
-        }
-        close TOTAL;
-    }
-    $build->{versions} = \%build_ver;
+    rename "data/$build", "old-data/$build";
 }
 
-# load summary files
+
+#
+# Read each build's summary.txt file
+# This gets us the statistics for the global per-test-unit index.
+#
 
 my %alltests = ();
 
@@ -166,7 +158,10 @@ foreach my $build (@builds)
     close SUM;
 }
 
-# build the tests linked list
+
+#
+# Link the build the test units together
+#
 
 my $prev;
 foreach my $test (sort keys %alltests)
@@ -176,7 +171,10 @@ foreach my $test (sort keys %alltests)
     $prev = $test;
 }
 
-# output the html files for individual test runs
+
+#
+# Write the test unit index pages
+#
 
 foreach my $test (keys %alltests)
 {
@@ -244,6 +242,38 @@ EOF
     close OUT;
     rename "data/tests/$test.html.new", "data/tests/$test.html" or unlink "data/tests/$test.html.new";
 }
+
+
+#
+# Read each build's total.txt file
+# This gets us the statistics for the main index page.
+#
+
+my %versions = ();
+
+foreach my $build (@builds)
+{
+    my %build_ver = ();
+    if (open TOTAL, "data/$build->{name}/total.txt" )
+    {
+        while (<TOTAL>)
+        {
+            if (/^([A-Za-z0-9]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)(?:\s+(\d+))?/)
+            {
+                my ($name, $runs, $tests, $errors, $todos, $successes) = ($1, $2, $3, $4, $5, $6);
+                $versions{$name}++;
+                $build_ver{$name} = [ $runs, $tests, $errors, $todos, $successes ];
+            }
+        }
+        close TOTAL;
+    }
+    $build->{versions} = \%build_ver;
+}
+
+
+#
+# Write the global index page
+#
 
 open OUT, ">data/index.html.new" or die "cannot create 'data/index.html.new'";
 

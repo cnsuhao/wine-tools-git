@@ -37,6 +37,10 @@ use vars qw/$workdir/;
 require "winetest.conf";
 
 
+#
+# Common helpers
+#
+
 use POSIX qw(locale_h strftime);
 setlocale(LC_ALL, "C");
 
@@ -47,7 +51,9 @@ sub long_date($)
 }
 
 
-# generate a table of the errors encountered during processing
+#
+# Generate a table of the errors encountered during processing
+#
 
 chdir($workdir) or die "could not chdir to the work directory: $!";
 
