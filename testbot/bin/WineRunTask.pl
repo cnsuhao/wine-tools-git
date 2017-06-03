@@ -467,9 +467,11 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
   if (open(my $LogFile, "<", $FullLogFileName))
   {
     # There is more than one test unit when running the full test suite so keep
-    # track of the current one. Also note that for the TestBot we don't really
-    # care about the todos and skips
-    my ($CurrentDll, $CurrentUnit, $LineFailures, $SummaryFailures) = ("", "", 0, 0);
+    # track of the current one. Note that for the TestBot we don't count or
+    # complain about misplaced skips.
+    my ($CurrentDll, $CurrentUnit) = ("", "");
+    my ($LineFailures, $LineTodos, $LineSkips) = (0, 0, 0);
+    my ($SummaryFailures, $SummaryTodos, $SummarySkips) = (0, 0, 0);
     my ($CurrentIsBroken, %CurrentPids, $CurrentRc, $LogFailures);
 
     sub CheckUnit($$)
@@ -513,6 +515,8 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
       if (!$CurrentIsBroken)
       {
         CheckSummaryCounter($LineFailures, $SummaryFailures, "failure");
+        CheckSummaryCounter($LineTodos, $SummaryTodos, "todo");
+        CheckSummaryCounter($LineSkips, $SummarySkips, "skip");
       }
 
       # Note that the summary lines may count some failures twice
@@ -556,7 +560,8 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
       $LogFailures += $LineFailures;
 
       $CurrentDll = $CurrentUnit = "";
-      $LineFailures = $SummaryFailures = 0;
+      $LineFailures = $LineTodos = $LineSkips = 0;
+      $SummaryFailures = $SummaryTodos = $SummarySkips = 0;
       $CurrentIsBroken = 0;
       $CurrentRc = undef;
       %CurrentPids = ();
@@ -583,6 +588,23 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
         CheckUnit($1, "failure");
         $LineFailures++;
       }
+      elsif ($Line =~ /^([_a-z0-9]+)\.c:\d+: Test marked todo: / or
+             ($CurrentUnit ne "" and
+              $Line =~ /($CurrentUnit)\.c:\d+: Test marked todo: /))
+      {
+        CheckUnit($1, "todo");
+        $LineTodos++;
+      }
+      # TestLauncher's skip message is quite broken
+      elsif ($Line =~ /^([_a-z0-9]+)(?:\.c)?:\d+:? Tests? skipped: / or
+             ($CurrentUnit ne "" and
+              $Line =~ /($CurrentUnit)(?:\.c)?:\d+:? Tests? skipped: /))
+      {
+        # Don't complain and don't count misplaced skips. Only complain if they
+        # are misreported (see CloseTestUnit). Also TestLauncher uses the wrong
+        # name in its skip message when skipping tests.
+        $LineSkips++ if ($1 eq $CurrentUnit or $1 eq $CurrentDll);
+      }
       elsif ($Line =~ /^Fatal: test '([_a-z0-9]+)' does not exist/)
       {
         # This also replaces a test summary line.
@@ -607,11 +629,11 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
         CheckUnit($Unit, "unhandled exception");
         $LineFailures++;
       }
-      elsif ($Line =~ /^(?:([0-9a-f]+):)?([_a-z0-9]+): \d+ tests? executed \((\d+) marked as todo, (\d+) failures?\), \d+ skipped\./ or
+      elsif ($Line =~ /^(?:([0-9a-f]+):)?([_a-z0-9]+): \d+ tests? executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\./ or
              ($CurrentUnit ne "" and
-              $Line =~ /(?:([0-9a-f]+):)?($CurrentUnit): \d+ tests? executed \((\d+) marked as todo, (\d+) failures?\), \d+ skipped\./))
+              $Line =~ /(?:([0-9a-f]+):)?($CurrentUnit): \d+ tests? executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\./))
       {
-        my ($Pid, $Unit, $Todos, $Failures) = ($1, $2, $3, $4);
+        my ($Pid, $Unit, $Todos, $Failures, $Skips) = ($1, $2, $3, $4, $5);
 
         # Dlls that have only one test unit will run it even if there is
         # no argument. Also TestLauncher uses the wrong name in its test
@@ -621,6 +643,8 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
           # There may be more than one summary line due to child processes
           $CurrentPids{$Pid || 0} = 1;
           $SummaryFailures += $Failures;
+          $SummaryTodos += $Todos;
+          $SummarySkips += $Skips;
           $IsWineTest = 1;
         }
         else
