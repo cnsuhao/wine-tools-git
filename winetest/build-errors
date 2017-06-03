@@ -36,10 +36,18 @@ sub BEGIN
 use vars qw/$workdir/;
 require "winetest.conf";
 
+my $name0=$0;
+$name0 =~ s+^.*/++;
+
 
 #
 # Common helpers
 #
+
+sub error(@)
+{
+    print STDERR "$name0:error: ", @_;
+}
 
 use POSIX qw(locale_h strftime);
 setlocale(LC_ALL, "C");
@@ -88,6 +96,10 @@ foreach my $err (sort { $b->{date} <=> $a->{date}; } @errors)
 print OUT "</table>", end_html();
 close OUT;
 
-rename "data/errors.html.new", "data/errors.html" or unlink "data/errors.html.new";
+if (!rename "$filename.new", "$filename")
+{
+    error("could not move '$filename.new' into place: $!\n");
+    unlink "$filename.new";
+}
 
 exit 0;

@@ -64,6 +64,11 @@ my $summary_version=4;
 # Common helpers
 #
 
+sub error(@)
+{
+    print STDERR "$name0:error: ", @_;
+}
+
 $ENV{GIT_DIR} = $gitdir;
 
 sub get_build_info($)
@@ -128,37 +133,37 @@ sub mydie(@)
     if (!$update) {
         my $errdir = tempdir ("errXXXXX", DIR => "$workdir/queue");
         if (!rename $tmpdir, $errdir) {
-            print STDERR "$name0:error: unable to rename '$tmpdir' to '$errdir': $!\n";
+            error("could not rename '$tmpdir' to '$errdir': $!\n");
             exit 3;
         }
         if (open ERR, ">$errdir/error")
         {
-            print ERR "$label: ", @_;
+            print ERR "$label: ", @_, "\n";
             close ERR;
         }
     }
-    print STDERR "$name0:error:$label: ", @_;
+    print STDERR "$name0:error:$label: ", @_, "\n";
     exit 1;
 }
 
-open IN, "<:raw", $report or mydie "unable to open '$report' for reading: $!\n";
-open SUM, ">$tmpdir/summary.txt" or mydie "unable to open '$tmpdir/summary.txt' for writing: $!\n";
+open IN, "<:raw", $report or mydie "could not open '$report' for reading: $!";
+open SUM, ">$tmpdir/summary.txt" or mydie "could not open '$tmpdir/summary.txt' for writing: $!";
 
 # Get the size of the report file
 my $filesize = -s "$report";
 
 $_ = <IN>;
 /^Version (\d+)\r?$/ or mydie "no version header: $_";
-mydie "illegal version: $1\n" if ($1 lt $minimum_report_version);
+mydie "illegal version: $1" if ($1 lt $minimum_report_version);
 print SUM "Version $summary_version\n";
 
 $_ = <IN>;
 /^Tests from build ([-.0-9a-zA-Z]+)\r?$/ or mydie "no build header: $_";
 my $testbuild = $1;
-$testbuild =~ /^[0-9a-f]{40}$/ or mydie "not a valid commit id $testbuild\n";
+$testbuild =~ /^[0-9a-f]{40}$/ or mydie "not a valid commit id $testbuild";
 my $commit = `git rev-parse --verify $testbuild^0 2>/dev/null`;
 chomp $commit;
-$testbuild eq $commit or mydie "not an existing commit $testbuild\n";
+$testbuild eq $commit or mydie "not an existing commit $testbuild";
 my $shortbuild = substr($testbuild,0,12);
 my $archive = "winetest-$shortbuild.exe";
 
@@ -293,13 +298,13 @@ if ($wine_build) {
     }
     else
     {
-        mydie "invalid wine build '$wine_build'\n";
+        mydie "invalid wine build '$wine_build'";
     }
     chomp $wine_commit;
-    mydie "unknown wine build '$wine_build'\n" unless $wine_commit;
+    mydie "unknown wine build '$wine_build'" unless $wine_commit;
     my $merge_base = `git merge-base $wine_commit $testbuild 2>/dev/null`;
     chomp $merge_base;
-    $merge_base eq $testbuild or mydie "wine build '$wine_build' not a descendant of build $testbuild\n";
+    $merge_base eq $testbuild or mydie "wine build '$wine_build' not a descendant of build $testbuild";
 }
 
 
@@ -325,7 +330,7 @@ while ($_ = <IN>) {
     elsif ($2 eq "skipped")
     {
         print SUM "- $module - skipped - - - - -\n";
-        mydie "too many dlls skipped by user request\n" if ++$user_skips > $maxuserskips;
+        mydie "too many dlls skipped by user request" if ++$user_skips > $maxuserskips;
     }
 }
 
@@ -357,7 +362,7 @@ while (<IN>) {
             $testbox->{data} .= "<div class=\"test result skipped\">Skipped by user request.</div>\n";
             print SUM "- $dll $unit skipped - - - $source $rev\n";
             $dll = undef;
-            mydie "too many tests skipped by user request\n" if ++$user_skips > $maxuserskips;
+            mydie "too many tests skipped by user request" if ++$user_skips > $maxuserskips;
         }
     } elsif (/^((?:[0-9a-f]+:)?$unit: (\d+) tests executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\.)\r?$/) {
         $lines++;
@@ -379,10 +384,12 @@ while (<IN>) {
             if ($1 == 258) { $reason = "test failed: timed out"; }
             elsif ($1 < 0) { $reason = "test failed: crash"; }
             $testbox->{data} .= "<div class=\"test end\">$reason</div>\n";
-            mydie "too many test failures\n" if ++$failed_tests > $maxfailedtests;
+            mydie "too many test failures" if ++$failed_tests > $maxfailedtests;
         } else {
             $result = "$total $todo $failed $skipped";
-            if ($failed) { mydie "too many test failures\n" if ++$failed_tests > $maxfailedtests; }
+            if ($failed && ++$failed_tests > $maxfailedtests) {
+                mydie "too many test failures";
+            }
         }
         print SUM "- $dll $unit $result $source $rev\n";
         $dll = undef;
@@ -411,12 +418,12 @@ while (<IN>) {
 if (defined $dll) {
     # Either winetest crashed or the report file was cut off
     if ($filesize == $maxfilesize) {
-        mydie "report reached file limit (runaway test?)\n";
+        mydie "report reached file limit (runaway test?)";
     } else {
-        mydie "report truncated (winetest crash?)\n";
+        mydie "report truncated (winetest crash?)";
     }
 }
-close SUM or mydie "error writing to '$tmpdir/summary.txt': $!\n";
+close SUM or mydie "error writing to '$tmpdir/summary.txt': $!";
 close IN;
 
 
@@ -476,7 +483,7 @@ for (my $i = 0; $i <= $#boxes; $i++)
 # Create the 'full report' page
 #
 
-open REPORT, ">$tmpdir/report.html" or mydie "unable to open '$tmpdir/report.html' for writing: $!\n";
+open REPORT, ">$tmpdir/report.html" or mydie "could not open '$tmpdir/report.html' for writing: $!";
 
 print REPORT start_html( -title => "$short_date $tag report", -style => {src=>"/report.css"} );
 print REPORT "<div class=\"navbar\">";
@@ -494,7 +501,7 @@ for (my $i = 0; $i <= $#boxes; $i++)
     print REPORT $boxes[$i]->{data}, "</div>\n";
 }
 print REPORT end_html();
-close REPORT or mydie "error writing to '$tmpdir/report.html': $!\n";
+close REPORT or mydie "error writing to '$tmpdir/report.html': $!";
 
 
 #
@@ -503,7 +510,7 @@ close REPORT or mydie "error writing to '$tmpdir/report.html': $!\n";
 
 for (my $i = 0; $i <= $#boxes; $i++)
 {
-    open FILE, ">$tmpdir/$boxes[$i]->{id}.html" or mydie "unable to open '$tmpdir/$boxes[$i]->{id}.html' for writing: $!\n";
+    open FILE, ">$tmpdir/$boxes[$i]->{id}.html" or mydie "could not open '$tmpdir/$boxes[$i]->{id}.html' for writing: $!";
     print FILE start_html( -title => "$short_date $boxes[$i]->{id} $tag", -style => {src=>"/report.css"} );
     print FILE "<div class=\"navbar\">";
     print FILE $boxes[$i]->{prev} ? "<a href=\"./$boxes[$i]->{prev}.html\">prev</a> | " : "prev | ";
@@ -517,7 +524,7 @@ for (my $i = 0; $i <= $#boxes; $i++)
     printf FILE "<div class=\"updownbar\">%s</div>\n", $boxes[$i]->{title};
     print FILE $boxes[$i]->{data}, "</div>\n";
     print FILE end_html();
-    close FILE or mydie "error writing to '$tmpdir/$boxes[$i]->{id}.html': $!\n";
+    close FILE or mydie "error writing to '$tmpdir/$boxes[$i]->{id}.html': $!";
 }
 
 
@@ -540,14 +547,14 @@ if (!$update) {
     $dir = $dirbase = "$builddir/${version}_$tag";
     $try = 0;
     while (!rename $tmpdir, $dir) {
-        $!{ENOTEMPTY} or mydie "unable to rename '$tmpdir' to '$dir': $!\n";
-        ++$try < $maxmult or mydie "more than $maxmult submissions for $dirbase\n";
+        $!{ENOTEMPTY} or mydie "could not rename '$tmpdir' to '$dir': $!";
+        ++$try < $maxmult or mydie "more than $maxmult submissions for $shortbuild/$version";
         $dir = "${dirbase}_$try";
     }
 }
 if (!-e "$builddir/outdated") {
     if (!open SIGN, ">$builddir/outdated") {
-        print STDERR "$name0:error: unable to open '$builddir/outdated' for writing: $!\n";
+        error("could not open '$builddir/outdated' for writing: $!\n");
         exit 1;
     }
     close SIGN;

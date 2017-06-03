@@ -59,6 +59,11 @@ my $summary_version=4;
 # Common helpers
 #
 
+sub error(@)
+{
+    print STDERR "$name0:error: ", @_;
+}
+
 $ENV{GIT_DIR} = $gitdir;
 
 sub get_build_info($)
@@ -190,7 +195,7 @@ foreach my $file (glob "data/$build/*/summary.txt") {
     (my $id, my @tag) = split /_/, $dir;
     my $group = $idmap{$id};
     if (!defined $group) {
-        print STDERR "$name0:error: unknown architecture '$id' in '$file'\n";
+        error("unknown architecture '$id' in '$file'\n");
         next;
     }
 
@@ -198,11 +203,11 @@ foreach my $file (glob "data/$build/*/summary.txt") {
     $report->{tag} = @tag?"@tag":"";
     $report->{dir} = $dir;
     if (!open TEST, "<$file") {
-        print STDERR "$name0:error: unable to open '$file' for reading: $!\n";
+        error("could not open '$file' for reading: $!\n");
         next;
     }
     if (($_ = <TEST>) ne "Version $summary_version\n") {
-        print STDERR "$name0:error: wrong header in '$file': $_";
+        error("wrong header in '$file': $_\n");
         close TEST;
         next;
     }
@@ -649,8 +654,8 @@ sub write_build_index_and_summary($)
     }
 
     my $idx_file = "data/$build/$filename";
-    if (!open OUT, ">$idx_file.new") {
-        print STDERR "$name0:error: unable to open '$idx_file.new' for writing: $!\n";
+    if (!open OUT, ">", "$idx_file.new") {
+        error("could not open '$idx_file.new' for writing: $!\n");
         return;
     }
 
@@ -740,7 +745,11 @@ If you have a 64-bit Windows OS, you can also run the <a href="/builds/winetest6
 EOF
 
     close OUT;
-    rename "$idx_file.new", $idx_file or unlink "$idx_file.new";
+    if (!rename "$idx_file.new", "$idx_file")
+    {
+        error("could not move '$idx_file.new' into place: $!\n");
+        unlink "$idx_file.new";
+    }
 }
 
 
@@ -753,9 +762,10 @@ sub write_totals($)
 {
     my ($reports)=@_;
 
-    if (!open TOTAL, ">data/$build/total.txt.new")
+    my $filename = "data/$build/total.txt";
+    if (!open TOTAL, ">", "$filename.new")
     {
-        print STDERR "$name0:error: unable to open 'data/$build/total.txt.new' for writing: $!\n";
+        error("could not open '$filename.new' for writing: $!\n");
         return;
     }
     my $unit_count=scalar(keys %alltests);
@@ -774,7 +784,11 @@ sub write_totals($)
         printf TOTAL "%s %u %u %u %u %u\n", $report->{group}->{name}, $report_count, $unit_count, $report->{errors}, $report->{todos}, $report->{successes};
     }
     close TOTAL;
-    rename "data/$build/total.txt.new", "data/$build/total.txt" or unlink "data/$build/total.txt.new";
+    if (!rename "$filename.new", "$filename")
+    {
+        error("could not move '$filename.new' into place: $!\n");
+        unlink "$filename.new";
+    }
 }
 
 
@@ -782,9 +796,10 @@ sub write_totals($)
 # Actually generate the build's files
 #
 
-if (!open SUMMARY, ">data/$build/summary.txt.new")
+my $filename = "data/$build/summary.txt";
+if (!open SUMMARY, ">", "$filename.new")
 {
-  print STDERR "$name0:error: unable to open 'data/$build/summary.txt.new' for writing: $!\n";
+  error("could not open '$filename.new' for writing: $!\n");
   goto DONE;
 }
 
@@ -797,12 +812,16 @@ foreach my $group (@groups) {
 write_build_index_and_summary(undef);
 
 close SUMMARY;
-rename "data/$build/summary.txt.new", "data/$build/summary.txt" or unlink "data/$build/summary.txt.new";
+if (!rename "$filename.new", "$filename")
+{
+    error("could not move '$filename.new' into place: $!\n");
+    unlink "$filename.new";
+}
 
 write_totals(\@groups);
 
 DONE:
 if (!unlink $outdated) {
-    print STDERR "$name0:error: unable to unlink '$outdated': $!\n";
+    error("unable to unlink '$outdated': $!\n");
     exit 3;
 }

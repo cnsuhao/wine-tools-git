@@ -37,10 +37,18 @@ sub BEGIN
 use vars qw/$workdir $gitdir $gitweb/;
 require "winetest.conf";
 
+my $name0=$0;
+$name0 =~ s+^.*/++;
+
 
 #
 # Common helpers
 #
+
+sub error(@)
+{
+    print STDERR "$name0:error: ", @_;
+}
 
 $ENV{GIT_DIR} = $gitdir;
 
@@ -110,7 +118,7 @@ chdir($workdir) or die "could not chdir to the work directory: $!";
 my @builds;
 my @too_old;
 
-opendir(DIR, "data") or die "cannot open 'data'";
+opendir(DIR, "data") or die "could not open the 'data' directory: $!";
 foreach my $build (readdir(DIR))
 {
     next if $build =~ /^\./;
@@ -135,7 +143,10 @@ closedir(DIR);
 # remove the too old results
 foreach my $build (@too_old)
 {
-    rename "data/$build", "old-data/$build";
+    if (!rename "data/$build", "old-data/$build")
+    {
+        error("could not move 'data/$build' to old-data: $!\n");
+    }
 }
 
 
@@ -178,7 +189,8 @@ foreach my $test (sort keys %alltests)
 
 foreach my $test (keys %alltests)
 {
-    open OUT, ">data/tests/$test.html.new" or die "cannot create 'data/tests/$test.html.new'";
+    my $filename = "data/tests/$test.html";
+    open OUT, ">", "$filename.new" or die "could not open '$filename.new' for writing: $!";
     print OUT <<EOF;
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
                       "http://www.w3.org/TR/html4/strict.dtd">
@@ -240,7 +252,11 @@ EOF
     }
     print OUT "</table></body></html>\n";
     close OUT;
-    rename "data/tests/$test.html.new", "data/tests/$test.html" or unlink "data/tests/$test.html.new";
+    if (!rename "$filename.new", "$filename")
+    {
+        error("could not move '$filename.new' into place: $!\n");
+        unlink "$filename.new";
+    }
 }
 
 
@@ -275,7 +291,8 @@ foreach my $build (@builds)
 # Write the global index page
 #
 
-open OUT, ">data/index.html.new" or die "cannot create 'data/index.html.new'";
+my $filename = "data/index.html";
+open OUT, ">", "$filename.new" or die "could not open '$filename.new' for writing: $!";
 
 print OUT <<"EOF";
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
@@ -357,6 +374,10 @@ EOF
 
 close OUT;
 
-rename "data/index.html.new", "data/index.html" or unlink "data/index.html.new";
+if (!rename "$filename.new", "$filename")
+{
+    error("could not move '$filename.new' into place: $!\n");
+    unlink "$filename.new";
+}
 
 exit 0;
