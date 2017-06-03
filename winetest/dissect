@@ -236,6 +236,10 @@ while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
 }
 $box->{data} .= "</table>\n";
 
+if (!defined $plid or !defined $major or !defined $minor or !defined $product) {
+    mydie "missing a PlatformId, dwMajorVersion, dwMinorVersion or wProductType field";
+}
+
 my @idmatch = (
     # Describes how to match a platform's version information
     # with a dissect platform id:
@@ -284,7 +288,7 @@ if ($wine) {
                         "Darwin" => "mac",
                         "FreeBSD" => "bsd",
                         "SunOS" => "solaris" );
-    $version = $host && defined($known_hosts{$host}) ? $known_hosts{$host} : "wine";
+    $version = $known_hosts{$host || ""} || "wine";
 }
 if ($wine_build) {
     my $wine_commit;
