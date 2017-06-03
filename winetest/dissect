@@ -334,7 +334,7 @@ while ($_ = <IN>) {
     elsif ($2 eq "skipped")
     {
         print SUM "- $module - skipped - - - - -\n";
-        mydie "too many dlls skipped by user request" if ++$user_skips > $maxuserskips;
+        mydie "too many dlls skipped by user request (>$maxuserskips at $module)" if ++$user_skips > $maxuserskips;
     }
 }
 
@@ -365,8 +365,8 @@ while (<IN>) {
         {
             $testbox->{data} .= "<div class=\"test result skipped\">Skipped by user request.</div>\n";
             print SUM "- $dll $unit skipped - - - $source $rev\n";
+            mydie "too many test units skipped by user request (>$maxuserskips at $dll:$unit)" if ++$user_skips > $maxuserskips;
             $dll = undef;
-            mydie "too many tests skipped by user request" if ++$user_skips > $maxuserskips;
         }
     } elsif (/^((?:[0-9a-f]+:)?$unit: (\d+) tests executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\.)\r?$/) {
         $lines++;
@@ -388,11 +388,11 @@ while (<IN>) {
             if ($1 == 258) { $reason = "test failed: timed out"; }
             elsif ($1 < 0) { $reason = "test failed: crash"; }
             $testbox->{data} .= "<div class=\"test end\">$reason</div>\n";
-            mydie "too many test failures" if ++$failed_tests > $maxfailedtests;
+            mydie "too many failed test units (>$maxfailedtests at $dll:$unit)" if ++$failed_tests > $maxfailedtests;
         } else {
             $result = "$total $todo $failed $skipped";
             if ($failed && ++$failed_tests > $maxfailedtests) {
-                mydie "too many test failures";
+                mydie "too many failed test units (>$maxfailedtests at $dll:$unit)";
             }
         }
         print SUM "- $dll $unit $result $source $rev\n";
@@ -422,9 +422,9 @@ while (<IN>) {
 if (defined $dll) {
     # Either winetest crashed or the report file was cut off
     if ($filesize == $maxfilesize) {
-        mydie "report reached file limit (runaway test?)";
+        mydie "report reached file size limit (>$maxfilesize bytes at $dll:$unit, runaway test?)";
     } else {
-        mydie "report truncated (winetest crash?)";
+        mydie "report truncated at $dll:$unit (winetest crash?)";
     }
 }
 close SUM or mydie "error writing to '$tmpdir/summary.txt': $!";
