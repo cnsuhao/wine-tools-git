@@ -30,20 +30,21 @@ then
     echo "$name0:error: you must specify the work directory as the first parameter" >&2
     exit 1
 fi
-lock=/tmp/winetest.lock
+lock="/tmp/winetest.lock"
 
 # expiration age (in days) before results get archived
 expire=120
 
-if [ ! -f $lock ]; then
-    touch $lock
-    cd $workdir
+if [ ! -f "$lock" ]
+then
+    touch "$lock"
+    cd "$workdir"
 
     refresh_index=""
     refresh_errors=""
     while true
     do
-        $tools/dissect
+        "$tools/dissect"
         case $? in
             0) refresh_index=1 ;;
             1) refresh_errors=1 ;;
@@ -52,7 +53,7 @@ if [ ! -f $lock ]; then
     done
     if [ -n "$refresh_index" ]
     then
-        while $tools/gather; do true; done
+        while "$tools/gather"; do true; done
     fi
     if [ ! -d data/tests -o ! -d old-data ]
     then
@@ -60,18 +61,18 @@ if [ ! -f $lock ]; then
         refresh_index=1
         refresh_errors=1
     fi
-    [ -n "$refresh_index" ] && $tools/build-index
-    [ -n "$refresh_errors" ] && $tools/build-errors
+    [ -n "$refresh_index" ] && "$tools/build-index"
+    [ -n "$refresh_errors" ] && "$tools/build-errors"
 
     # archive old results
     (
         set -e
         cd old-data
-        dir=`find . -maxdepth 1 -mtime +$expire -type d -print -quit`
+        dir=`find . -maxdepth 1 -mtime "+$expire" -type d -print -quit`
         test -n "$dir"
-        tar cfj $dir.tar.bz2 $dir
-        touch -r $dir $dir.tar.bz2
-        rm -rf $dir
+        tar cfj "$dir.tar.bz2" "$dir"
+        touch -r "$dir" "$dir.tar.bz2"
+        rm -rf "$dir"
     )
 
     # remove old test builds
@@ -79,13 +80,13 @@ if [ ! -f $lock ]; then
         set -e
         mkdir -p builds
         cd builds
-        find . -mtime +$expire -name winetest\*.exe -print0 | \
+        find . -mtime "+$expire" -name "winetest*.exe" -print0 | \
             xargs -0 rm -f
     )
 
     # remove old queue files
-    find queue -maxdepth 1 -mtime +30 -name err\* -print0 | xargs -0 rm -rf
-    find queue -maxdepth 1 -mtime +30 -name CGI\* -print0 | xargs -0 rm -f
+    find queue -maxdepth 1 -mtime +30 -name "err*" -print0 | xargs -0 rm -rf
+    find queue -maxdepth 1 -mtime +30 -name "CGI*" -print0 | xargs -0 rm -f
 
-    rm $lock
+    rm "$lock"
 fi
