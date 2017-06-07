@@ -48,7 +48,7 @@ sub BEGIN
     }
     unshift @INC, $1 if ($0 =~ m=^(/.*)/[^/]+$=);
 }
-use vars qw/$workdir $gitdir $gitweb $maxmult $maxuserskips $maxfailedtests $maxfilesize $acceptprediluvianwin/;
+use vars qw/$gitdir $gitweb $maxmult $maxuserskips $maxfailedtests $maxfilesize $acceptprediluvianwin/;
 require "winetest.conf";
 
 my $name0=$0;
@@ -81,11 +81,11 @@ sub get_build_info($)
     {
         ($date, $subject) = ($1, $2);
         # Make sure the directory's mtime matches the commit time
-        utime $date, $date, "$workdir/data/$build";
+        utime $date, $date, "data/$build";
     }
     else
     {
-        $date = (stat "$workdir/data/$build")[9];
+        $date = (stat "data/$build")[9];
         $subject = "";
     }
     return ($date, $subject);
@@ -105,6 +105,13 @@ sub short_date($)
 # Command line processing
 #
 
+require Cwd;
+my $workdir = Cwd::cwd();
+if (!-f "$workdir/report.css")
+{
+    error("'$workdir' is not a valid work directory\n");
+    exit 2;
+}
 chdir($workdir) or die "could not chdir to the work directory: $!";
 
 my ($update, $report);
