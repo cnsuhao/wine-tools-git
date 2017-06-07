@@ -80,7 +80,8 @@ foreach my $dir (readdir DIR)
 }
 closedir DIR;
 
-open OUT, ">data/errors.html.new" or die "cannot create 'data/errors.html.new'";
+my $filename = "data/errors.html";
+open OUT, ">$filename.new" or die "cannot create 'data/$filename.new'";
 
 print OUT start_html( -title => "Errors caught during Wine test report processing",
                       -style => {src => "/summary.css"},
