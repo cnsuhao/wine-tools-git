@@ -33,7 +33,8 @@ sub BEGIN
     }
     unshift @INC, $1 if ($0 =~ m=^(/.*)/[^/]+$=);
 }
-
+use vars qw/$workdir/;
+require "winetest.conf";
 
 my $name0=$0;
 $name0 =~ s+^.*/++;
@@ -62,13 +63,6 @@ sub long_date($)
 # Generate a table of the errors encountered during processing
 #
 
-require Cwd;
-my $workdir = Cwd::cwd();
-if (!-f "$workdir/report.css")
-{
-    error("'$workdir' is not a valid work directory\n");
-    exit 2;
-}
 chdir($workdir) or die "could not chdir to the work directory: $!";
 
 my @errors;

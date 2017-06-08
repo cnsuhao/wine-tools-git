@@ -32,6 +32,7 @@ Read-only source code account:
   should be available as $HOME/tools/winetest/INSTALL.txt).
     git clone git://source.winehq.org/git/tools.git
 - Edit $HOME/tools/winetest/winetest.conf to set:
+    $workdir = "/home/winehq/sites/winetest";
     $gitdir = "/home/wine/wine.git";
 
 Web site account:

@@ -45,7 +45,7 @@ sub BEGIN
     }
     unshift @INC, $1 if ($0 =~ m=^(/.*)/[^/]+$=);
 }
-use vars qw/$gitdir $gitweb/;
+use vars qw/$workdir $gitdir $gitweb/;
 require "winetest.conf";
 
 my $name0=$0;
@@ -76,11 +76,11 @@ sub get_build_info($)
     {
         ($date, $subject) = ($1, $2);
         # Make sure the directory's mtime matches the commit time
-        utime $date, $date, "data/$build";
+        utime $date, $date, "$workdir/data/$build";
     }
     else
     {
-        $date = (stat "data/$build")[9];
+        $date = (stat "$workdir/data/$build")[9];
         $subject = "";
     }
     return ($date, $subject);
@@ -175,13 +175,7 @@ my %idmap = (95=>\%w95, 98=>\%w98, me=>\%me, nt3=>\%nt3, nt4=>\%nt4, 2000=>\%w2k
 # Pick a build to work on
 #
 
-require Cwd;
-my $workdir = Cwd::cwd();
-if (!-f "$workdir/report.css")
-{
-    error("'$workdir' is not a valid work directory\n");
-    exit 2;
-}
+
 chdir($workdir) or die "could not chdir to the work directory: $!";
 
 my ($outdated,undef) = glob "data/*/outdated";
