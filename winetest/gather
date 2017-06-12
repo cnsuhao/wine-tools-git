@@ -821,7 +821,8 @@ if (!rename "$filename.new", "$filename")
 write_totals(\@groups);
 
 DONE:
-if (!unlink $outdated) {
+if (!unlink $outdated and !$!{ENOENT})
+{
     error("unable to unlink '$outdated': $!\n");
     exit 3;
 }
