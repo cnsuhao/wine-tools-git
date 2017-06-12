@@ -172,16 +172,108 @@ my %idmap = (95=>\%w95, 98=>\%w98, me=>\%me, nt3=>\%nt3, nt4=>\%nt4, 2000=>\%w2k
 
 
 #
-# Pick a build to work on
+# Command line processing
 #
 
+my ($update, $builddir, $usage);
+
+sub check_opt_val($$)
+{
+    my ($option, $val) = @_;
+
+    if (defined $val)
+    {
+        error("$option can only be specified once\n");
+        $usage = 2; # but continue processing this option
+    }
+    if (!@ARGV)
+    {
+        error("missing value for $option\n");
+        $usage = 2;
+        return undef;
+    }
+    return shift @ARGV;
+}
+
+while (@ARGV)
+{
+    my $arg = shift @ARGV;
+    if ($arg eq "--workdir")
+    {
+        $workdir = check_opt_val($arg, $workdir);
+    }
+    elsif ($arg eq "--update")
+    {
+        $builddir = check_opt_val($arg, $builddir);
+        $update = 1;
+    }
+    elsif ($arg eq "--help")
+    {
+        $usage = 0;
+    }
+    else
+    {
+        error("unknown argument '$arg'\n");
+        $usage = 1;
+    }
+}
+if (!defined $usage)
+{
+
+    if (!defined $workdir)
+    {
+        require Cwd;
+        $workdir = Cwd::cwd();
+    }
+    elsif ($workdir !~ m%^/%)
+    {
+        require Cwd;
+        $workdir = Cwd::cwd() . "/$workdir";
+    }
+    if (!-f "$workdir/report.css")
+    {
+        error("'$workdir' is not a valid work directory\n");
+        $usage = 2;
+    }
+    if (defined $builddir and !-f "$builddir/summary.txt")
+    {
+        error("the '$builddir' build directory is not valid\n");
+        $usage = 1;
+    }
+}
+if (defined $usage)
+{
+    if ($usage)
+    {
+        error("try '$name0 --help' for more information\n");
+        exit $usage;
+    }
+    print "Usage: $name0 [--workdir DIR] [--update BUILDDIR] [--help]\n";
+    print "\n";
+    print "Processes a build's report summaries to create the build's index files.\n";
+    print "\n";
+    print "Where:\n";
+    print "  --workdir DIR     Specifies the directory containing the winetest website\n";
+    print "                    files.\n";
+    print "  --update BUILDDIR Updates the HTML files of the specified build directory.\n";
+    print "  --help          Shows this usage message.\n";
+    exit 0;
+}
 
 chdir($workdir) or die "could not chdir to the work directory: $!";
 
-my ($outdated,undef) = glob "data/*/outdated";
-exit 2 unless defined $outdated;
-(my $build = $outdated) =~ s|^data/(.*)/outdated$|$1|;
-(my $release = $build) =~ s/^(\d+).*$/$1/;
+if (!defined $builddir)
+{
+    ($builddir, undef) = glob "data/*/outdated";
+    exit 2 if (!defined $builddir);
+    $builddir =~ s~/outdated$~~;
+}
+if ($builddir !~ s~^(?:\Q$workdir\E/+)?data/+([0-9a-f]{40})/?$~data/$1~)
+{
+    error("the '$builddir' build directory is not valid\n");
+    exit 1;
+}
+my $build = $1;
 my ($date, $_subject) = get_build_info($build);
 
 
@@ -190,8 +282,8 @@ my ($date, $_subject) = get_build_info($build);
 #
 
 my %alltests;                   # union of test names
-foreach my $file (glob "data/$build/*/summary.txt") {
-    (my $dir = $file) =~ s|^data/\Q$build\E/(.*?)/summary.txt$|$1|;
+foreach my $file (glob "$builddir/*/summary.txt") {
+    (my $dir = $file) =~ s|^$builddir/(.*?)/summary.txt$|$1|;
     (my $id, my @tag) = split /_/, $dir;
     my $group = $idmap{$id};
     if (!defined $group) {
@@ -560,7 +652,7 @@ sub singletest($$$) {
     {
         my $report = $group->{reports} ? $group->{reports}->[0] : $group;
         $prefix = "$testname | $report->{tag}";
-        if (-r "data/$build/$report->{dir}/$testname.html")
+        if (-r "$builddir/$report->{dir}/$testname.html")
         {
             $href = "$report->{dir}/$testname.html";
         }
@@ -653,7 +745,7 @@ sub write_build_index_and_summary($)
         $filename = "index.html";
     }
 
-    my $idx_file = "data/$build/$filename";
+    my $idx_file = "$builddir/$filename";
     if (!open OUT, ">", "$idx_file.new") {
         error("could not open '$idx_file.new' for writing: $!\n");
         return;
@@ -762,7 +854,7 @@ sub write_totals($)
 {
     my ($reports)=@_;
 
-    my $filename = "data/$build/total.txt";
+    my $filename = "$builddir/total.txt";
     if (!open TOTAL, ">", "$filename.new")
     {
         error("could not open '$filename.new' for writing: $!\n");
@@ -796,7 +888,7 @@ sub write_totals($)
 # Actually generate the build's files
 #
 
-my $filename = "data/$build/summary.txt";
+my $filename = "$builddir/summary.txt";
 if (!open SUMMARY, ">", "$filename.new")
 {
   error("could not open '$filename.new' for writing: $!\n");
@@ -821,8 +913,8 @@ if (!rename "$filename.new", "$filename")
 write_totals(\@groups);
 
 DONE:
-if (!unlink $outdated and !$!{ENOENT})
+if (!unlink "$builddir/outdated" and !$!{ENOENT})
 {
-    error("unable to unlink '$outdated': $!\n");
+    error("unable to unlink '$builddir/outdated': $!\n");
     exit 3;
 }

@@ -105,16 +105,98 @@ sub short_date($)
 # Command line processing
 #
 
+my ($update, $report, $usage);
+
+sub check_opt_val($$)
+{
+    my ($option, $val) = @_;
+
+    if (defined $val)
+    {
+        error("$option can only be specified once\n");
+        $usage = 2; # but continue processing this option
+    }
+    if (!@ARGV)
+    {
+        error("missing value for $option\n");
+        $usage = 2;
+        return undef;
+    }
+    return shift @ARGV;
+}
+
+while (@ARGV)
+{
+    my $arg = shift @ARGV;
+    if ($arg eq "--workdir")
+    {
+        $workdir = check_opt_val($arg, $workdir);
+    }
+    elsif ($arg eq "--update")
+    {
+        $report = check_opt_val($arg, $report);
+        $update = 1;
+    }
+    elsif ($arg eq "--help")
+    {
+        $usage = 0;
+    }
+    else
+    {
+        error("unknown argument '$arg'\n");
+        $usage = 2;
+    }
+}
+if (!defined $usage)
+{
+    if (!defined $workdir)
+    {
+        require Cwd;
+        $workdir = Cwd::cwd();
+    }
+    elsif ($workdir !~ m%^/%)
+    {
+        require Cwd;
+        $workdir = Cwd::cwd() . "/$workdir";
+    }
+    if (!-f "$workdir/report.css")
+    {
+        error("'$workdir' is not a valid work directory\n");
+        $usage = 2;
+    }
+    if (defined $report and !-f $report)
+    {
+        error("the '$report' report is not valid\n");
+        $usage = 2;
+    }
+}
+if (defined $usage)
+{
+    if ($usage)
+    {
+        error("try '$name0 --help' for more information\n");
+        exit $usage;
+    }
+    print "Usage: $name0 [--workdir DIR] [--update REPORT] [--help]\n";
+    print "\n";
+    print "Processes a test report to generate the corresponding HTML files.\n";
+    print "\n";
+    print "Where:\n";
+    print "  --workdir DIR   Specifies the directory containing the winetest website\n";
+    print "                  files.\n";
+    print "  --update REPORT Updates the HTML files of the specified test report. Note that\n";
+    print "                  it must have already been moved into place.\n";
+    print "  --help          Shows this usage message.\n";
+    exit 0;
+}
+
 chdir($workdir) or die "could not chdir to the work directory: $!";
 
-my ($update, $report);
-if (defined $ARGV[0] and $ARGV[0] eq "--update") {
-    $report = $ARGV[1];
-    $update = 1;
-} else {
-    ($report, undef) = glob "queue/rep*/report";
+if (!defined $report)
+{
+    ($report, undef) = glob "$workdir/queue/rep*/report";
+    exit 2 if (!defined $report or !-f $report);
 }
-exit 2 unless (defined $report && -f $report);
 
 my $tmpdir = $report;
 $tmpdir =~ s|^(.+)/report$|$1|;
