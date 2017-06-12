@@ -115,6 +115,20 @@ sub BuildTestAgentd()
   return 1;
 }
 
+sub BuildTestLauncher()
+{
+  system("( cd $::RootDir/src/TestLauncher && set -x && " .
+         "  time make -j$ncpus" .
+         ") >>$LogDir/Reconfig.log 2>&1");
+  if ($? != 0)
+  {
+    LogMsg "Build TestLauncher failed\n";
+    return !1;
+  }
+
+  return 1;
+}
+
 sub BuildNative()
 {
   mkdir "$DataDir/build-native" if (! -d "$DataDir/build-native");
@@ -173,17 +187,11 @@ if (! GitPull())
 
 CountCPUs();
 
-if (! BuildTestAgentd())
-{
-  exit(1);
-}
-
-if (! BuildNative())
-{
-  exit(1);
-}
-
-if (! BuildCross(32) || ! BuildCross(64))
+if (!BuildTestAgentd() ||
+    !BuildTestLauncher() ||
+    !BuildNative() ||
+    !BuildCross(32) ||
+    !BuildCross(64))
 {
   exit(1);
 }
