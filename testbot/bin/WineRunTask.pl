@@ -477,7 +477,7 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
     sub CheckUnit($$)
     {
       my ($Unit, $Type) = @_;
-      if ($Unit eq $CurrentUnit)
+      if ($Unit eq $CurrentUnit or $CurrentUnit eq "")
       {
         $IsWineTest = 1;
       }
@@ -600,10 +600,14 @@ if ($TA->GetFile($RptFileName, $FullLogFileName))
              ($CurrentUnit ne "" and
               $Line =~ /($CurrentUnit)(?:\.c)?:\d+:? Tests? skipped: /))
       {
+        my $Unit = $1;
         # Don't complain and don't count misplaced skips. Only complain if they
         # are misreported (see CloseTestUnit). Also TestLauncher uses the wrong
         # name in its skip message when skipping tests.
-        $LineSkips++ if ($1 eq $CurrentUnit or $1 eq $CurrentDll);
+        if ($Unit eq $CurrentUnit or $CurrentUnit eq "" or $Unit eq $CurrentDll)
+        {
+          $LineSkips++;
+        }
       }
       elsif ($Line =~ /^Fatal: test '([_a-z0-9]+)' does not exist/)
       {
