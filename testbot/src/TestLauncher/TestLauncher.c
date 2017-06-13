@@ -114,14 +114,14 @@ static BOOL AllImportedDllsPresent(char *TestExeName)
    TestExe = CreateFileA(TestExeName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
    if (TestExe == INVALID_HANDLE_VALUE)
    {
-      ReportError("Can't open test executable %s, error %u\n", TestExeName, GetLastError());
+      ReportError("Can't open test executable %s, error %lu\n", TestExeName, GetLastError());
       return FALSE;
    }
 
    if (! ReadFile(TestExe, &DosHeader, sizeof(IMAGE_DOS_HEADER), &NR, NULL) || NR != sizeof(IMAGE_DOS_HEADER))
    {
       CloseHandle(TestExe);
-      ReportError("Can't read DOS header from %s, error %u\n", TestExeName, GetLastError());
+      ReportError("Can't read DOS header from %s, error %lu\n", TestExeName, GetLastError());
       return FALSE;
    }
    if (DosHeader.e_magic != IMAGE_DOS_SIGNATURE)
@@ -135,20 +135,20 @@ static BOOL AllImportedDllsPresent(char *TestExeName)
    if (NewPos == INVALID_SET_FILE_POINTER && GetLastError() != ERROR_SUCCESS)
    {
       CloseHandle(TestExe);
-      ReportError("Can't move to NT headers in %s, error %u\n", TestExeName, GetLastError());
+      ReportError("Can't move to NT headers in %s, error %lu\n", TestExeName, GetLastError());
       return FALSE;
    }
 
    if (! ReadFile(TestExe, &NTHeaders, sizeof(IMAGE_NT_HEADERS), &NR, NULL) || NR != sizeof(IMAGE_NT_HEADERS))
    {
       CloseHandle(TestExe);
-      ReportError("Can't read NT headers from %s, error %u\n", TestExeName, GetLastError());
+      ReportError("Can't read NT headers from %s, error %lu\n", TestExeName, GetLastError());
       return FALSE;
    }
    if (NTHeaders.Signature != IMAGE_NT_SIGNATURE || NTHeaders.OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
    {
       CloseHandle(TestExe);
-      ReportError("%s does not contain valid NT headers expected 0x%08x/0x%04x found 0x%08x/0x%04x\n", TestExeName,
+      ReportError("%s does not contain valid NT headers expected 0x%08x/0x%04x found 0x%08lx/0x%04x\n", TestExeName,
              IMAGE_NT_SIGNATURE, IMAGE_NT_OPTIONAL_HDR_MAGIC, NTHeaders.Signature, NTHeaders.OptionalHeader.Magic);
       return FALSE;
    }
@@ -156,7 +156,7 @@ static BOOL AllImportedDllsPresent(char *TestExeName)
    if (DataDirectoryImportTable->VirtualAddress == 0 || DataDirectoryImportTable->Size == 0)
    {
       CloseHandle(TestExe);
-      ReportError("%s does not contain valid a valid import table (RVA 0x%x size 0x%x)\n", TestExeName,
+      ReportError("%s does not contain valid a valid import table (RVA 0x%lx size 0x%lx)\n", TestExeName,
              DataDirectoryImportTable->VirtualAddress, DataDirectoryImportTable->Size);
       return FALSE;
    }
@@ -173,7 +173,7 @@ static BOOL AllImportedDllsPresent(char *TestExeName)
    {
       free(SectionHeaders);
       CloseHandle(TestExe);
-      ReportError("Can't read section headers from %s, error %u\n", TestExeName, GetLastError());
+      ReportError("Can't read section headers from %s, error %lu\n", TestExeName, GetLastError());
       return FALSE;
    }
 
@@ -201,7 +201,7 @@ static BOOL AllImportedDllsPresent(char *TestExeName)
       free(ImportDescriptors);
       free(SectionHeaders);
       CloseHandle(TestExe);
-      ReportError("Can't move to import directory in %s, error %u\n", TestExeName, GetLastError());
+      ReportError("Can't move to import directory in %s, error %lu\n", TestExeName, GetLastError());
       return FALSE;
    }
 
@@ -210,7 +210,7 @@ static BOOL AllImportedDllsPresent(char *TestExeName)
       free(ImportDescriptors);
       free(SectionHeaders);
       CloseHandle(TestExe);
-      ReportError("Can't read import directory from %s, error %u\n", TestExeName, GetLastError());
+      ReportError("Can't read import directory from %s, error %lu\n", TestExeName, GetLastError());
       return FALSE;
    }
 
@@ -234,7 +234,7 @@ static BOOL AllImportedDllsPresent(char *TestExeName)
          free(ImportDescriptors);
          free(SectionHeaders);
          CloseHandle(TestExe);
-         ReportError("Can't move to import module name in %s, error %u\n", TestExeName, GetLastError());
+         ReportError("Can't move to import module name in %s, error %lu\n", TestExeName, GetLastError());
          return FALSE;
       }
 
@@ -243,7 +243,7 @@ static BOOL AllImportedDllsPresent(char *TestExeName)
          free(ImportDescriptors);
          free(SectionHeaders);
          CloseHandle(TestExe);
-         ReportError("Can't read import directory from %s, error %u\n", TestExeName, GetLastError());
+         ReportError("Can't read import directory from %s, error %lu\n", TestExeName, GetLastError());
          return FALSE;
       }
 
@@ -329,7 +329,7 @@ int main(int argc, char *argv[])
       {
          if (GetFullPathNameA(argv[Arg], countof(TestExeFullName), TestExeFullName, &TestExeFileName) == 0)
          {
-            fprintf(stderr, "Can't determine full path of test executable %s, error %u\n",
+            fprintf(stderr, "Can't determine full path of test executable %s, error %lu\n",
                     argv[Arg], GetLastError());
             exit(1);
          }
@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
 
    if (! CreateProcessA(NULL, CommandLine, NULL, NULL, TRUE, CREATE_DEFAULT_ERROR_MODE, NULL, NULL, &StartupInfo, &ProcessInformation))
    {
-      fprintf(stderr, "CreateProcess failed with error %u\n", GetLastError());
+      fprintf(stderr, "CreateProcess failed with error %lu\n", GetLastError());
       exit(1);
    }
 
@@ -407,20 +407,20 @@ int main(int argc, char *argv[])
       switch(WaitStatus)
       {
       case WAIT_FAILED:
-         fprintf(stderr, "Wait for child failed, error %u\n", GetLastError());
+         fprintf(stderr, "Wait for child failed, error %lu\n", GetLastError());
          break;
 
       case WAIT_TIMEOUT:
          break;
 
       default:
-         fprintf(stderr, "Unexpected return value %u from wait for child\n", WaitStatus);
+         fprintf(stderr, "Unexpected return value %lu from wait for child\n", WaitStatus);
          break;
       }
 
       ExitCode = WaitStatus;
       if (! TerminateProcess(ProcessInformation.hProcess, 257))
-         fprintf(stderr, "TerminateProcess failed with error %u\n", GetLastError());
+         fprintf(stderr, "TerminateProcess failed with error %lu\n", GetLastError());
 
       switch (WaitForSingleObject(ProcessInformation.hProcess, 5000))
       {
@@ -428,7 +428,7 @@ int main(int argc, char *argv[])
          break;
 
       case WAIT_FAILED:
-         fprintf(stderr, "Wait for terminate failed, error %u\n", GetLastError());
+         fprintf(stderr, "Wait for terminate failed, error %lu\n", GetLastError());
          break;
 
       case WAIT_TIMEOUT:
@@ -436,7 +436,7 @@ int main(int argc, char *argv[])
          break;
 
       default:
-         fprintf(stderr, "Unexpected return value %u from wait for terminate\n", WaitStatus);
+         fprintf(stderr, "Unexpected return value %lu from wait for terminate\n", WaitStatus);
          break;
       }
    }
@@ -445,12 +445,12 @@ int main(int argc, char *argv[])
       if (! GetExitCodeProcess(ProcessInformation.hProcess, &ExitCode))
       {
          ExitCode = 259;
-         fprintf(stderr, "Can't get child exit code, error %u\n", GetLastError());
+         fprintf(stderr, "Can't get child exit code, error %lu\n", GetLastError());
       }
    }
    CloseHandle(ProcessInformation.hProcess);
 
-   printf("%s:%s done (%u)\n", TestName, Subtest, ExitCode);
+   printf("%s:%s done (%lu)\n", TestName, Subtest, ExitCode);
 
-	return 0;
+   return 0;
 }
