@@ -324,7 +324,9 @@ foreach my $file (glob "$builddir/*/summary.txt") {
         $alltests{$testname} = $source;
 
         if ($count eq "failed") {
-            if ($todos eq "filelimit") {
+            if ($todos eq "crash") {
+                $report->{$testname} = { status => "crash" };
+            } elsif ($todos eq "filelimit") {
                 $report->{$testname} = { status => "file limit" };
                 $report->{filelimit} = $testname;
             } else {

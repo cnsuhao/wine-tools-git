@@ -465,7 +465,7 @@ while (<IN>) {
     } elsif (/$dll:$unit(?::[0-9a-f]+)? done \((-?\d+)\)(?:\r?$| in)/) {
         chomp;                  # current test ended
         if ($lines==0 || $1 < 0) {
-            $result = "failed $1 - -";
+            $result = "failed ". ($1 < 0 ? "crash" : $1) ." - -";
             my $reason = "test failed: error $1";
             if ($1 == 258) { $reason = "test failed: timed out"; }
             elsif ($1 < 0) { $reason = "test failed: crash"; }
