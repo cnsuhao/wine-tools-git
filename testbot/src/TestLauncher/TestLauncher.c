@@ -53,9 +53,9 @@ static void _ReportError(const char *Format, ...)
    Failures++;
 }
 
-static DWORD ConvertRVAToDiskOffset(DWORD RVA, DWORD SectionHeaderCount, PIMAGE_SECTION_HEADER SectionHeaders)
+static DWORD ConvertRVAToDiskOffset(DWORD RVA, DWORD SectionHeaderCount, const IMAGE_SECTION_HEADER *SectionHeaders)
 {
-   PIMAGE_SECTION_HEADER SectionHeader;
+   const IMAGE_SECTION_HEADER *SectionHeader;
 
    for (SectionHeader = SectionHeaders; SectionHeader < SectionHeaders + SectionHeaderCount; SectionHeader++)
    {
@@ -66,7 +66,7 @@ static DWORD ConvertRVAToDiskOffset(DWORD RVA, DWORD SectionHeaderCount, PIMAGE_
    return 0;
 }
 
-static BOOL DllPresent(char *DllName)
+static BOOL DllPresent(const char *DllName)
 {
    HMODULE DllModule;
 
@@ -91,15 +91,15 @@ static BOOL DllPresent(char *DllName)
  * So instead we just dive into the executable's import table, determine which modules are being
  * imported and check if they are present.
  */
-static BOOL AllImportedDllsPresent(char *TestExeName)
+static BOOL AllImportedDllsPresent(const char *TestExeName)
 {
    HANDLE TestExe;
    IMAGE_DOS_HEADER DosHeader;
    IMAGE_NT_HEADERS NTHeaders;
-   PIMAGE_DATA_DIRECTORY DataDirectoryImportTable;
-   PIMAGE_SECTION_HEADER SectionHeaders;
-   PIMAGE_IMPORT_DESCRIPTOR ImportDescriptors;
-   PIMAGE_IMPORT_DESCRIPTOR ImportDescriptor;
+   const IMAGE_DATA_DIRECTORY *DataDirectoryImportTable;
+   IMAGE_SECTION_HEADER *SectionHeaders;
+   IMAGE_IMPORT_DESCRIPTOR *ImportDescriptors;
+   const IMAGE_IMPORT_DESCRIPTOR *ImportDescriptor;
    DWORD NR;
    DWORD NewPos;
    DWORD FileOffset;
@@ -157,7 +157,7 @@ static BOOL AllImportedDllsPresent(char *TestExeName)
       return FALSE;
    }
 
-   SectionHeaders = (PIMAGE_SECTION_HEADER) malloc(NTHeaders.FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER));
+   SectionHeaders = (IMAGE_SECTION_HEADER*) malloc(NTHeaders.FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER));
    if (SectionHeaders == NULL)
    {
       CloseHandle(TestExe);
@@ -173,7 +173,7 @@ static BOOL AllImportedDllsPresent(char *TestExeName)
       return FALSE;
    }
 
-   ImportDescriptors = (PIMAGE_IMPORT_DESCRIPTOR) malloc(DataDirectoryImportTable->Size);
+   ImportDescriptors = (IMAGE_IMPORT_DESCRIPTOR*) malloc(DataDirectoryImportTable->Size);
    if (ImportDescriptors == NULL)
    {
       free(SectionHeaders);
@@ -287,8 +287,8 @@ int main(int argc, char *argv[])
    BOOL UsageError;
    char TestExeFullName[_MAX_PATH];
    char *TestExeFileName;
-   char *Suffix;
-   char *Subtest;
+   const char *Suffix;
+   const char *Subtest;
    int TestArg;
    char *CommandLine;
    int CommandLen;
