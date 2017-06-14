@@ -376,6 +376,19 @@ elsif (!defined $TAError)
 if ($NewStatus eq "completed")
 {
   use File::Copy;
+  for my $Bitness ("32", "64")
+  {
+    Debug(Elapsed($Start), " Retrieving the $Bitness bit TestLauncher to '$TaskDir/TestLauncher$Bitness.exe'\n");
+    if ($TA->GetFile("../src/TestLauncher/TestLauncher$Bitness.exe", "$TaskDir/TestLauncher$Bitness.exe"))
+    {
+      copy "$TaskDir/TestLauncher$Bitness.exe", "$DataDir/latest/TestLauncher$Bitness.exe";
+    }
+    elsif (!defined $TAError)
+    {
+      $TAError = "An error occurred while retrieving the $Bitness bit TestLauncher: ". $TA->GetLastError();
+    }
+  }
+
   Debug(Elapsed($Start), " Retrieving the updated test list '$TaskDir/testlist.txt'\n");
   if ($TA->GetFile("testlist.txt", "$TaskDir/testlist.txt"))
   {

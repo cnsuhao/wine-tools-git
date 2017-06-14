@@ -362,8 +362,8 @@ my $IsWineTest = 1;
 if ($Step->Type eq "single")
 {
   my $TestLauncher = "TestLauncher" . ($FileType eq "exe64" ? "64" : "32") . ".exe";
-  Debug(Elapsed($Start), " Sending '$BinDir/windows/$TestLauncher'\n");
-  if (!$TA->SendFile("$BinDir/windows/$TestLauncher", $TestLauncher, 0))
+  Debug(Elapsed($Start), " Sending 'latest/$TestLauncher'\n");
+  if (!$TA->SendFile("$DataDir/latest/$TestLauncher", $TestLauncher, 0))
   {
     FatalTAError($TA, "Could not copy TestLauncher to the VM");
   }
