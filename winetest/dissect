@@ -239,12 +239,12 @@ open IN, "<:raw", $report or mydie "could not open '$report' for reading: $!";
 # - <dll> <unit> <total> <todo> <failures> <skipped> <source> <rev>
 open SUM, ">$tmpdir/summary.txt" or mydie "could not open '$tmpdir/summary.txt' for writing: $!";
 
-my $line = <IN>;
+my $line = <IN> || "";
 $line =~ /^Version (\d+)\r?$/ or mydie "no version header: $line";
 mydie "illegal version: $1" if ($1 lt $minimum_report_version);
 print SUM "Version $summary_version\n";
 
-$line = <IN>;
+$line = <IN> || "";
 $line =~ /^Tests from build ([-.0-9a-zA-Z]+)\r?$/ or mydie "no build header: $line";
 my $testbuild = $1;
 $testbuild =~ /^[0-9a-f]{40}$/ or mydie "not a valid commit id $testbuild";
@@ -257,8 +257,8 @@ my $archive = "winetest-$shortbuild.exe";
 my ($date, $_subject) = get_build_info($testbuild);
 my $short_date = short_date($date);
 
-$line = <IN>;
-$line = <IN> if ($line =~ /^Archive: /); # ignore Archive header
+$line = <IN> || "";
+$line = <IN> || "" if ($line =~ /^Archive: /); # Ignore the Archive header
 
 $line =~ /^Tag: ([-.0-9a-zA-Z]*)\r?$/ or mydie "no tag line: $line";
 $tag = $1;
@@ -278,15 +278,15 @@ sub create_box($$$)
     return $box;
 }
 
-$line = <IN>;
-$line =~ /^Build info:\r?$/ or mydie "no Build info header: $line";
+$line = <IN> || "";
+$line =~ /^Build info:\r?$/ or mydie "no build info header: $line";
 my $box = create_box( "version", "version", "$tag $short_date information" );
 $box->{data} .= "<h2>Build version</h2>\n";
 $box->{data} .= "<table class=\"output\">\n";
 $box->{data} .= "<tr><td>Build</td><td><a title=\"$testbuild\" href=\"$gitweb/?a=shortlog;h=$testbuild\">$shortbuild</a></td></tr>\n";
 $box->{data} .= "<tr><td>Tag</td><td><a title=\"Full report\" href=\"report.html\">$tag</a></td></tr></table>\n";
 $box->{data} .= "<div class=\"output\"> </div>\n";
-while ($line = <IN>)
+while ($line = <IN> || "")
 {
     last if ($line !~ s/^    //);
     chomp $line;
@@ -299,7 +299,7 @@ $box->{data} .= "<h2>Operating system version</h2>\n";
 $box->{data} .= "<table class=\"output\">\n";
 
 my ($wine, $wine_build, $major, $minor, $plid, $product, $host);
-while ($line = <IN>)
+while ($line = <IN> || "")
 {
     last if ($line !~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/);
     if ($1 eq "URL") {
@@ -412,7 +412,7 @@ $box->{data} .= "<h2>DLL version</h2>\n";
 
 my $skipped_units;
 my %dllinfo;
-while ($line = <IN>)
+while ($line = <IN> || "")
 {
     last if ($line !~ /^\s+([^ =]+)=(.*?)\r?$/);
     my ($dll, $info) = ($1, $2);
