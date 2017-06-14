@@ -229,18 +229,23 @@ sub mydie(@)
 }
 
 open IN, "<:raw", $report or mydie "could not open '$report' for reading: $!";
+
+# summary.txt file format:
+# Version <version>
+# - <dll> - missing - - - - -
+# - <dll> - skipped - - - - -
+# - <dll> <unit> skipped - - - <source> <rev>
+# - <dll> <unit> failed (258|crash) - - <source> <rev>
+# - <dll> <unit> <total> <todo> <failures> <skipped> <source> <rev>
 open SUM, ">$tmpdir/summary.txt" or mydie "could not open '$tmpdir/summary.txt' for writing: $!";
 
-# Get the size of the report file
-my $filesize = -s "$report";
-
-$_ = <IN>;
-/^Version (\d+)\r?$/ or mydie "no version header: $_";
+my $line = <IN>;
+$line =~ /^Version (\d+)\r?$/ or mydie "no version header: $line";
 mydie "illegal version: $1" if ($1 lt $minimum_report_version);
 print SUM "Version $summary_version\n";
 
-$_ = <IN>;
-/^Tests from build ([-.0-9a-zA-Z]+)\r?$/ or mydie "no build header: $_";
+$line = <IN>;
+$line =~ /^Tests from build ([-.0-9a-zA-Z]+)\r?$/ or mydie "no build header: $line";
 my $testbuild = $1;
 $testbuild =~ /^[0-9a-f]{40}$/ or mydie "not a valid commit id $testbuild";
 my $commit = `git rev-parse --verify $testbuild^0 2>/dev/null`;
@@ -252,10 +257,10 @@ my $archive = "winetest-$shortbuild.exe";
 my ($date, $_subject) = get_build_info($testbuild);
 my $short_date = short_date($date);
 
-$_ = <IN>;
-if (/^Archive: /) { $_ = <IN>; }  # ignore Archive header
+$line = <IN>;
+$line = <IN> if ($line =~ /^Archive: /); # ignore Archive header
 
-/^Tag: ([-.0-9a-zA-Z]*)\r?$/ or mydie "no tag line: $_";
+$line =~ /^Tag: ([-.0-9a-zA-Z]*)\r?$/ or mydie "no tag line: $line";
 $tag = $1;
 
 
@@ -273,26 +278,30 @@ sub create_box($$$)
     return $box;
 }
 
-$_ = <IN>;
-/^Build info:\r?$/ or mydie "no Build info header: $_";
+$line = <IN>;
+$line =~ /^Build info:\r?$/ or mydie "no Build info header: $line";
 my $box = create_box( "version", "version", "$tag $short_date information" );
 $box->{data} .= "<h2>Build version</h2>\n";
 $box->{data} .= "<table class=\"output\">\n";
 $box->{data} .= "<tr><td>Build</td><td><a title=\"$testbuild\" href=\"$gitweb/?a=shortlog;h=$testbuild\">$shortbuild</a></td></tr>\n";
 $box->{data} .= "<tr><td>Tag</td><td><a title=\"Full report\" href=\"report.html\">$tag</a></td></tr></table>\n";
 $box->{data} .= "<div class=\"output\"> </div>\n";
-while (($_ = <IN>) =~ s/^    //)
+while ($line = <IN>)
 {
-    chomp;
-    s/\r+$//;
-    $box->{data} .= "<div class=\"output\">" . escapeHTML($_) . "</div>\n";
+    last if ($line !~ s/^    //);
+    chomp $line;
+    $line =~ s/\r+$//;
+    $box->{data} .= "<div class=\"output\">" . escapeHTML($line) . "</div>\n";
 }
 
-my ($wine, $wine_build, $major, $minor, $plid, $product, $host);
-/^Operating system version:\r?$/ or mydie "no OS header: $_";
+$line =~ /^Operating system version:\r?$/ or mydie "no OS header: $line";
 $box->{data} .= "<h2>Operating system version</h2>\n";
 $box->{data} .= "<table class=\"output\">\n";
-while (($_ = <IN>) =~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/) {
+
+my ($wine, $wine_build, $major, $minor, $plid, $product, $host);
+while ($line = <IN>)
+{
+    last if ($line !~ /^\s*([0-9a-zA-Z ]+)=(.*?)\r?$/);
     if ($1 eq "URL") {
         $box->{data} .= sprintf "<tr><td>$1</td><td><a href=\"%s\">%s</a></td></tr>\n", escapeHTML($2), escapeHTML($2);
     } else {
@@ -398,25 +407,25 @@ if ($wine_build) {
 # Parse the 'Dll info' section
 #
 
-my $user_skips = 0;
-my $failed_tests = 0;
-my %dllinfo;
-/^Dll info:\r?$/ or mydie "no Dll info header: $_";
+$line =~ /^Dll info:\r?$/ or mydie "no Dll info header: $line";
 $box->{data} .= "<h2>DLL version</h2>\n";
-while ($_ = <IN>) {
-    chomp;
-    s/\r+$//;
-    last if (!/^\s+([^ =]+)=(.*)\r?$/);
-    my $module = $1;
-    $dllinfo{$module} = { version => $2 };
-    if ($2 eq "dll is missing" || $2 =~ /^load error/ || $2 eq "dll is a stub")
+
+my $skipped_units;
+my %dllinfo;
+while ($line = <IN>)
+{
+    last if ($line !~ /^\s+([^ =]+)=(.*?)\r?$/);
+    my ($dll, $info) = ($1, $2);
+    $dllinfo{$dll} = { version => $info };
+    if ($info eq "dll is missing" or $info eq "dll is a stub" or
+        $info =~ /^load error/)
     {
-        print SUM "- $module - missing - - - - -\n";
+        print SUM "- $dll - missing - - - - -\n";
     }
-    elsif ($2 eq "skipped")
+    elsif ($info eq "skipped")
     {
-        print SUM "- $module - skipped - - - - -\n";
-        mydie "too many dlls skipped by user request (>$maxuserskips at $module)" if ++$user_skips > $maxuserskips;
+        print SUM "- $dll - skipped - - - - -\n";
+        mydie "too many dlls skipped by user request (>$maxuserskips at $dll)" if ++$skipped_units > $maxuserskips;
     }
 }
 
@@ -425,90 +434,312 @@ while ($_ = <IN>) {
 # Parse the tests output
 #
 
-/^Test output:/ or mydie "no test header: $_";
-my ($dll, $unit, $source, $rev, $result);
-my ($lines,$total, $todo, $failed, $skipped);
-$dll = undef;                   # state machine starts
-$total = $todo = $failed = $skipped = 0;
-$lines = 0;
+my ($dll, $unit, $source, $rev, $result) = ("", "", "");
+my ($failures, $todo, $skipped) = (0, 0, 0);
+my ($s_failures, $s_todo, $s_skipped, $s_total) = (0, 0, 0, 0);
+my (%pids, $rc, $summary, $broken);
+my ($extra_failures, $failed_units) = (0, 0);
+
+sub get_source_link($$)
+{
+    my ($_unit, $_lnum) = @_;
+
+    my $source_link = defined $_unit ? "$_unit.c" : $source ne "-" ? $source : "$dll:$unit";
+    $source_link .= ":$_lnum" if (defined $_lnum);
+    if (defined $_unit and $_unit ne $unit)
+    {
+        # If the line is not for the current test unit we'll let its
+        # developer hash it out with the polluter ;-)
+        $broken = 1;
+    }
+    elsif ($source ne "-")
+    {
+        my $url = "$gitweb/?a=blob;f=$source;hb=$testbuild";
+        $url .= "#l$_lnum" if (defined $_lnum);
+        $source_link = "<a href=\"$url\">$source_link</a>";
+    }
+    return $source_link;
+}
+
 my $testbox;
-while (<IN>) {
-    if (!defined $dll) {        # new test
-        next if /^\s*$/;
-        m[([_.a-z0-9]+):([_a-z0-9]+) (start|skipped) ([/_.a-z0-9]+) (-|[.0-9a-f]+)\r?$]
-          or next;
-        ($dll,$unit,$source,$rev) = ($1,$2,$4,$5);
-        $testbox = create_box( "$dll:$unit", "testfile", "<a href=\"$gitweb/?a=history;f=$source;hb=$testbuild\">$source</a>" );
-        if (defined($dllinfo{$dll}->{version}) && !defined($dllinfo{$dll}->{first}))
+
+sub add_test_line($$)
+{
+    my ($class, $line) = @_;
+    $testbox->{data} .= "<div class=\"test $class\">$line</div>\n";
+}
+
+sub check_unit($$)
+{
+    my ($l_unit, $l_type) = @_;
+    if ($l_unit ne $unit)
+    {
+        add_test_line("end", "Misplaced $l_type message\n");
+        $extra_failures++;
+        $broken = 1;
+    }
+}
+
+sub check_summary_counter($$$)
+{
+    my ($count, $s_count, $type) = @_;
+
+    if ($count != 0 and $s_count == 0)
+    {
+        add_test_line("end", "The test has unaccounted for $type messages");
+        $extra_failures++;
+    }
+    elsif ($count == 0 and $s_count != 0)
+    {
+        add_test_line("end", "The test is missing some $type messages");
+        $extra_failures++;
+    }
+}
+
+sub create_test_unit_box()
+{
+    if (defined($dllinfo{$dll}->{version}) && !$dllinfo{$dll}->{first})
+    {
+        $dllinfo{$dll}->{first} = "$dll:$unit";
+    }
+    return create_box("$dll:$unit", "testfile", get_source_link(undef, undef));
+}
+
+sub close_test_unit($)
+{
+    my ($last) = @_;
+
+    # Verify the counters
+    if (!$broken)
+    {
+        check_summary_counter($failures, $s_failures, "failure");
+        check_summary_counter($todo, $s_todo, "todo");
+        check_summary_counter($skipped, $s_skipped, "skip");
+    }
+
+    # Note that the summary lines may count some failures twice
+    # so only use them as a fallback.
+    $failures ||= $s_failures;
+    $todo ||= $s_todo;
+    $skipped ||= $s_skipped;
+
+    if (!$broken and defined $rc)
+    {
+        # Check the exit code, particularly against failures reported
+        # after the 'done' line (e.g. by subprocesses).
+        if ($failures != 0 and $rc == 0)
         {
-            $dllinfo{$dll}->{first} = "$dll:$unit";
+            add_test_line("end", "The test returned success despite having failures");
+            $extra_failures++;
         }
-        if ($3 eq "skipped")
+        elsif ($failures == 0 and $rc != 0)
         {
-            $testbox->{data} .= "<div class=\"test result skipped\">Skipped by user request.</div>\n";
-            print SUM "- $dll $unit skipped - - - $source $rev\n";
-            mydie "too many test units skipped by user request (>$maxuserskips at $dll:$unit)" if ++$user_skips > $maxuserskips;
-            $dll = undef;
+            add_test_line("end", "The test returned a non-zero exit code despite reporting no failure");
+            $extra_failures++;
         }
-    } elsif (/^((?:[0-9a-f]+:)?$unit: (\d+) tests executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\.)\r?$/) {
-        $lines++;
-        $total += $2;
-        $todo += $3;
-        $failed += $4;
-        $skipped += $5;
-        chomp;
-        s/\r+$//;
-        my $class = "test result";
-        if ($failed) { $class .= " failed"; }
-        elsif ($todo) { $class .= " todo"; }
-        $testbox->{data} .= sprintf "<div class=\"%s\">%s</div>\n", $class, escapeHTML($_);
-    } elsif (/$dll:$unit(?::[0-9a-f]+)? done \((-?\d+)\)(?:\r?$| in)/) {
-        chomp;                  # current test ended
-        if ($lines==0 || $1 < 0) {
-            $result = "failed ". ($1 < 0 ? "crash" : $1) ." - -";
-            my $reason = "test failed: error $1";
-            if ($1 == 258) { $reason = "test failed: timed out"; }
-            elsif ($1 < 0) { $reason = "test failed: crash"; }
-            $testbox->{data} .= "<div class=\"test end\">$reason</div>\n";
-            mydie "too many failed test units (>$maxfailedtests at $dll:$unit)" if ++$failed_tests > $maxfailedtests;
-        } else {
-            $result = "$total $todo $failed $skipped";
-            if ($failed && ++$failed_tests > $maxfailedtests) {
-                mydie "too many failed test units (>$maxfailedtests at $dll:$unit)";
-            }
-        }
-        print SUM "- $dll $unit $result $source $rev\n";
-        $dll = undef;
-        $total = $todo = $failed = $skipped = 0;
-        $lines = 0;
-    } else {                    # current test output
-        chomp;
-        s/\r+$//;
-        if (/^$unit\.c:(\d+): (.*)$/)
+    }
+    elsif (!defined $rc)
+    {
+        if (!$last)
         {
-            my ($line, $text) = ($1, $2);
-            my $class = "test trace";
-            if ($text =~ /^Test failed: /) { $class = "test failed"; }
-            elsif ($text =~ /^Test succeeded inside todo block: /) { $class = "test failed"; }
-            elsif ($text =~ /^Test marked todo: /) { $class = "test todo"; }
-            elsif ($text =~ /^Tests skipped: /) { $class = "test skipped"; }
-            $testbox->{data} .= sprintf "<div class=\"%s\"><a href=\"%s/?a=blob;f=%s;hb=%s#l%u\">%s.c:%u</a>: %s</div>\n",
-                                 $class, $gitweb, $source, $testbuild, $line, $unit, $line, escapeHTML($text);
+            add_test_line("end", "The $dll:$unit done line is missing");
+        }
+        elsif (-s $report == $maxfilesize)
+        {
+            mydie "report reached file size limit (>$maxfilesize bytes at $dll:$unit, runaway test?)";
         }
         else
         {
-            $testbox->{data} .= sprintf "<div class=\"test trace\">%s</div>\n", escapeHTML($_);
+            mydie "report truncated at $dll:$unit (winetest crash?)";
+        }
+        $extra_failures++;
+    }
+
+    $failures += $extra_failures;
+    $summary = "$s_total $todo $failures $skipped" if (!defined $summary);
+    print SUM "- $dll $unit $summary $source $rev\n";
+    if ($failures && ++$failed_units > $maxfailedtests) {
+        mydie "too many failed test units (>$maxfailedtests at $dll:$unit)";
+    }
+
+    $dll = $unit = "";
+    $failures = $todo = $skipped = 0;
+    $s_failures = $s_todo = $s_skipped = $s_total = 0;
+    $extra_failures = $broken = 0;
+    $rc = $summary = undef;
+    %pids = ();
+}
+
+$line =~ /^Test output:/ or mydie "no test header: $line";
+while ($line = <IN>) {
+    next if ($line =~ /^\s*$/);
+    chomp $line;
+    $line =~ s/\r+$//;
+    if ($line =~ m%^([_.a-z0-9-]+):([_a-z0-9]+) (start|skipped) (-|[/_.a-z0-9]+) (-|[.0-9a-f]+)\r?$%)
+    {
+        my ($l_dll, $l_unit, $l_type, $l_source, $l_rev) = ($1, $2, $3, $4, $5);
+
+        # Close the previous test unit
+        close_test_unit(0) if ($dll ne "");
+
+        ($dll, $unit, $source, $rev) = ($l_dll, $l_unit, $l_source, $l_rev);
+
+        $testbox = create_test_unit_box();
+        if ($l_type eq "skipped")
+        {
+            add_test_line("skipped", "Skipped by user request.");
+            print SUM "- $dll $unit skipped - - - $source $rev\n";
+            mydie "too many test units skipped by user request (>$maxuserskips at $dll:$unit)" if ++$skipped_units > $maxuserskips;
+            $rc = 0;
         }
     }
-}
-if (defined $dll) {
-    # Either winetest crashed or the report file was cut off
-    if ($filesize == $maxfilesize) {
-        mydie "report reached file size limit (>$maxfilesize bytes at $dll:$unit, runaway test?)";
-    } else {
-        mydie "report truncated at $dll:$unit (winetest crash?)";
+    elsif ($line =~ /^(?:([0-9a-f]+):)?([_.a-z0-9]+): unhandled exception [0-9a-fA-F]{8} at / or
+           ($unit ne "" and
+            $line =~ /(?:([0-9a-f]+):)?($unit): unhandled exception [0-9a-fA-F]{8} at /))
+    {
+        my ($l_pid, $l_unit) = ($1, $2);
+        if ($l_unit eq $unit)
+        {
+          # This also replaces a test summary line.
+          $pids{$l_pid || 0} = 1;
+          $s_failures++;
+        }
+        add_test_line("failed", escapeHTML($line));
+        check_unit($l_unit, "unhandled exception");
+        $failures++;
+    }
+    elsif ($line =~ /^()([_a-z0-9]+)\.c:(\d+): (Test (?:failed|succeeded inside todo block): .*)$/ or
+           ($unit ne "" and
+            $line =~ /^(.*?)($unit)\.c:(\d+): (Test (?:failed|succeeded inside todo block): .*)$/))
+    {
+        my ($pollution, $l_unit, $l_num, $l_text) = ($1, $2, $3, $4);
+        add_test_line("failed", escapeHTML($pollution) .
+                                get_source_link($l_unit, $l_num) .": ".
+                                escapeHTML($l_text));
+        check_unit($l_unit, "failure");
+        $failures++;
+    }
+    elsif ($line =~ /^()([_a-z0-9]+)\.c:(\d+): (Test marked todo: .*)$/ or
+           ($unit ne "" and
+            $line =~ /^(.*?)($unit)\.c:(\d+): (Test marked todo: .*)$/))
+    {
+        my ($pollution, $l_unit, $l_num, $l_text) = ($1, $2, $3, $4);
+        add_test_line("todo", escapeHTML($pollution) .
+                              get_source_link($l_unit, $l_num) .": ".
+                              escapeHTML($l_text));
+        check_unit($l_unit, "todo");
+        $todo++;
+    }
+    elsif ($line =~ /^()([_a-z0-9]+)\.c:(\d+): (Tests skipped: .*)$/ or
+           ($unit ne "" and
+            $line =~ /^(.*?)($unit)\.c:(\d+): (Tests skipped: .*)$/))
+    {
+        my ($pollution, $l_unit, $l_num, $l_text) = ($1, $2, $3, $4);
+        add_test_line("skipped", escapeHTML($pollution) .
+                                 get_source_link($l_unit, $l_num) .": ".
+                                 escapeHTML($l_text));
+        # Don't complain and don't count misplaced skips
+        $skipped++ if ($l_unit eq $unit);
+    }
+    elsif ($line =~ /^()([_a-z0-9]+)\.c:(\d+): (.*)$/ or
+           ($unit ne "" and
+            $line =~ /^(.*?)($unit)\.c:(\d+): (.*)$/))
+    {
+        my ($pollution, $l_unit, $l_num, $l_text) = ($1, $2, $3, $4);
+        add_test_line("trace", escapeHTML($pollution) .
+                               get_source_link($l_unit, $l_num) .": ".
+                               escapeHTML($l_text));
+    }
+    elsif ($line =~ /^(?:([0-9a-f]+):)?([_a-z0-9]+): (\d+) tests? executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\./ or
+           ($unit ne "" and
+            $line =~ /(?:([0-9a-f]+):)?($unit): (\d+) tests? executed \((\d+) marked as todo, (\d+) failures?\), (\d+) skipped\./))
+    {
+        my ($l_pid, $l_unit, $l_total, $l_todo, $l_failures, $l_skipped) = ($1, $2, $3, $4, $5, $6);
+
+        my $class = $l_failures ? "failed" : $l_todo ? "todo" : "result";
+        if ($l_unit eq $unit)
+        {
+            # There may be more than one summary line due to child processes
+            $pids{$l_pid || 0} = 1;
+            $s_total += $l_total;
+            $s_todo += $l_todo;
+            $s_failures += $l_failures;
+            $s_skipped += $l_skipped;
+            add_test_line($class, escapeHTML($line));
+        }
+        else
+        {
+            $class = "failed" if ($l_todo);
+            add_test_line($class, escapeHTML($line));
+            check_unit($l_unit, "test summary") if ($class ne "result");
+        }
+    }
+    elsif ($line =~ /^([_.a-z0-9-]+):([_a-z0-9]+)(?::([0-9a-f]+))? done \((-?\d+)\)(?:\r?$| in)/ or
+           ($dll ne "" and
+            $line =~ /(\Q$dll\E):([_a-z0-9]+)(?::([0-9a-f]+))? done \((-?\d+)\)(?:\r?$| in)/))
+    {
+        my ($l_dll, $l_unit, $l_pid, $l_rc) = ($1, $2, $3, $4);
+
+        if ($l_dll ne $dll or $l_unit ne $unit)
+        {
+            # First close the current test unit taking into account
+            # it may have been polluted by the new one.
+            add_test_line("end", "The $l_dll:$l_unit start line is missing (or it is garbled)");
+            $extra_failures++;
+            $broken = 1;
+            close_test_unit(0);
+
+            # Then switch to the new one, warning it's missing a start line,
+            # and that its results may be inconsistent.
+            ($dll, $unit, $source, $rev) = ($l_dll, $l_unit, "-", "-");
+            $testbox = create_test_unit_box();
+            add_test_line("end", "The $l_dll:$l_unit start line is missing (or it is garbled)");
+            $extra_failures++;
+            $broken = 1;
+        }
+
+        my $class = $l_rc ? "failed" : "";
+        add_test_line($class, escapeHTML($line));
+
+        if ((!$l_pid and !%pids) or ($l_pid and !$pids{$l_pid} and !$pids{0}))
+        {
+            # The main summary line is missing
+            if ($l_rc == 258)
+            {
+                add_test_line("end", "Test failed: timed out");
+                $summary = "failed 258";
+                $extra_failures++;
+                $broken = 1;
+            }
+            elsif ($l_rc & 0xc0000000)
+            {
+                add_test_line("end", sprintf("Test failed: crash (%08x)", $l_rc & 0xffffffff));
+                $summary = "failed crash";
+                $extra_failures++;
+                $broken = 1;
+            }
+            elsif (!$broken)
+            {
+                add_test_line("end", "The main process has no test summary line");
+                $extra_failures++;
+            }
+        }
+        elsif ($l_rc & 0xc0000000)
+        {
+            add_test_line("end", sprintf("Test failed: crash (%08x)", $l_rc & 0xffffffff));
+            $summary = "failed crash";
+            $extra_failures++;
+            $broken = 1;
+        }
+        $rc = $l_rc;
+    }
+    else
+    {
+        add_test_line("trace", escapeHTML($line));
     }
 }
+close_test_unit(1);
+
 close SUM or mydie "error writing to '$tmpdir/summary.txt': $!";
 close IN;
 
