@@ -199,8 +199,12 @@ my @too_old;
 opendir(DIR, "data") or die "could not open the 'data' directory: $!";
 foreach my $build (readdir(DIR))
 {
-    next if $build =~ /^\./;
-    next unless $build =~ /^[-.0-9a-zA-Z]+$/;
+    next if ($build =~ /^(\.\.?|index\.html|errors\.html|tests)$/);
+    if ($build !~ /^[0-9a-f]{40}$/)
+    {
+        error("'data/$build' is not a valid build directory\n");
+        next;
+    }
     next unless -f "data/$build/index.html";
 
     my ($date, $subject) = get_build_info($build);
