@@ -19,13 +19,9 @@
  */
 
 #include <stdio.h>
+#include <errno.h>
 #include <windows.h>
 
-#ifdef __MINGW32__
-#define strcpy_s(dest, size, src) strcpy((dest), (src))
-#define strncpy_s(dest, size, src, max) strncpy((dest), (src), (max))
-#define strcat_s(dest, size, src) strcat((dest), (src))
-#endif
 #define countof(Array) (sizeof(Array) / sizeof(Array[0]))
 
 static unsigned Failures = 0;
@@ -339,9 +335,12 @@ int main(int argc, char *argv[])
          if (Suffix == NULL)
             Suffix = strchr(TestExeFileName, '.');
          if (Suffix == NULL)
-            strcpy_s(TestName, countof(TestName), TestExeFileName);
+            strcpy(TestName, TestExeFileName);
          else
-            strncpy_s(TestName, _MAX_PATH, TestExeFileName, Suffix - TestExeFileName);
+         {
+            strncpy(TestName, TestExeFileName, Suffix - TestExeFileName);
+            TestName[Suffix - TestExeFileName] = '\0';
+         }
          Subtest = (Arg + 1 < argc ? argv[Arg + 1] : "");
 
          CommandLen = strlen(TestExeFullName) + 3;
@@ -356,13 +355,13 @@ int main(int argc, char *argv[])
          }
 
          CommandLine[0] = '"';
-         strcpy_s(CommandLine + 1, CommandLen - 1, TestExeFullName);
-         strcat_s(CommandLine, CommandLen, "\"");
+         strcpy(CommandLine + 1, TestExeFullName);
+         strcat(CommandLine, "\"");
          for (TestArg = Arg + 1; TestArg < argc; TestArg++)
          {
-            strcat_s(CommandLine, CommandLen, " \"");
-            strcat_s(CommandLine, CommandLen, argv[TestArg]);
-            strcat_s(CommandLine, CommandLen, "\"");
+            strcat(CommandLine, " \"");
+            strcat(CommandLine, argv[TestArg]);
+            strcat(CommandLine, "\"");
          }
 
          Arg = argc;
