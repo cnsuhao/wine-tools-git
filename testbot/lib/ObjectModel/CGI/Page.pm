@@ -58,6 +58,23 @@ sub _initialize($$$)
 =pod
 =over 12
 
+=head1 C<GetParamNames()>
+
+Returns the list of parameter names.
+
+=back
+=cut
+
+sub GetParamNames($)
+{
+  my $self = shift;
+
+  return $self->{CGIObj}->param();
+}
+
+=pod
+=over 12
+
 =head1 C<GetParam()>
 
 This thunks to CGI::param() and thus takes the same arguments list.

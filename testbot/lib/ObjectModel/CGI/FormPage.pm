@@ -362,7 +362,7 @@ sub Save($)
 {
   my ($self) = @_;
 
-  my @ParamNames = $self->GetParam();
+  my @ParamNames = $self->GetParamNames();
   foreach my $ParameterName (@ParamNames)
   {
     my $PropertyDescriptor = $self->GetPropertyDescriptorByName($ParameterName);
