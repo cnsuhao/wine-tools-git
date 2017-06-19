@@ -77,7 +77,9 @@ sub GetParamNames($)
 
 =head1 C<GetParam()>
 
-This thunks to CGI::param() and thus takes the same arguments list.
+This thunks to CGI::param() and thus takes the same arguments list but forces
+the result to scalar context to avoid security issues.
+To get the list of parameter names use GetParamNames().
 
 =back
 =cut
@@ -86,7 +88,7 @@ sub GetParam($@)
 {
   my $self = shift;
 
-  return $self->{CGIObj}->param(@_);
+  return scalar($self->{CGIObj}->param(@_));
 }
 
 sub CGI($)
