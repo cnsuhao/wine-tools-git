@@ -26,7 +26,6 @@
 
 static unsigned Failures = 0;
 static unsigned Skips = 0;
-static char TestName[_MAX_PATH];
 
 
 #define ReportError (_SetErrorLocation(__FILE__, __LINE__), 0) ? (void)0 : _ReportError
@@ -91,7 +90,7 @@ static BOOL DllPresent(const char *DllName)
  * So instead we just dive into the executable's import table, determine which modules are being
  * imported and check if they are present.
  */
-static BOOL AllImportedDllsPresent(const char *TestExeName)
+static BOOL AllImportedDllsPresent(const char *TestExeName, const char *Subtest)
 {
    HANDLE TestExe;
    IMAGE_DOS_HEADER DosHeader;
@@ -259,7 +258,7 @@ static BOOL AllImportedDllsPresent(const char *TestExeName)
       {
          if (AllPresent)
          {
-            printf("%s:0 Test skipped: required DLL %s", TestName, ModuleName);
+            printf("%s.c:0: Tests skipped: required DLL %s", Subtest, ModuleName);
             AllPresent = FALSE;
          }
          else
@@ -288,6 +287,7 @@ int main(int argc, char *argv[])
    char TestExeFullName[_MAX_PATH];
    char *TestExeFileName;
    const char *Suffix;
+   char TestName[_MAX_PATH];
    const char *Subtest;
    int TestArg;
    char *CommandLine;
@@ -378,9 +378,9 @@ int main(int argc, char *argv[])
    Start = GetTickCount();
    printf("%s:%s start - -\n", TestName, Subtest);
 
-   if (! AllImportedDllsPresent(TestExeFullName))
+   if (! AllImportedDllsPresent(TestExeFullName, Subtest))
    {
-      printf("%s: %u tests executed (0 marked as todo, %u failures), %u skipped.\n", TestName, Failures, Failures, Skips);
+      printf("%s: %u tests executed (0 marked as todo, %u failures), %u skipped.\n", Subtest, Failures, Failures, Skips);
       printf("%s:%s done (%u) in %lds\n", TestName, Subtest, Failures,
              (GetTickCount() - Start) / 1000);
       exit(0);
