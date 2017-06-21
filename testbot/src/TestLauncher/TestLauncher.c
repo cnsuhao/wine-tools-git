@@ -451,7 +451,7 @@ int main(int argc, char *argv[])
    }
    CloseHandle(ProcessInformation.hProcess);
 
-   printf("%s:%s:%04lx done (%lu) in %lds\n", TestName, Subtest,
+   printf("%s:%s:%04lx done (%ld) in %lds\n", TestName, Subtest,
           ProcessInformation.dwProcessId, ExitCode,
           (GetTickCount() - Start) / 1000);
 
