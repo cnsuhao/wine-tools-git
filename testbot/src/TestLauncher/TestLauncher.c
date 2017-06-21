@@ -380,8 +380,8 @@ int main(int argc, char *argv[])
 
    if (! AllImportedDllsPresent(TestExeFullName, Subtest))
    {
-      printf("%s: %u tests executed (0 marked as todo, %u failures), %u skipped.\n", Subtest, Failures, Failures, Skips);
-      printf("%s:%s done (%u) in %lds\n", TestName, Subtest, Failures,
+      printf("0000:%s: %u tests executed (0 marked as todo, %u failures), %u skipped.\n", Subtest, Failures, Failures, Skips);
+      printf("%s:%s:0000 done (%u) in %lds\n", TestName, Subtest, Failures,
              (GetTickCount() - Start) / 1000);
       exit(0);
    }
@@ -451,7 +451,8 @@ int main(int argc, char *argv[])
    }
    CloseHandle(ProcessInformation.hProcess);
 
-   printf("%s:%s done (%lu) in %lds\n", TestName, Subtest, ExitCode,
+   printf("%s:%s:%04lx done (%lu) in %lds\n", TestName, Subtest,
+          ProcessInformation.dwProcessId, ExitCode,
           (GetTickCount() - Start) / 1000);
 
    return 0;
