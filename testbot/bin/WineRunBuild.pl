@@ -191,12 +191,36 @@ sub LogTaskError($)
   umask($OldUMask);
 }
 
-sub WrapUpAndExit($)
+sub WrapUpAndExit($;$)
 {
-  my ($Status) = @_;
+  my ($Status, $Retry) = @_;
+  my $NewVMStatus = $Status eq 'queued' ? 'offline' : 'dirty';
+
+  my $TestFailures;
+  my $Tries = $Task->TestFailures || 0;
+  if ($Retry)
+  {
+    # This may be a transient error (e.g. a network glitch)
+    # so retry a few times to improve robustness
+    $Tries++;
+    if ($Task->CanRetry())
+    {
+      $Status = 'queued';
+      $TestFailures = $Tries;
+    }
+    else
+    {
+      LogTaskError("Giving up after $Tries run(s)\n");
+    }
+  }
+  elsif ($Tries >= 1)
+  {
+    LogTaskError("The previous $Tries run(s) terminated abnormally\n");
+  }
 
   # Update the Task and Job
   $Task->Status($Status);
+  $Task->TestFailures($TestFailures);
   $Task->ChildPid(undef);
   if ($Status eq 'queued')
   {
@@ -215,25 +239,25 @@ sub WrapUpAndExit($)
   $VM = CreateVMs()->GetItem($VM->GetKey());
   if ($VM->Status eq 'running')
   {
-    $VM->Status($Status eq 'queued' ? 'offline' : 'dirty');
+    $VM->Status($NewVMStatus);
     $VM->Save();
     RescheduleJobs();
   }
 
-  my $Result = $VM->Name .": ". $VM->Status ." Task: $Status";
+  my $Result = $VM->Name .": ". $VM->Status ." Status: $Status Failures: ". (defined $TestFailures ? $TestFailures : "unset");
   LogMsg "Task $JobId/$StepNo/$TaskNo done ($Result)\n";
   Debug(Elapsed($Start), " Done. $Result\n");
   exit($Status eq 'completed' ? 0 : 1);
 }
 
-sub FatalError($)
+sub FatalError($;$)
 {
-  my ($ErrMessage) = @_;
+  my ($ErrMessage, $Retry) = @_;
 
   LogMsg "$JobId/$StepNo/$TaskNo $ErrMessage";
   LogTaskError($ErrMessage);
 
-  WrapUpAndExit('boterror');
+  WrapUpAndExit('boterror', $Retry);
 }
 
 sub FatalTAError($$)
@@ -246,21 +270,27 @@ sub FatalTAError($$)
   if (!defined $IsPoweredOn)
   {
     # The VM host is not accessible anymore so mark the VM as offline and
-    # requeue the task.
+    # requeue the task. This does not count towards the task's tries limit
+    # since neither the VM nor the task are at fault.
     Error("$ErrMessage\n");
     WrapUpAndExit('queued');
   }
 
+  my $Retry;
   if ($IsPoweredOn)
   {
-    $ErrMessage .= " The test VM has crashed, rebooted or lost connectivity (or the TestAgent server died)\n";
+    LogMsg("$ErrMessage\n");
+    LogTaskError("$ErrMessage\n");
+    $ErrMessage = "The test VM has crashed, rebooted or lost connectivity (or the TestAgent server died)\n";
+    # Retry in case it was a temporary network glitch
+    $Retry = 1;
   }
   else
   {
     # Ignore the TestAgent error, it's irrelevant
     $ErrMessage = "The test VM is powered off!\n";
   }
-  FatalError($ErrMessage);
+  FatalError($ErrMessage, $Retry);
 }
 
 
@@ -394,7 +424,7 @@ if ($TA->GetFile("Build.log", $FullLogFileName))
   }
   else
   {
-    FatalError("Unable to open the build log for reading: $!\n");
+    FatalError("Unable to open the build log for reading: $!\n", "retry");
   }
 }
 elsif (!defined $TAError)

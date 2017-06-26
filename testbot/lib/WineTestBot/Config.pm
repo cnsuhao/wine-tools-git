@@ -28,7 +28,8 @@ WineTestBot::Config - Site-independent configuration settings
 use vars qw (@ISA @EXPORT @EXPORT_OK $UseSSL $LogDir $DataDir $BinDir
              $DbDataSource $DbUsername $DbPassword $MaxRevertingVMs
              $MaxRevertsWhileRunningVMs $MaxActiveVMs $MaxVMsWhenIdle
-             $SleepAfterRevert $WaitForToolsInVM $AdminEMail $RobotEMail
+             $SleepAfterRevert $WaitForToolsInVM $MaxTaskTries $AdminEMail
+             $RobotEMail
              $WinePatchToOverride $WinePatchCc $SuiteTimeout $SingleTimeout
              $BuildTimeout $ReconfigTimeout $TagPrefix
              $ProjectName $PatchesMailingList $LDAPServer
@@ -41,7 +42,8 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw($UseSSL $LogDir $DataDir $BinDir
              $MaxRevertingVMs $MaxRevertsWhileRunningVMs $MaxActiveVMs
-             $MaxVMsWhenIdle $SleepAfterRevert $WaitForToolsInVM $AdminEMail
+             $MaxVMsWhenIdle $SleepAfterRevert $WaitForToolsInVM
+             $MaxTaskTries $AdminEMail
              $RobotEMail $WinePatchToOverride $WinePatchCc $SuiteTimeout
              $SingleTimeout $BuildTimeout $ReconfigTimeout
              $TagPrefix $ProjectName $PatchesMailingList
@@ -69,6 +71,8 @@ $MaxActiveVMs = 2;
 $MaxVMsWhenIdle = undef;
 $SleepAfterRevert = 0;
 $WaitForToolsInVM = 30;
+
+$MaxTaskTries = 3;
 
 $SuiteTimeout = 30 * 60;
 $SingleTimeout = 2 * 60;

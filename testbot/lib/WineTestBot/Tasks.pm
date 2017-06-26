@@ -142,6 +142,12 @@ sub Run($$)
   return $ErrMessage;
 }
 
+sub CanRetry($)
+{
+  my ($self) = @_;
+  return ($self->TestFailures || 0) + 1 < $MaxTaskTries;
+}
+
 sub UpdateStatus($$)
 {
   my ($self, $Skip) = @_;
