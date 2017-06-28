@@ -64,7 +64,7 @@ sub TakeScreenshot($$)
   my ($VM, $FullScreenshotFileName) = @_;
 
   my ($ErrMessage, $ImageSize, $ImageBytes) = $VM->CaptureScreenImage();
-  if (! defined($ErrMessage))
+  if (!defined $ErrMessage)
   {
     my $OldUMask = umask(002);
     if (open(my $Screenshot, ">", $FullScreenshotFileName))
@@ -78,9 +78,9 @@ sub TakeScreenshot($$)
     }
     umask($OldUMask);
   }
-  else
+  elsif ($VM->IsPoweredOn())
   {
-    Error "Can't capture screenshot: $ErrMessage\n";
+    Error "Could not capture a screenshot: $ErrMessage\n";
   }
 }
 
@@ -221,6 +221,9 @@ sub WrapUpAndExit($;$$)
 {
   my ($Status, $TestFailures, $Retry) = @_;
   my $NewVMStatus = $Status eq 'queued' ? 'offline' : 'dirty';
+
+  Debug(Elapsed($Start), " Taking a screenshot\n");
+  TakeScreenshot($VM, $FullScreenshotFileName);
 
   my $Tries = $Task->TestFailures || 0;
   if ($Retry)
@@ -754,10 +757,6 @@ elsif (!defined $TAError)
   $TAError = "An error occurred while retrieving the test report: ". $TA->GetLastError();
 }
 $TA->Disconnect();
-
-
-Debug(Elapsed($Start), " Taking a screenshot\n");
-TakeScreenshot($VM, $FullScreenshotFileName);
 
 FatalTAError(undef, $TAError, $PossibleCrash) if (defined $TAError);
 
