@@ -24,7 +24,6 @@ package LogoutPage;
 use ObjectModel::CGI::Page;
 use WineTestBot::CGI::Sessions;
 use CGI qw(:standard);
-use CGI::Cookie;
 
 @LogoutPage::ISA = qw(ObjectModel::CGI::Page);
 
