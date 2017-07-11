@@ -1347,6 +1347,9 @@ int main(int argc, char** argv)
         if (master < 0)
             continue;
         setsockopt(master, SOL_SOCKET, SO_REUSEADDR, (void*)&on, sizeof(on));
+#ifdef HANDLE_FLAG_INHERIT
+        SetHandleInformation((HANDLE)master, HANDLE_FLAG_INHERIT, 0);
+#endif
 
         debug("Trying to bind to %s\n", sockaddr_to_string(addrp->ai_addr, addrp->ai_addrlen));
         if (bind(master, addrp->ai_addr, addrp->ai_addrlen) == 0)
@@ -1375,6 +1378,9 @@ int main(int argc, char** argv)
         client = accept(master, NULL, NULL);
 #ifdef O_CLOEXEC
         fcntl(client, F_SETFL, fcntl(client, F_GETFL, 0) | O_CLOEXEC);
+#endif
+#ifdef HANDLE_FLAG_INHERIT
+        SetHandleInformation((HANDLE)client, HANDLE_FLAG_INHERIT, 0);
 #endif
         if (client >= 0)
         {

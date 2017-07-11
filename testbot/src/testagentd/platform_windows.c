@@ -126,7 +126,7 @@ uint64_t platform_run(char** argv, uint32_t flags, char** redirects)
     si.hStdInput = fhs[0];
     si.hStdOutput = fhs[1];
     si.hStdError = fhs[2];
-    if (!CreateProcessA(NULL, cmdline, NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS,
+    if (!CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS,
                         NULL, NULL, &si, &pi))
     {
         set_status(ST_ERROR, "could not run '%s': %lu", cmdline, GetLastError());
