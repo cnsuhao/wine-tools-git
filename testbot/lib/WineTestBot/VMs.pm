@@ -480,25 +480,6 @@ sub Status($;$)
   return $NewStatus;
 }
 
-sub HasPoweredOnStatus($)
-{
-  my ($self) = @_;
-  my $Status = $self->Status;
-  return ($Status eq "reverting" or
-          $Status eq "sleeping" or
-          $Status eq "idle" or
-          $Status eq "running");
-}
-
-sub HasEnabledRole($)
-{
-  my ($self) = @_;
-  my $Role = $self->Role;
-  return ($Role eq "extra" or
-          $Role eq "base" or
-          $Role eq "winetest");
-}
-
 sub Validate($)
 {
   my ($self) = @_;
@@ -626,46 +607,6 @@ sub CreateVMs(;$)
   my ($ScopeObject) = @_;
   return WineTestBot::VMs::->new("VMs", "VMs", "VM",
                                  \@PropertyDescriptors, $ScopeObject);
-}
-
-sub CountRevertingRunningVMs($)
-{
-  my ($self) = @_;
-
-  my $RevertingVMs = 0;
-  my $RunningVMs = 0;
-
-  foreach my $VM (@{$self->GetItems()})
-  {
-    my $VMStatus = $VM->Status;
-    if ($VMStatus eq "reverting")
-    {
-      $RevertingVMs++;
-    }
-    elsif ($VMStatus eq "running")
-    {
-      $RunningVMs++;
-    }
-  }
-
-  return ($RevertingVMs, $RunningVMs);
-}
-
-sub CountPoweredOnNonBaseVMs($)
-{
-  my ($self) = @_;
-
-  my $PoweredOnVMs = 0;
-  foreach my $VM (@{$self->GetItems()})
-  {
-    if ($VM->Role ne "base" and $VM->HasEnabledRole() and
-        $VM->HasPoweredOnStatus())
-    {
-      $PoweredOnVMs++;
-    }
-  }
-
-  return $PoweredOnVMs;
 }
 
 sub SortKeysBySortOrder($$)
