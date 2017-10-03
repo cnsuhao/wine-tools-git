@@ -58,6 +58,17 @@ sub LogMsg(@)
   print $logfile scalar localtime, " ", $logprefix, "[$$]: ", @_ if ($logfile);
 }
 
+=pod
+=over 12
+
+=item C<SetupRedirects()>
+
+This redirects stderr so it writes to our log. This is typically called before
+exec()-ing external tools so their error messages are not lost.
+
+=back
+=cut
+
 sub SetupRedirects()
 {
   if (defined $logfile)
