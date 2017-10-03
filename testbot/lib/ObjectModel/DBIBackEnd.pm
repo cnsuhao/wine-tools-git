@@ -565,7 +565,7 @@ sub DeleteAll($$)
   return undef;
 }
 
-sub PrepareForFork($)
+sub Close($)
 {
   my ($self) = @_;
 

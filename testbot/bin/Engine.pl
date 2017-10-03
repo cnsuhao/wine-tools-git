@@ -280,7 +280,9 @@ sub HandleJobStatusChange($$$)
 
   if ($OldStatus eq "running" && $NewStatus ne "running")
   {
-    $ActiveBackEnds{'WineTestBot'}->PrepareForFork();
+    # Make sure the child process does not inherit the database connection
+    $ActiveBackEnds{'WineTestBot'}->Close();
+
     my $Pid = fork;
     if (!defined $Pid)
     {

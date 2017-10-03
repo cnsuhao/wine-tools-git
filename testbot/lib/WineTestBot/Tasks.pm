@@ -99,7 +99,9 @@ sub Run($$)
     $RunScript = "RunTask.pl";
   }
 
-  $self->GetBackEnd()->PrepareForFork();
+  # Make sure the child process does not inherit the database connection
+  $self->GetBackEnd()->Close();
+
   my $Pid = fork;
   if (!defined $Pid)
   {
