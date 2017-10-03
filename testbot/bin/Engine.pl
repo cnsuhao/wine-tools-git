@@ -1,4 +1,5 @@
 #!/usr/bin/perl -Tw
+# -*- Mode: Perl; perl-indent-level: 2; indent-tabs-mode: nil -*-
 #
 # The WineTestBot server, aka the engine that makes it all work.
 #

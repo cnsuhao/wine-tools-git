@@ -1,4 +1,5 @@
 #!/usr/bin/perl -Tw
+# -*- Mode: Perl; perl-indent-level: 2; indent-tabs-mode: nil -*-
 #
 # Performs the 'build' task in the build machine. Specifically this applies a
 # conformance test patch, rebuilds the impacted test and retrieves the

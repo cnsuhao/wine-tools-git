@@ -1,4 +1,5 @@
 #!/usr/bin/perl -Tw
+# -*- Mode: Perl; perl-indent-level: 2; indent-tabs-mode: nil -*-
 #
 # Performs the 'reconfig' task in the build machine. Specifically this updates
 # the build machine's Wine repository, re-runs configure, and rebuilds the
