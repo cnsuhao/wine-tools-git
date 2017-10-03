@@ -65,18 +65,33 @@ $LogDir = "$::RootDir/var";
 $DataDir = "$::RootDir/var";
 $BinDir = "$::RootDir/bin";
 
+# See the ScheduleOnHost() documentation in lib/WineTestBot/Jobs.pm
 $MaxRevertingVMs = 1;
 $MaxRevertsWhileRunningVMs = 1;
 $MaxActiveVMs = 2;
 $MaxVMsWhenIdle = undef;
-$SleepAfterRevert = 0;
-$WaitForToolsInVM = 30;
 
+# How long to wait when connecting to the VM's TestAgent server after a revert
+# (in seconds).
+$WaitForToolsInVM = 30;
+# How long to let the VM settle down after the revert before starting a task on
+# it (in seconds).
+$SleepAfterRevert = 0;
+
+# How many times to run a test that fails before giving up.
 $MaxTaskTries = 3;
 
+# How long to let a test suite run before forcibly shutting it down
+# (in seconds).
 $SuiteTimeout = 30 * 60;
+# How long to let a regular test run before forcibly shutting it down
+# (in seconds).
 $SingleTimeout = 2 * 60;
+# How long to let a regular build run before forcibly shutting it down
+# (in seconds).
 $BuildTimeout = 5 * 60;
+# How long to let a full recompilation run before forcibly shutting it down
+# (in seconds).
 $ReconfigTimeout = 45 * 60;
 
 $ProjectName = "Wine";

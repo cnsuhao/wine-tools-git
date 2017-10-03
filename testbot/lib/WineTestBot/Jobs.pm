@@ -419,7 +419,8 @@ reverting too many VMs at once.
 =item *
 
 Once there are no jobs to run anymore the scheduler can prepare up to
-$MaxVMsWhenIdle VMs (or $MaxActiveVMs if not set) for future jobs.
+$MaxVMsWhenIdle VMs (or $MaxActiveVMs if not set) for future jobs. This can be
+set to 0 to minimize the TestBot resource usage when idle.
 
 =cut
 
