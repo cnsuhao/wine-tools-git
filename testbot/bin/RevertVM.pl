@@ -222,6 +222,6 @@ if (defined($ErrMessage))
   FatalError "Could not change status for VM $VMKey: $ErrMessage\n", $VM;
 }
 
-LogMsg "Revert of $VMKey completed\n";
+LogMsg "Revert of $VMKey completed in ", Elapsed($Start), " s\n";
 
 exit 0;
