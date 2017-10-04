@@ -1,6 +1,6 @@
 # -*- Mode: Perl; perl-indent-level: 2; indent-tabs-mode: nil -*-
 # Copyright 2009 Ge van Geldorp
-# Copyright 2012-2014 Francois Gouget
+# Copyright 2012-2017 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -18,76 +18,6 @@
 
 use strict;
 
-package WineTestBot::VM::Hypervisors;
-
-=head1 NAME
-
-WineTestBot::VM::Hypervisors - A cache of hypervisor objects
-
-=head1 DESCRIPTION
-
-A hypervisor is the software running on the host that handles the hardware
-virtualisation in support of the VMs. Thus each host has its own hypervisor,
-but some may have more than one, typically if more than one virtualisation
-software is used such as QEmu and VirtualBox.
-
-WineTestBot typically needs to deal with many VMs spread across a few hosts to
-spread the load and thus a few hypervisors. WineTestBot identifies the
-hypervisors via their VirtURI from which we get a Sys::Virt hypervisor.
-This class caches these  objects so only one is created per URI.
-
-=cut
-
-use URI;
-
-use WineTestBot::Config;
-
-use vars qw (@ISA @EXPORT_OK);
-
-require Exporter;
-@ISA = qw(Exporter);
-
-@EXPORT_OK = qw(new);
-
-my $Singleton;
-sub new($)
-{
-  my ($class) = @_;
-
-  if (!defined $Singleton)
-  {
-    $Singleton = {};
-    $Singleton = bless $Singleton, $class;
-  }
-  return $Singleton;
-}
-
-=pod
-=over 12
-
-=head1 C<GetHypervisor()>
-
-Returns the Sys::Virt hypervisor object corresponding to the specified URI.
-This object is cached so only one hypervisor object is created per URI.
-
-=back
-=cut
-
-sub GetHypervisor($$)
-{
-  my ($self, $URI) = @_;
-
-  my $Key = $URI || "";
-  if (!defined $self->{$Key})
-  {
-    eval { $self->{$Key} = Sys::Virt->new(uri => $URI); };
-    return ($@->message(), undef) if ($@);
-  }
-
-  return (undef, $self->{$Key});
-}
-
-
 package WineTestBot::VM;
 
 =head1 NAME
@@ -96,14 +26,20 @@ WineTestBot::VM - A VM instance
 
 =head1 DESCRIPTION
 
-This provides methods for starting, stopping, getting the status of the VM,
-as well as manipulating its snapshots. These methods are implemented through
-Sys::Virt to provide portability across virtualization technologies.
+A VM defines the environment a test will be run on, that is, typically, a
+specific virtual machine snapshot.
 
-This class also provides methods to copy files to or from the VM and running
-commands in it. This part is used to start the tasks in the VM but is
-implemented independently from the VM's hypervisor since most do not provide
-this functionality.
+This class provides access to the properties identifying this environment, its
+intended use and current state.
+
+The GetDomain() method returns an object that can be used to start, stop, or
+get the status of the VM, as well as manipulate its snapshots.
+
+And the GetAgent() method returns a TestAgent instance configured for that VM.
+This object can be used to copy files to or from the VM and to run commands in
+it. This part is used to start the tasks in the VM but is implemented
+independently from the VM's hypervisor since most do not provide this
+functionality.
 
 The VM type defines what it can do:
 
@@ -206,12 +142,10 @@ are undergoing maintenance.
 
 =cut
 
-use Sys::Virt;
-use Image::Magick;
-
 use ObjectModel::BackEnd;
 use WineTestBot::Config;
 use WineTestBot::Engine::Notify;
+use WineTestBot::LibvirtDomain;
 use WineTestBot::TestAgent;
 use WineTestBot::WineTestBotObjects;
 
@@ -226,9 +160,6 @@ sub _initialize($$)
 
   $self->SUPER::_initialize($VMs);
 
-  $self->{Hypervisors} = $VMs->{Hypervisors};
-  $self->{Hypervisor} = undef;
-  $self->{Domain} = undef;
   $self->{OldStatus} = undef;
 }
 
@@ -251,151 +182,11 @@ sub GetHost($)
   return "localhost";
 }
 
-sub _GetDomain($)
+sub GetDomain($)
 {
   my ($self) = @_;
 
-  if (!defined $self->{Domain})
-  {
-    my ($ErrMessage, $Hypervisor) = $self->{Hypervisors}->GetHypervisor($self->VirtURI);
-    return ($ErrMessage,  undef) if (defined $ErrMessage);
-
-    $self->{Hypervisor} = $Hypervisor;
-    eval { $self->{Domain} = $self->{Hypervisor}->get_domain_by_name($self->VirtDomain) };
-    return ($@->message(), undef) if ($@);
-  }
-  return (undef, $self->{Domain});
-}
-
-sub UpdateStatus($$)
-{
-  my ($self, $Domain) = @_;
-
-  if ($self->Status eq "offline")
-  {
-    return undef;
-  }
-
-  my ($State, $Reason) = $Domain->get_state();
-  return $@->message() if ($@);
-  if ($State == Sys::Virt::Domain::STATE_SHUTDOWN or
-      $State == Sys::Virt::Domain::STATE_SHUTOFF)
-  {
-    $self->Status("off");
-    $self->Save();
-  }
-
-  return undef;
-}
-
-sub _GetSnapshot($$)
-{
-  my ($self, $SnapshotName) = @_;
-
-  my ($ErrMessage, $Domain) = $self->_GetDomain();
-  return $ErrMessage if (defined $ErrMessage);
-
-  my $Snapshot;
-  eval {
-    # Work around the lack of get_snapshot_by_name() in older libvirt versions.
-    foreach my $Snap ($Domain->list_snapshots())
-    {
-      if ($Snap->get_name() eq $SnapshotName)
-      {
-        $Snapshot = $Snap;
-        last;
-      }
-    }
-  };
-  return ("Snapshot '$SnapshotName' not found", undef, undef) if (!defined $Snapshot);
-  return (undef, $Domain, $Snapshot);
-}
-
-sub RevertToSnapshot($$)
-{
-  my ($self, $SnapshotName) = @_;
-
-  my ($ErrMessage, $Domain, $Snapshot) = $self->_GetSnapshot($SnapshotName);
-  return $ErrMessage if (defined $ErrMessage);
-  eval { $Snapshot->revert_to(Sys::Virt::DomainSnapshot::REVERT_RUNNING) };
-  return $@->message() if ($@);
-
-  return $self->UpdateStatus($Domain);
-}
-
-sub CreateSnapshot($$)
-{
-  my ($self, $SnapshotName) = @_;
-
-  my ($ErrMessage, $Domain) = $self->_GetDomain();
-  return $ErrMessage if (defined $ErrMessage);
-
-  # FIXME: XML escaping
-  my $Xml = "<domainsnapshot><name>$SnapshotName</name></domainsnapshot>";
-  eval { $Domain->create_snapshot($Xml, 0) };
-  return $@->message() if ($@);
-  return undef;
-}
-
-sub RemoveSnapshot($$)
-{
-  my ($self, $SnapshotName) = @_;
-
-  my ($ErrMessage, $Domain, $Snapshot) = $self->_GetSnapshot($SnapshotName);
-  return $ErrMessage if (defined $ErrMessage);
-
-  eval { $Snapshot->delete(0) };
-  return $@->message() if ($@);
-  return undef;
-}
-
-sub IsPoweredOn($)
-{
-  my ($self) = @_;
-
-  my ($ErrMessage, $Domain) = $self->_GetDomain();
-  return undef if (defined $ErrMessage);
-  my $IsActive;
-  eval { $IsActive = $Domain->is_active() };
-  return undef if ($@);
-  return $IsActive;
-}
-
-sub PowerOn($)
-{
-  my ($self) = @_;
-
-  my ($ErrMessage, $Domain) = $self->_GetDomain();
-  return $ErrMessage if (defined $ErrMessage);
-
-  eval { $Domain->create(0) };
-  return $@->message() if ($@);
-
-  return $self->UpdateStatus($Domain);
-}
-
-sub PowerOff($$)
-{
-  my ($self, $NoStatus) = @_;
-
-  my ($ErrMessage, $Domain) = $self->_GetDomain();
-  return $ErrMessage if (defined $ErrMessage);
-
-  if ($self->IsPoweredOn())
-  {
-    eval { $Domain->destroy() };
-    if ($@)
-    {
-      $ErrMessage = $@->message();
-    }
-    elsif ($self->IsPoweredOn())
-    {
-      $ErrMessage = "The VM is still active";
-    }
-  }
-  $ErrMessage ||= $self->UpdateStatus($Domain) if (!$NoStatus);
-  return undef if (!defined $ErrMessage);
-  return join("", "Could not power off ", $self->Name, ": ", $ErrMessage);
+  return LibvirtDomain->new($self);
 }
 
 sub GetAgent($)
@@ -416,52 +207,6 @@ sub GetAgent($)
     $TunnelInfo->{username} = $ParsedURI->userinfo;
   }
   return TestAgent->new($self->Hostname, $AgentPort, $TunnelInfo);
-}
-
-my %StreamData;
-
-sub _Stream2Image($$$)
-{
-  my ($Stream, $Data, $Size) = @_;
-  my $Image = $StreamData{$Stream};
-  $Image->{Size} += $Size;
-  $Image->{Bytes} .= $Data;
-  return $Size;
-}
-
-sub CaptureScreenImage($)
-{
-  my ($self) = @_;
-
-  my ($ErrMessage, $Domain) = $self->_GetDomain();
-  return ($ErrMessage, undef, undef) if (defined $ErrMessage);
-
-  my $Stream;
-  eval { $Stream = $self->{Hypervisor}->new_stream(0) };
-  return ($@->message(), undef, undef) if ($@);
-
-  my $Image={Size => 0, Bytes => ""};
-  $StreamData{$Stream}=$Image;
-  eval {
-    $Domain->screenshot($Stream, 0, 0);
-    $Stream->recv_all(\&WineTestBot::VM::_Stream2Image);
-    $Stream->finish();
-  };
-  delete $StreamData{$Stream};
-  return ($@->message(), undef, undef) if ($@);
-
-  # The screenshot format depends on the hypervisor (e.g. PPM for QEmu)
-  # but callers expect PNG images.
-  my $image=Image::Magick->new();
-  my ($width, $height, $size, $format) = $image->Ping(blob => $Image->{Bytes});
-  if ($format ne "PNG")
-  {
-    my @blobs=($Image->{Bytes});
-    $image->BlobToImage(@blobs);
-    $Image->{Bytes}=($image->ImageToBlob(magick => 'png'))[0];
-    $Image->{Size}=length($Image->{Bytes});
-  }
-  return (undef, $Image->{Size}, $Image->{Bytes});
 }
 
 sub Status($;$)
@@ -571,12 +316,6 @@ require Exporter;
 @ISA = qw(WineTestBot::WineTestBotCollection Exporter);
 @EXPORT = qw(&CreateVMs);
 
-sub _initialize($)
-{
-  my ($self) = @_;
-  $self->{Hypervisors} = WineTestBot::VM::Hypervisors->new();
-  $self->SUPER::_initialize();
-}
 
 BEGIN
 {

@@ -1,6 +1,6 @@
 # -*- Mode: Perl; perl-indent-level: 2; indent-tabs-mode: nil -*-
 # Copyright 2009 Ge van Geldorp
-# Copyright 2012-2014 Francois Gouget
+# Copyright 2012-2017 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -575,7 +575,8 @@ sub ScheduleOnHost($$$)
     if (!exists $VMsToRevert{$VMKey})
     {
       my $VM = $HostVMs->GetItem($VMKey);
-      my $ErrMessage = $VM->PowerOff();
+      # FIXME Domain operations can be slow and should not be run by the Engine
+      my $ErrMessage = $VM->GetDomain()->PowerOff();
       return $ErrMessage if (defined $ErrMessage);
     }
   }
@@ -592,7 +593,8 @@ sub ScheduleOnHost($$$)
       my $VM = $HostVMs->GetItem($VMKey);
       next if (!$IdleVMs{$VMKey});
 
-      my $ErrMessage = $VM->PowerOff();
+      # FIXME Domain operations can be slow and should not be run by the Engine
+      my $ErrMessage = $VM->GetDomain()->PowerOff();
       return $ErrMessage if (defined $ErrMessage);
       $IdleCount--;
       $ActiveCount--;

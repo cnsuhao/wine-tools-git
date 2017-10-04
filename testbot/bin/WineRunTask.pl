@@ -63,7 +63,8 @@ sub TakeScreenshot($$)
 {
   my ($VM, $FullScreenshotFileName) = @_;
 
-  my ($ErrMessage, $ImageSize, $ImageBytes) = $VM->CaptureScreenImage();
+  my $Domain = $VM->GetDomain();
+  my ($ErrMessage, $ImageSize, $ImageBytes) = $Domain->CaptureScreenImage();
   if (!defined $ErrMessage)
   {
     my $OldUMask = umask(002);
@@ -78,7 +79,7 @@ sub TakeScreenshot($$)
     }
     umask($OldUMask);
   }
-  elsif ($VM->IsPoweredOn())
+  elsif ($Domain->IsPoweredOn())
   {
     Error "Could not capture a screenshot: $ErrMessage\n";
   }
@@ -305,7 +306,7 @@ sub FatalTAError($$;$)
   $ErrMessage .= ": ". $TA->GetLastError() if (defined $TA);
 
   # A TestAgent operation failed, see if the VM is still accessible
-  my $IsPoweredOn = $VM->IsPoweredOn();
+  my $IsPoweredOn = $VM->GetDomain()->IsPoweredOn();
   if (!defined $IsPoweredOn)
   {
     # The VM host is not accessible anymore so mark the VM as offline and
@@ -347,7 +348,7 @@ if (!$Debug and $VM->Status ne "running")
 {
   FatalError("The VM is not ready for use (" . $VM->Status . ")\n");
 }
-elsif ($Debug and !$VM->IsPoweredOn)
+elsif ($Debug and !$VM->GetDomain()->IsPoweredOn())
 {
   FatalError("The VM is not powered on\n");
 }

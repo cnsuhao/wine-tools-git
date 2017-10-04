@@ -120,7 +120,7 @@ sub Cleanup(;$$)
           # That task's process died somehow.
           $Requeue = 1;
         }
-        elsif (!$Task->VM->IsPoweredOn())
+        elsif (!$Task->VM->GetDomain()->IsPoweredOn())
         {
           # A running task should have a powered on VM.
           $Requeue = 1;
@@ -182,7 +182,8 @@ sub Cleanup(;$$)
       next;
     }
 
-    if ($VM->IsPoweredOn())
+    my $Domain = $VM->GetDomain();
+    if ($Domain->IsPoweredOn())
     {
       if ($KillVMs)
       {
@@ -201,7 +202,7 @@ sub Cleanup(;$$)
         next;
       }
       LogMsg "Powering off $VMKey\n";
-      $VM->PowerOff();
+      $Domain->PowerOff();
     }
     else
     {
@@ -529,7 +530,7 @@ sub HandleGetScreenshot($)
   # FIXME: Taking a screenshot leaks libvirt connections, takes a long time and
   # blocks the Engine during the whole operation. So live screenshots are
   # disabled for now.
-  my ($ErrMessage, $ImageSize, $ImageBytes) = ("Screenshotting has been disabled for the time being", undef, undef); #$VM->CaptureScreenImage();
+  my ($ErrMessage, $ImageSize, $ImageBytes) = ("Screenshotting has been disabled for the time being", undef, undef); #$VM->GetDomain()->CaptureScreenImage();
   if (defined($ErrMessage))
   {
     LogMsg "Failed to take screenshot of $VMName: $ErrMessage\n";

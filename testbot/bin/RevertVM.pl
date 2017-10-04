@@ -166,7 +166,8 @@ LogMsg "Reverting $VMKey to ", $VM->IdleSnapshot, "\n";
 
 # Some QEmu/KVM versions are buggy and cannot revert a running VM
 Debug(Elapsed($Start), " Powering off the VM\n");
-my $ErrMessage = $VM->PowerOff(1);
+my $Domain = $VM->GetDomain();
+my $ErrMessage = $Domain->PowerOff(1);
 if (defined $ErrMessage)
 {
   Error "$ErrMessage\n";
@@ -174,7 +175,7 @@ if (defined $ErrMessage)
 }
 
 Debug(Elapsed($Start), " Reverting $VMKey to ", $VM->IdleSnapshot, "\n");
-$ErrMessage = $VM->RevertToSnapshot($VM->IdleSnapshot);
+$ErrMessage = $Domain->RevertToSnapshot();
 if (defined($ErrMessage))
 {
   FatalError "Could not revert $VMKey to " . $VM->IdleSnapshot . ": $ErrMessage\n",

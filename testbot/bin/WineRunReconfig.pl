@@ -267,7 +267,7 @@ sub FatalTAError($$)
   $ErrMessage .= ": ". $TA->GetLastError() if (defined $TA);
 
   # A TestAgent operation failed, see if the VM is still accessible
-  my $IsPoweredOn = $VM->IsPoweredOn();
+  my $IsPoweredOn = $VM->GetDomain()->IsPoweredOn();
   if (!defined $IsPoweredOn)
   {
     # The VM host is not accessible anymore so mark the VM as offline and
@@ -303,7 +303,7 @@ if (!$Debug and $VM->Status ne "running")
 {
   FatalError("The VM is not ready for use (" . $VM->Status . ")\n");
 }
-elsif ($Debug and !$VM->IsPoweredOn)
+elsif ($Debug and !$VM->GetDomain()->IsPoweredOn())
 {
   FatalError("The VM is not powered on\n");
 }
@@ -446,7 +446,7 @@ FatalTAError(undef, $TAError) if (defined $TAError);
 if ($NewStatus eq 'completed')
 {
   Debug(Elapsed($Start), " Deleting the old ", $VM->IdleSnapshot, " snapshot\n");
-  $ErrMessage = $VM->RemoveSnapshot($VM->IdleSnapshot);
+  $ErrMessage = $VM->GetDomain()->RemoveSnapshot();
   if (defined $ErrMessage)
   {
     # It's not clear if the snapshot is still usable. Rather than try to figure
@@ -455,7 +455,7 @@ if ($NewStatus eq 'completed')
   }
 
   Debug(Elapsed($Start), " Recreating the ", $VM->IdleSnapshot, " snapshot\n");
-  $ErrMessage = $VM->CreateSnapshot($VM->IdleSnapshot);
+  $ErrMessage = $VM->GetDomain()->CreateSnapshot();
   if (defined $ErrMessage)
   {
     # Without the snapshot the VM is not usable anymore but FatalError() will
