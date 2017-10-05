@@ -200,6 +200,7 @@ sub GetAgent($)
   my $TunnelInfo;
   if ($URI =~ s/^(?:[a-z]+\+)?(?:ssh|libssh2):/ssh:/)
   {
+    require URI;
     my $ParsedURI = URI->new($URI);
     %$TunnelInfo = %$TunnelDefaults if ($TunnelDefaults);
     $TunnelInfo->{sshhost}  = $ParsedURI->host;
