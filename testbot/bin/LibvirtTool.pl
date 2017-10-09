@@ -1,12 +1,12 @@
 #!/usr/bin/perl -Tw
 # -*- Mode: Perl; perl-indent-level: 2; indent-tabs-mode: nil -*-
 #
-# Reverts a VM so that it is ready to run jobs. Note that in addition to the
-# hypervisor revert operation this implies letting the VM settle down and
-# checking that it responds to our commands. If this fails the administrator
-# is notified and the VM is marked as offline.
+# Reverts a VM so that it is ready to run jobs.
+# This operation can take quite a bit of time, particularly in case of
+# network trouble, and thus is best performed in a separate process.
 #
 # Copyright 2009 Ge van Geldorp
+# Copyright 2012-2017 Francois Gouget
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -57,51 +57,51 @@ sub Error(@)
   LogMsg @_;
 }
 
-sub FatalError($$)
+sub NotifyAdministrator($$)
 {
-  my ($ErrMessage, $VM) = @_;
-  Error $ErrMessage;
+  my ($Subject, $Body) = @_;
 
-  # Get the up-to-date VM status and update it if nobody else changed it
-  my $VMKey = $VM->GetKey();
-  $VM = CreateVMs()->GetItem($VMKey);
-  if ($VM->Status eq "reverting" or $VM->Status eq "sleeping")
+  if (open(my $fh, "|/usr/sbin/sendmail -oi -t -odq"))
   {
-    $VM->Status("offline");
-    $VM->ChildPid(undef);
-    $VM->Save();
-  }
-
-  my $VMSnapshot = $VM->IdleSnapshot;
-  open (SENDMAIL, "|/usr/sbin/sendmail -oi -t -odq");
-  print SENDMAIL <<"EOF";
+    LogMsg "Notifying administrator: $Subject\n";
+    print $fh <<"EOF";
 From: $RobotEMail
 To: $AdminEMail
-Subject: VM $VMKey offline
+Subject: $Subject
 
-Reverting $VMKey to $VMSnapshot failed:
-
-$ErrMessage
-
-The VM has been put offline.
+$Body
 EOF
-  close(SENDMAIL);
-
-  exit 1;
+    close($fh);
+  }
+  else
+  {
+    LogMsg "Could not send administrator notification: $!\n";
+    LogMsg "  Subject: $Subject\n";
+    LogMsg "  Body: $Body\n";
+  }
 }
+
+
+#
+# Setup and command line processing
+#
 
 $ENV{PATH} = "/usr/bin:/bin";
 delete $ENV{ENV};
 
 
 # Grab the command line options
-my ($Usage, $VMKey);
+my ($Usage, $Action, $VMKey);
 while (@ARGV)
 {
   my $Arg = shift @ARGV;
   if ($Arg eq "--debug")
   {
     $Debug = 1;
+  }
+  elsif ($Arg eq "revert")
+  {
+    $Action = $Arg;
   }
   elsif ($Arg =~ /^(?:-\?|-h|--help)$/)
   {
@@ -127,8 +127,14 @@ while (@ARGV)
 }
 
 # Check parameters
+my $VM;
 if (!defined $Usage)
 {
+  if (!defined $Action)
+  {
+    Error "you must specify the action to perform\n";
+    $Usage = 2;
+  }
   if (!defined $VMKey)
   {
     Error "you must specify the VM name\n";
@@ -137,92 +143,144 @@ if (!defined $Usage)
   elsif ($VMKey =~ /^([a-zA-Z0-9_]+)$/)
   {
     $VMKey = $1;
+    $VM = CreateVMs()->GetItem($VMKey);
+    if (!defined $VM)
+    {
+      Error "VM $VMKey does not exist\n";
+      $Usage = 2;
+    }
   }
   else
   {
     Error "'$VMKey' is not a valid VM name\n";
     $Usage = 2;
   }
-
 }
 if (defined $Usage)
 {
-    print "Usage: $Name0 [--debug] [--help] VMName\n";
-    exit $Usage;
+  print "Usage: $Name0 [--debug] [--help] revert VMName\n";
+  exit $Usage;
 }
 
-my $VM = CreateVMs()->GetItem($VMKey);
-if (!defined $VM)
+
+#
+# Main
+#
+
+my $Start = Time();
+
+my $CurrentStatus;
+
+sub FatalError($)
 {
-  Error "VM $VMKey does not exist\n";
+  my ($ErrMessage) = @_;
+  Error $ErrMessage;
+
+  # Put the VM offline if nobody else modified its status before us
+  $VM = CreateVMs()->GetItem($VMKey);
+  $VM->Status("offline") if ($VM->Status eq $CurrentStatus);
+  $VM->ChildPid(undef);
+  my ($ErrProperty, $SaveErrMessage) = $VM->Save();
+  if (defined $SaveErrMessage)
+  {
+    LogMsg "Could not put the $VMKey VM offline: $SaveErrMessage ($ErrProperty)\n";
+  }
+  elsif ($VM->Status eq "offline")
+  {
+    NotifyAdministrator("Putting the $VMKey VM offline",
+                        "Could not perform the $Action operation on the $VMKey VM:\n".
+                        "\n$ErrMessage\n".
+                        "The VM has been put offline.");
+  }
   exit 1;
 }
-if (!$Debug and $VM->Status ne "reverting")
-{
-  FatalError "The VM is not ready to be reverted (" . $VM->Status . ")\n", $VM;
-}
-my $Start = Time();
-LogMsg "Reverting $VMKey to ", $VM->IdleSnapshot, "\n";
 
-# Some QEmu/KVM versions are buggy and cannot revert a running VM
-Debug(Elapsed($Start), " Powering off the VM\n");
-my $Domain = $VM->GetDomain();
-my $ErrMessage = $Domain->PowerOff(1);
-if (defined $ErrMessage)
+sub ChangeStatus($$;$)
 {
-  Error "$ErrMessage\n";
-  LogMsg "Trying the revert anyway\n";
-}
+  my ($From, $To, $Done) = @_;
 
-Debug(Elapsed($Start), " Reverting $VMKey to ", $VM->IdleSnapshot, "\n");
-$ErrMessage = $Domain->RevertToSnapshot();
-if (defined($ErrMessage))
-{
-  FatalError "Could not revert $VMKey to " . $VM->IdleSnapshot . ": $ErrMessage\n",
-             $VM;
-}
+  # Get the up-to-date VM status
+  $VM = CreateVMs()->GetItem($VMKey);
+  if (!$VM or (defined $From and $VM->Status ne $From))
+  {
+    LogMsg "Not changing status\n";
+    return undef;
+  }
 
-# Get the up-to-date VM status and exit if someone else changed it
-$VM = CreateVMs()->GetItem($VMKey);
-exit 1 if ($VM->Status ne "reverting");
-$VM->Status("sleeping");
-(my $ErrProperty, $ErrMessage) = $VM->Save();
-if (defined($ErrMessage))
-{
-  FatalError "Could not change status for VM $VMKey: $ErrMessage\n", $VM;
+  $VM->Status($To);
+  $VM->ChildPid(undef) if ($Done);
+  my ($ErrProperty, $ErrMessage) = $VM->Save();
+  if (defined $ErrMessage)
+  {
+    FatalError("Could not change the $VMKey VM status: $ErrMessage\n");
+  }
+  $CurrentStatus = $To;
+  return 1;
 }
 
-Debug(Elapsed($Start), " Trying the TestAgent connection\n");
-LogMsg "Waiting for ", $VM->Name, " (up to ${WaitForToolsInVM}s per attempt)\n";
-my $TA = $VM->GetAgent();
-$TA->SetConnectTimeout($WaitForToolsInVM);
-my $Success = $TA->Ping();
-$TA->Disconnect();
-if (!$Success)
+sub Revert()
 {
-  $ErrMessage = $TA->GetLastError();
-  FatalError "Tools in $VMKey not responding: $ErrMessage\n", $VM;
+  my $VM = CreateVMs()->GetItem($VMKey);
+  if (!$Debug and $VM->Status ne "reverting")
+  {
+    Error("The VM is not ready to be reverted (". $VM->Status .")\n");
+    return 1;
+  }
+  $CurrentStatus = "reverting";
+
+  # Some QEmu/KVM versions are buggy and cannot revert a running VM
+  Debug(Elapsed($Start), " Powering off the VM\n");
+  my $Domain = $VM->GetDomain();
+  my $ErrMessage = $Domain->PowerOff(1);
+  if (defined $ErrMessage)
+  {
+    LogMsg "Could not power off $VMKey: $ErrMessage\n";
+    LogMsg "Trying the revert anyway...\n";
+  }
+
+  Debug(Elapsed($Start), " Reverting $VMKey to ", $VM->IdleSnapshot, "\n");
+  $ErrMessage = $Domain->RevertToSnapshot();
+  if (defined $ErrMessage)
+  {
+    FatalError("Could not revert $VMKey to ". $VM->IdleSnapshot .": $ErrMessage\n");
+  }
+
+  # The VM is now sleeping which may allow some tasks to run
+  return 1 if (!ChangeStatus("reverting", "sleeping"));
+
+  Debug(Elapsed($Start), " Trying the TestAgent connection\n");
+  LogMsg "Waiting for ". $VM->Name ." (up to ${WaitForToolsInVM}s per attempt)\n";
+  my $TA = $VM->GetAgent();
+  $TA->SetConnectTimeout($WaitForToolsInVM);
+  my $Success = $TA->Ping();
+  $TA->Disconnect();
+  if (!$Success)
+  {
+    $ErrMessage = $TA->GetLastError();
+    FatalError("Cannot connect to the $VMKey TestAgent: $ErrMessage\n");
+  }
+
+  if ($SleepAfterRevert != 0)
+  {
+    Debug(Elapsed($Start), " Sleeping\n");
+    LogMsg "Letting ". $VM->Name  ." settle down for ${SleepAfterRevert}s\n";
+    sleep($SleepAfterRevert);
+  }
+
+  return ChangeStatus("sleeping", "idle", "done") ? 0 : 1;
 }
 
-if ($SleepAfterRevert != 0)
+
+my $Rc;
+if ($Action eq "revert")
 {
-  Debug(Elapsed($Start), " Sleeping\n");
-  LogMsg "Letting ", $VM->Name, " settle for ${SleepAfterRevert}s\n";
-  sleep($SleepAfterRevert);
+  $Rc = Revert();
 }
-Debug(Elapsed($Start), " Done\n");
-
-# Get the up-to-date VM status and exit if someone else changed it
-$VM = CreateVMs()->GetItem($VMKey);
-exit 1 if ($VM->Status ne "sleeping");
-$VM->Status("idle");
-$VM->ChildPid(undef);
-($ErrProperty, $ErrMessage) = $VM->Save();
-if (defined($ErrMessage))
+else
 {
-  FatalError "Could not change status for VM $VMKey: $ErrMessage\n", $VM;
+  Error("Unsupported action $Action!\n");
+  $Rc = 1;
 }
+LogMsg "$Action on $VMKey completed in ", Elapsed($Start), " s\n";
 
-LogMsg "Revert of $VMKey completed in ", Elapsed($Start), " s\n";
-
-exit 0;
+exit $Rc;
