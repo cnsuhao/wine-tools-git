@@ -276,8 +276,8 @@ sub RunRevert($)
     delete $ENV{ENV};
     require WineTestBot::Log;
     WineTestBot::Log::SetupRedirects();
-    exec("$BinDir/RevertVM.pl", $self->GetKey()) or
-    WineTestBot::Log::LogMsg("Unable to exec RevertVM.pl: $!\n");
+    exec("$BinDir/LibvirtTool.pl", $self->GetKey()) or
+    WineTestBot::Log::LogMsg("Unable to exec LibvirtTool.pl: $!\n");
     exit(1);
   }
 
