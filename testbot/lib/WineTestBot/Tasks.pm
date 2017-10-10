@@ -128,7 +128,7 @@ sub Run($$)
     }
     $ENV{PATH} = "/usr/bin:/bin";
     delete $ENV{ENV};
-    exec("$BinDir/${ProjectName}$RunScript", $JobId, $StepNo, $TaskNo) or
+    exec("$BinDir/${ProjectName}$RunScript", "--log-only", $JobId, $StepNo, $TaskNo) or
     require WineTestBot::Log;
     WineTestBot::Log::LogMsg("Unable to exec ${ProjectName}$RunScript: $!\n");
     exit(1);

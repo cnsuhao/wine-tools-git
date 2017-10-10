@@ -51,9 +51,10 @@ sub Debug(@)
   print STDERR @_ if ($Debug);
 }
 
+my $LogOnly;
 sub Error(@)
 {
-  Debug("$Name0:error: ", @_);
+  print STDERR "$Name0:error: ", @_ if (!$LogOnly);
   LogMsg @_;
 }
 
@@ -98,6 +99,10 @@ while (@ARGV)
   if ($Arg eq "--debug")
   {
     $Debug = 1;
+  }
+  elsif ($Arg eq "--log-only")
+  {
+    $LogOnly = 1;
   }
   elsif ($Arg eq "revert")
   {
@@ -158,7 +163,7 @@ if (!defined $Usage)
 }
 if (defined $Usage)
 {
-  print "Usage: $Name0 [--debug] [--help] revert VMName\n";
+  print "Usage: $Name0 [--debug] [--log-only] [--help] revert VMName\n";
   exit $Usage;
 }
 
