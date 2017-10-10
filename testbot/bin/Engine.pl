@@ -195,7 +195,7 @@ sub Cleanup(;$$)
         next;
       }
       elsif (($VM->Status eq "reverting" or $VM->Status eq "sleeping") and
-             defined $VM->ChildPid and kill(0, $VM->ChildPid))
+             defined $VM->ChildPid and !kill(0, $VM->ChildPid))
       {
         # This VM is still being reverted. Let that process run its course.
         LogMsg "$VMKey is being reverted\n";
