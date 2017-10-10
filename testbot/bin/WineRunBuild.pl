@@ -241,7 +241,6 @@ sub WrapUpAndExit($;$)
   {
     $VM->Status($NewVMStatus);
     $VM->Save();
-    RescheduleJobs();
   }
 
   my $Result = $VM->Name .": ". $VM->Status ." Status: $Status Failures: ". (defined $TestFailures ? $TestFailures : "unset");

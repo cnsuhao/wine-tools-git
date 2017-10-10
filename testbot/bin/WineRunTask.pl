@@ -270,7 +270,6 @@ sub WrapUpAndExit($;$$)
   {
     $VM->Status($NewVMStatus);
     $VM->Save();
-    RescheduleJobs();
   }
 
   if ($Status eq 'completed' and $Step->Type eq 'suite')
