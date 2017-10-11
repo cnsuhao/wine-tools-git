@@ -159,7 +159,7 @@ sub UpdateStatus($$)
   if (defined $self->ChildPid && !kill(0, $self->ChildPid) && $! == ESRCH)
   {
     $self->ChildPid(undef);
-    if ($Status eq "queued" || $Status eq "running")
+    if ($Status eq "running")
     {
       my ($JobId, $StepNo, $TaskNo) = @{$self->GetMasterKey()};
       my $OldUMask = umask(002);
