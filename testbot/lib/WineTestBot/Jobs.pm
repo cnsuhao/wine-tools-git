@@ -123,6 +123,8 @@ Updates the status of this job and of its steps and tasks. Part of this means
 checking for failed builds and skipping the subsequent tasks, or detecting
 dead child processes.
 
+Returns the updated status.
+
 =back
 =cut
 
@@ -183,9 +185,27 @@ sub UpdateStatus($)
   return $Status;
 }
 
+=pod
+=over 12
+
+=item C<Cancel()>
+
+Cancels the Job, preserving existing results.
+
+More precisely, goes through all of that Job's 'queued' and 'running' tasks,
+killing all the running ones and marking them, and all the queued tasks, as
+'skipped' so they will not be run. The overall Job status will be 'canceled'
+unless it was completed already.
+
+Returns undef if successful, the error message otherwise.
+
+=back
+=cut
+
 sub Cancel($)
 {
   my ($self) = @_;
+  my $ErrMessage;
 
   my $Steps = $self->Steps;
   $Steps->AddFilter("Status", ["queued", "running"]);
@@ -198,7 +218,8 @@ sub Cancel($)
       if ($Task->Status eq "queued")
       {
         $Task->Status("skipped");
-        $Task->Save();
+        my ($EProperty, $EMessage) = $Task->Save();
+        $ErrMessage ||= "$EMessage ($EProperty)" if ($EMessage);
       }
       elsif (defined $Task->ChildPid)
       {
@@ -207,19 +228,37 @@ sub Cancel($)
         kill("TERM", $Task->ChildPid);
         $Task->Status("canceled");
         $Task->ChildPid(undef);
-        $Task->Save();
+        my ($EProperty, $EMessage) = $Task->Save();
+        $ErrMessage ||= "$EMessage ($EProperty)" if ($EMessage);
 
         my $VM = $Task->VM;
         $VM->Status('dirty');
-        $VM->Save();
+        ($EProperty, $EMessage) = $VM->Save();
+        $ErrMessage ||= "$EMessage ($EProperty)" if ($EMessage);
       }
     }
   }
   # Let UpdateStatus() handle updating the overall job status
   $self->UpdateStatus();
 
-  return undef;
+  return $ErrMessage;
 }
+
+=pod
+=over 12
+
+=item C<Restart()>
+
+Restarts the Job from scratch.
+
+More precisely, if the Job is not 'queued' or 'running', goes through all of
+its tasks and marks them all as 'queued', deleting any existing result in the
+process.
+
+Returns undef if successful, the error message otherwise.
+
+=back
+=cut
 
 sub Restart($)
 {
@@ -259,7 +298,8 @@ sub Restart($)
   $self->Status("queued");
   $self->Submitted(time);
   $self->Ended(undef);
-  $self->Save(); # Save it all
+  my ($ErrProperty, $ErrMessage) = $self->Save(); # Save it all
+  return "$ErrMessage ($ErrProperty)" if ($ErrMessage);
 
   return undef;
 }
