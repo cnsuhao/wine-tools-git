@@ -40,7 +40,6 @@ use WineTestBot::Config;
 use WineTestBot::Jobs;
 use WineTestBot::Steps;
 use WineTestBot::WineTestBotObjects;
-use WineTestBot::Log;
 
 use vars qw(@ISA @EXPORT);
 
@@ -109,6 +108,7 @@ sub Run($$)
   }
   elsif (!$Pid)
   {
+    require WineTestBot::Log;
     # Capture Perl errors in the task's generic error log
     my ($JobId, $StepNo, $TaskNo) = @{$self->GetMasterKey()};
     my $TaskDir = "$DataDir/jobs/$JobId/$StepNo/$TaskNo";
@@ -124,12 +124,11 @@ sub Run($$)
     }
     else
     {
-      LogMsg "unable to redirect stderr to '$TaskDir/err': $!\n";
+      WineTestBot::Log::LogMsg("unable to redirect stderr to '$TaskDir/err': $!\n");
     }
     $ENV{PATH} = "/usr/bin:/bin";
     delete $ENV{ENV};
     exec("$BinDir/${ProjectName}$RunScript", "--log-only", $JobId, $StepNo, $TaskNo) or
-    require WineTestBot::Log;
     WineTestBot::Log::LogMsg("Unable to exec ${ProjectName}$RunScript: $!\n");
     exit(1);
   }
@@ -173,7 +172,8 @@ sub UpdateStatus($$)
       umask($OldUMask);
       # This probably indicates a bug in the task script.
       # Don't requeue the task to avoid an infinite loop.
-      LogMsg "Child process for task $JobId/$StepNo/$TaskNo died unexpectedly\n";
+      require WineTestBot::Log;
+      WineTestBot::Log::LogMsg("Child process for task $JobId/$StepNo/$TaskNo died unexpectedly\n");
       $self->Status("boterror");
       $Status = "boterror";
 
