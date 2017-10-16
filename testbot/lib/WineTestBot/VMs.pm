@@ -142,6 +142,8 @@ are undergoing maintenance.
 
 =cut
 
+use File::Basename;
+
 use ObjectModel::BackEnd;
 use WineTestBot::Config;
 use WineTestBot::Engine::Notify;
@@ -309,38 +311,89 @@ sub RunRevert($)
 {
   my ($self) = @_;
 
-  $self->Status("reverting");
-  my ($ErrProperty, $ErrMessage) = $self->Save();
-  return $ErrMessage if (defined $ErrMessage);
+  my $Tool = "LibvirtTool.pl";
+  my $Args = ["$BinDir/$Tool", "--log-only", "revert", $self->GetKey()];
 
-  # Make sure the child process does not inherit the database connection
+  # There are two $VM->ChildPid race conditions to avoid:
+  # - Between the child process and new calls to ScheduleJobs().
+  #   We cannot leave setting ChildPid to the child process because then it
+  #   may still not be set by the time the next ScheduleJobs() call happens,
+  #   which would result in a new child being started.
+  #   Note that the status is not guaranteed to change in _RunVMTool() so it
+  #   cannot be relied on to avoid this race.
+  # - Between RunRevert() and the exit of the child process.
+  #   The child process may exit before RunRevert() gets around to setting
+  #   ChildPid after the fork(). This would result in ChildPid remaining set
+  #   indefinitely.
+  # So set ChildPid in the parent and synchronize with the child so it only
+  # starts once this is done.
+
+  # Make sure the child process will use its own database connection
   $self->GetBackEnd()->Close();
 
-  my $Pid = fork;
+  use Fcntl;
+  my ($fd_read, $fd_write);
+  pipe($fd_read, $fd_write); # For synchronization
+
+  my $Pid = fork();
   if (!defined $Pid)
   {
+    close($fd_read);
+    close($fd_write);
     return "Unable to start child process: $!";
   }
-  elsif (!$Pid)
+  if ($Pid)
   {
-    $ENV{PATH} = "/usr/bin:/bin";
-    delete $ENV{ENV};
-    require WineTestBot::Log;
-    WineTestBot::Log::SetupRedirects();
-    exec("$BinDir/LibvirtTool.pl", "--log-only", "revert", $self->GetKey()) or
-    WineTestBot::Log::LogMsg("Unable to exec LibvirtTool.pl: $!\n");
-    exit(1);
+    close($fd_read);
+
+    # Set the Status and ChildPid
+    $self->Status("reverting");
+    $self->ChildPid($Pid);
+    my ($ErrProperty, $ErrMessage) = $self->Save();
+    if ($ErrMessage)
+    {
+      close($fd_write);
+      return "Could not set the $Tool pid: $ErrMessage ($ErrProperty)";
+    }
+
+    # Let the child go
+    close($fd_write);
+
+    return undef;
   }
 
-  # Note that if the child process completes quickly (typically due to some
-  # error), it may set ChildPid to undef before we get here. So we may end up
-  # with non-reverting VMs for which ChildPid is set. That's ok because
-  # ChildPid should be ignored anyway if Status is not 'reverting' or
-  # 'sleeping'.
-  $self->ChildPid($Pid);
-  $self->Save();
+  # Wait for the parent to set $VM->ChildPid
+  close($fd_write);
+  sysread($fd_read, $fd_write, 1);
+  close($fd_read);
 
-  return undef;
+  # Get up-to-date information on the VM and verify the pid. If the parent
+  # failed to set the pid it may try to start another process at any time.
+  # So abort in order avoid interference.
+  require WineTestBot::VMs;
+  my $VM = WineTestBot::VMs::CreateVMs()->GetItem($self->GetKey());
+  exit 1 if (($VM->ChildPid || 0) != $$);
+  $self->GetBackEnd()->Close();
+
+  require WineTestBot::Log;
+  WineTestBot::Log::LogMsg("Starting child: @$Args\n");
+
+  # Set up the file descriptors for the new process
+  WineTestBot::Log::SetupRedirects();
+
+  $ENV{PATH} = "/usr/bin:/bin";
+  exec(@$Args) or
+      WineTestBot::Log::LogMsg("Unable to exec $Tool: $!\n");
+
+  # Reset the Status and ChildPid since the exec failed
+  $self->Status("offline");
+  $self->ChildPid(undef);
+  my ($ErrProperty, $ErrMessage) = $self->Save();
+  if ($ErrMessage)
+  {
+    WineTestBot::Log::LogMsg("Could not remove the $Tool pid: $ErrMessage ($ErrProperty)\n");
+  }
+  exit 1;
 }
 
 
