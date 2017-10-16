@@ -226,6 +226,57 @@ sub Status($;$)
   return $NewStatus;
 }
 
+=pod
+=over 12
+
+=item C<CanHaveChild()>
+
+Returns true if the VM status is compatible with ChildPid being set.
+
+=back
+=cut
+
+sub CanHaveChild($)
+{
+  my ($self) = @_;
+  return ($self->Status =~ /^(?:reverting|sleeping)$/);
+}
+
+=pod
+=over 12
+
+=item C<HasRunningChild()>
+
+Returns true if ChildPid is set and still identifies a running process.
+
+=back
+=cut
+
+sub HasRunningChild($)
+{
+  my ($self) = @_;
+  return undef if (!$self->ChildPid);
+  return kill(0, $self->ChildPid);
+}
+
+=pod
+=over 12
+
+=item C<KillChild()>
+
+If ChildPid is set, kills the corresponding process and unsets ChildPid.
+It is up to the caller to save the updated VM object.
+
+=back
+=cut
+
+sub KillChild($)
+{
+  my ($self) = @_;
+  kill("TERM", $self->ChildPid) if ($self->ChildPid);
+  $self->ChildPid(undef);
+}
+
 sub Validate($)
 {
   my ($self) = @_;

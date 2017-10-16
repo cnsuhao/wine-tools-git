@@ -71,8 +71,8 @@ sub FatalError(@)
 
 =item C<Cleanup()>
 
-The Cleanup() function gets the tasks and VMs in a consistent state on the
-Engine startup or cleanly stops the tasks and VMs on shutdown.
+The Cleanup() function gets the Tasks and VMs in a consistent state on the
+Engine startup or cleanly stops the Tasks and VMs on shutdown.
 It has to contend with three main scenarios:
 - The Engine being restarted. Any task started just before that is still
   running should still have its process and powered on VM and should be left
@@ -81,15 +81,14 @@ It has to contend with three main scenarios:
 - The Engine startup after a reboot. All task processes will be dead and need
   to be requeued. But the VMs are likely to be hosted on a separate machine so
   it is quite possible that they will still be running. Hopefully any running
-  process matching a task's ChildPid will belong to another user so we don't
+  process matching a Task's ChildPid will belong to another user so we don't
   mistake that case for the previous one.
-- A shutdown of the Engine and its tasks / VMs. In this case it's used to
+- A shutdown of the Engine and its Tasks / VMs. In this case it's used to
   kill the running tasks and requeue them, and/or power off the VMs.
 
 In all cases we only trust that a VM status field is still valid if:
-- It is 'running' and used by a task that is still running.
-- It is 'reverting' or 'sleeping', is powered on and the revert process is
-  still running.
+- It is 'running' and used by a Task that is still running.
+- It can have a running process and that process is still running.
 - It is 'idle' and powered on.
 In all other cases the VM will be powered off and marked as such.
 
@@ -187,15 +186,14 @@ sub Cleanup(;$$)
     {
       if ($KillVMs)
       {
-        kill("TERM", $VM->ChildPid) if (defined $VM->ChildPid);
+        $VM->KillChild();
       }
       elsif ($VM->Status eq "idle")
       {
         # Assume these are still ready for use
         next;
       }
-      elsif (($VM->Status eq "reverting" or $VM->Status eq "sleeping") and
-             defined $VM->ChildPid and !kill(0, $VM->ChildPid))
+      elsif ($VM->CanHaveChild() and $VM->HasRunningChild())
       {
         # This VM is still being reverted. Let that process run its course.
         LogMsg "$VMKey is being reverted\n";
